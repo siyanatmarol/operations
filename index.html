@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aljamea-tus-Saifiyah Facilities Management Dept (Marol)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        jamea: {
+                            50: '#fbf8ed',
+                            100: '#f4ebcf',
+                            500: '#b89230',
+                            600: '#9b7622',
+                            700: '#7e5c1a',
+                            800: '#5c4113',
+                            900: '#3d2a0a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .header-pattern {
+            background-color: #064e3b;
+            background-image: radial-gradient(#b89230 0.75px, transparent 0.75px), radial-gradient(#b89230 0.75px, #064e3b 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0,15px 15px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- MAIN HEADER -->
+    <header class="bg-slate-900 text-white shadow-lg border-b-4 border-amber-500 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-15 header-pattern pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-md ring-2 ring-amber-300/30">
+                        <i class="fa-solid fa-building-columns text-2xl text-slate-950"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-amber-400">
+                            Aljamea-tus-Saifiyah Facilities Management Dept (Marol)
+                        </h1>
+                        <p class="text-xs text-slate-300 flex items-center gap-2 mt-0.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Estate & Facilities Portal
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Controls & User Identity Switcher -->
+                <div class="flex flex-wrap items-center gap-2.5 text-xs">
+                    <!-- Current User Role Indicator -->
+                    <div class="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                        <i class="fa-solid fa-user-circle text-amber-400 text-base"></i>
+                        <div class="text-left">
+                            <span class="block text-[10px] text-slate-400 uppercase font-bold" id="currentUserRoleLabel">Role: Super Admin</span>
+                            <span class="font-medium text-slate-200" id="currentEmailLabel">murtaza.kheraluwala@jameasaifiyah.edu</span>
+                        </div>
+                    </div>
+
+                    <button onclick="openFacultyModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-users-gear"></i> Faculty Directory
+                    </button>
+                    
+                    <button onclick="openUserModal()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/40 text-amber-300 px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-user-shield text-amber-400"></i> Admin Access
+                    </button>
+                    
+                    <button onclick="exportAllData()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg font-medium transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- PRIMARY MODULE TABS -->
+    <div class="bg-slate-800 text-slate-200 border-b border-slate-700 shadow-inner">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 overflow-x-auto">
+            <button id="module-tab-dawat" onclick="switchModule('dawat')" class="module-btn px-5 py-3 text-sm font-semibold border-b-2 border-amber-400 text-amber-400 flex items-center gap-2 bg-slate-800/80 transition">
+                <i class="fa-solid fa-city"></i> Dawat Estates
+            </button>
+            <button id="module-tab-inventory" onclick="switchModule('inventory')" class="module-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500 transition flex items-center gap-2">
+                <i class="fa-solid fa-boxes-stacked"></i> Inventory Management
+            </button>
+        </div>
+    </div>
+
+    <!-- SUB-HEADER NAVIGATION (Under Dawat Estates Module) -->
+    <nav id="dawatSubHeaders" class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-1 sm:space-x-3 overflow-x-auto py-2 custom-scrollbar" id="subHeaderTabs">
+                <button onclick="switchTab('estates')" id="tab-estates" class="tab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition whitespace-nowrap bg-amber-50 text-amber-800 border border-amber-200">
+                    <i class="fa-solid fa-house-chimney"></i> Estate Details
+                </button>
+                <button onclick="switchTab('allocation')" id="tab-allocation" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2 transition whitespace-nowrap text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-user-check"></i> Allocation
+                </button>
+                <button onclick="switchTab('maintenance')" id="tab-maintenance" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2 transition whitespace-nowrap text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-paint-roller"></i> Maintenance Data
+                </button>
+                <button onclick="switchTab('bachelors')" id="tab-bachelors" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2 transition whitespace-nowrap text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-bed"></i> Bachelor Flats
+                </button>
+                <button onclick="switchTab('vacant-bills')" id="tab-vacant-bills" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2 transition whitespace-nowrap text-slate-600 hover:bg-slate-100 relative">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Vacant Flats Bills
+                    <span id="missingBillsBadge" class="hidden absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-bounce">!</span>
+                </button>
+                <button onclick="switchTab('societies')" id="tab-societies" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2 transition whitespace-nowrap text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-building-user"></i> Society Maintenance
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- MODULE 1: DAWAT ESTATES CONTENT -->
+        <div id="module-dawat-content">
+            
+            <!-- SECTION 1: ESTATE DETAILS -->
+            <section id="section-estates" class="tab-content block space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Estate Master Register</h2>
+                        <p class="text-xs text-slate-500">Comprehensive inventory of all department flats and property specifications</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="estateSearch" oninput="renderEstatesTable()" placeholder="Search Flat / Building / Owner..." class="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none w-48 sm:w-64">
+                        </div>
+                        <select id="estateStatusFilter" onchange="renderEstatesTable()" class="py-1.5 px-3 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
+                            <option value="ALL">All Occupancy</option>
+                            <option value="Occupied">Occupied</option>
+                            <option value="Vacant">Vacant</option>
+                            <option value="Bachelor">Bachelor Designated</option>
+                        </select>
+                        <button onclick="openEstateModal()" class="admin-only bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-plus"></i> Add Estate
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-3">Flat & Building</th>
+                                    <th class="p-3">Type & Size</th>
+                                    <th class="p-3">Registered Owner</th>
+                                    <th class="p-3">Electricity CA / Meter</th>
+                                    <th class="p-3">Gas CA / Meter</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-center">Bachelor Designation</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="estatesTableBody" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: ALLOCATION -->
+            <section id="section-allocation" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Faculty Allocation Management</h2>
+                        <p class="text-xs text-slate-500">Track flat allocations to faculty members (Excludes Bachelor flats)</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <input type="text" id="allocationSearch" oninput="renderAllocationTable()" placeholder="Search Faculty / ITS / Flat..." class="px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none w-48 sm:w-64">
+                        <button onclick="openAllocationModal()" class="admin-only bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-user-plus"></i> New Allocation
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                <tr>
+                                    <th class="p-3">Flat Details</th>
+                                    <th class="p-3">Faculty Member</th>
+                                    <th class="p-3">ITS Number</th>
+                                    <th class="p-3">Contact Number</th>
+                                    <th class="p-3">Allocation Date</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allocationTableBody" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: MAINTENANCE DATA -->
+            <section id="section-maintenance" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Refurbishment & Maintenance Works</h2>
+                        <p class="text-xs text-slate-500">History of redevelopment, executed works, costs & before/after logs</p>
+                    </div>
+                    <button onclick="openMaintenanceModal()" class="admin-only bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-hammer"></i> Record Maintenance Task
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="maintenanceCardsContainer">
+                    <!-- JS Injected Cards -->
+                </div>
+            </section>
+
+            <!-- SECTION 4: BACHELOR FLATS -->
+            <section id="section-bachelors" class="tab-content hidden space-y-6">
+                <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-info text-amber-600 text-lg mt-0.5"></i>
+                    <div class="text-xs text-amber-900 leading-relaxed">
+                        Flats designated as Bachelor flats in <strong>Estate Details</strong> automatically appear here. 
+                        Manage bed capacity and assigned occupants below.
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="bachelorCardsGrid">
+                    <!-- JS Injected -->
+                </div>
+            </section>
+
+            <!-- SECTION 5: VACANT FLATS BILLS -->
+            <section id="section-vacant-bills" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Vacant & Bachelor Bills Tracker</h2>
+                        <p class="text-xs text-slate-500">Ensures electricity & gas bills for Department-borne flats are uploaded and paid</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="text-xs font-medium text-slate-600">Selected Month:</label>
+                        <input type="month" id="vacantBillMonth" onchange="renderVacantBillsTable()" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase">
+                                <tr>
+                                    <th class="p-3">Flat / Building</th>
+                                    <th class="p-3">Flat Type</th>
+                                    <th class="p-3">Electricity CA</th>
+                                    <th class="p-3">Gas CA</th>
+                                    <th class="p-3">Electricity Bill PDF</th>
+                                    <th class="p-3">Gas Bill PDF</th>
+                                    <th class="p-3">Payment Status</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vacantBillsTableBody" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: SOCIETY MAINTENANCE TRACKING -->
+            <section id="section-societies" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Society Maintenance Management (13 Societies)</h2>
+                        <p class="text-xs text-slate-500">Track billing frequencies, society contact persons, and central document vault</p>
+                    </div>
+                    <button onclick="openSocietyModal()" class="admin-only bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-plus"></i> Add Society
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Societies List Table (Left 2 cols) -->
+                    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-3 bg-slate-50 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center">
+                            <span>Societies Register</span>
+                            <span id="societyCountBadge" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">13 Societies</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border-collapse">
+                                <thead class="bg-slate-100/70 border-b border-slate-200 text-slate-600">
+                                    <tr>
+                                        <th class="p-2.5">Society Name</th>
+                                        <th class="p-2.5">Flats & Types</th>
+                                        <th class="p-2.5">Billing Cycle</th>
+                                        <th class="p-2.5">Contact Person</th>
+                                        <th class="p-2.5">Submitted By</th>
+                                        <th class="p-2.5 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="societyTableBody" class="divide-y divide-slate-100">
+                                    <!-- JS Injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Society Document Vault UPDATED (Right 1 col) -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-folder-closed text-amber-600"></i> Document Vault
+                            </h3>
+                            <button onclick="openSocietyDocModal()" class="admin-only text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded font-medium transition">
+                                + Upload Doc
+                            </button>
+                        </div>
+
+                        <!-- FILTER & SEARCH BAR FOR VAULT -->
+                        <div class="space-y-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                            <div>
+                                <label class="text-[10px] font-semibold text-slate-500 uppercase block mb-1">Sort / Filter by Society:</label>
+                                <select id="vaultSocietyFilter" onchange="renderSocietyDocsList()" class="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                    <!-- JS Options -->
+                                </select>
+                            </div>
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+                                <input type="text" id="vaultSearch" oninput="renderSocietyDocsList()" placeholder="Search doc name or notes..." class="w-full text-xs pl-7 pr-2.5 py-1.5 border border-slate-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2.5 max-h-80 overflow-y-auto pr-1 custom-scrollbar" id="societyDocList">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- MODULE 2: INVENTORY MANAGEMENT CONTENT (Module Tab Expansion Ready) -->
+        <div id="module-inventory-content" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Inventory & Asset Management</h2>
+                        <p class="text-xs text-slate-500">Track fixtures, appliances, air conditioners, and furnishings across all Marol estates</p>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats row -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-xs text-slate-500 block">Total Tracked Assets</span>
+                        <span class="text-xl font-bold text-slate-800">142 Items</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-xs text-slate-500 block">Assigned to Flats</span>
+                        <span class="text-xl font-bold text-amber-700">118 Items</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-xs text-slate-500 block">In Store Depot</span>
+                        <span class="text-xl font-bold text-emerald-700">24 Items</span>
+                    </div>
+                </div>
+
+                <div class="p-8 border-2 border-dashed border-slate-200 rounded-xl text-center space-y-3">
+                    <i class="fa-solid fa-toolbox text-3xl text-slate-300"></i>
+                    <h3 class="text-sm font-semibold text-slate-700">Inventory Module Expanded Readiness</h3>
+                    <p class="text-xs text-slate-500 max-w-md mx-auto">
+                        This module is structured for seamless addition of asset serial tracking, stock inward/outward registers, and warranty tracking.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODALS CONTAINER -->
+
+    <!-- ADMIN & USER PERMISSIONS MODAL (Fully Interactive) -->
+    <div id="modalAdminUser" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 border border-slate-200 text-xs">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-user-shield text-amber-600 text-base"></i>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm">User Access & Role Permissions</h3>
+                        <p class="text-[11px] text-slate-500">Manage user access and sub-header permissions linked to email IDs</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modalAdminUser')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Role Switch Simulator for Testing -->
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg flex items-center justify-between">
+                <div>
+                    <span class="font-bold text-amber-900 block">Switch Live User Persona (Interactive Preview)</span>
+                    <span class="text-[11px] text-amber-700">Test how invited users with limited sub-header access view the portal</span>
+                </div>
+                <select id="userPersonaSelect" onchange="switchPersona()" class="px-3 py-1.5 border border-amber-300 rounded-lg bg-white font-medium text-slate-800">
+                    <option value="murtaza.kheraluwala@jameasaifiyah.edu">murtaza.kheraluwala@jameasaifiyah.edu (Super Admin)</option>
+                    <option value="invited.staff@jameasaifiyah.edu">invited.staff@jameasaifiyah.edu (Limited Access User)</option>
+                </select>
+            </div>
+
+            <!-- Invite New User Form -->
+            <form onsubmit="inviteUser(event)" class="bg-slate-50 p-3 rounded-lg border space-y-3">
+                <span class="font-bold text-slate-800 block">Invite New Authorized User</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="email" id="inviteEmail" placeholder="Enter user email (e.g. user@jameasaifiyah.edu)" required class="px-3 py-1.5 border rounded-lg bg-white">
+                    <select id="inviteRole" class="px-3 py-1.5 border rounded-lg bg-white">
+                        <option value="Standard">Standard User (Restricted Sub-headers)</option>
+                        <option value="Admin">Administrator (Full Access)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Grant Access to Specific Sub-Headers:</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-estates" checked class="rounded text-amber-600"> Estate Details</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-allocation" checked class="rounded text-amber-600"> Allocation</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-maintenance" class="rounded text-amber-600"> Maintenance Data</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-bachelors" class="rounded text-amber-600"> Bachelor Flats</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-vacant-bills" class="rounded text-amber-600"> Vacant Bills</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" id="perm-societies" class="rounded text-amber-600"> Society Maintenance</label>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-lg font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-paper-plane"></i> Send Access Invite
+                    </button>
+                </div>
+            </form>
+
+            <!-- User Register Table -->
+            <div class="max-h-40 overflow-y-auto border rounded-lg">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-100 font-semibold sticky top-0">
+                        <tr>
+                            <th class="p-2">User Email</th>
+                            <th class="p-2">Role</th>
+                            <th class="p-2">Sub-header Access</th>
+                            <th class="p-2 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="divide-y">
+                        <!-- JS Injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESTATE MODAL -->
+    <div id="modalEstate" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-xl max-w-xl w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-900 text-base" id="estateModalTitle">Add New Estate Record</h3>
+                <button onclick="closeModal('modalEstate')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="estateForm" onsubmit="saveEstate(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="estateId">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Building Name *</label>
+                        <input type="text" id="estateBuilding" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Flat Number *</label>
+                        <input type="text" id="estateFlatNo" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Type *</label>
+                        <select id="estateType" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                            <option>1 BHK</option>
+                            <option>2 BHK</option>
+                            <option>3 BHK</option>
+                            <option>Studio</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Sqft Size</label>
+                        <input type="number" id="estateSqft" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Occupancy</label>
+                        <select id="estateOccupancy" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                            <option value="Vacant">Vacant</option>
+                            <option value="Occupied">Occupied</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Registered Owner *</label>
+                    <input type="text" id="estateOwner" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border">
+                    <div>
+                        <label class="block font-medium text-slate-700">Electricity CA Number</label>
+                        <input type="text" id="estateElecCA" class="w-full px-2.5 py-1 border rounded mt-1">
+                        <label class="block font-medium text-slate-700 mt-2">Electricity Meter #</label>
+                        <input type="text" id="estateElecMeter" class="w-full px-2.5 py-1 border rounded mt-1">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700">Gas CA Number</label>
+                        <input type="text" id="estateGasCA" class="w-full px-2.5 py-1 border rounded mt-1">
+                        <label class="block font-medium text-slate-700 mt-2">Gas Meter #</label>
+                        <input type="text" id="estateGasMeter" class="w-full px-2.5 py-1 border rounded mt-1">
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="estateIsBachelor" class="w-4 h-4 text-amber-600 rounded">
+                    <label for="estateIsBachelor" class="font-medium text-slate-800">Designate as Bachelor Flat</label>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalEstate')" class="px-4 py-1.5 border rounded-lg hover:bg-slate-100">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FACULTY DIRECTORY MODAL -->
+    <div id="modalFaculty" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-users text-amber-600"></i> Faculty Directory
+                </h3>
+                <button onclick="closeModal('modalFaculty')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Import Section -->
+            <div class="bg-amber-50/60 border border-amber-200 rounded-lg p-3 text-xs flex items-center justify-between">
+                <div>
+                    <span class="font-semibold text-amber-900 block">Import Faculty List (CSV Format)</span>
+                    <span class="text-slate-500">Headers: Name, ITS, Contact</span>
+                </div>
+                <label class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded cursor-pointer font-medium">
+                    <i class="fa-solid fa-file-import"></i> Upload CSV
+                    <input type="file" accept=".csv" class="hidden" onchange="importFacultyCSV(event)">
+                </label>
+            </div>
+
+            <!-- Add Single Faculty Form -->
+            <form onsubmit="saveFacultyMember(event)" class="grid grid-cols-3 gap-2 text-xs bg-slate-50 p-3 rounded-lg border">
+                <input type="text" id="facName" placeholder="Faculty Name *" required class="px-2.5 py-1.5 border rounded">
+                <input type="text" id="facITS" placeholder="ITS Number *" required class="px-2.5 py-1.5 border rounded">
+                <div class="flex gap-1">
+                    <input type="text" id="facContact" placeholder="Contact Number *" required class="px-2.5 py-1.5 border rounded w-full">
+                    <button type="submit" class="bg-emerald-700 text-white px-3 py-1.5 rounded font-medium hover:bg-emerald-800">Add</button>
+                </div>
+            </form>
+
+            <!-- Faculty List Table -->
+            <div class="max-h-60 overflow-y-auto border rounded-lg">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100 font-semibold sticky top-0">
+                        <tr>
+                            <th class="p-2">Name</th>
+                            <th class="p-2">ITS Number</th>
+                            <th class="p-2">Contact Number</th>
+                            <th class="p-2 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facultyTableBody" class="divide-y">
+                        <!-- JS Injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALLOCATION MODAL -->
+    <div id="modalAllocation" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 text-xs">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-900 text-base">New Flat Allocation</h3>
+                <button onclick="closeModal('modalAllocation')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveAllocation(event)" class="space-y-3">
+                <div>
+                    <label class="block font-medium mb-1">Select Flat *</label>
+                    <select id="allocFlatId" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                        <!-- JS Injected Options -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Select Faculty Member *</label>
+                    <select id="allocFacultySelect" onchange="onFacultySelectChange()" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                        <!-- JS Injected Options -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded border">
+                    <div>
+                        <label class="block text-slate-500 mb-0.5">ITS Number</label>
+                        <input type="text" id="allocITS" readonly class="w-full px-2 py-1 bg-slate-100 border rounded font-semibold text-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-0.5">Contact Number</label>
+                        <input type="text" id="allocContact" readonly class="w-full px-2 py-1 bg-slate-100 border rounded font-semibold text-slate-700">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Allocation Start Date *</label>
+                    <input type="date" id="allocDate" required class="w-full px-3 py-1.5 border rounded-lg">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAllocation')" class="px-4 py-1.5 border rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">Confirm Allocation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAINTENANCE MODAL -->
+    <div id="modalMaintenance" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 text-xs">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Record Maintenance Work</h3>
+                <button onclick="closeModal('modalMaintenance')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveMaintenanceRecord(event)" class="space-y-3">
+                <div>
+                    <label class="block font-medium mb-1">Select Flat *</label>
+                    <select id="maintFlatId" required class="w-full px-3 py-1.5 border rounded-lg">
+                        <!-- JS Injected -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Refurbishment Date *</label>
+                        <input type="date" id="maintDate" required class="w-full px-3 py-1.5 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Total Cost (INR) *</label>
+                        <input type="number" id="maintCost" required class="w-full px-3 py-1.5 border rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Works Executed Details *</label>
+                    <textarea id="maintWorks" rows="2" required placeholder="e.g. Painting, Plumbing overhauling, Tile replacement..." class="w-full px-3 py-1.5 border rounded-lg"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Before Refurbishment Photo</label>
+                        <input type="file" id="maintPhotoBefore" accept="image/*" class="w-full text-slate-500">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">After Refurbishment Photo</label>
+                        <input type="file" id="maintPhotoAfter" accept="image/*" class="w-full text-slate-500">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalMaintenance')" class="px-4 py-1.5 border rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">Save Maintenance Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SOCIETY MODAL -->
+    <div id="modalSociety" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 text-xs">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Society Details</h3>
+                <button onclick="closeModal('modalSociety')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveSocietyRecord(event)" class="space-y-3">
+                <div>
+                    <label class="block font-medium mb-1">Society Name *</label>
+                    <input type="text" id="socName" required class="w-full px-3 py-1.5 border rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Total Flats & Type *</label>
+                        <input type="text" id="socFlatsSummary" placeholder="e.g. 12 Flats (2BHK)" required class="w-full px-3 py-1.5 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Billing System *</label>
+                        <select id="socBillingSystem" class="w-full px-3 py-1.5 border rounded-lg">
+                            <option>Monthly</option>
+                            <option>Quarterly</option>
+                            <option>Bi-Annually</option>
+                            <option>Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium mb-1">Contact Person Name</label>
+                        <input type="text" id="socContactName" class="w-full px-3 py-1.5 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1">Contact Mobile</label>
+                        <input type="text" id="socContactMob" class="w-full px-3 py-1.5 border rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Bill Submitted By</label>
+                    <input type="text" id="socBillSubmittedBy" placeholder="e.g. Secretary / Manager" class="w-full px-3 py-1.5 border rounded-lg">
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalSociety')" class="px-4 py-1.5 border rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">Save Society</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SOCIETY DOC MODAL -->
+    <div id="modalSocietyDoc" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Upload Society Document</h3>
+                <button onclick="closeModal('modalSocietyDoc')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveSocietyDoc(event)" class="space-y-3">
+                <div>
+                    <label class="block font-medium mb-1">Select Society *</label>
+                    <select id="docSocSelect" required class="w-full px-3 py-1.5 border rounded-lg"></select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Document Name *</label>
+                    <input type="text" id="docName" placeholder="e.g. Annual Maintenance Invoice 2026" required class="w-full px-3 py-1.5 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Select Document PDF *</label>
+                    <input type="file" id="docPdfFile" accept="application/pdf" required class="w-full text-slate-500">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Details / Notes</label>
+                    <textarea id="docDetails" rows="2" class="w-full px-3 py-1.5 border rounded-lg"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalSocietyDoc')" class="px-4 py-1.5 border rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">Upload Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HISTORY ARCHIVE MODAL -->
+    <div id="modalHistory" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 text-xs">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Past Allocation History</h3>
+                    <p class="text-[11px] text-slate-500" id="historyFlatTitle">Flat History</p>
+                </div>
+                <button onclick="closeModal('modalHistory')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="max-h-60 overflow-y-auto border rounded-lg">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 font-semibold sticky top-0 border-b">
+                        <tr>
+                            <th class="p-2">Faculty Member</th>
+                            <th class="p-2">ITS Number</th>
+                            <th class="p-2">From Date</th>
+                            <th class="p-2">To Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y">
+                        <!-- JS Injected -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+    <script>
+        // CORE STATE ARCHITECTURE
+        let currentPersona = 'murtaza.kheraluwala@jameasaifiyah.edu';
+
+        let state = {
+            users: [
+                {
+                    email: "murtaza.kheraluwala@jameasaifiyah.edu",
+                    role: "Admin",
+                    subHeaderAccess: ["estates", "allocation", "maintenance", "bachelors", "vacant-bills", "societies"]
+                },
+                {
+                    email: "invited.staff@jameasaifiyah.edu",
+                    role: "Standard",
+                    subHeaderAccess: ["estates", "allocation"]
+                }
+            ],
+            faculty: [
+                { id: "f1", name: "Janab Mustafa Bhaisaheb", its: "10293847", contact: "+91 98200 11223" },
+                { id: "f2", name: "Mulla Yusuf Bhai", its: "20394857", contact: "+91 98211 44556" },
+                { id: "f3", name: "Shaikh Ali Asgar", its: "30495822", contact: "+91 98333 77889" },
+                { id: "f4", name: "Mulla Huzefa Bhai", its: "40596811", contact: "+91 97666 00112" }
+            ],
+            estates: [
+                {
+                    id: "e1",
+                    building: "Al-Zahra Heights",
+                    flatNo: "A-101",
+                    type: "2 BHK",
+                    sqft: "850",
+                    owner: "Saifee Burhani Upliftment Trust",
+                    elecCA: "102938475",
+                    elecMeter: "M-9921",
+                    gasCA: "8823102",
+                    gasMeter: "G-102",
+                    isBachelor: false,
+                    occupancy: "Occupied",
+                    currentFacultyId: "f1",
+                    allocDate: "2025-01-15"
+                },
+                {
+                    id: "e2",
+                    building: "Burhani Enclave",
+                    flatNo: "B-302",
+                    type: "3 BHK",
+                    sqft: "1100",
+                    owner: "Aljamea Estate Trust",
+                    elecCA: "108877221",
+                    elecMeter: "M-4411",
+                    gasCA: "8899221",
+                    gasMeter: "G-504",
+                    isBachelor: false,
+                    occupancy: "Vacant",
+                    currentFacultyId: "",
+                    allocDate: ""
+                },
+                {
+                    id: "e3",
+                    building: "Saifee Villa (Marol)",
+                    flatNo: "C-004",
+                    type: "1 BHK",
+                    sqft: "550",
+                    owner: "Saifee Trust",
+                    elecCA: "109922334",
+                    elecMeter: "M-1102",
+                    gasCA: "7766554",
+                    gasMeter: "G-909",
+                    isBachelor: true,
+                    capacity: 4,
+                    occupants: [
+                        { name: "Huzefa Kapasi", its: "50192837", contact: "+91 91234 56789" },
+                        { name: "Taha Chhatriwala", its: "60192838", contact: "+91 98765 43210" }
+                    ],
+                    occupancy: "Occupied"
+                }
+            ],
+            maintenance: [
+                {
+                    id: "m1",
+                    flatId: "e1",
+                    date: "2025-11-10",
+                    cost: 45000,
+                    works: "Complete interior painting and bath waterproofing.",
+                    photoBefore: "https://placehold.co/400x250/e2e8f0/475569?text=Before+Refurbishment",
+                    photoAfter: "https://placehold.co/400x250/dcfce7/166534?text=After+Refurbishment"
+                }
+            ],
+            history: [
+                { id: "h1", flatId: "e1", facultyName: "Shaikh Abbas Bhai", its: "99887766", fromDate: "2023-01-01", toDate: "2024-12-31" }
+            ],
+            vacantBills: {},
+            societies: [
+                {
+                    id: "s1",
+                    name: "Al-Zahra Cooperative Housing Society",
+                    flatsSummary: "8 Flats (2 BHK)",
+                    billingSystem: "Monthly",
+                    contactName: "Mustafa Merchant",
+                    contactMob: "+91 98200 99887",
+                    billSubmittedBy: "Secretary"
+                },
+                {
+                    id: "s2",
+                    name: "Burhani Heights Society",
+                    flatsSummary: "5 Flats (3 BHK)",
+                    billingSystem: "Quarterly",
+                    contactName: "Shk Shabbir Rajkotwala",
+                    contactMob: "+91 98210 11223",
+                    billSubmittedBy: "Estate Manager"
+                }
+            ],
+            societyDocs: [
+                {
+                    id: "sd1",
+                    societyId: "s1",
+                    name: "Q1 Maintenance Receipt 2026",
+                    date: "2026-02-15",
+                    details: "Quarterly maintenance payment receipt.",
+                    fileUrl: "#"
+                }
+            ]
+        };
+
+        window.onload = function() {
+            const saved = localStorage.getItem('siyanat_marol_v2_data');
+            if (saved) {
+                try { state = JSON.parse(saved); } catch(e){}
+            }
+
+            const today = new Date();
+            document.getElementById('vacantBillMonth').value = today.toISOString().slice(0, 7);
+
+            applyUserPermissions();
+            renderEstatesTable();
+            renderAllocationTable();
+            renderMaintenanceCards();
+            renderBachelorCards();
+            renderVacantBillsTable();
+            renderSocietiesTable();
+            renderSocietyDocsList();
+            renderFacultyTable();
+            renderUsersTable();
+        };
+
+        function saveToLocalStorage() {
+            localStorage.setItem('siyanat_marol_v2_data', JSON.stringify(state));
+        }
+
+        // PERMISSIONS & USER AUTHORIZATION SYSTEM
+        function applyUserPermissions() {
+            const user = state.users.find(u => u.email === currentPersona) || { role: "Standard", subHeaderAccess: ["estates"] };
+            
+            document.getElementById('currentUserRoleLabel').innerText = `Role: ${user.role}`;
+            document.getElementById('currentEmailLabel').innerText = user.email;
+
+            // Show/Hide sub-header tabs depending on user permissions
+            const allTabs = ['estates', 'allocation', 'maintenance', 'bachelors', 'vacant-bills', 'societies'];
+            let firstVisible = null;
+
+            allTabs.forEach(tabKey => {
+                const btn = document.getElementById(`tab-${tabKey}`);
+                if (user.role === 'Admin' || (user.subHeaderAccess && user.subHeaderAccess.includes(tabKey))) {
+                    if (btn) btn.classList.remove('hidden');
+                    if (!firstVisible) firstVisible = tabKey;
+                } else {
+                    if (btn) btn.classList.add('hidden');
+                }
+            });
+
+            // Toggle admin-only action buttons across the UI
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                if (user.role === 'Admin') el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            if (firstVisible) switchTab(firstVisible);
+        }
+
+        function switchPersona() {
+            currentPersona = document.getElementById('userPersonaSelect').value;
+            applyUserPermissions();
+            showToast(`Switched active persona to ${currentPersona}`, 'info');
+        }
+
+        function openUserModal() {
+            renderUsersTable();
+            openModal('modalAdminUser');
+        }
+
+        function inviteUser(e) {
+            e.preventDefault();
+            const email = document.getElementById('inviteEmail').value;
+            const role = document.getElementById('inviteRole').value;
+            
+            const access = [];
+            if (document.getElementById('perm-estates').checked) access.push('estates');
+            if (document.getElementById('perm-allocation').checked) access.push('allocation');
+            if (document.getElementById('perm-maintenance').checked) access.push('maintenance');
+            if (document.getElementById('perm-bachelors').checked) access.push('bachelors');
+            if (document.getElementById('perm-vacant-bills').checked) access.push('vacant-bills');
+            if (document.getElementById('perm-societies').checked) access.push('societies');
+
+            const existingIndex = state.users.findIndex(u => u.email === email);
+            if (existingIndex >= 0) {
+                state.users[existingIndex] = { email, role, subHeaderAccess: access };
+            } else {
+                state.users.push({ email, role, subHeaderAccess: access });
+            }
+
+            // Update user persona selector options
+            const sel = document.getElementById('userPersonaSelect');
+            if (!Array.from(sel.options).some(opt => opt.value === email)) {
+                const opt = document.createElement('option');
+                opt.value = email;
+                opt.innerText = `${email} (${role})`;
+                sel.appendChild(opt);
+            }
+
+            saveToLocalStorage();
+            renderUsersTable();
+            document.getElementById('inviteEmail').value = '';
+            showToast(`User invite sent to ${email}`, 'success');
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            state.users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 font-medium">${u.email}</td>
+                    <td class="p-2"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${u.role === 'Admin' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">${u.role}</span></td>
+                    <td class="p-2 text-[10px] text-slate-500">${u.subHeaderAccess ? u.subHeaderAccess.join(', ') : 'All'}</td>
+                    <td class="p-2 text-right">
+                        ${u.email !== 'murtaza.kheraluwala@jameasaifiyah.edu' ? `<button onclick="removeUser('${u.email}')" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>` : '<span class="text-slate-400">Owner</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function removeUser(email) {
+            state.users = state.users.filter(u => u.email !== email);
+            saveToLocalStorage();
+            renderUsersTable();
+            showToast('User permissions revoked', 'info');
+        }
+
+        // NAVIGATION LOGIC
+        function switchModule(moduleKey) {
+            document.querySelectorAll('.module-btn').forEach(btn => {
+                btn.classList.remove('border-amber-400', 'text-amber-400', 'bg-slate-800/80');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            const activeBtn = document.getElementById(`module-tab-${moduleKey}`);
+            if (activeBtn) {
+                activeBtn.classList.add('border-amber-400', 'text-amber-400', 'bg-slate-800/80');
+                activeBtn.classList.remove('border-transparent', 'text-slate-400');
+            }
+
+            if (moduleKey === 'dawat') {
+                document.getElementById('module-dawat-content').classList.remove('hidden');
+                document.getElementById('module-inventory-content').classList.add('hidden');
+                document.getElementById('dawatSubHeaders').classList.remove('hidden');
+            } else if (moduleKey === 'inventory') {
+                document.getElementById('module-dawat-content').classList.add('hidden');
+                document.getElementById('module-inventory-content').classList.remove('hidden');
+                document.getElementById('dawatSubHeaders').classList.add('hidden');
+            }
+        }
+
+        function switchTab(tabKey) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-amber-50', 'text-amber-800', 'border-amber-200', 'active');
+                btn.classList.add('text-slate-600');
+            });
+            document.querySelectorAll('.tab-content').forEach(sec => sec.classList.add('hidden'));
+
+            const activeBtn = document.getElementById(`tab-${tabKey}`);
+            const activeSection = document.getElementById(`section-${tabKey}`);
+
+            if (activeBtn && activeSection) {
+                activeBtn.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-200', 'active');
+                activeBtn.classList.remove('text-slate-600');
+                activeSection.classList.remove('hidden');
+            }
+        }
+
+        // 1. ESTATE FUNCTIONS
+        function renderEstatesTable() {
+            const tbody = document.getElementById('estatesTableBody');
+            const search = document.getElementById('estateSearch').value.toLowerCase();
+            const filter = document.getElementById('estateStatusFilter').value;
+            tbody.innerHTML = '';
+
+            const currentUser = state.users.find(u => u.email === currentPersona) || { role: "Standard" };
+            const isAdmin = currentUser.role === 'Admin';
+
+            const filtered = state.estates.filter(e => {
+                const matchSearch = e.building.toLowerCase().includes(search) || 
+                                    e.flatNo.toLowerCase().includes(search) || 
+                                    e.owner.toLowerCase().includes(search);
+                
+                let matchStatus = true;
+                if (filter === 'Bachelor') matchStatus = e.isBachelor;
+                else if (filter === 'Occupied') matchStatus = e.occupancy === 'Occupied';
+                else if (filter === 'Vacant') matchStatus = e.occupancy === 'Vacant';
+
+                return matchSearch && matchStatus;
+            });
+
+            filtered.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <span class="font-bold text-slate-800 block">${e.building}</span>
+                        <span class="text-[11px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 inline-block mt-0.5">${e.flatNo}</span>
+                    </td>
+                    <td class="p-3">
+                        <span class="font-medium text-slate-700">${e.type}</span>
+                        <span class="text-slate-400 block text-[11px]">${e.sqft ? e.sqft + ' sqft' : 'N/A'}</span>
+                    </td>
+                    <td class="p-3 font-medium text-slate-700">${e.owner}</td>
+                    <td class="p-3 text-slate-600">
+                        <div>CA: ${e.elecCA || '-'}</div>
+                        <div class="text-[11px] text-slate-400">Meter: ${e.elecMeter || '-'}</div>
+                    </td>
+                    <td class="p-3 text-slate-600">
+                        <div>CA: ${e.gasCA || '-'}</div>
+                        <div class="text-[11px] text-slate-400">Meter: ${e.gasMeter || '-'}</div>
+                    </td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${e.occupancy === 'Occupied' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                            ${e.occupancy}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="toggleBachelorDesignation('${e.id}')" ${!isAdmin ? 'disabled' : ''} class="px-2 py-1 rounded text-[11px] font-semibold transition ${e.isBachelor ? 'bg-amber-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                            ${e.isBachelor ? '<i class="fa-solid fa-check"></i> Bachelor' : 'Designate'}
+                        </button>
+                    </td>
+                    <td class="p-3 text-right space-x-1">
+                        <button onclick="openHistoryModal('${e.id}')" title="View Allocation History" class="p-1.5 text-slate-500 hover:text-amber-600 transition"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                        ${isAdmin ? `<button onclick="editEstate('${e.id}')" class="p-1.5 text-slate-500 hover:text-blue-600 transition"><i class="fa-solid fa-pen-to-square"></i></button>` : ''}
+                        ${isAdmin ? `<button onclick="deleteEstate('${e.id}')" class="p-1.5 text-slate-500 hover:text-rose-600 transition"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleBachelorDesignation(id) {
+            const estate = state.estates.find(e => e.id === id);
+            if (estate) {
+                estate.isBachelor = !estate.isBachelor;
+                if (estate.isBachelor) {
+                    estate.occupants = estate.occupants || [];
+                    estate.capacity = estate.capacity || 4;
+                    showToast(`${estate.flatNo} moved to Bachelor Flats header`, 'info');
+                } else {
+                    showToast(`${estate.flatNo} moved to standard Allocation header`, 'info');
+                }
+                saveToLocalStorage();
+                renderEstatesTable();
+                renderAllocationTable();
+                renderBachelorCards();
+                renderVacantBillsTable();
+            }
+        }
+
+        function openEstateModal(editId = null) {
+            document.getElementById('estateForm').reset();
+            document.getElementById('estateId').value = '';
+            document.getElementById('estateModalTitle').innerText = editId ? "Edit Estate Record" : "Add New Estate Record";
+
+            if (editId) {
+                const e = state.estates.find(item => item.id === editId);
+                if (e) {
+                    document.getElementById('estateId').value = e.id;
+                    document.getElementById('estateBuilding').value = e.building;
+                    document.getElementById('estateFlatNo').value = e.flatNo;
+                    document.getElementById('estateType').value = e.type;
+                    document.getElementById('estateSqft').value = e.sqft || '';
+                    document.getElementById('estateOwner').value = e.owner;
+                    document.getElementById('estateOccupancy').value = e.occupancy;
+                    document.getElementById('estateElecCA').value = e.elecCA || '';
+                    document.getElementById('estateElecMeter').value = e.elecMeter || '';
+                    document.getElementById('estateGasCA').value = e.gasCA || '';
+                    document.getElementById('estateGasMeter').value = e.gasMeter || '';
+                    document.getElementById('estateIsBachelor').checked = e.isBachelor;
+                }
+            }
+            openModal('modalEstate');
+        }
+
+        function editEstate(id) { openEstateModal(id); }
+
+        function saveEstate(event) {
+            event.preventDefault();
+            const id = document.getElementById('estateId').value;
+            const data = {
+                building: document.getElementById('estateBuilding').value,
+                flatNo: document.getElementById('estateFlatNo').value,
+                type: document.getElementById('estateType').value,
+                sqft: document.getElementById('estateSqft').value,
+                owner: document.getElementById('estateOwner').value,
+                occupancy: document.getElementById('estateOccupancy').value,
+                elecCA: document.getElementById('estateElecCA').value,
+                elecMeter: document.getElementById('estateElecMeter').value,
+                gasCA: document.getElementById('estateGasCA').value,
+                gasMeter: document.getElementById('estateGasMeter').value,
+                isBachelor: document.getElementById('estateIsBachelor').checked
+            };
+
+            if (id) {
+                const index = state.estates.findIndex(e => e.id === id);
+                state.estates[index] = { ...state.estates[index], ...data };
+            } else {
+                data.id = 'e' + Date.now();
+                data.capacity = 4;
+                data.occupants = [];
+                state.estates.push(data);
+            }
+
+            saveToLocalStorage();
+            closeModal('modalEstate');
+            renderEstatesTable();
+            renderAllocationTable();
+            renderBachelorCards();
+            renderVacantBillsTable();
+            showToast('Estate record saved', 'success');
+        }
+
+        function deleteEstate(id) {
+            if (confirm("Delete this estate record?")) {
+                state.estates = state.estates.filter(e => e.id !== id);
+                saveToLocalStorage();
+                renderEstatesTable();
+                renderAllocationTable();
+                renderBachelorCards();
+                renderVacantBillsTable();
+            }
+        }
+
+        // 2. FACULTY & ALLOCATION FUNCTIONS
+        function openFacultyModal() {
+            renderFacultyTable();
+            openModal('modalFaculty');
+        }
+
+        function renderFacultyTable() {
+            const tbody = document.getElementById('facultyTableBody');
+            tbody.innerHTML = '';
+            state.faculty.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 font-medium">${f.name}</td>
+                    <td class="p-2 text-amber-800 font-semibold">${f.its}</td>
+                    <td class="p-2">${f.contact}</td>
+                    <td class="p-2 text-right">
+                        <button onclick="deleteFaculty('${f.id}')" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function saveFacultyMember(e) {
+            e.preventDefault();
+            const name = document.getElementById('facName').value;
+            const its = document.getElementById('facITS').value;
+            const contact = document.getElementById('facContact').value;
+
+            state.faculty.push({ id: 'f' + Date.now(), name, its, contact });
+            saveToLocalStorage();
+            renderFacultyTable();
+            document.getElementById('facName').value = '';
+            document.getElementById('facITS').value = '';
+            document.getElementById('facContact').value = '';
+            showToast('Faculty member added', 'success');
+        }
+
+        function deleteFaculty(id) {
+            state.faculty = state.faculty.filter(f => f.id !== id);
+            saveToLocalStorage();
+            renderFacultyTable();
+        }
+
+        function importFacultyCSV(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const lines = evt.target.result.split('\n');
+                let count = 0;
+                lines.forEach((line, idx) => {
+                    if (idx === 0) return;
+                    const parts = line.split(',').map(s => s.trim());
+                    if (parts.length >= 3 && parts[0]) {
+                        state.faculty.push({
+                            id: 'f' + Date.now() + Math.random().toString().slice(2, 5),
+                            name: parts[0],
+                            its: parts[1],
+                            contact: parts[2]
+                        });
+                        count++;
+                    }
+                });
+                saveToLocalStorage();
+                renderFacultyTable();
+                showToast(`Imported ${count} faculty members successfully`, 'success');
+            };
+            reader.readAsText(file);
+        }
+
+        function renderAllocationTable() {
+            const tbody = document.getElementById('allocationTableBody');
+            const search = document.getElementById('allocationSearch').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            const currentUser = state.users.find(u => u.email === currentPersona) || { role: "Standard" };
+            const isAdmin = currentUser.role === 'Admin';
+
+            const eligibleEstates = state.estates.filter(e => !e.isBachelor && e.occupancy === 'Occupied' && e.currentFacultyId);
+
+            eligibleEstates.forEach(e => {
+                const faculty = state.faculty.find(f => f.id === e.currentFacultyId) || { name: 'Unknown', its: '-', contact: '-' };
+                if (faculty.name.toLowerCase().includes(search) || e.building.toLowerCase().includes(search) || faculty.its.includes(search)) {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                    tr.innerHTML = `
+                        <td class="p-3">
+                            <span class="font-bold text-slate-800 block">${e.building}</span>
+                            <span class="text-xs text-amber-700 font-semibold">${e.flatNo}</span>
+                        </td>
+                        <td class="p-3 font-semibold text-slate-800">${faculty.name}</td>
+                        <td class="p-3 text-amber-800 font-medium">${faculty.its}</td>
+                        <td class="p-3 text-slate-600">${faculty.contact}</td>
+                        <td class="p-3 text-slate-500">${e.allocDate || 'N/A'}</td>
+                        <td class="p-3 text-right">
+                            ${isAdmin ? `<button onclick="deallocateFlat('${e.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-rose-50 text-rose-700 hover:border-rose-300 border rounded text-[11px] font-medium transition">Deallocate</button>` : '<span class="text-slate-400">View Only</span>'}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+
+        function openAllocationModal() {
+            const flatSelect = document.getElementById('allocFlatId');
+            const facSelect = document.getElementById('allocFacultySelect');
+
+            flatSelect.innerHTML = '<option value="">Select Vacant Flat...</option>';
+            state.estates.filter(e => !e.isBachelor && e.occupancy === 'Vacant').forEach(e => {
+                flatSelect.innerHTML += `<option value="${e.id}">${e.building} - ${e.flatNo} (${e.type})</option>`;
+            });
+
+            facSelect.innerHTML = '<option value="">Select Faculty Member...</option>';
+            state.faculty.forEach(f => {
+                facSelect.innerHTML += `<option value="${f.id}">${f.name} (ITS: ${f.its})</option>`;
+            });
+
+            document.getElementById('allocITS').value = '';
+            document.getElementById('allocContact').value = '';
+            openModal('modalAllocation');
+        }
+
+        function onFacultySelectChange() {
+            const facId = document.getElementById('allocFacultySelect').value;
+            const faculty = state.faculty.find(f => f.id === facId);
+            if (faculty) {
+                document.getElementById('allocITS').value = faculty.its;
+                document.getElementById('allocContact').value = faculty.contact;
+            } else {
+                document.getElementById('allocITS').value = '';
+                document.getElementById('allocContact').value = '';
+            }
+        }
+
+        function saveAllocation(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('allocFlatId').value;
+            const facId = document.getElementById('allocFacultySelect').value;
+            const allocDate = document.getElementById('allocDate').value;
+
+            const estate = state.estates.find(e => e.id === flatId);
+            if (estate) {
+                estate.occupancy = 'Occupied';
+                estate.currentFacultyId = facId;
+                estate.allocDate = allocDate;
+
+                saveToLocalStorage();
+                closeModal('modalAllocation');
+                renderAllocationTable();
+                renderEstatesTable();
+                showToast('Flat allocated successfully', 'success');
+            }
+        }
+
+        function deallocateFlat(flatId) {
+            const estate = state.estates.find(e => e.id === flatId);
+            if (estate && confirm(`Are you sure you want to deallocate ${estate.flatNo}?`)) {
+                const faculty = state.faculty.find(f => f.id === estate.currentFacultyId);
+                state.history.push({
+                    id: 'h' + Date.now(),
+                    flatId: estate.id,
+                    facultyName: faculty ? faculty.name : 'N/A',
+                    its: faculty ? faculty.its : 'N/A',
+                    fromDate: estate.allocDate || 'N/A',
+                    toDate: new Date().toISOString().slice(0,10)
+                });
+
+                estate.occupancy = 'Vacant';
+                estate.currentFacultyId = '';
+                estate.allocDate = '';
+
+                saveToLocalStorage();
+                renderAllocationTable();
+                renderEstatesTable();
+                showToast('Flat deallocated and archived', 'info');
+            }
+        }
+
+        // 3. MAINTENANCE FUNCTIONS
+        function renderMaintenanceCards() {
+            const container = document.getElementById('maintenanceCardsContainer');
+            container.innerHTML = '';
+
+            state.maintenance.forEach(m => {
+                const estate = state.estates.find(e => e.id === m.flatId) || { building: 'Unknown', flatNo: '' };
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start border-b pb-2">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm">${estate.building} - ${estate.flatNo}</h3>
+                            <span class="text-xs text-slate-500">Refurbished: ${m.date}</span>
+                        </div>
+                        <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                            ₹ ${Number(m.cost).toLocaleString('en-IN')}
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-600">${m.works}</p>
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Before</span>
+                            <img src="${m.photoBefore}" class="w-full h-28 object-cover rounded-lg border">
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">After</span>
+                            <img src="${m.photoAfter}" class="w-full h-28 object-cover rounded-lg border">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openMaintenanceModal() {
+            const select = document.getElementById('maintFlatId');
+            select.innerHTML = '';
+            state.estates.forEach(e => {
+                select.innerHTML += `<option value="${e.id}">${e.building} - ${e.flatNo}</option>`;
+            });
+            openModal('modalMaintenance');
+        }
+
+        function saveMaintenanceRecord(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('maintFlatId').value;
+            const date = document.getElementById('maintDate').value;
+            const cost = document.getElementById('maintCost').value;
+            const works = document.getElementById('maintWorks').value;
+
+            state.maintenance.push({
+                id: 'm' + Date.now(),
+                flatId, date, cost, works,
+                photoBefore: 'https://placehold.co/400x250/e2e8f0/475569?text=Before+Refurbishment',
+                photoAfter: 'https://placehold.co/400x250/dcfce7/166534?text=After+Refurbishment'
+            });
+
+            saveToLocalStorage();
+            closeModal('modalMaintenance');
+            renderMaintenanceCards();
+            showToast('Maintenance record saved', 'success');
+        }
+
+        // 4. BACHELOR FLATS FUNCTIONS
+        function renderBachelorCards() {
+            const grid = document.getElementById('bachelorCardsGrid');
+            grid.innerHTML = '';
+
+            const currentUser = state.users.find(u => u.email === currentPersona) || { role: "Standard" };
+            const isAdmin = currentUser.role === 'Admin';
+
+            const bachelors = state.estates.filter(e => e.isBachelor);
+
+            if (bachelors.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 text-xs">No flats currently designated as Bachelor Flats. You can designate flats in "Estate Details".</div>';
+                return;
+            }
+
+            bachelors.forEach(b => {
+                const occupants = b.occupants || [];
+                const capacity = b.capacity || 4;
+                const available = capacity - occupants.length;
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start border-b pb-2">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm">${b.building} - ${b.flatNo}</h3>
+                            <span class="text-[11px] text-slate-500">${b.type} (${b.sqft || '-'} sqft)</span>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded ${available > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                            ${available} Space(s) Available
+                        </span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-medium text-slate-700">
+                            <span>Occupants (${occupants.length}/${capacity})</span>
+                            ${isAdmin ? `<button onclick="addBachelorOccupant('${b.id}')" class="text-amber-600 hover:text-amber-700 text-[11px] font-bold">+ Add Occupant</button>` : ''}
+                        </div>
+                        <div class="space-y-1.5 max-h-36 overflow-y-auto pt-1">
+                            ${occupants.map((occ, idx) => `
+                                <div class="bg-slate-50 p-2 rounded border flex justify-between items-center text-xs">
+                                    <div>
+                                        <span class="font-medium text-slate-800 block">${occ.name}</span>
+                                        <span class="text-[10px] text-slate-500">ITS: ${occ.its} | Mob: ${occ.contact}</span>
+                                    </div>
+                                    ${isAdmin ? `<button onclick="removeBachelorOccupant('${b.id}', ${idx})" class="text-rose-500 hover:text-rose-700"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                                </div>
+                            `).join('') || '<div class="text-[11px] text-slate-400 italic py-1">No occupants assigned yet.</div>'}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function addBachelorOccupant(flatId) {
+            const name = prompt("Enter Occupant Name:");
+            if (!name) return;
+            const its = prompt("Enter Occupant ITS Number:");
+            const contact = prompt("Enter Contact Number:");
+
+            const estate = state.estates.find(e => e.id === flatId);
+            if (estate) {
+                estate.occupants = estate.occupants || [];
+                estate.occupants.push({ name, its: its || '-', contact: contact || '-' });
+                estate.occupancy = 'Occupied';
+                saveToLocalStorage();
+                renderBachelorCards();
+                renderEstatesTable();
+                showToast('Occupant assigned', 'success');
+            }
+        }
+
+        function removeBachelorOccupant(flatId, index) {
+            const estate = state.estates.find(e => e.id === flatId);
+            if (estate && estate.occupants) {
+                estate.occupants.splice(index, 1);
+                if (estate.occupants.length === 0) estate.occupancy = 'Vacant';
+                saveToLocalStorage();
+                renderBachelorCards();
+                renderEstatesTable();
+            }
+        }
+
+        // 5. VACANT BILLS TRACKER FUNCTIONS
+        function renderVacantBillsTable() {
+            const tbody = document.getElementById('vacantBillsTableBody');
+            const month = document.getElementById('vacantBillMonth').value;
+            const badge = document.getElementById('missingBillsBadge');
+            tbody.innerHTML = '';
+
+            const targetFlats = state.estates.filter(e => e.occupancy === 'Vacant' || e.isBachelor);
+            let hasMissing = false;
+
+            targetFlats.forEach(e => {
+                const key = `${e.id}_${month}`;
+                const record = state.vacantBills[key] || { elecPdf: null, gasPdf: null, elecPaid: false, gasPaid: false };
+
+                const missingElec = !record.elecPdf;
+                const missingGas = !record.gasPdf;
+
+                if (missingElec || missingGas) hasMissing = true;
+
+                const tr = document.createElement('tr');
+                tr.className = (missingElec || missingGas) ? 'bg-amber-50/70 border-b border-amber-100' : 'hover:bg-slate-50 border-b border-slate-100';
+
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <span class="font-bold text-slate-800 block">${e.building} - ${e.flatNo}</span>
+                        ${(missingElec || missingGas) ? '<span class="text-[10px] font-bold bg-amber-600 text-white px-1.5 py-0.5 rounded inline-block mt-0.5"><i class="fa-solid fa-triangle-exclamation"></i> Missing Bill PDF</span>' : ''}
+                    </td>
+                    <td class="p-3">
+                        <span class="text-xs px-2 py-0.5 rounded font-semibold ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">
+                            ${e.isBachelor ? 'Bachelor Flat' : 'Vacant Flat'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-slate-600">${e.elecCA || '-'}</td>
+                    <td class="p-3 text-slate-600">${e.gasCA || '-'}</td>
+                    <td class="p-3">
+                        ${record.elecPdf ? 
+                            `<span class="text-emerald-700 font-medium flex items-center gap-1"><i class="fa-solid fa-file-pdf"></i> Uploaded</span>` : 
+                            `<label class="text-amber-700 underline font-semibold cursor-pointer"><i class="fa-solid fa-upload"></i> Upload PDF <input type="file" accept="application/pdf" class="hidden" onchange="uploadVacantBill('${e.id}', '${month}', 'elecPdf', event)"></label>`
+                        }
+                    </td>
+                    <td class="p-3">
+                        ${record.gasPdf ? 
+                            `<span class="text-emerald-700 font-medium flex items-center gap-1"><i class="fa-solid fa-file-pdf"></i> Uploaded</span>` : 
+                            `<label class="text-amber-700 underline font-semibold cursor-pointer"><i class="fa-solid fa-upload"></i> Upload PDF <input type="file" accept="application/pdf" class="hidden" onchange="uploadVacantBill('${e.id}', '${month}', 'gasPdf', event)"></label>`
+                        }
+                    </td>
+                    <td class="p-3">
+                        <button onclick="toggleBillPayment('${e.id}', '${month}')" class="px-2 py-1 rounded text-[11px] font-bold ${record.elecPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                            ${record.elecPaid ? '<i class="fa-solid fa-circle-check"></i> Paid' : '<i class="fa-solid fa-clock"></i> Pending'}
+                        </button>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="clearBillRecord('${e.id}', '${month}')" class="text-slate-400 hover:text-rose-600 text-xs"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (hasMissing) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        function uploadVacantBill(flatId, month, billType, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const key = `${flatId}_${month}`;
+            state.vacantBills[key] = state.vacantBills[key] || { elecPdf: null, gasPdf: null, elecPaid: false, gasPaid: false };
+            state.vacantBills[key][billType] = file.name;
+
+            saveToLocalStorage();
+            renderVacantBillsTable();
+            showToast('Bill PDF stored successfully', 'success');
+        }
+
+        function toggleBillPayment(flatId, month) {
+            const key = `${flatId}_${month}`;
+            state.vacantBills[key] = state.vacantBills[key] || { elecPdf: null, gasPdf: null, elecPaid: false, gasPaid: false };
+            state.vacantBills[key].elecPaid = !state.vacantBills[key].elecPaid;
+            state.vacantBills[key].gasPaid = state.vacantBills[key].elecPaid;
+
+            saveToLocalStorage();
+            renderVacantBillsTable();
+        }
+
+        function clearBillRecord(flatId, month) {
+            delete state.vacantBills[`${flatId}_${month}`];
+            saveToLocalStorage();
+            renderVacantBillsTable();
+        }
+
+        // 6. SOCIETY MANAGEMENT & UPDATED DOCUMENT VAULT
+        function renderSocietiesTable() {
+            const tbody = document.getElementById('societyTableBody');
+            tbody.innerHTML = '';
+
+            document.getElementById('societyCountBadge').innerText = `${state.societies.length} Societies`;
+
+            // Also populate Society Vault filter dropdown
+            const vaultSelect = document.getElementById('vaultSocietyFilter');
+            const currentVal = vaultSelect.value || 'ALL';
+            vaultSelect.innerHTML = '<option value="ALL">All Societies (Vault View)</option>';
+
+            state.societies.forEach(s => {
+                vaultSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold text-slate-800">${s.name}</td>
+                    <td class="p-2.5 font-medium text-slate-700">${s.flatsSummary}</td>
+                    <td class="p-2.5"><span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200 font-semibold">${s.billingSystem}</span></td>
+                    <td class="p-2.5">
+                        <div>${s.contactName || '-'}</div>
+                        <div class="text-[10px] text-slate-400">${s.contactMob || ''}</div>
+                    </td>
+                    <td class="p-2.5 text-slate-600">${s.billSubmittedBy || '-'}</td>
+                    <td class="p-2.5 text-right">
+                        <button onclick="deleteSociety('${s.id}')" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            vaultSelect.value = currentVal;
+        }
+
+        function openSocietyModal() { openModal('modalSociety'); }
+
+        function saveSocietyRecord(e) {
+            e.preventDefault();
+            state.societies.push({
+                id: 's' + Date.now(),
+                name: document.getElementById('socName').value,
+                flatsSummary: document.getElementById('socFlatsSummary').value,
+                billingSystem: document.getElementById('socBillingSystem').value,
+                contactName: document.getElementById('socContactName').value,
+                contactMob: document.getElementById('socContactMob').value,
+                billSubmittedBy: document.getElementById('socBillSubmittedBy').value
+            });
+
+            saveToLocalStorage();
+            closeModal('modalSociety');
+            renderSocietiesTable();
+            renderSocietyDocsList();
+            showToast('Society added successfully', 'success');
+        }
+
+        function deleteSociety(id) {
+            if (confirm("Delete society?")) {
+                state.societies = state.societies.filter(s => s.id !== id);
+                saveToLocalStorage();
+                renderSocietiesTable();
+                renderSocietyDocsList();
+            }
+        }
+
+        // UPDATED VAULT SEARCH & DROPDOWN FILTER LOGIC
+        function renderSocietyDocsList() {
+            const container = document.getElementById('societyDocList');
+            const socFilter = document.getElementById('vaultSocietyFilter').value;
+            const searchVal = document.getElementById('vaultSearch').value.toLowerCase();
+            container.innerHTML = '';
+
+            const currentUser = state.users.find(u => u.email === currentPersona) || { role: "Standard" };
+            const isAdmin = currentUser.role === 'Admin';
+
+            const filtered = state.societyDocs.filter(d => {
+                const matchSoc = (socFilter === 'ALL' || d.societyId === socFilter);
+                const matchSearch = d.name.toLowerCase().includes(searchVal) || (d.details && d.details.toLowerCase().includes(searchVal));
+                return matchSoc && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">No matching vault documents found.</p>';
+                return;
+            }
+
+            filtered.forEach(d => {
+                const society = state.societies.find(s => s.id === d.societyId) || { name: 'General Society' };
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs space-y-1 hover:border-amber-300 transition";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-slate-800 block leading-tight">${d.name}</span>
+                        <span class="text-[10px] text-slate-400 whitespace-nowrap">${d.date}</span>
+                    </div>
+                    <div class="text-[11px] text-amber-800 font-semibold">${society.name}</div>
+                    ${d.details ? `<p class="text-[11px] text-slate-500">${d.details}</p>` : ''}
+                    <div class="pt-1 flex justify-between items-center text-[10px]">
+                        <span class="text-emerald-700 font-semibold flex items-center gap-1"><i class="fa-solid fa-file-pdf"></i> Attached PDF</span>
+                        ${isAdmin ? `<button onclick="deleteSocietyDoc('${d.id}')" class="text-rose-500 hover:text-rose-700 font-medium"><i class="fa-solid fa-trash"></i> Delete</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openSocietyDocModal() {
+            const select = document.getElementById('docSocSelect');
+            select.innerHTML = '';
+            state.societies.forEach(s => {
+                select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            });
+            openModal('modalSocietyDoc');
+        }
+
+        function saveSocietyDoc(e) {
+            e.preventDefault();
+            state.societyDocs.push({
+                id: 'sd' + Date.now(),
+                societyId: document.getElementById('docSocSelect').value,
+                name: document.getElementById('docName').value,
+                details: document.getElementById('docDetails').value,
+                date: new Date().toISOString().slice(0, 10)
+            });
+
+            saveToLocalStorage();
+            closeModal('modalSocietyDoc');
+            renderSocietyDocsList();
+            showToast('Document uploaded to vault', 'success');
+        }
+
+        function deleteSocietyDoc(id) {
+            state.societyDocs = state.societyDocs.filter(d => d.id !== id);
+            saveToLocalStorage();
+            renderSocietyDocsList();
+        }
+
+        // HISTORY ARCHIVE MODAL
+        function openHistoryModal(flatId) {
+            const estate = state.estates.find(e => e.id === flatId);
+            document.getElementById('historyFlatTitle').innerText = estate ? `${estate.building} - ${estate.flatNo}` : 'Flat History';
+
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            const records = state.history.filter(h => h.flatId === flatId);
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">No past allocation history recorded.</td></tr>';
+            } else {
+                records.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="p-2 font-medium">${r.facultyName}</td>
+                        <td class="p-2 text-amber-800">${r.its}</td>
+                        <td class="p-2 text-slate-500">${r.fromDate}</td>
+                        <td class="p-2 text-slate-500">${r.toDate}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            openModal('modalHistory');
+        }
+
+        // UTILITIES
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `p-3 rounded-lg shadow-lg text-white text-xs font-medium transition transform translate-y-2 ${type === 'success' ? 'bg-emerald-700' : 'bg-slate-800'}`;
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function exportAllData() {
+            const json = JSON.stringify(state, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `siyanat_marol_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            showToast('System data exported to JSON', 'success');
+        }
+    </script>
+</body>
+</html>

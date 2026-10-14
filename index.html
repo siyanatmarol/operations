@@ -17,7 +17,7 @@
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
 
-    <!-- LOGIN OVERLAY (Hidden once authenticated) -->
+    <!-- LOGIN OVERLAY -->
     <div id="loginOverlay" class="fixed inset-0 bg-emerald-950 bg-opacity-95 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 text-center space-y-6">
             <div class="flex justify-center">
@@ -54,8 +54,8 @@
             <!-- User Profile & Admin Badge -->
             <div class="flex items-center space-x-4">
                 <div class="text-right">
-                    <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">fm.marol@jameasaifiyah.edu</span>
-                    <span id="currentUserRole" class="text-xs bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">Admin</span>
+                    <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">murtaza.kheraluwala@jameasaifiyah.edu</span>
+                    <span id="currentUserRole" class="text-xs bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">Super Admin</span>
                 </div>
                 <button onclick="handleSignOut()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1" title="Sign Out">
                     <i class="fa-solid fa-right-from-bracket"></i>
@@ -380,7 +380,7 @@
                         <span>User Access Control & Invited Permissions</span>
                     </h2>
                     <p class="text-xs text-gray-500 mt-1">
-                        Primary Admin: <strong class="text-emerald-800">fm.marol@jameasaifiyah.edu</strong>. Users sign in via Google and receive granular access only to permitted sub-headers.
+                        Primary Admins: <strong class="text-emerald-800">murtaza.kheraluwala@jameasaifiyah.edu</strong> & <strong class="text-emerald-800">fm.marol@jameasaifiyah.edu</strong>. Users sign in via Google and receive granular access.
                     </p>
                 </div>
 
@@ -669,7 +669,7 @@
 
         let currentUser = null;
 
-        // Default initial seed data if DB is empty
+        // Default initial seed data
         let estatesData = [];
         let facultyData = [];
         let societiesData = [
@@ -678,7 +678,15 @@
         ];
         let societyDocs = [];
         let vacantBills = {};
+        
+        // Explicit Super Admin accounts
+        let superAdmins = [
+            'murtaza.kheraluwala@jameasaifiyah.edu',
+            'fm.marol@jameasaifiyah.edu'
+        ];
+
         let usersList = [
+            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6] },
             { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6] }
         ];
 
@@ -689,13 +697,14 @@
                 currentUser = user;
                 document.getElementById('currentUserEmail').innerText = user.email;
                 
-                // Check if user is in authorized list in Firebase DB, if not add primary admin automatically
                 await loadCloudData();
                 
-                // Validate permissions
-                const dbUser = usersList.find(u => u.email.toLowerCase() === user.email.toLowerCase());
-                if (!dbUser && user.email.toLowerCase() !== 'fm.marol@jameasaifiyah.edu') {
-                    document.getElementById('loginErrorMsg').innerText = "Access Denied: Your email is not invited by the administrator.";
+                const userEmailLower = user.email.toLowerCase();
+                const isSuperAdmin = superAdmins.map(e => e.toLowerCase()).includes(userEmailLower);
+                const dbUser = usersList.find(u => u.email.toLowerCase() === userEmailLower);
+
+                if (!dbUser && !isSuperAdmin) {
+                    document.getElementById('loginErrorMsg').innerText = `Access Denied: ${user.email} is not authorized by the administrator.`;
                     document.getElementById('loginErrorMsg').classList.remove('hidden');
                     await signOut(auth);
                     return;
@@ -734,7 +743,6 @@
                     vacantBills = data.bills || {};
                     usersList = data.users || usersList;
                 } else {
-                    // Seed initial demo data
                     estatesData = [
                         { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [] }
                     ];
@@ -774,7 +782,6 @@
             renderVacantBills();
         }
 
-        // Navigation Controllers
         window.switchModule = function(modName) {
             ['dawat-estates', 'inventory', 'faculty-dir', 'admin-access'].forEach(m => {
                 document.getElementById('module-' + m).classList.add('hidden');

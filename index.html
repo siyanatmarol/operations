@@ -64,7 +64,7 @@
         </div>
 
         <div class="bg-emerald-950 border-t border-emerald-800">
-            <div class="max-w-7xl mx-auto px-4 flex space-x-2">
+            <div class="max-w-7xl mx-auto px-4 flex space-x-2 overflow-x-auto">
                 <button onclick="switchModule('dawat-estates')" id="mod-dawat-estates" class="px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 active-tab">
                     <i class="fa-solid fa-city text-emerald-400"></i>
                     <span>Dawat Estates</span>
@@ -115,6 +115,10 @@
                 <button onclick="switchSubHeader('society')" id="sub-society" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
                     <i class="fa-solid fa-sitemap"></i>
                     <span>6. Society Maintenance</span>
+                </button>
+                <button onclick="switchSubHeader('integrated')" id="sub-integrated" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2 bg-amber-50 border border-amber-300">
+                    <i class="fa-solid fa-layer-group text-amber-700"></i>
+                    <span class="text-amber-900 font-bold">7. Integrated View</span>
                 </button>
             </div>
 
@@ -177,7 +181,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Faculty Flat Allocations</h2>
-                        <p class="text-xs text-gray-500">Track current faculty occupants, allocation dates, and archived tenure history.</p>
+                        <p class="text-xs text-gray-500">Track current faculty occupants, tenure duration, last maintenance, and archived history.</p>
                     </div>
                     <input type="text" id="allocSearch" oninput="renderAllocationTable()" placeholder="Search Faculty Name, Building, Flat No, or ITS..." class="w-full sm:w-80 p-2 border rounded text-sm">
                 </div>
@@ -189,9 +193,10 @@
                                 <th class="p-3">Flat Details</th>
                                 <th class="p-3">Status</th>
                                 <th class="p-3">Current Occupant</th>
-                                <th class="p-3">ITS Number</th>
-                                <th class="p-3">Contact</th>
+                                <th class="p-3">ITS & Contact</th>
                                 <th class="p-3">Allocated Since</th>
+                                <th class="p-3">Tenure Duration</th>
+                                <th class="p-3">Last Maintenance</th>
                                 <th class="p-3 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -205,10 +210,10 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Flat Refurbishment & Maintenance Records</h2>
-                        <p class="text-xs text-gray-500">Log works completed and upload photos/videos directly to your 200GB Google Drive with inline previews.</p>
+                        <p class="text-xs text-gray-500">Log works with maintenance types (Refurbishment, Redevelopment, etc.) and before/after photos.</p>
                     </div>
                     <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-                        <input type="text" id="maintSearch" oninput="renderMaintenanceGrid()" placeholder="Search Building, Flat No, or Work Details..." class="p-2 border rounded text-sm w-full sm:w-64">
+                        <input type="text" id="maintSearch" oninput="renderMaintenanceGrid()" placeholder="Search Building, Flat No, Type or Details..." class="p-2 border rounded text-sm w-full sm:w-64">
                         <button onclick="openAddMaintenanceModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center justify-center space-x-1 whitespace-nowrap">
                             <i class="fa-solid fa-plus"></i>
                             <span>Add Maintenance Log</span>
@@ -309,6 +314,114 @@
                             <tbody id="societyDocsTableBody" class="divide-y"></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <!-- SUB-HEADER 7: INTEGRATED VIEW -->
+            <div id="sec-integrated" class="hidden space-y-6">
+                <div class="bg-white p-5 rounded-lg shadow border space-y-3">
+                    <div class="border-b pb-2">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-layer-group text-amber-600"></i>
+                            <span>Integrated Master Flat Profile</span>
+                        </h2>
+                        <p class="text-xs text-gray-500">Select any estate flat to pull complete aggregated data from all sub-headers instantly.</p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                        <div class="sm:w-1/2">
+                            <label class="text-xs font-semibold text-gray-700 block mb-1">Select Flat</label>
+                            <select id="integratedFlatSelect" onchange="renderIntegratedView()" class="w-full p-2.5 border rounded-lg text-sm bg-gray-50 font-medium text-emerald-900">
+                                <option value="">-- Choose Building & Flat Number --</option>
+                            </select>
+                        </div>
+                        <div class="sm:w-1/2">
+                            <label class="text-xs font-semibold text-gray-700 block mb-1">Search Keyword</label>
+                            <input type="text" id="integratedSearch" oninput="filterIntegratedDropdown()" placeholder="Filter dropdown by building or flat..." class="w-full p-2.5 border rounded-lg text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="integratedContentDisplay" class="hidden space-y-6">
+                    <!-- Cards Grid for Flat Summary -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        
+                        <!-- Card 1: Estate Specs -->
+                        <div class="bg-white p-5 rounded-lg shadow border space-y-3 border-l-4 border-l-emerald-600">
+                            <h3 class="font-bold text-gray-800 border-b pb-2 text-sm flex items-center justify-between">
+                                <span><i class="fa-solid fa-building text-emerald-600 mr-2"></i>Estate Specifications</span>
+                                <span id="intCategoryBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
+                            </h3>
+                            <div class="text-xs space-y-2 text-gray-700">
+                                <p><strong>Building & Wing:</strong> <span id="intBuildingWing"></span></p>
+                                <p><strong>Flat No:</strong> <span id="intFlatNo" class="font-bold text-emerald-800"></span></p>
+                                <p><strong>Type & Size:</strong> <span id="intTypeSqft"></span></p>
+                                <p><strong>Registered Owner:</strong> <span id="intOwner"></span></p>
+                                <p><strong>Electricity CA:</strong> <span id="intElec" class="font-mono"></span></p>
+                                <p><strong>Gas CA:</strong> <span id="intGas" class="font-mono"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Current Occupant -->
+                        <div class="bg-white p-5 rounded-lg shadow border space-y-3 border-l-4 border-l-blue-600">
+                            <h3 class="font-bold text-gray-800 border-b pb-2 text-sm">
+                                <i class="fa-solid fa-user-check text-blue-600 mr-2"></i>Current Occupant Status
+                            </h3>
+                            <div class="text-xs space-y-2 text-gray-700">
+                                <p><strong>Status:</strong> <span id="intStatusBadge"></span></p>
+                                <p><strong>Occupant Name:</strong> <span id="intOccupantName" class="font-bold"></span></p>
+                                <p><strong>ITS Number:</strong> <span id="intIts" class="font-mono"></span></p>
+                                <p><strong>Contact:</strong> <span id="intContact"></span></p>
+                                <p><strong>Allocated Since:</strong> <span id="intAllocSince"></span></p>
+                                <p><strong>Tenure Duration:</strong> <span id="intTenure" class="text-emerald-800 font-bold"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Utility & Maintenance Overview -->
+                        <div class="bg-white p-5 rounded-lg shadow border space-y-3 border-l-4 border-l-amber-600">
+                            <h3 class="font-bold text-gray-800 border-b pb-2 text-sm">
+                                <i class="fa-solid fa-chart-line text-amber-600 mr-2"></i>Maintenance & Bills Summary
+                            </h3>
+                            <div class="text-xs space-y-2 text-gray-700">
+                                <p><strong>Total Refurbishments:</strong> <span id="intMaintCount" class="font-bold"></span></p>
+                                <p><strong>Last Maintenance:</strong> <span id="intLastMaintType" class="font-bold text-amber-800"></span></p>
+                                <p><strong>Time Since Last Work:</strong> <span id="intLastMaintTime"></span></p>
+                                <p><strong>Electricity Bill (Current):</strong> <span id="intElecBill"></span></p>
+                                <p><strong>Gas Bill (Current):</strong> <span id="intGasBill"></span></p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Row 2: Maintenance Logs History & Photos -->
+                    <div class="bg-white p-5 rounded-lg shadow border space-y-4">
+                        <h3 class="text-md font-bold text-gray-800 border-b pb-2">
+                            <i class="fa-solid fa-screwdriver-wrench text-emerald-700 mr-2"></i>Refurbishment & Maintenance History
+                        </h3>
+                        <div id="intMaintLogsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    </div>
+
+                    <!-- Row 3: Allocation Archive History -->
+                    <div class="bg-white p-5 rounded-lg shadow border space-y-3">
+                        <h3 class="text-md font-bold text-gray-800 border-b pb-2">
+                            <i class="fa-solid fa-box-archive text-amber-700 mr-2"></i>Past Occupants & Allocation Archive
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-100 text-gray-700 uppercase font-semibold">
+                                    <tr>
+                                        <th class="p-2.5">Resident Name</th>
+                                        <th class="p-2.5">ITS Number</th>
+                                        <th class="p-2.5">Contact</th>
+                                        <th class="p-2.5">Start Date</th>
+                                        <th class="p-2.5">End Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="intArchiveTableBody" class="divide-y"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -503,7 +616,7 @@
         </div>
     </div>
 
-    <!-- Modal: Add Maintenance Log with Direct File Uploader -->
+    <!-- Modal: Add Maintenance Log (With Types & Before/After Media) -->
     <div id="modalAddMaintenance" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -511,10 +624,22 @@
                 <button onclick="closeModal('modalAddMaintenance')" class="text-gray-500 text-xl font-bold">&times;</button>
             </div>
             <form id="maintForm" onsubmit="saveMaintenanceLog(event)" class="space-y-3">
-                <div>
-                    <label class="text-xs font-semibold block mb-1">Select Flat *</label>
-                    <select id="maintFlatSelect" required class="w-full p-2 border rounded text-sm"></select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Select Flat *</label>
+                        <select id="maintFlatSelect" required class="w-full p-2 border rounded text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Maintenance Type *</label>
+                        <select id="maintType" required class="w-full p-2 border rounded text-sm">
+                            <option value="Refurbishment">Refurbishment</option>
+                            <option value="Redevelopment">Redevelopment</option>
+                            <option value="Semi-refurbishment">Semi-refurbishment</option>
+                            <option value="New Development">New Development</option>
+                        </select>
+                    </div>
                 </div>
+
                 <div>
                     <label class="text-xs font-semibold block mb-1">Work Description / Details *</label>
                     <textarea id="maintDesc" required placeholder="e.g. Complete kitchen tiling, painting & plumbing overhaul..." class="w-full p-2 border rounded text-sm h-20"></textarea>
@@ -525,15 +650,21 @@
                         <input type="number" id="maintCost" placeholder="e.g. 45000" class="w-full p-2 border rounded text-sm">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold block mb-1">Completion Date</label>
+                        <label class="text-xs font-semibold block mb-1">Completion Date *</label>
                         <input type="date" id="maintDate" required class="w-full p-2 border rounded text-sm">
                     </div>
                 </div>
                 
-                <div class="bg-gray-50 p-3 rounded border space-y-2">
-                    <label class="text-xs font-bold text-gray-700 block"><i class="fa-solid fa-cloud-arrow-up text-emerald-600 mr-1"></i> Upload Photo, Video or PDF</label>
-                    <input type="file" id="maintMediaInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
-                    <p class="text-[10px] text-gray-500">Uploads automatically to fm.marol Drive and displays inline!</p>
+                <!-- Before File Upload -->
+                <div class="bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
+                    <label class="text-xs font-bold text-amber-900 block"><i class="fa-solid fa-camera text-amber-600 mr-1"></i> BEFORE Media (Photo / Video / PDF)</label>
+                    <input type="file" id="maintBeforeInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
+                </div>
+
+                <!-- After File Upload -->
+                <div class="bg-emerald-50 p-3 rounded border border-emerald-200 space-y-2">
+                    <label class="text-xs font-bold text-emerald-900 block"><i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> AFTER Media (Photo / Video / PDF)</label>
+                    <input type="file" id="maintAfterInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-3 border-t">
@@ -544,7 +675,7 @@
         </div>
     </div>
 
-    <!-- Modal: Allocation & History Archive -->
+    <!-- Modal: Allocation & Past History Manual Entry -->
     <div id="modalAllocation" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -555,7 +686,7 @@
             <form id="allocForm" onsubmit="saveAllocation(event)" class="space-y-3">
                 <input type="hidden" id="allocFlatId">
                 <div>
-                    <label class="text-xs font-semibold block mb-1">Select Faculty Member *</label>
+                    <label class="text-xs font-semibold block mb-1">Select Current Faculty Member *</label>
                     <select id="allocFacultySelect" onchange="autoFillFacultyDetails()" required class="w-full p-2 border rounded text-sm">
                         <option value="">-- Choose from Directory --</option>
                     </select>
@@ -576,17 +707,84 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modalAllocation')" class="px-4 py-2 border rounded text-sm">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium">Update Allocation</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium">Update Current Occupant</button>
                 </div>
             </form>
 
-            <div class="border-t pt-4">
-                <h4 class="text-sm font-bold text-gray-700 mb-2 flex items-center space-x-1">
-                    <i class="fa-solid fa-box-archive text-amber-600"></i>
-                    <span>Allocation Archive History</span>
+            <!-- Manual Past Allocation Entry Section -->
+            <div class="border-t pt-4 space-y-3">
+                <h4 class="text-xs font-bold text-gray-800 uppercase flex items-center justify-between">
+                    <span class="flex items-center space-x-1"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> <span>Add Past Allocation Record Manually</span></span>
                 </h4>
-                <div id="allocArchiveList" class="space-y-2 text-xs max-h-40 overflow-y-auto bg-gray-50 p-2 border rounded"></div>
+                <form id="manualPastForm" onsubmit="addManualPastHistory(event)" class="bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="pastName" placeholder="Past Resident Name *" required class="p-1.5 border rounded text-xs bg-white">
+                        <input type="text" id="pastIts" placeholder="ITS Number (Optional)" class="p-1.5 border rounded text-xs bg-white">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-gray-600 block">Start Date *</label>
+                            <input type="date" id="pastStartDate" required class="w-full p-1 border rounded text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-600 block">End Date *</label>
+                            <input type="date" id="pastEndDate" required class="w-full p-1 border rounded text-xs bg-white">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-1.5 rounded text-xs font-bold transition">+ Add to Past History Archive</button>
+                </form>
+
+                <div class="pt-2">
+                    <h5 class="text-xs font-bold text-gray-700 mb-1">Archived Past Resident History:</h5>
+                    <div id="allocArchiveList" class="space-y-2 text-xs max-h-36 overflow-y-auto bg-gray-50 p-2 border rounded divide-y"></div>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Society (5 Required Fields) -->
+    <div id="modalAddSociety" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Add Society Details</h3>
+                <button onclick="closeModal('modalAddSociety')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="societyForm" onsubmit="saveSocietyRecord(event)" class="space-y-3">
+                <!-- 1. Society Name -->
+                <div>
+                    <label class="text-xs font-semibold block mb-1">1. Society Name *</label>
+                    <input type="text" id="socName" required placeholder="e.g. Saifee Complex Society" class="w-full p-2 border rounded text-sm">
+                </div>
+                <!-- 2. Count of Flats -->
+                <div>
+                    <label class="text-xs font-semibold block mb-1">2. Count of Flats (by type) *</label>
+                    <input type="text" id="socFlats" required placeholder="e.g. 12 Flats (2 BHK) & 4 Flats (1 BHK)" class="w-full p-2 border rounded text-sm">
+                </div>
+                <!-- 3. Maintenance Bill System -->
+                <div>
+                    <label class="text-xs font-semibold block mb-1">3. Maintenance Bill System Frequency *</label>
+                    <select id="socCycle" required class="w-full p-2 border rounded text-sm">
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Yearly">Yearly</option>
+                    </select>
+                </div>
+                <!-- 4. Society Contact Person Name & Number -->
+                <div>
+                    <label class="text-xs font-semibold block mb-1">4. Society Contact Person Name & Number *</label>
+                    <input type="text" id="socContactPerson" required placeholder="e.g. Shk Shabbir Bhai (+91 9820055443)" class="w-full p-2 border rounded text-sm">
+                </div>
+                <!-- 5. Bill Submission Responsible Person Name & Number -->
+                <div>
+                    <label class="text-xs font-semibold block mb-1">5. Bill Submission Responsible Person Name & Number *</label>
+                    <input type="text" id="socBillSubmittedBy" required placeholder="e.g. Mulla Mustafa (+91 9876543210)" class="w-full p-2 border rounded text-sm">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddSociety')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Society</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -694,8 +892,8 @@
         let estatesData = [];
         let facultyData = [];
         let societiesData = [
-            { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai', phone: '+91 9820055443', billSubmittedBy: 'Dept Staff' },
-            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas', phone: '+91 9820011122', billSubmittedBy: 'Secretary' }
+            { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai (+91 9820055443)', billSubmittedBy: 'Mulla Mustafa (+91 9876543210)' },
+            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011122)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
         ];
         let societyDocs = [];
         let maintLogs = [];
@@ -707,9 +905,31 @@
         ];
 
         let usersList = [
-            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6] },
-            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6] }
+            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] },
+            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] }
         ];
+
+        // Utility: Calculate Time Elapsed (Years & Months)
+        function calculateElapsed(startDateStr) {
+            if(!startDateStr) return '-';
+            const start = new Date(startDateStr);
+            const now = new Date();
+            if(isNaN(start.getTime())) return '-';
+
+            let years = now.getFullYear() - start.getFullYear();
+            let months = now.getMonth() - start.getMonth();
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            if(years === 0 && months === 0) return 'Less than a month';
+            let res = [];
+            if(years > 0) res.push(`${years} ${years === 1 ? 'yr' : 'yrs'}`);
+            if(months > 0) res.push(`${months} ${months === 1 ? 'mo' : 'mos'}`);
+            return res.join(' ');
+        }
 
         async function uploadFileToDrive(file) {
             return new Promise((resolve, reject) => {
@@ -828,6 +1048,7 @@
             renderUsersList();
             populateSocietyDropdowns();
             populateFlatMaintenanceDropdown();
+            populateIntegratedFlatDropdown();
             
             const today = new Date().toISOString().slice(0, 7);
             document.getElementById('billMonthPicker').value = today;
@@ -844,7 +1065,7 @@
         };
 
         window.switchSubHeader = function(secName) {
-            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society'].forEach(s => {
+            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
                 document.getElementById('sec-' + s).classList.add('hidden');
                 document.getElementById('sub-' + s).classList.remove('sub-tab-active');
             });
@@ -854,6 +1075,7 @@
             if(secName === 'bachelor') renderBachelorGrid();
             if(secName === 'maintenance') renderMaintenanceGrid();
             if(secName === 'vacant-bills') renderVacantBills();
+            if(secName === 'integrated') populateIntegratedFlatDropdown();
         };
 
         window.renderEstateTable = function() {
@@ -956,6 +1178,7 @@
             renderEstateTable();
             renderAllocationTable();
             populateFlatMaintenanceDropdown();
+            populateIntegratedFlatDropdown();
         };
 
         window.deleteFlat = async function(id) {
@@ -964,6 +1187,7 @@
                 await saveCloudData();
                 renderEstateTable();
                 renderAllocationTable();
+                populateIntegratedFlatDropdown();
             }
         };
 
@@ -981,15 +1205,31 @@
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50";
                 const wingBadge = e.wing ? ` (${e.wing})` : '';
+
+                // Calculate Tenure Duration
+                const tenure = e.occupant ? calculateElapsed(e.startDate) : '-';
+
+                // Find Last Maintenance
+                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
+                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+                
+                let lastMaintStr = '-';
+                if(flatMaintLogs.length > 0) {
+                    const lastLog = flatMaintLogs[0];
+                    const elapsed = calculateElapsed(lastLog.date);
+                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
+                }
+
                 tr.innerHTML = `
                     <td class="p-3 font-semibold">${e.building}${wingBadge} - ${e.flatNo}</td>
                     <td class="p-3">
                         ${e.occupant ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
                     </td>
                     <td class="p-3 font-medium text-gray-900">${e.occupant || '-'}</td>
-                    <td class="p-3 text-xs font-mono">${e.its || '-'}</td>
-                    <td class="p-3 text-xs">${e.contact || '-'}</td>
+                    <td class="p-3 text-xs font-mono">${e.its ? `${e.its}<br/>${e.contact || ''}` : '-'}</td>
                     <td class="p-3 text-xs">${e.startDate || '-'}</td>
+                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
+                    <td class="p-3 text-xs">${lastMaintStr}</td>
                     <td class="p-3 text-center">
                         <button onclick="openAllocationModal('${e.id}')" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
                     </td>
@@ -1016,17 +1256,58 @@
             document.getElementById('allocContact').value = flat.contact || '';
             document.getElementById('allocStartDate').value = flat.startDate || '';
 
+            renderModalArchiveList(flat);
+            document.getElementById('modalAllocation').classList.remove('hidden');
+        };
+
+        function renderModalArchiveList(flat) {
             const archList = document.getElementById('allocArchiveList');
             archList.innerHTML = '';
             if(flat.archive && flat.archive.length > 0) {
-                flat.archive.forEach(a => {
-                    archList.innerHTML += `<div class="border-b pb-1"><strong>${a.occupant}</strong> (ITS: ${a.its})<br/><span class="text-gray-500">Stayed: ${a.startDate} to ${a.endDate}</span></div>`;
+                flat.archive.forEach((a, idx) => {
+                    archList.innerHTML += `
+                        <div class="py-1 flex justify-between items-center">
+                            <div>
+                                <strong>${a.occupant}</strong> ${a.its ? `(ITS: ${a.its})` : ''}<br/>
+                                <span class="text-gray-500">${a.startDate} to ${a.endDate}</span>
+                            </div>
+                            <button onclick="deleteArchiveEntry('${flat.id}', ${idx})" class="text-red-500 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>`;
                 });
             } else {
                 archList.innerHTML = '<span class="text-gray-400">No past allocation history recorded.</span>';
             }
+        }
 
-            document.getElementById('modalAllocation').classList.remove('hidden');
+        window.addManualPastHistory = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('allocFlatId').value;
+            const flat = estatesData.find(e => e.id === flatId);
+            if(!flat) return;
+
+            if(!flat.archive) flat.archive = [];
+            flat.archive.push({
+                occupant: document.getElementById('pastName').value,
+                its: document.getElementById('pastIts').value,
+                startDate: document.getElementById('pastStartDate').value,
+                endDate: document.getElementById('pastEndDate').value
+            });
+
+            await saveCloudData();
+            document.getElementById('manualPastForm').reset();
+            renderModalArchiveList(flat);
+            renderAllocationTable();
+            alert("Past allocation record added!");
+        };
+
+        window.deleteArchiveEntry = async function(flatId, index) {
+            const flat = estatesData.find(e => e.id === flatId);
+            if(flat && flat.archive) {
+                flat.archive.splice(index, 1);
+                await saveCloudData();
+                renderModalArchiveList(flat);
+                renderAllocationTable();
+            }
         };
 
         window.autoFillFacultyDetails = function() {
@@ -1086,37 +1367,44 @@
         window.saveMaintenanceLog = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSaveMaint');
-            btn.innerText = "Uploading to Drive...";
+            btn.innerText = "Uploading Media to Drive...";
             btn.disabled = true;
 
-            const mediaFile = document.getElementById('maintMediaInput').files[0];
-            let fileUrl = "";
-            let directImgUrl = "";
-            let fileType = "";
+            const beforeFile = document.getElementById('maintBeforeInput').files[0];
+            const afterFile = document.getElementById('maintAfterInput').files[0];
 
-            if(mediaFile) {
-                try {
-                    const uploadRes = await uploadFileToDrive(mediaFile);
-                    fileUrl = uploadRes.fileUrl;
-                    directImgUrl = uploadRes.directImgUrl;
-                    fileType = mediaFile.type.startsWith('video') ? 'video' : (mediaFile.type.includes('pdf') ? 'pdf' : 'image');
-                } catch(err) {
-                    alert("Upload failed: " + err);
-                    btn.innerText = "Upload & Save Log";
-                    btn.disabled = false;
-                    return;
+            let beforeUrl = "", beforeDirect = "", beforeType = "";
+            let afterUrl = "", afterDirect = "", afterType = "";
+
+            try {
+                if(beforeFile) {
+                    const res = await uploadFileToDrive(beforeFile);
+                    beforeUrl = res.fileUrl;
+                    beforeDirect = res.directImgUrl;
+                    beforeType = beforeFile.type.startsWith('video') ? 'video' : (beforeFile.type.includes('pdf') ? 'pdf' : 'image');
                 }
+                if(afterFile) {
+                    const res = await uploadFileToDrive(afterFile);
+                    afterUrl = res.fileUrl;
+                    afterDirect = res.directImgUrl;
+                    afterType = afterFile.type.startsWith('video') ? 'video' : (afterFile.type.includes('pdf') ? 'pdf' : 'image');
+                }
+            } catch(err) {
+                alert("Upload failed: " + err);
+                btn.innerText = "Upload & Save Log";
+                btn.disabled = false;
+                return;
             }
 
             maintLogs.push({
                 id: Date.now().toString(),
                 flat: document.getElementById('maintFlatSelect').value,
+                type: document.getElementById('maintType').value,
                 desc: document.getElementById('maintDesc').value,
                 cost: document.getElementById('maintCost').value,
                 date: document.getElementById('maintDate').value,
-                fileUrl: fileUrl,
-                directImgUrl: directImgUrl,
-                fileType: fileType
+                beforeUrl, beforeDirect, beforeType,
+                afterUrl, afterDirect, afterType
             });
 
             await saveCloudData();
@@ -1124,6 +1412,7 @@
             btn.disabled = false;
             closeModal('modalAddMaintenance');
             renderMaintenanceGrid();
+            renderAllocationTable();
         };
 
         window.renderMaintenanceGrid = function() {
@@ -1133,7 +1422,7 @@
             grid.innerHTML = '';
 
             const filteredLogs = maintLogs.filter(m => {
-                const textStr = `${m.flat} ${m.desc} ${m.cost}`.toLowerCase();
+                const textStr = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost}`.toLowerCase();
                 return textStr.includes(search);
             });
 
@@ -1143,26 +1432,32 @@
             }
 
             filteredLogs.forEach(m => {
-                let mediaElement = '';
-                if(m.fileUrl) {
-                    if(m.fileType === 'video') {
-                        mediaElement = `<video src="${m.fileUrl}" controls class="w-full h-48 object-cover rounded border mt-2"></video>`;
-                    } else if(m.fileType === 'pdf') {
-                        mediaElement = `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> PDF Document Attached</span><a href="${m.fileUrl}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open PDF</a></div>`;
+                function renderMedia(url, direct, type, label) {
+                    if(!url) return '';
+                    if(type === 'video') {
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
+                    } else if(type === 'pdf') {
+                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
                     } else {
-                        mediaElement = `<img src="${m.directImgUrl || m.fileUrl}" alt="Maintenance Photo" class="w-full h-48 object-cover rounded border mt-2">`;
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
                     }
                 }
 
                 grid.innerHTML += `
                     <div class="bg-white p-4 rounded-lg shadow border space-y-2">
                         <div class="flex justify-between items-start border-b pb-2">
-                            <h4 class="font-bold text-gray-800">${m.flat}</h4>
+                            <div>
+                                <h4 class="font-bold text-gray-800">${m.flat}</h4>
+                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
+                            </div>
                             <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
                         </div>
                         <p class="text-xs text-gray-600">${m.desc}</p>
                         <p class="text-[10px] text-gray-400">Completed on: ${m.date}</p>
-                        ${mediaElement}
+                        <div class="grid grid-cols-2 gap-2">
+                            ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                            ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                        </div>
                     </div>
                 `;
             });
@@ -1243,11 +1538,44 @@
             renderFacultyTable();
         };
 
+        // FIXED SOCIETY FUNCTIONS
+        window.openAddSocietyModal = function() {
+            document.getElementById('societyForm').reset();
+            document.getElementById('modalAddSociety').classList.remove('hidden');
+        };
+
+        window.saveSocietyRecord = async function(e) {
+            e.preventDefault();
+            societiesData.push({
+                id: Date.now().toString(),
+                name: document.getElementById('socName').value,
+                flats: document.getElementById('socFlats').value,
+                cycle: document.getElementById('socCycle').value,
+                contactPerson: document.getElementById('socContactPerson').value,
+                billSubmittedBy: document.getElementById('socBillSubmittedBy').value
+            });
+
+            await saveCloudData();
+            closeModal('modalAddSociety');
+            renderSocieties();
+            populateSocietyDropdowns();
+            alert("Society added successfully!");
+        };
+
         window.renderSocieties = function() {
             const grid = document.getElementById('societyGrid');
             grid.innerHTML = '';
             societiesData.forEach(s => {
-                grid.innerHTML += `<div class="bg-white p-4 rounded-lg shadow border space-y-2"><div class="flex justify-between items-start"><h4 class="font-bold text-emerald-900">${s.name}</h4><span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">${s.cycle}</span></div><p class="text-xs text-gray-600"><strong>Flats:</strong> ${s.flats}</p><p class="text-xs text-gray-600"><strong>Contact:</strong> ${s.contactPerson} (${s.phone})</p></div>`;
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-emerald-900">${s.name}</h4>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">${s.cycle}</span>
+                        </div>
+                        <p class="text-xs text-gray-600"><strong>Flats:</strong> ${s.flats}</p>
+                        <p class="text-xs text-gray-600"><strong>Society Contact:</strong> ${s.contactPerson}</p>
+                        <p class="text-xs text-gray-600"><strong>Bill Responsible:</strong> ${s.billSubmittedBy}</p>
+                    </div>`;
             });
         };
 
@@ -1328,6 +1656,132 @@
             renderSocietyDocs();
         };
 
+        // SUB-HEADER 7: INTEGRATED VIEW LOGIC
+        function populateIntegratedFlatDropdown() {
+            const select = document.getElementById('integratedFlatSelect');
+            const search = (document.getElementById('integratedSearch') ? document.getElementById('integratedSearch').value : '').toLowerCase();
+            select.innerHTML = '<option value="">-- Choose Building & Flat Number --</option>';
+
+            estatesData.filter(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                return `${e.building}${wing} ${e.flatNo}`.toLowerCase().includes(search);
+            }).forEach(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                select.innerHTML += `<option value="${e.id}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
+            });
+        }
+
+        window.filterIntegratedDropdown = function() {
+            populateIntegratedFlatDropdown();
+        };
+
+        window.renderIntegratedView = function() {
+            const flatId = document.getElementById('integratedFlatSelect').value;
+            const container = document.getElementById('integratedContentDisplay');
+
+            if(!flatId) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            const flat = estatesData.find(e => e.id === flatId);
+            if(!flat) return;
+
+            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
+            const flatKey = `${flat.building}${wingBadge} - ${flat.flatNo}`;
+
+            // 1. Estate Specs
+            document.getElementById('intBuildingWing').innerText = `${flat.building}${wingBadge}`;
+            document.getElementById('intFlatNo').innerText = flat.flatNo;
+            document.getElementById('intTypeSqft').innerText = `${flat.type} (${flat.sqft} SqFt)`;
+            document.getElementById('intOwner').innerText = flat.owner;
+            document.getElementById('intElec').innerText = flat.elec || '-';
+            document.getElementById('intGas').innerText = flat.gas || '-';
+            document.getElementById('intCategoryBadge').innerText = flat.isBachelor ? `Bachelor (${flat.capacity} Beds)` : 'Regular';
+            document.getElementById('intCategoryBadge').className = flat.isBachelor ? 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800' : 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800';
+
+            // 2. Current Occupant Status
+            document.getElementById('intStatusBadge').className = flat.occupant ? 'bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold';
+            document.getElementById('intStatusBadge').innerText = flat.occupant ? 'Allocated' : 'Vacant';
+            document.getElementById('intOccupantName').innerText = flat.occupant || '-';
+            document.getElementById('intIts').innerText = flat.its || '-';
+            document.getElementById('intContact').innerText = flat.contact || '-';
+            document.getElementById('intAllocSince').innerText = flat.startDate || '-';
+            document.getElementById('intTenure').innerText = flat.occupant ? calculateElapsed(flat.startDate) : '-';
+
+            // 3. Maintenance Summary
+            const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('intMaintCount').innerText = `${flatMaintLogs.length} Log(s)`;
+            
+            if(flatMaintLogs.length > 0) {
+                const latest = flatMaintLogs[0];
+                document.getElementById('intLastMaintType').innerText = latest.type || 'Refurbishment';
+                document.getElementById('intLastMaintTime').innerText = `${calculateElapsed(latest.date)} ago (${latest.date})`;
+            } else {
+                document.getElementById('intLastMaintType').innerText = 'None Logged';
+                document.getElementById('intLastMaintTime').innerText = '-';
+            }
+
+            // Bills Status for Current Month
+            const currentMonth = document.getElementById('billMonthPicker').value || new Date().toISOString().slice(0, 7);
+            const billKey = `${flat.id}_${currentMonth}`;
+            const bill = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
+            document.getElementById('intElecBill').innerHTML = bill.elecPaid ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+            document.getElementById('intGasBill').innerHTML = bill.gasPaid ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+
+            // 4. Maintenance Cards Container
+            const logsGrid = document.getElementById('intMaintLogsContainer');
+            logsGrid.innerHTML = '';
+            if(flatMaintLogs.length === 0) {
+                logsGrid.innerHTML = '<p class="text-xs text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
+            } else {
+                flatMaintLogs.forEach(m => {
+                    function renderMedia(url, direct, type, label) {
+                        if(!url) return '';
+                        if(type === 'video') return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-32 object-cover rounded border"></video></div>`;
+                        if(type === 'pdf') return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-32 object-cover rounded border"></div>`;
+                    }
+
+                    logsGrid.innerHTML += `
+                        <div class="bg-gray-50 p-3 rounded border space-y-1.5 text-xs">
+                            <div class="flex justify-between items-center border-b pb-1">
+                                <span class="font-bold text-amber-800">${m.type || 'Refurbishment'}</span>
+                                <span class="font-bold text-emerald-800">₹${m.cost || '0'}</span>
+                            </div>
+                            <p class="text-gray-700">${m.desc}</p>
+                            <p class="text-[10px] text-gray-400">Date: ${m.date}</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                                ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // 5. Allocation History Table
+            const archBody = document.getElementById('intArchiveTableBody');
+            archBody.innerHTML = '';
+            if(!flat.archive || flat.archive.length === 0) {
+                archBody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-400">No past allocation history recorded for this flat.</td></tr>';
+            } else {
+                flat.archive.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b hover:bg-gray-50";
+                    tr.innerHTML = `
+                        <td class="p-2.5 font-semibold text-gray-800">${a.occupant}</td>
+                        <td class="p-2.5 font-mono">${a.its || '-'}</td>
+                        <td class="p-2.5">${a.contact || '-'}</td>
+                        <td class="p-2.5">${a.startDate || '-'}</td>
+                        <td class="p-2.5 text-gray-500">${a.endDate || 'Present'}</td>
+                    `;
+                    archBody.appendChild(tr);
+                });
+            }
+
+            container.classList.remove('hidden');
+        };
+
         window.renderBachelorGrid = function() {
             const grid = document.getElementById('bachelorGrid');
             grid.innerHTML = '';
@@ -1359,7 +1813,6 @@
                         const occupantName = (row['Occupant'] || row['Faculty Name'] || row['Occupant Name'] || row['Current Occupant'] || '').toString().trim();
                         const allocDate = row['Allocation Date'] || row['Allocated Since'] || row['Start Date'] || '';
 
-                        // Pull ITS and Contact from Directory if match found
                         let matchedIts = '';
                         let matchedContact = '';
 
@@ -1392,6 +1845,7 @@
                     });
                     renderEstateTable();
                     renderAllocationTable();
+                    populateIntegratedFlatDropdown();
                 } else if(target === 'faculty') {
                     jsonData.forEach(row => {
                         facultyData.push({
@@ -1427,8 +1881,8 @@
             const email = document.getElementById('inviteEmail').value;
             const role = document.getElementById('inviteRole').value;
             const perms = [];
-            for(let i=1; i<=6; i++) {
-                if(document.getElementById(`perm-${i}`).checked) perms.push(i);
+            for(let i=1; i<=7; i++) {
+                if(document.getElementById(`perm-${i}`)?.checked) perms.push(i);
             }
             usersList.push({ email, role, permissions: perms });
             await saveCloudData();

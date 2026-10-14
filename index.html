@@ -51,7 +51,6 @@
                 </div>
             </div>
             
-            <!-- User Profile & Admin Badge -->
             <div class="flex items-center space-x-4">
                 <div class="text-right">
                     <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">murtaza.kheraluwala@jameasaifiyah.edu</span>
@@ -64,7 +63,6 @@
             </div>
         </div>
 
-        <!-- Primary Module Navigation Tabs -->
         <div class="bg-emerald-950 border-t border-emerald-800">
             <div class="max-w-7xl mx-auto px-4 flex space-x-2">
                 <button onclick="switchModule('dawat-estates')" id="mod-dawat-estates" class="px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 active-tab">
@@ -93,7 +91,6 @@
         <!-- MODULE: DAWAT ESTATES -->
         <div id="module-dawat-estates" class="space-y-6">
             
-            <!-- 6 Sub-Header Navigation Bar -->
             <div class="bg-white rounded-lg shadow p-2 flex flex-wrap gap-2 border">
                 <button onclick="switchSubHeader('estate-details')" id="sub-estate-details" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-active flex items-center space-x-2">
                     <i class="fa-solid fa-building"></i>
@@ -140,7 +137,6 @@
                     </div>
                 </div>
 
-                <!-- Filters & Search -->
                 <div class="bg-white p-4 rounded-lg shadow border flex flex-col sm:flex-row gap-3">
                     <input type="text" id="estateSearch" oninput="renderEstateTable()" placeholder="Search Building Name, Wing, Flat No, Owner, or Meter..." class="w-full sm:w-1/2 p-2 border rounded text-sm">
                     <select id="estateTypeFilter" onchange="renderEstateTable()" class="p-2 border rounded text-sm">
@@ -157,7 +153,6 @@
                     </select>
                 </div>
 
-                <!-- Estates Table -->
                 <div class="bg-white rounded-lg shadow border overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
@@ -172,9 +167,7 @@
                                 <th class="p-3 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="estateTableBody" class="divide-y">
-                            <!-- Dynamically populated -->
-                        </tbody>
+                        <tbody id="estateTableBody" class="divide-y"></tbody>
                     </table>
                 </div>
             </div>
@@ -201,19 +194,17 @@
                                 <th class="p-3 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="allocationTableBody" class="divide-y">
-                            <!-- Dynamically populated -->
-                        </tbody>
+                        <tbody id="allocationTableBody" class="divide-y"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- SUB-HEADER 3: MAINTENANCE DATA -->
+            <!-- SUB-HEADER 3: MAINTENANCE DATA WITH DIRECT MEDIA UPLOAD & PREVIEW -->
             <div id="sec-maintenance" class="hidden space-y-4">
                 <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Flat Refurbishment & Maintenance Records</h2>
-                        <p class="text-xs text-gray-500">Log works completed and link Google Drive photo/video evidence from fm.marol@jameasaifiyah.edu.</p>
+                        <p class="text-xs text-gray-500">Log works completed and upload photos/videos directly to Firebase Cloud with inline previews.</p>
                     </div>
                     <button onclick="openAddMaintenanceModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                         <i class="fa-solid fa-plus"></i>
@@ -221,9 +212,7 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="maintenanceGrid">
-                    <!-- Dynamically populated -->
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="maintenanceGrid"></div>
             </div>
 
             <!-- SUB-HEADER 4: BACHELOR FLATS -->
@@ -235,9 +224,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="bachelorGrid">
-                    <!-- Dynamically populated -->
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="bachelorGrid"></div>
             </div>
 
             <!-- SUB-HEADER 5: VACANT FLATS BILLS -->
@@ -264,9 +251,7 @@
                                 <th class="p-3 text-center">Update Receipt</th>
                             </tr>
                         </thead>
-                        <tbody id="vacantBillsTableBody" class="divide-y">
-                            <!-- Dynamically populated -->
-                        </tbody>
+                        <tbody id="vacantBillsTableBody" class="divide-y"></tbody>
                     </table>
                 </div>
             </div>
@@ -276,7 +261,7 @@
                 <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">13 Societies Maintenance & Billing Master</h2>
-                        <p class="text-xs text-gray-500">Billing frequency, contact persons, and central document vault linked to Google Drive.</p>
+                        <p class="text-xs text-gray-500">Billing frequency, contact persons, and central document vault linked to Firebase Cloud Storage.</p>
                     </div>
                     <button onclick="openAddSocietyModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                         <i class="fa-solid fa-plus"></i>
@@ -284,20 +269,18 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="societyGrid">
-                    <!-- Dynamically populated -->
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="societyGrid"></div>
 
                 <!-- Document Vault -->
                 <div class="bg-white p-5 rounded-lg shadow border space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
                         <div>
                             <h3 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-vault text-amber-600 mr-2"></i>Society Document Vault</h3>
-                            <p class="text-xs text-gray-500">Filter and search official receipts, NOCs, agreements, and Google Drive links.</p>
+                            <p class="text-xs text-gray-500">Filter and search official receipts, NOCs, agreements, and view uploaded PDFs inline.</p>
                         </div>
                         <button onclick="openUploadDocModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                             <i class="fa-solid fa-upload"></i>
-                            <span>Add Drive Link / Doc</span>
+                            <span>Upload File / Document</span>
                         </button>
                     </div>
 
@@ -316,12 +299,10 @@
                                     <th class="p-3">Document Title</th>
                                     <th class="p-3">Date</th>
                                     <th class="p-3">Notes</th>
-                                    <th class="p-3 text-center">Google Drive Link</th>
+                                    <th class="p-3 text-center">Attachment / Document</th>
                                 </tr>
                             </thead>
-                            <tbody id="societyDocsTableBody" class="divide-y">
-                                <!-- Dynamically populated -->
-                            </tbody>
+                            <tbody id="societyDocsTableBody" class="divide-y"></tbody>
                         </table>
                     </div>
                 </div>
@@ -363,9 +344,7 @@
                                 <th class="p-3 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="facultyTableBody" class="divide-y">
-                            <!-- Dynamically populated -->
-                        </tbody>
+                        <tbody id="facultyTableBody" class="divide-y"></tbody>
                     </table>
                 </div>
             </div>
@@ -380,7 +359,7 @@
                         <span>User Access Control & Invited Permissions</span>
                     </h2>
                     <p class="text-xs text-gray-500 mt-1">
-                        Primary Admins: <strong class="text-emerald-800">murtaza.kheraluwala@jameasaifiyah.edu</strong> & <strong class="text-emerald-800">fm.marol@jameasaifiyah.edu</strong>. Users sign in via Google and receive granular access.
+                        Primary Admins: <strong class="text-emerald-800">murtaza.kheraluwala@jameasaifiyah.edu</strong> & <strong class="text-emerald-800">fm.marol@jameasaifiyah.edu</strong>.
                     </p>
                 </div>
 
@@ -429,9 +408,7 @@
                                     <th class="p-3 text-center">Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="userListTableBody" class="divide-y">
-                                <!-- Dynamically populated -->
-                            </tbody>
+                            <tbody id="userListTableBody" class="divide-y"></tbody>
                         </table>
                     </div>
                 </div>
@@ -443,7 +420,7 @@
     <!-- FOOTER -->
     <footer class="bg-emerald-950 text-emerald-400 text-xs py-4 border-t border-emerald-800 text-center">
         <p>Aljamea-tus-Saifiyah Facilities Management Dept (Marol) &copy; 2026. All rights reserved.</p>
-        <p class="text-emerald-500 text-[10px] mt-1">Firebase Cloud Storage Active | Google Drive Connected: fm.marol@jameasaifiyah.edu</p>
+        <p class="text-emerald-500 text-[10px] mt-1">Firebase Cloud Storage Active | Direct Media Upload Enabled</p>
     </footer>
 
     <!-- MODALS SECTION -->
@@ -522,6 +499,48 @@
         </div>
     </div>
 
+    <!-- Modal: Add Maintenance Log with Direct Photo/Video Upload -->
+    <div id="modalAddMaintenance" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Add Refurbishment / Maintenance Log</h3>
+                <button onclick="closeModal('modalAddMaintenance')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="maintForm" onsubmit="saveMaintenanceLog(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Select Flat *</label>
+                    <select id="maintFlatSelect" required class="w-full p-2 border rounded text-sm"></select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Work Description / Details *</label>
+                    <textarea id="maintDesc" required placeholder="e.g. Complete kitchen tiling, painting & plumbing overhaul..." class="w-full p-2 border rounded text-sm h-20"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Total Expense (₹)</label>
+                        <input type="number" id="maintCost" placeholder="e.g. 45000" class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Completion Date</label>
+                        <input type="date" id="maintDate" required class="w-full p-2 border rounded text-sm">
+                    </div>
+                </div>
+                
+                <!-- Direct Photo/Video Upload Controls -->
+                <div class="bg-gray-50 p-3 rounded border space-y-2">
+                    <label class="text-xs font-bold text-gray-700 block"><i class="fa-solid fa-cloud-arrow-up text-emerald-600 mr-1"></i> Upload Photo or Video Evidence</label>
+                    <input type="file" id="maintMediaInput" accept="image/*,video/*" class="w-full text-xs border p-2 rounded bg-white">
+                    <p class="text-[10px] text-gray-500">File uploads directly to Firebase Cloud Storage and will be previewed inline on the maintenance card.</p>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddMaintenance')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" id="btnSaveMaint" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Upload & Save Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal: Allocation & History Archive -->
     <div id="modalAllocation" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -563,9 +582,7 @@
                     <i class="fa-solid fa-box-archive text-amber-600"></i>
                     <span>Allocation Archive History</span>
                 </h4>
-                <div id="allocArchiveList" class="space-y-2 text-xs max-h-40 overflow-y-auto bg-gray-50 p-2 border rounded">
-                    <!-- Historical tenure records -->
-                </div>
+                <div id="allocArchiveList" class="space-y-2 text-xs max-h-40 overflow-y-auto bg-gray-50 p-2 border rounded"></div>
             </div>
         </div>
     </div>
@@ -614,11 +631,11 @@
         </div>
     </div>
 
-    <!-- Modal: Society Document Vault (Google Drive Link) -->
+    <!-- Modal: Direct Society Document / Receipt Upload -->
     <div id="modalUploadDoc" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="text-lg font-bold text-gray-800">Link Google Drive Document</h3>
+                <h3 class="text-lg font-bold text-gray-800">Upload Society Document / Receipt</h3>
                 <button onclick="closeModal('modalUploadDoc')" class="text-gray-500 text-xl font-bold">&times;</button>
             </div>
             <form id="docUploadForm" onsubmit="saveSocietyDoc(event)" class="space-y-3">
@@ -635,12 +652,12 @@
                     <textarea id="docNotes" class="w-full p-2 border rounded text-sm h-20"></textarea>
                 </div>
                 <div>
-                    <label class="text-xs font-semibold block mb-1">Google Drive Shareable Link (fm.marol@jameasaifiyah.edu) *</label>
-                    <input type="url" id="docDriveUrl" required placeholder="https://drive.google.com/file/d/..." class="w-full text-sm border p-2 rounded">
+                    <label class="text-xs font-semibold block mb-1">Choose File (PDF or Image) *</label>
+                    <input type="file" id="docFileInput" accept=".pdf,image/*" required class="w-full text-xs border p-2 rounded">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modalUploadDoc')" class="px-4 py-2 border rounded text-sm">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium">Save Drive Link</button>
+                    <button type="submit" id="btnUploadDoc" class="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium">Upload File</button>
                 </div>
             </form>
         </div>
@@ -650,7 +667,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
-        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+        import { getDatabase, ref as dbRef, set, get, child } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAmfhe1OId_cHrnHnf4iPIHgJN81-tFluY",
@@ -666,10 +684,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+        const storage = getStorage(app);
 
         let currentUser = null;
 
-        // Default initial seed data
         let estatesData = [];
         let facultyData = [];
         let societiesData = [
@@ -677,9 +695,9 @@
             { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas', phone: '+91 9820011122', billSubmittedBy: 'Secretary' }
         ];
         let societyDocs = [];
+        let maintLogs = [];
         let vacantBills = {};
         
-        // Explicit Super Admin accounts
         let superAdmins = [
             'murtaza.kheraluwala@jameasaifiyah.edu',
             'fm.marol@jameasaifiyah.edu'
@@ -690,13 +708,11 @@
             { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6] }
         ];
 
-        // Auth State Listener
         onAuthStateChanged(auth, async (user) => {
             const loginOverlay = document.getElementById('loginOverlay');
             if (user) {
                 currentUser = user;
                 document.getElementById('currentUserEmail').innerText = user.email;
-                
                 await loadCloudData();
                 
                 const userEmailLower = user.email.toLowerCase();
@@ -733,13 +749,14 @@
 
         async function loadCloudData() {
             try {
-                const snapshot = await get(child(ref(db), 'portalData'));
+                const snapshot = await get(child(dbRef(db), 'portalData'));
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     estatesData = data.estates || [];
                     facultyData = data.faculty || [];
                     societiesData = data.societies || societiesData;
                     societyDocs = data.docs || [];
+                    maintLogs = data.maint || [];
                     vacantBills = data.bills || {};
                     usersList = data.users || usersList;
                 } else {
@@ -755,11 +772,12 @@
 
         window.saveCloudData = async function() {
             try {
-                await set(ref(db, 'portalData'), {
+                await set(dbRef(db, 'portalData'), {
                     estates: estatesData,
                     faculty: facultyData,
                     societies: societiesData,
                     docs: societyDocs,
+                    maint: maintLogs,
                     bills: vacantBills,
                     users: usersList
                 });
@@ -774,8 +792,10 @@
             renderFacultyTable();
             renderSocieties();
             renderSocietyDocs();
+            renderMaintenanceGrid();
             renderUsersList();
             populateSocietyDropdowns();
+            populateFlatMaintenanceDropdown();
             
             const today = new Date().toISOString().slice(0, 7);
             document.getElementById('billMonthPicker').value = today;
@@ -800,6 +820,7 @@
             document.getElementById('sub-' + secName).classList.add('sub-tab-active');
 
             if(secName === 'bachelor') renderBachelorGrid();
+            if(secName === 'maintenance') renderMaintenanceGrid();
             if(secName === 'vacant-bills') renderVacantBills();
         };
 
@@ -834,8 +855,8 @@
                             : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
                     </td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -902,6 +923,7 @@
             closeModal('modalAddFlat');
             renderEstateTable();
             renderAllocationTable();
+            populateFlatMaintenanceDropdown();
         };
 
         window.deleteFlat = async function(id) {
@@ -1006,6 +1028,89 @@
             await saveCloudData();
             closeModal('modalAllocation');
             renderAllocationTable();
+        };
+
+        // Maintenance Data Section & Direct Media Uploads
+        function populateFlatMaintenanceDropdown() {
+            const select = document.getElementById('maintFlatSelect');
+            select.innerHTML = '';
+            estatesData.forEach(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                select.innerHTML += `<option value="${e.building}${wing} - ${e.flatNo}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
+            });
+        }
+
+        window.openAddMaintenanceModal = function() {
+            document.getElementById('maintForm').reset();
+            populateFlatMaintenanceDropdown();
+            document.getElementById('modalAddMaintenance').classList.remove('hidden');
+        };
+
+        window.saveMaintenanceLog = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveMaint');
+            btn.innerText = "Uploading to Cloud...";
+            btn.disabled = true;
+
+            const mediaFile = document.getElementById('maintMediaInput').files[0];
+            let mediaUrl = "";
+            let mediaType = "";
+
+            if(mediaFile) {
+                const fileRef = storageRef(storage, `maintenance_media/${Date.now()}_${mediaFile.name}`);
+                await uploadBytes(fileRef, mediaFile);
+                mediaUrl = await getDownloadURL(fileRef);
+                mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
+            }
+
+            maintLogs.push({
+                id: Date.now().toString(),
+                flat: document.getElementById('maintFlatSelect').value,
+                desc: document.getElementById('maintDesc').value,
+                cost: document.getElementById('maintCost').value,
+                date: document.getElementById('maintDate').value,
+                mediaUrl: mediaUrl,
+                mediaType: mediaType
+            });
+
+            await saveCloudData();
+            btn.innerText = "Upload & Save Log";
+            btn.disabled = false;
+            closeModal('modalAddMaintenance');
+            renderMaintenanceGrid();
+        };
+
+        window.renderMaintenanceGrid = function() {
+            const grid = document.getElementById('maintenanceGrid');
+            grid.innerHTML = '';
+
+            if(maintLogs.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No maintenance logs or refurbishment photos uploaded yet.</p>';
+                return;
+            }
+
+            maintLogs.forEach(m => {
+                let mediaElement = '';
+                if(m.mediaUrl) {
+                    if(m.mediaType === 'video') {
+                        mediaElement = `<video src="${m.mediaUrl}" controls class="w-full h-48 object-cover rounded border mt-2"></video>`;
+                    } else {
+                        mediaElement = `<img src="${m.mediaUrl}" alt="Maintenance Photo" class="w-full h-48 object-cover rounded border mt-2">`;
+                    }
+                }
+
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
+                        <div class="flex justify-between items-start border-b pb-2">
+                            <h4 class="font-bold text-gray-800">${m.flat}</h4>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
+                        </div>
+                        <p class="text-xs text-gray-600">${m.desc}</p>
+                        <p class="text-[10px] text-gray-400">Completed on: ${m.date}</p>
+                        ${mediaElement}
+                    </div>
+                `;
+            });
         };
 
         window.renderVacantBills = function() {
@@ -1120,7 +1225,7 @@
                     <td class="p-3 font-bold text-gray-800">${d.title}</td>
                     <td class="p-3 text-gray-500">${d.date}</td>
                     <td class="p-3 text-gray-600">${d.notes || '-'}</td>
-                    <td class="p-3 text-center"><a href="${d.driveUrl}" target="_blank" class="text-amber-700 font-bold hover:underline"><i class="fa-brands fa-google-drive"></i> Open Drive File</a></td>
+                    <td class="p-3 text-center"><a href="${d.fileUrl}" target="_blank" class="text-amber-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf"></i> View Document</a></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1133,15 +1238,31 @@
 
         window.saveSocietyDoc = async function(e) {
             e.preventDefault();
+            const btn = document.getElementById('btnUploadDoc');
+            btn.innerText = "Uploading File...";
+            btn.disabled = true;
+
+            const docFile = document.getElementById('docFileInput').files[0];
+            let fileUrl = "";
+
+            if(docFile) {
+                const fileRef = storageRef(storage, `society_docs/${Date.now()}_${docFile.name}`);
+                await uploadBytes(fileRef, docFile);
+                fileUrl = await getDownloadURL(fileRef);
+            }
+
             societyDocs.push({
                 id: Date.now().toString(),
                 society: document.getElementById('docSocietySelect').value,
                 title: document.getElementById('docTitle').value,
                 notes: document.getElementById('docNotes').value,
-                driveUrl: document.getElementById('docDriveUrl').value,
+                fileUrl: fileUrl,
                 date: new Date().toISOString().split('T')[0]
             });
+
             await saveCloudData();
+            btn.innerText = "Upload File";
+            btn.disabled = false;
             closeModal('modalUploadDoc');
             renderSocietyDocs();
         };

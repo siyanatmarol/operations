@@ -53,7 +53,7 @@
             
             <div class="flex items-center space-x-4">
                 <div class="text-right">
-                    <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">murtaza.kheraluwala@jameasaifiyah.edu</span>
+                    <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">User</span>
                     <span id="currentUserRole" class="text-xs bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">Super Admin</span>
                 </div>
                 <button onclick="handleSignOut()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1" title="Sign Out">
@@ -619,7 +619,7 @@
         </div>
     </div>
 
-    <!-- Modal: Add Maintenance Log (With Types & Before/After Media) -->
+    <!-- Modal: Add Maintenance Log -->
     <div id="modalAddMaintenance" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -658,13 +658,11 @@
                     </div>
                 </div>
                 
-                <!-- Before File Upload -->
                 <div class="bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
                     <label class="text-xs font-bold text-amber-900 block"><i class="fa-solid fa-camera text-amber-600 mr-1"></i> BEFORE Media (Photo / Video / PDF)</label>
                     <input type="file" id="maintBeforeInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
                 </div>
 
-                <!-- After File Upload -->
                 <div class="bg-emerald-50 p-3 rounded border border-emerald-200 space-y-2">
                     <label class="text-xs font-bold text-emerald-900 block"><i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> AFTER Media (Photo / Video / PDF)</label>
                     <input type="file" id="maintAfterInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
@@ -714,7 +712,6 @@
                 </div>
             </form>
 
-            <!-- Manual Past Allocation Entry Section -->
             <div class="border-t pt-4 space-y-3">
                 <h4 class="text-xs font-bold text-gray-800 uppercase flex items-center justify-between">
                     <span class="flex items-center space-x-1"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> <span>Add Past Allocation Record Manually</span></span>
@@ -812,4 +809,1152 @@
             <form id="facultyForm" onsubmit="saveFacultyRecord(event)" class="space-y-3">
                 <div>
                     <label class="text-xs font-semibold block mb-1">ITS Number *</label>
-                    <input type="text
+                    <input type="text" id="facultyIts" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Full Name *</label>
+                    <input type="text" id="facultyName" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Contact Number *</label>
+                    <input type="text" id="facultyContact" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modalFaculty')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium">Save Faculty</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Society Document Vault Uploader -->
+    <div id="modalUploadDoc" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Upload Society Document / Receipt</h3>
+                <button onclick="closeModal('modalUploadDoc')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="docUploadForm" onsubmit="saveSocietyDoc(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Society Name *</label>
+                    <select id="docSocietySelect" required class="w-full p-2 border rounded text-sm"></select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Document Title *</label>
+                    <input type="text" id="docTitle" required placeholder="e.g., Annual Maintenance NOC 2026" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Notes / Details</label>
+                    <textarea id="docNotes" class="w-full p-2 border rounded text-sm h-20"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Choose File (PDF or Image) *</label>
+                    <input type="file" id="docFileInput" accept=".pdf,image/*" required class="w-full text-xs border p-2 rounded">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modalUploadDoc')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" id="btnUploadDoc" class="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium">Upload File</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIREBASE & APPLICATION LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+        import { getDatabase, ref as dbRef, set, get, child } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmfhe1OId_cHrnHnf4iPIHgJN81-tFluY",
+            authDomain: "siyanatmarol.firebaseapp.com",
+            databaseURL: "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "siyanatmarol",
+            storageBucket: "siyanatmarol.firebasestorage.app",
+            messagingSenderId: "772376555073",
+            appId: "1:772376555073:web:7b154cec7ae1683da2e0c0",
+            measurementId: "G-K7RJEENDFK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmdma-wCM7s9fOdDVEJBkB3n8JNsMEnoLQnoVtBjEElmz4kwmDElbRGZ0vzmwv6K71/exec";
+
+        let currentUser = null;
+
+        let estatesData = [];
+        let facultyData = [];
+        let societiesData = [
+            { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai (+91 9820055443)', billSubmittedBy: 'Mulla Mustafa (+91 9876543210)' },
+            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011122)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
+        ];
+        let societyDocs = [];
+        let maintLogs = [];
+        let vacantBills = {};
+        
+        let superAdmins = [
+            'murtaza.kheraluwala@jameasaifiyah.edu',
+            'fm.marol@jameasaifiyah.edu'
+        ];
+
+        let usersList = [
+            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] },
+            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] }
+        ];
+
+        function calculateElapsed(startDateStr) {
+            if(!startDateStr) return '-';
+            const start = new Date(startDateStr);
+            const now = new Date();
+            if(isNaN(start.getTime())) return '-';
+
+            let years = now.getFullYear() - start.getFullYear();
+            let months = now.getMonth() - start.getMonth();
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            if(years === 0 && months === 0) return 'Less than a month';
+            let res = [];
+            if(years > 0) res.push(`${years} ${years === 1 ? 'yr' : 'yrs'}`);
+            if(months > 0) res.push(`${months} ${months === 1 ? 'mo' : 'mos'}`);
+            return res.join(' ');
+        }
+
+        async function uploadFileToDrive(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64Data = e.target.result.split(',')[1];
+                    try {
+                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                filename: file.name,
+                                mimeType: file.type,
+                                base64: base64Data
+                            })
+                        });
+                        const result = await response.json();
+                        if(result.status === 'success') {
+                            resolve(result);
+                        } else {
+                            reject(result.message);
+                        }
+                    } catch(err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            const loginOverlay = document.getElementById('loginOverlay');
+            if (user) {
+                currentUser = user;
+                document.getElementById('currentUserEmail').innerText = user.email;
+                await loadCloudData();
+                
+                const userEmailLower = user.email.trim().toLowerCase();
+                const isSuperAdmin = superAdmins.map(e => e.trim().toLowerCase()).includes(userEmailLower);
+                const dbUser = usersList.find(u => u.email.trim().toLowerCase() === userEmailLower);
+
+                if (!dbUser && !isSuperAdmin) {
+                    document.getElementById('loginErrorMsg').innerText = `Access Denied: ${user.email} is not authorized.`;
+                    document.getElementById('loginErrorMsg').classList.remove('hidden');
+                    await signOut(auth);
+                    return;
+                }
+
+                loginOverlay.classList.add('hidden');
+                initAppUI();
+            } else {
+                loginOverlay.classList.remove('hidden');
+            }
+        });
+
+        window.handleGoogleSignIn = async function() {
+            const errEl = document.getElementById('loginErrorMsg');
+            errEl.classList.add('hidden');
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                const provider = new GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Auth error:", error);
+                errEl.innerText = error.message || "Failed to sign in. Please try again.";
+                errEl.classList.remove('hidden');
+            }
+        };
+
+        window.handleSignOut = async function() {
+            await signOut(auth);
+        };
+
+        async function loadCloudData() {
+            try {
+                const snapshot = await get(child(dbRef(db), 'portalData'));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    estatesData = data.estates || [];
+                    facultyData = data.faculty || [];
+                    societiesData = data.societies || societiesData;
+                    societyDocs = data.docs || [];
+                    maintLogs = data.maint || [];
+                    vacantBills = data.bills || {};
+                    usersList = data.users || usersList;
+                } else {
+                    estatesData = [
+                        { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [] }
+                    ];
+                    await saveCloudData();
+                }
+            } catch (err) {
+                console.error("Error loading cloud data:", err);
+            }
+        }
+
+        window.saveCloudData = async function() {
+            try {
+                await set(dbRef(db, 'portalData'), {
+                    estates: estatesData,
+                    faculty: facultyData,
+                    societies: societiesData,
+                    docs: societyDocs,
+                    maint: maintLogs,
+                    bills: vacantBills,
+                    users: usersList
+                });
+            } catch (err) {
+                console.error("Error saving to cloud:", err);
+            }
+        }
+
+        function initAppUI() {
+            renderEstateTable();
+            renderAllocationTable();
+            renderFacultyTable();
+            renderSocieties();
+            renderSocietyDocs();
+            renderMaintenanceGrid();
+            renderUsersList();
+            populateSocietyDropdowns();
+            populateFlatMaintenanceDropdown();
+            populateIntegratedFlatDropdown();
+            
+            const today = new Date().toISOString().slice(0, 7);
+            document.getElementById('billMonthPicker').value = today;
+            renderVacantBills();
+        }
+
+        window.switchModule = function(modName) {
+            ['dawat-estates', 'inventory', 'faculty-dir', 'admin-access'].forEach(m => {
+                document.getElementById('module-' + m).classList.add('hidden');
+                document.getElementById('mod-' + m).classList.remove('active-tab');
+            });
+            document.getElementById('module-' + modName).classList.remove('hidden');
+            document.getElementById('mod-' + modName).classList.add('active-tab');
+        };
+
+        window.switchSubHeader = function(secName) {
+            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
+                document.getElementById('sec-' + s).classList.add('hidden');
+                document.getElementById('sub-' + s).classList.remove('sub-tab-active');
+            });
+            document.getElementById('sec-' + secName).classList.remove('hidden');
+            document.getElementById('sub-' + secName).classList.add('sub-tab-active');
+
+            if(secName === 'bachelor') renderBachelorGrid();
+            if(secName === 'maintenance') renderMaintenanceGrid();
+            if(secName === 'vacant-bills') renderVacantBills();
+            if(secName === 'integrated') populateIntegratedFlatDropdown();
+        };
+
+        window.renderEstateTable = function() {
+            const tbody = document.getElementById('estateTableBody');
+            const search = document.getElementById('estateSearch').value.toLowerCase();
+            const typeFilter = document.getElementById('estateTypeFilter').value;
+            const categoryFilter = document.getElementById('estateCategoryFilter').value;
+
+            tbody.innerHTML = '';
+
+            estatesData.filter(e => {
+                const wingStr = e.wing ? ` (${e.wing})` : '';
+                const matchSearch = `${e.building} ${wingStr} ${e.flatNo} ${e.owner} ${e.elec} ${e.gas}`.toLowerCase().includes(search);
+                const matchType = !typeFilter || e.type === typeFilter;
+                const matchCategory = !categoryFilter || (categoryFilter === 'bachelor' ? e.isBachelor : !e.isBachelor);
+                return matchSearch && matchType && matchCategory;
+            }).forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 border-b";
+                const wingBadge = e.wing ? `<span class="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">${e.wing}</span>` : '';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-gray-800">${e.building}${wingBadge}</td>
+                    <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
+                    <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
+                    <td class="p-3">${e.owner}</td>
+                    <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
+                    <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
+                    <td class="p-3">
+                        ${e.isBachelor 
+                            ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
+                            : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
+                    </td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.toggleBachelorCapacityInput = function() {
+            const chk = document.getElementById('flatIsBachelor').checked;
+            document.getElementById('bachelorCapacityBox').classList.toggle('hidden', !chk);
+        };
+
+        window.openAddFlatModal = function() {
+            document.getElementById('flatId').value = '';
+            document.getElementById('flatForm').reset();
+            document.getElementById('flatModalTitle').innerText = 'Add New Estate Flat';
+            document.getElementById('modalAddFlat').classList.remove('hidden');
+        };
+
+        window.openEditFlat = function(id) {
+            const flat = estatesData.find(e => e.id === id);
+            if(!flat) return;
+            document.getElementById('flatId').value = flat.id;
+            document.getElementById('flatBuilding').value = flat.building;
+            document.getElementById('flatWing').value = flat.wing || '';
+            document.getElementById('flatNo').value = flat.flatNo;
+            document.getElementById('flatType').value = flat.type;
+            document.getElementById('flatSqft').value = flat.sqft;
+            document.getElementById('flatOwner').value = flat.owner;
+            document.getElementById('flatElec').value = flat.elec;
+            document.getElementById('flatGas').value = flat.gas;
+            document.getElementById('flatIsBachelor').checked = flat.isBachelor;
+            document.getElementById('flatBedCapacity').value = flat.capacity || 4;
+            toggleBachelorCapacityInput();
+            document.getElementById('flatModalTitle').innerText = 'Edit Estate Flat';
+            document.getElementById('modalAddFlat').classList.remove('hidden');
+        };
+
+        window.saveFlatRecord = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('flatId').value;
+            const isBachelor = document.getElementById('flatIsBachelor').checked;
+            const flatObj = {
+                id: id || Date.now().toString(),
+                building: document.getElementById('flatBuilding').value,
+                wing: document.getElementById('flatWing').value,
+                flatNo: document.getElementById('flatNo').value,
+                type: document.getElementById('flatType').value,
+                sqft: parseInt(document.getElementById('flatSqft').value),
+                owner: document.getElementById('flatOwner').value,
+                elec: document.getElementById('flatElec').value,
+                gas: document.getElementById('flatGas').value,
+                isBachelor: isBachelor,
+                capacity: isBachelor ? parseInt(document.getElementById('flatBedCapacity').value) : 0,
+                archive: []
+            };
+
+            if(id) {
+                const idx = estatesData.findIndex(item => item.id === id);
+                estatesData[idx] = { ...estatesData[idx], ...flatObj };
+            } else {
+                estatesData.push(flatObj);
+            }
+            await saveCloudData();
+            closeModal('modalAddFlat');
+            renderEstateTable();
+            renderAllocationTable();
+            populateFlatMaintenanceDropdown();
+            populateIntegratedFlatDropdown();
+        };
+
+        window.deleteFlat = async function(id) {
+            if(confirm("Are you sure you want to delete this flat record?")) {
+                estatesData = estatesData.filter(e => e.id !== id);
+                await saveCloudData();
+                renderEstateTable();
+                renderAllocationTable();
+                populateIntegratedFlatDropdown();
+            }
+        };
+
+        window.renderAllocationTable = function() {
+            const tbody = document.getElementById('allocationTableBody');
+            const searchInput = document.getElementById('allocSearch');
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
+            tbody.innerHTML = '';
+
+            estatesData.filter(e => !e.isBachelor).filter(e => {
+                const wingStr = e.wing ? ` (${e.wing})` : '';
+                const fullStr = `${e.building}${wingStr} ${e.flatNo} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''}`.toLowerCase();
+                return fullStr.includes(search);
+            }).forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+
+                const tenure = e.occupant ? calculateElapsed(e.startDate) : '-';
+
+                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
+                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+                
+                let lastMaintStr = '-';
+                if(flatMaintLogs.length > 0) {
+                    const lastLog = flatMaintLogs[0];
+                    const elapsed = calculateElapsed(lastLog.date);
+                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold">${e.building}${wingBadge} - ${e.flatNo}</td>
+                    <td class="p-3">
+                        ${e.occupant ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
+                    </td>
+                    <td class="p-3 font-medium text-gray-900">${e.occupant || '-'}</td>
+                    <td class="p-3 text-xs font-mono">${e.its ? `${e.its}<br/>${e.contact || ''}` : '-'}</td>
+                    <td class="p-3 text-xs">${e.startDate || '-'}</td>
+                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
+                    <td class="p-3 text-xs">${lastMaintStr}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="openAllocationModal('${e.id}')" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.openAllocationModal = function(id) {
+            const flat = estatesData.find(e => e.id === id);
+            if(!flat) return;
+
+            document.getElementById('allocFlatId').value = flat.id;
+            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
+            document.getElementById('allocModalTitle').innerText = `Allocation: ${flat.building}${wingBadge} ${flat.flatNo}`;
+            
+            const select = document.getElementById('allocFacultySelect');
+            select.innerHTML = '<option value="">-- Select Faculty Member --</option>';
+            facultyData.forEach(f => {
+                select.innerHTML += `<option value="${f.id}">${f.name} (ITS: ${f.its})</option>`;
+            });
+
+            document.getElementById('allocIts').value = flat.its || '';
+            document.getElementById('allocContact').value = flat.contact || '';
+            document.getElementById('allocStartDate').value = flat.startDate || '';
+
+            renderModalArchiveList(flat);
+            document.getElementById('modalAllocation').classList.remove('hidden');
+        };
+
+        function renderModalArchiveList(flat) {
+            const archList = document.getElementById('allocArchiveList');
+            archList.innerHTML = '';
+            if(flat.archive && flat.archive.length > 0) {
+                flat.archive.forEach((a, idx) => {
+                    archList.innerHTML += `
+                        <div class="py-1 flex justify-between items-center">
+                            <div>
+                                <strong>${a.occupant}</strong> ${a.its ? `(ITS: ${a.its})` : ''}<br/>
+                                <span class="text-gray-500">${a.startDate} to ${a.endDate}</span>
+                            </div>
+                            <button onclick="deleteArchiveEntry('${flat.id}', ${idx})" class="text-red-500 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>`;
+                });
+            } else {
+                archList.innerHTML = '<span class="text-gray-400">No past allocation history recorded.</span>';
+            }
+        }
+
+        window.addManualPastHistory = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('allocFlatId').value;
+            const flat = estatesData.find(e => e.id === flatId);
+            if(!flat) return;
+
+            if(!flat.archive) flat.archive = [];
+            flat.archive.push({
+                occupant: document.getElementById('pastName').value,
+                its: document.getElementById('pastIts').value,
+                startDate: document.getElementById('pastStartDate').value,
+                endDate: document.getElementById('pastEndDate').value
+            });
+
+            await saveCloudData();
+            document.getElementById('manualPastForm').reset();
+            renderModalArchiveList(flat);
+            renderAllocationTable();
+            alert("Past allocation record added!");
+        };
+
+        window.deleteArchiveEntry = async function(flatId, index) {
+            const flat = estatesData.find(e => e.id === flatId);
+            if(flat && flat.archive) {
+                flat.archive.splice(index, 1);
+                await saveCloudData();
+                renderModalArchiveList(flat);
+                renderAllocationTable();
+            }
+        };
+
+        window.autoFillFacultyDetails = function() {
+            const facId = document.getElementById('allocFacultySelect').value;
+            const fac = facultyData.find(f => f.id === facId);
+            if(fac) {
+                document.getElementById('allocIts').value = fac.its;
+                document.getElementById('allocContact').value = fac.contact;
+            }
+        };
+
+        window.saveAllocation = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('allocFlatId').value;
+            const flat = estatesData.find(e => e.id === flatId);
+            if(!flat) return;
+
+            const facId = document.getElementById('allocFacultySelect').value;
+            const fac = facultyData.find(f => f.id === facId);
+
+            if(flat.occupant && flat.occupant !== fac.name) {
+                if(!flat.archive) flat.archive = [];
+                flat.archive.push({
+                    occupant: flat.occupant,
+                    its: flat.its,
+                    contact: flat.contact,
+                    startDate: flat.startDate,
+                    endDate: new Date().toISOString().split('T')[0]
+                });
+            }
+
+            flat.occupant = fac.name;
+            flat.its = fac.its;
+            flat.contact = fac.contact;
+            flat.startDate = document.getElementById('allocStartDate').value;
+
+            await saveCloudData();
+            closeModal('modalAllocation');
+            renderAllocationTable();
+        };
+
+        function populateFlatMaintenanceDropdown() {
+            const select = document.getElementById('maintFlatSelect');
+            select.innerHTML = '';
+            estatesData.forEach(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                select.innerHTML += `<option value="${e.building}${wing} - ${e.flatNo}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
+            });
+        }
+
+        window.openAddMaintenanceModal = function() {
+            document.getElementById('maintForm').reset();
+            populateFlatMaintenanceDropdown();
+            document.getElementById('modalAddMaintenance').classList.remove('hidden');
+        };
+
+        window.saveMaintenanceLog = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveMaint');
+            btn.innerText = "Uploading Media to Drive...";
+            btn.disabled = true;
+
+            const beforeFile = document.getElementById('maintBeforeInput').files[0];
+            const afterFile = document.getElementById('maintAfterInput').files[0];
+
+            let beforeUrl = "", beforeDirect = "", beforeType = "";
+            let afterUrl = "", afterDirect = "", afterType = "";
+
+            try {
+                if(beforeFile) {
+                    const res = await uploadFileToDrive(beforeFile);
+                    beforeUrl = res.fileUrl;
+                    beforeDirect = res.directImgUrl;
+                    beforeType = beforeFile.type.startsWith('video') ? 'video' : (beforeFile.type.includes('pdf') ? 'pdf' : 'image');
+                }
+                if(afterFile) {
+                    const res = await uploadFileToDrive(afterFile);
+                    afterUrl = res.fileUrl;
+                    afterDirect = res.directImgUrl;
+                    afterType = afterFile.type.startsWith('video') ? 'video' : (afterFile.type.includes('pdf') ? 'pdf' : 'image');
+                }
+            } catch(err) {
+                alert("Upload failed: " + err);
+                btn.innerText = "Upload & Save Log";
+                btn.disabled = false;
+                return;
+            }
+
+            maintLogs.push({
+                id: Date.now().toString(),
+                flat: document.getElementById('maintFlatSelect').value,
+                type: document.getElementById('maintType').value,
+                desc: document.getElementById('maintDesc').value,
+                cost: document.getElementById('maintCost').value,
+                date: document.getElementById('maintDate').value,
+                beforeUrl, beforeDirect, beforeType,
+                afterUrl, afterDirect, afterType
+            });
+
+            await saveCloudData();
+            btn.innerText = "Upload & Save Log";
+            btn.disabled = false;
+            closeModal('modalAddMaintenance');
+            renderMaintenanceGrid();
+            renderAllocationTable();
+        };
+
+        window.renderMaintenanceGrid = function() {
+            const grid = document.getElementById('maintenanceGrid');
+            const searchInput = document.getElementById('maintSearch');
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
+            grid.innerHTML = '';
+
+            const filteredLogs = maintLogs.filter(m => {
+                const textStr = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost}`.toLowerCase();
+                return textStr.includes(search);
+            });
+
+            if(filteredLogs.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
+                return;
+            }
+
+            filteredLogs.forEach(m => {
+                function renderMedia(url, direct, type, label) {
+                    if(!url) return '';
+                    if(type === 'video') {
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
+                    } else if(type === 'pdf') {
+                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                    } else {
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
+                    }
+                }
+
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
+                        <div class="flex justify-between items-start border-b pb-2">
+                            <div>
+                                <h4 class="font-bold text-gray-800">${m.flat}</h4>
+                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
+                            </div>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
+                        </div>
+                        <p class="text-xs text-gray-600">${m.desc}</p>
+                        <p class="text-[10px] text-gray-400">Completed on: ${m.date}</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                            ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        window.renderVacantBills = function() {
+            const tbody = document.getElementById('vacantBillsTableBody');
+            tbody.innerHTML = '';
+            const month = document.getElementById('billMonthPicker').value;
+            const eligibleFlats = estatesData.filter(e => e.isBachelor || !e.occupant);
+
+            eligibleFlats.forEach(e => {
+                const billKey = `${e.id}_${month}`;
+                const billData = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+                tr.innerHTML = `
+                    <td class="p-3"><strong class="text-gray-800">${e.building}${wingBadge} ${e.flatNo}</strong><br/><span class="text-xs text-amber-700 font-semibold">${e.isBachelor ? 'Bachelor Flat' : 'Vacant Flat'}</span></td>
+                    <td class="p-3 text-xs font-mono">Elec: ${e.elec || 'N/A'}<br/>Gas: ${e.gas || 'N/A'}</td>
+                    <td class="p-3">${billData.elecPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
+                    <td class="p-3">${billData.gasPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
+                        <button onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.toggleBillStatus = async function(billKey, field) {
+            if(!vacantBills[billKey]) vacantBills[billKey] = { elecPaid: false, gasPaid: false };
+            vacantBills[billKey][field] = !vacantBills[billKey][field];
+            await saveCloudData();
+            renderVacantBills();
+        };
+
+        window.renderFacultyTable = function() {
+            const tbody = document.getElementById('facultyTableBody');
+            const search = document.getElementById('facultySearch').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(search)).forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-emerald-800">${f.its}</td>
+                    <td class="p-3 font-medium">${f.name}</td>
+                    <td class="p-3 text-gray-600">${f.contact}</td>
+                    <td class="p-3 text-center"><button onclick="deleteFaculty('${f.id}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.openAddFacultyModal = function() {
+            document.getElementById('facultyForm').reset();
+            document.getElementById('modalFaculty').classList.remove('hidden');
+        };
+
+        window.saveFacultyRecord = async function(e) {
+            e.preventDefault();
+            facultyData.push({
+                id: Date.now().toString(),
+                its: document.getElementById('facultyIts').value,
+                name: document.getElementById('facultyName').value,
+                contact: document.getElementById('facultyContact').value
+            });
+            await saveCloudData();
+            closeModal('modalFaculty');
+            renderFacultyTable();
+        };
+
+        window.deleteFaculty = async function(id) {
+            facultyData = facultyData.filter(f => f.id !== id);
+            await saveCloudData();
+            renderFacultyTable();
+        };
+
+        window.openAddSocietyModal = function() {
+            document.getElementById('societyForm').reset();
+            document.getElementById('modalAddSociety').classList.remove('hidden');
+        };
+
+        window.saveSocietyRecord = async function(e) {
+            e.preventDefault();
+            societiesData.push({
+                id: Date.now().toString(),
+                name: document.getElementById('socName').value,
+                flats: document.getElementById('socFlats').value,
+                cycle: document.getElementById('socCycle').value,
+                contactPerson: document.getElementById('socContactPerson').value,
+                billSubmittedBy: document.getElementById('socBillSubmittedBy').value
+            });
+
+            await saveCloudData();
+            closeModal('modalAddSociety');
+            renderSocieties();
+            populateSocietyDropdowns();
+            alert("Society added successfully!");
+        };
+
+        window.renderSocieties = function() {
+            const grid = document.getElementById('societyGrid');
+            grid.innerHTML = '';
+            societiesData.forEach(s => {
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-emerald-900">${s.name}</h4>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">${s.cycle}</span>
+                        </div>
+                        <p class="text-xs text-gray-600"><strong>Flats:</strong> ${s.flats}</p>
+                        <p class="text-xs text-gray-600"><strong>Society Contact:</strong> ${s.contactPerson}</p>
+                        <p class="text-xs text-gray-600"><strong>Bill Responsible:</strong> ${s.billSubmittedBy}</p>
+                    </div>`;
+            });
+        };
+
+        window.populateSocietyDropdowns = function() {
+            const selDoc = document.getElementById('docFilterSociety');
+            const selUpload = document.getElementById('docSocietySelect');
+            selDoc.innerHTML = '<option value="">All 13 Societies</option>';
+            selUpload.innerHTML = '';
+            societiesData.forEach(s => {
+                selDoc.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+                selUpload.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+            });
+        };
+
+        window.renderSocietyDocs = function() {
+            const tbody = document.getElementById('societyDocsTableBody');
+            const socFilter = document.getElementById('docFilterSociety').value;
+            const query = document.getElementById('docSearchQuery').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            societyDocs.filter(d => {
+                const matchSoc = !socFilter || d.society === socFilter;
+                const matchQuery = `${d.title} ${d.notes}`.toLowerCase().includes(query);
+                return matchSoc && matchQuery;
+            }).forEach(d => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50 text-xs";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold">${d.society}</td>
+                    <td class="p-3 font-bold text-gray-800">${d.title}</td>
+                    <td class="p-3 text-gray-500">${d.date}</td>
+                    <td class="p-3 text-gray-600">${d.notes || '-'}</td>
+                    <td class="p-3 text-center"><a href="${d.fileUrl}" target="_blank" class="text-amber-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf"></i> View File</a></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.openUploadDocModal = function() {
+            document.getElementById('docUploadForm').reset();
+            document.getElementById('modalUploadDoc').classList.remove('hidden');
+        };
+
+        window.saveSocietyDoc = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnUploadDoc');
+            btn.innerText = "Uploading...";
+            btn.disabled = true;
+
+            const docFile = document.getElementById('docFileInput').files[0];
+            let fileUrl = "";
+
+            if(docFile) {
+                try {
+                    const uploadRes = await uploadFileToDrive(docFile);
+                    fileUrl = uploadRes.fileUrl;
+                } catch(err) {
+                    alert("Upload failed: " + err);
+                    btn.innerText = "Upload File";
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            societyDocs.push({
+                id: Date.now().toString(),
+                society: document.getElementById('docSocietySelect').value,
+                title: document.getElementById('docTitle').value,
+                notes: document.getElementById('docNotes').value,
+                fileUrl: fileUrl,
+                date: new Date().toISOString().split('T')[0]
+            });
+
+            await saveCloudData();
+            btn.innerText = "Upload File";
+            btn.disabled = false;
+            closeModal('modalUploadDoc');
+            renderSocietyDocs();
+        };
+
+        function populateIntegratedFlatDropdown() {
+            const select = document.getElementById('integratedFlatSelect');
+            const search = (document.getElementById('integratedSearch') ? document.getElementById('integratedSearch').value : '').toLowerCase();
+            select.innerHTML = '<option value="">-- Choose Building & Flat Number --</option>';
+
+            estatesData.filter(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                return `${e.building}${wing} ${e.flatNo}`.toLowerCase().includes(search);
+            }).forEach(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                select.innerHTML += `<option value="${e.id}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
+            });
+        }
+
+        window.filterIntegratedDropdown = function() {
+            populateIntegratedFlatDropdown();
+        };
+
+        window.renderIntegratedView = function() {
+            const flatId = document.getElementById('integratedFlatSelect').value;
+            const container = document.getElementById('integratedContentDisplay');
+
+            if(!flatId) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            const flat = estatesData.find(e => e.id === flatId);
+            if(!flat) return;
+
+            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
+            const flatKey = `${flat.building}${wingBadge} - ${flat.flatNo}`;
+
+            document.getElementById('intBuildingWing').innerText = `${flat.building}${wingBadge}`;
+            document.getElementById('intFlatNo').innerText = flat.flatNo;
+            document.getElementById('intTypeSqft').innerText = `${flat.type} (${flat.sqft} SqFt)`;
+            document.getElementById('intOwner').innerText = flat.owner;
+            document.getElementById('intElec').innerText = flat.elec || '-';
+            document.getElementById('intGas').innerText = flat.gas || '-';
+            document.getElementById('intCategoryBadge').innerText = flat.isBachelor ? `Bachelor (${flat.capacity} Beds)` : 'Regular';
+            document.getElementById('intCategoryBadge').className = flat.isBachelor ? 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800' : 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800';
+
+            document.getElementById('intStatusBadge').className = flat.occupant ? 'bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold';
+            document.getElementById('intStatusBadge').innerText = flat.occupant ? 'Allocated' : 'Vacant';
+            document.getElementById('intOccupantName').innerText = flat.occupant || '-';
+            document.getElementById('intIts').innerText = flat.its || '-';
+            document.getElementById('intContact').innerText = flat.contact || '-';
+            document.getElementById('intAllocSince').innerText = flat.startDate || '-';
+            document.getElementById('intTenure').innerText = flat.occupant ? calculateElapsed(flat.startDate) : '-';
+
+            const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('intMaintCount').innerText = `${flatMaintLogs.length} Log(s)`;
+            
+            if(flatMaintLogs.length > 0) {
+                const latest = flatMaintLogs[0];
+                document.getElementById('intLastMaintType').innerText = latest.type || 'Refurbishment';
+                document.getElementById('intLastMaintTime').innerText = `${calculateElapsed(latest.date)} ago (${latest.date})`;
+            } else {
+                document.getElementById('intLastMaintType').innerText = 'None Logged';
+                document.getElementById('intLastMaintTime').innerText = '-';
+            }
+
+            const isVacantOrBachelor = flat.isBachelor || !flat.occupant;
+            const billsContainer = document.getElementById('intBillsContainer');
+
+            if(isVacantOrBachelor) {
+                const currentMonth = document.getElementById('billMonthPicker').value || new Date().toISOString().slice(0, 7);
+                const billKey = `${flat.id}_${currentMonth}`;
+                const bill = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
+                
+                document.getElementById('intElecBill').innerHTML = bill.elecPaid 
+                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
+                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+                document.getElementById('intGasBill').innerHTML = bill.gasPaid 
+                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
+                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+                
+                billsContainer.classList.remove('hidden');
+            } else {
+                billsContainer.classList.add('hidden');
+            }
+
+            const logsGrid = document.getElementById('intMaintLogsContainer');
+            logsGrid.innerHTML = '';
+            if(flatMaintLogs.length === 0) {
+                logsGrid.innerHTML = '<p class="text-xs text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
+            } else {
+                flatMaintLogs.forEach(m => {
+                    function renderMedia(url, direct, type, label) {
+                        if(!url) return '';
+                        if(type === 'video') return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-32 object-cover rounded border"></video></div>`;
+                        if(type === 'pdf') return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-32 object-cover rounded border"></div>`;
+                    }
+
+                    logsGrid.innerHTML += `
+                        <div class="bg-gray-50 p-3 rounded border space-y-1.5 text-xs">
+                            <div class="flex justify-between items-center border-b pb-1">
+                                <span class="font-bold text-amber-800">${m.type || 'Refurbishment'}</span>
+                                <span class="font-bold text-emerald-800">₹${m.cost || '0'}</span>
+                            </div>
+                            <p class="text-gray-700">${m.desc}</p>
+                            <p class="text-[10px] text-gray-400">Date: ${m.date}</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                                ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                            </div>
+                        </div>`;
+                });
+            }
+
+            const archBody = document.getElementById('intArchiveTableBody');
+            archBody.innerHTML = '';
+            if(!flat.archive || flat.archive.length === 0) {
+                archBody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-400">No past allocation history recorded for this flat.</td></tr>';
+            } else {
+                flat.archive.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b hover:bg-gray-50";
+                    tr.innerHTML = `
+                        <td class="p-2.5 font-semibold text-gray-800">${a.occupant}</td>
+                        <td class="p-2.5 font-mono">${a.its || '-'}</td>
+                        <td class="p-2.5">${a.contact || '-'}</td>
+                        <td class="p-2.5">${a.startDate || '-'}</td>
+                        <td class="p-2.5 text-gray-500">${a.endDate || 'Present'}</td>
+                    `;
+                    archBody.appendChild(tr);
+                });
+            }
+
+            container.classList.remove('hidden');
+        };
+
+        window.renderBachelorGrid = function() {
+            const grid = document.getElementById('bachelorGrid');
+            grid.innerHTML = '';
+            estatesData.filter(e => e.isBachelor).forEach(e => {
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+                grid.innerHTML += `<div class="bg-white p-4 rounded-lg shadow border space-y-3"><div class="flex justify-between items-center border-b pb-2"><h4 class="font-bold text-emerald-900">${e.building}${wingBadge} - ${e.flatNo}</h4><span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Beds: ${e.capacity}</span></div></div>`;
+            });
+        };
+
+        window.openImportModal = function(target) {
+            document.getElementById('importTypeTarget').value = target;
+            document.getElementById('modalImport').classList.remove('hidden');
+        };
+
+        window.processExcelImport = function() {
+            const fileInput = document.getElementById('excelFileInput');
+            const target = document.getElementById('importTypeTarget').value;
+            if(!fileInput.files[0]) return alert("Please select a file!");
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { raw: false, dateNF: 'yyyy-mm-dd' });
+
+                if(target === 'estates') {
+                    jsonData.forEach(row => {
+                        const getVal = (keys) => {
+                            for(let k of Object.keys(row)) {
+                                if(keys.some(key => k.trim().toLowerCase() === key.toLowerCase())) {
+                                    return row[k];
+                                }
+                            }
+                            return '';
+                        };
+
+                        let rawBuilding = getVal(['Building & Wing', 'Building', 'Building Name', 'Estate']);
+                        let buildingName = 'Unassigned';
+                        let wingName = '';
+
+                        if(rawBuilding) {
+                            if(rawBuilding.includes('-')) {
+                                const parts = rawBuilding.split('-');
+                                buildingName = parts[0].trim();
+                                wingName = parts.slice(1).join('-').trim();
+                            } else {
+                                buildingName = rawBuilding.trim();
+                            }
+                        }
+                        if(!wingName) {
+                            wingName = getVal(['Wing', 'Wing Name']);
+                        }
+
+                        const flatNo = getVal(['Flat No', 'Flat Number', 'Flat']) || '00';
+
+                        const rawTypeSize = getVal(['Type & Size', 'Type', 'Flat Type']);
+                        let flatType = '2 BHK';
+                        let sqftSize = 800;
+
+                        if(rawTypeSize) {
+                            if(rawTypeSize.toLowerCase().includes('1 bhk')) flatType = '1 BHK';
+                            else if(rawTypeSize.toLowerCase().includes('2 bhk')) flatType = '2 BHK';
+                            else if(rawTypeSize.toLowerCase().includes('3 bhk')) flatType = '3 BHK';
+                            else if(rawTypeSize.toLowerCase().includes('studio')) flatType = 'Studio';
+
+                            const sqftMatch = rawTypeSize.match(/(\d+)\s*(sqft|sq ft)/i);
+                            if(sqftMatch) sqftSize = parseInt(sqftMatch[1]);
+                        }
+                        const explicitSqft = getVal(['SqFt', 'Size', 'Sq Ft']);
+                        if(explicitSqft) sqftSize = parseInt(explicitSqft) || sqftSize;
+
+                        const categoryStr = getVal(['Category', 'Flat Category']);
+                        const isBachelor = categoryStr.toLowerCase().includes('bachelor');
+
+                        const occupantName = getVal(['Current Occupant', 'Occupant', 'Faculty Name', 'Resident']).toString().trim();
+                        let allocDate = getVal(['Allocated Since', 'Allocation Date', 'Start Date']).toString().trim();
+
+                        if(allocDate && !isNaN(Date.parse(allocDate))) {
+                            allocDate = new Date(allocDate).toISOString().split('T')[0];
+                        }
+
+                        let matchedIts = '';
+                        let matchedContact = '';
+
+                        if(occupantName) {
+                            const foundFac = facultyData.find(f => f.name.toLowerCase().trim() === occupantName.toLowerCase());
+                            if(foundFac) {
+                                matchedIts = foundFac.its;
+                                matchedContact = foundFac.contact;
+                            }
+                        }
+
+                        estatesData.push({
+                            id: Date.now().toString() + Math.random().toString().slice(2,5),
+                            building: buildingName,
+                            wing: wingName,
+                            flatNo: flatNo.toString().trim(),
+                            type: flatType,
+                            sqft: sqftSize,
+                            owner: getVal(['Owner', 'Registered Owner']) || 'Dawat-e-Hadiyah',
+                            elec: getVal(['Electricity CA Number', 'Electricity CA', 'Elec CA']) || '',
+                            gas: getVal(['Gas CA Number', 'Gas CA']) || '',
+                            isBachelor: isBachelor,
+                            capacity: isBachelor ? 4 : 0,
+                            occupant: occupantName,
+                            its: matchedIts,
+                            contact: matchedContact,
+                            startDate: allocDate,
+                            archive: []
+                        });
+                    });
+
+                    renderEstateTable();
+                    renderAllocationTable();
+                    populateIntegratedFlatDropdown();
+                } else if(target === 'faculty') {
+                    jsonData.forEach(row => {
+                        facultyData.push({
+                            id: Date.now().toString() + Math.random().toString().slice(2,5),
+                            its: row['ITS'] || row['ITS Number'] || '00000000',
+                            name: row['Name'] || row['Faculty Name'] || 'Faculty Member',
+                            contact: row['Contact'] || row['Mobile'] || '-'
+                        });
+                    });
+                    renderFacultyTable();
+                }
+
+                await saveCloudData();
+                closeModal('modalImport');
+                alert("Import completed successfully!");
+            };
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        };
+
+        window.renderUsersList = function() {
+            const tbody = document.getElementById('userListTableBody');
+            tbody.innerHTML = '';
+            usersList.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50 text-xs";
+                tr.innerHTML = `<td class="p-3 font-semibold text-gray-800">${u.email}</td><td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span></td><td class="p-3 text-gray-600">${u.permissions.map(p => `Sub ${p}`).join(', ')}</td><td class="p-3 text-center">${u.role !== 'Admin' ? `<button onclick="removeUser('${u.email}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button>` : 'Owner'}</td>`;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.handleInviteUser = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('inviteEmail').value;
+            const role = document.getElementById('inviteRole').value;
+            const perms = [];
+            for(let i=1; i<=7; i++) {
+                if(document.getElementById(`perm-${i}`)?.checked) perms.push(i);
+            }
+            usersList.push({ email, role, permissions: perms });
+            await saveCloudData();
+            renderUsersList();
+            document.getElementById('inviteUserForm').reset();
+            alert(`User invitation created for ${email}`);
+        };
+
+        window.removeUser = async function(email) {
+            usersList = usersList.filter(u => u.email !== email);
+            await saveCloudData();
+            renderUsersList();
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        };
+    </script>
+</body>
+</html>

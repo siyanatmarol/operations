@@ -174,11 +174,12 @@
 
             <!-- SUB-HEADER 2: ALLOCATION -->
             <div id="sec-allocation" class="hidden space-y-4">
-                <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Faculty Flat Allocations</h2>
                         <p class="text-xs text-gray-500">Track current faculty occupants, allocation dates, and archived tenure history.</p>
                     </div>
+                    <input type="text" id="allocSearch" oninput="renderAllocationTable()" placeholder="Search Faculty Name, Building, Flat No, or ITS..." class="w-full sm:w-80 p-2 border rounded text-sm">
                 </div>
 
                 <div class="bg-white rounded-lg shadow border overflow-x-auto">
@@ -201,15 +202,18 @@
 
             <!-- SUB-HEADER 3: MAINTENANCE DATA -->
             <div id="sec-maintenance" class="hidden space-y-4">
-                <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Flat Refurbishment & Maintenance Records</h2>
                         <p class="text-xs text-gray-500">Log works completed and upload photos/videos directly to your 200GB Google Drive with inline previews.</p>
                     </div>
-                    <button onclick="openAddMaintenanceModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Add Maintenance Log</span>
-                    </button>
+                    <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                        <input type="text" id="maintSearch" oninput="renderMaintenanceGrid()" placeholder="Search Building, Flat No, or Work Details..." class="p-2 border rounded text-sm w-full sm:w-64">
+                        <button onclick="openAddMaintenanceModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center justify-center space-x-1 whitespace-nowrap">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add Maintenance Log</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="maintenanceGrid"></div>
@@ -965,9 +969,15 @@
 
         window.renderAllocationTable = function() {
             const tbody = document.getElementById('allocationTableBody');
+            const searchInput = document.getElementById('allocSearch');
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
             tbody.innerHTML = '';
 
-            estatesData.filter(e => !e.isBachelor).forEach(e => {
+            estatesData.filter(e => !e.isBachelor).filter(e => {
+                const wingStr = e.wing ? ` (${e.wing})` : '';
+                const fullStr = `${e.building}${wingStr} ${e.flatNo} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''}`.toLowerCase();
+                return fullStr.includes(search);
+            }).forEach(e => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50";
                 const wingBadge = e.wing ? ` (${e.wing})` : '';
@@ -1118,14 +1128,21 @@
 
         window.renderMaintenanceGrid = function() {
             const grid = document.getElementById('maintenanceGrid');
+            const searchInput = document.getElementById('maintSearch');
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
             grid.innerHTML = '';
 
-            if(maintLogs.length === 0) {
-                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No maintenance logs or photos uploaded yet.</p>';
+            const filteredLogs = maintLogs.filter(m => {
+                const textStr = `${m.flat} ${m.desc} ${m.cost}`.toLowerCase();
+                return textStr.includes(search);
+            });
+
+            if(filteredLogs.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
                 return;
             }
 
-            maintLogs.forEach(m => {
+            filteredLogs.forEach(m => {
                 let mediaElement = '';
                 if(m.fileUrl) {
                     if(m.fileType === 'video') {

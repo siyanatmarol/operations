@@ -386,8 +386,13 @@
                                 <p><strong>Total Refurbishments:</strong> <span id="intMaintCount" class="font-bold"></span></p>
                                 <p><strong>Last Maintenance:</strong> <span id="intLastMaintType" class="font-bold text-amber-800"></span></p>
                                 <p><strong>Time Since Last Work:</strong> <span id="intLastMaintTime"></span></p>
-                                <p><strong>Electricity Bill (Current):</strong> <span id="intElecBill"></span></p>
-                                <p><strong>Gas Bill (Current):</strong> <span id="intGasBill"></span></p>
+                                
+                                <!-- Conditional Utility Bills Container -->
+                                <div id="intBillsContainer" class="pt-2 border-t mt-2 space-y-1.5 hidden">
+                                    <p class="text-[11px] font-bold text-amber-900 uppercase"><i class="fa-solid fa-receipt mr-1"></i> Department Bill Tracking (Vacant/Bachelor):</p>
+                                    <p><strong>Electricity Bill:</strong> <span id="intElecBill"></span></p>
+                                    <p><strong>Gas Bill:</strong> <span id="intGasBill"></span></p>
+                                </div>
                             </div>
                         </div>
 
@@ -742,7 +747,7 @@
         </div>
     </div>
 
-    <!-- Modal: Add Society (5 Required Fields) -->
+    <!-- Modal: Add Society -->
     <div id="modalAddSociety" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -750,17 +755,14 @@
                 <button onclick="closeModal('modalAddSociety')" class="text-gray-500 text-xl font-bold">&times;</button>
             </div>
             <form id="societyForm" onsubmit="saveSocietyRecord(event)" class="space-y-3">
-                <!-- 1. Society Name -->
                 <div>
                     <label class="text-xs font-semibold block mb-1">1. Society Name *</label>
                     <input type="text" id="socName" required placeholder="e.g. Saifee Complex Society" class="w-full p-2 border rounded text-sm">
                 </div>
-                <!-- 2. Count of Flats -->
                 <div>
                     <label class="text-xs font-semibold block mb-1">2. Count of Flats (by type) *</label>
                     <input type="text" id="socFlats" required placeholder="e.g. 12 Flats (2 BHK) & 4 Flats (1 BHK)" class="w-full p-2 border rounded text-sm">
                 </div>
-                <!-- 3. Maintenance Bill System -->
                 <div>
                     <label class="text-xs font-semibold block mb-1">3. Maintenance Bill System Frequency *</label>
                     <select id="socCycle" required class="w-full p-2 border rounded text-sm">
@@ -769,12 +771,10 @@
                         <option value="Yearly">Yearly</option>
                     </select>
                 </div>
-                <!-- 4. Society Contact Person Name & Number -->
                 <div>
                     <label class="text-xs font-semibold block mb-1">4. Society Contact Person Name & Number *</label>
                     <input type="text" id="socContactPerson" required placeholder="e.g. Shk Shabbir Bhai (+91 9820055443)" class="w-full p-2 border rounded text-sm">
                 </div>
-                <!-- 5. Bill Submission Responsible Person Name & Number -->
                 <div>
                     <label class="text-xs font-semibold block mb-1">5. Bill Submission Responsible Person Name & Number *</label>
                     <input type="text" id="socBillSubmittedBy" required placeholder="e.g. Mulla Mustafa (+91 9876543210)" class="w-full p-2 border rounded text-sm">
@@ -909,7 +909,6 @@
             { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] }
         ];
 
-        // Utility: Calculate Time Elapsed (Years & Months)
         function calculateElapsed(startDateStr) {
             if(!startDateStr) return '-';
             const start = new Date(startDateStr);
@@ -1206,10 +1205,8 @@
                 tr.className = "border-b hover:bg-gray-50";
                 const wingBadge = e.wing ? ` (${e.wing})` : '';
 
-                // Calculate Tenure Duration
                 const tenure = e.occupant ? calculateElapsed(e.startDate) : '-';
 
-                // Find Last Maintenance
                 const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
                 const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
                 
@@ -1538,7 +1535,6 @@
             renderFacultyTable();
         };
 
-        // FIXED SOCIETY FUNCTIONS
         window.openAddSocietyModal = function() {
             document.getElementById('societyForm').reset();
             document.getElementById('modalAddSociety').classList.remove('hidden');
@@ -1656,7 +1652,7 @@
             renderSocietyDocs();
         };
 
-        // SUB-HEADER 7: INTEGRATED VIEW LOGIC
+        // INTEGRATED VIEW LOGIC WITH CONDITIONAL BILL DISPLAY
         function populateIntegratedFlatDropdown() {
             const select = document.getElementById('integratedFlatSelect');
             const search = (document.getElementById('integratedSearch') ? document.getElementById('integratedSearch').value : '').toLowerCase();
@@ -1722,14 +1718,28 @@
                 document.getElementById('intLastMaintTime').innerText = '-';
             }
 
-            // Bills Status for Current Month
-            const currentMonth = document.getElementById('billMonthPicker').value || new Date().toISOString().slice(0, 7);
-            const billKey = `${flat.id}_${currentMonth}`;
-            const bill = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
-            document.getElementById('intElecBill').innerHTML = bill.elecPaid ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
-            document.getElementById('intGasBill').innerHTML = bill.gasPaid ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+            // 4. CONDITIONAL BILL SUMMARY (Only shown if Vacant OR Bachelor)
+            const isVacantOrBachelor = flat.isBachelor || !flat.occupant;
+            const billsContainer = document.getElementById('intBillsContainer');
 
-            // 4. Maintenance Cards Container
+            if(isVacantOrBachelor) {
+                const currentMonth = document.getElementById('billMonthPicker').value || new Date().toISOString().slice(0, 7);
+                const billKey = `${flat.id}_${currentMonth}`;
+                const bill = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
+                
+                document.getElementById('intElecBill').innerHTML = bill.elecPaid 
+                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
+                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+                document.getElementById('intGasBill').innerHTML = bill.gasPaid 
+                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
+                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+                
+                billsContainer.classList.remove('hidden');
+            } else {
+                billsContainer.classList.add('hidden');
+            }
+
+            // 5. Maintenance Cards Container
             const logsGrid = document.getElementById('intMaintLogsContainer');
             logsGrid.innerHTML = '';
             if(flatMaintLogs.length === 0) {
@@ -1759,7 +1769,7 @@
                 });
             }
 
-            // 5. Allocation History Table
+            // 6. Allocation History Table
             const archBody = document.getElementById('intArchiveTableBody');
             archBody.innerHTML = '';
             if(!flat.archive || flat.archive.length === 0) {

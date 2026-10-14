@@ -110,7 +110,7 @@
                 </button>
                 <button onclick="switchSubHeader('vacant-bills')" id="sub-vacant-bills" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
                     <i class="fa-solid fa-file-invoice-dollar"></i>
-                    <span>5. Vacant Flats Bills</span>
+                    <span>5. Vacant/Bachelor Flats Bills</span>
                 </button>
                 <button onclick="switchSubHeader('society')" id="sub-society" class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
                     <i class="fa-solid fa-sitemap"></i>
@@ -183,7 +183,14 @@
                         <h2 class="text-xl font-bold text-gray-800">Faculty Flat Allocations</h2>
                         <p class="text-xs text-gray-500">Track current faculty occupants, tenure duration, last maintenance, and archived history.</p>
                     </div>
-                    <input type="text" id="allocSearch" oninput="renderAllocationTable()" placeholder="Search Faculty Name, Building, Flat No, or ITS..." class="w-full sm:w-80 p-2 border rounded text-sm">
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <select id="allocStatusFilter" onchange="renderAllocationTable()" class="p-2 border rounded text-sm bg-white">
+                            <option value="">All Allocation Status</option>
+                            <option value="vacant">Vacant Flats Only</option>
+                            <option value="allocated">Allocated Flats Only</option>
+                        </select>
+                        <input type="text" id="allocSearch" oninput="renderAllocationTable()" placeholder="Search Faculty Name, Building, Flat No..." class="w-full sm:w-64 p-2 border rounded text-sm">
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow border overflow-x-auto">
@@ -236,11 +243,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="bachelorGrid"></div>
             </div>
 
-            <!-- SUB-HEADER 5: VACANT FLATS BILLS -->
+            <!-- SUB-HEADER 5: VACANT/BACHELOR FLATS BILLS -->
             <div id="sec-vacant-bills" class="hidden space-y-4">
                 <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
                     <div>
-                        <h2 class="text-xl font-bold text-gray-800">Vacant & Bachelor Flats Utility Bills Tracking</h2>
+                        <h2 class="text-xl font-bold text-gray-800">Vacant/Bachelor Flats Bills</h2>
                         <p class="text-xs text-gray-500">Track monthly Electricity & Gas bill receipts and payment status. Missing bills are auto-highlighted.</p>
                     </div>
                     <div class="flex items-center space-x-2">
@@ -687,7 +694,8 @@
             <form id="allocForm" onsubmit="saveAllocation(event)" class="space-y-3">
                 <input type="hidden" id="allocFlatId">
                 <div>
-                    <label class="text-xs font-semibold block mb-1">Select Current Faculty Member *</label>
+                    <label class="text-xs font-semibold block mb-1">Search & Select Current Faculty Member *</label>
+                    <input type="text" id="allocFacultySearch" oninput="filterAllocFacultyDropdown()" placeholder="Type faculty name or ITS to filter..." class="w-full p-2 border rounded text-xs mb-1 bg-gray-50">
                     <select id="allocFacultySelect" onchange="autoFillFacultyDetails()" required class="w-full p-2 border rounded text-sm">
                         <option value="">-- Choose from Directory --</option>
                     </select>
@@ -739,6 +747,44 @@
                     <div id="allocArchiveList" class="space-y-2 text-xs max-h-36 overflow-y-auto bg-gray-50 p-2 border rounded divide-y"></div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Resident to Bachelor Flat -->
+    <div id="modalAddBachelorResident" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="bachModalTitle">Add Resident to Bachelor Flat</h3>
+                <button onclick="closeModal('modalAddBachelorResident')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="bachResidentForm" onsubmit="saveBachelorResident(event)" class="space-y-3">
+                <input type="hidden" id="bachFlatId">
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Search Faculty Name or ITS</label>
+                    <input type="text" id="bachFacultySearch" oninput="filterBachFacultyDropdown()" placeholder="Type to filter faculty..." class="w-full p-2 border rounded text-xs mb-1 bg-gray-50">
+                    <select id="bachFacultySelect" onchange="autoFillBachResidentDetails()" required class="w-full p-2 border rounded text-sm">
+                        <option value="">-- Choose Faculty Member --</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">ITS Number</label>
+                        <input type="text" id="bachIts" readonly class="w-full p-2 bg-gray-100 border rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Contact</label>
+                        <input type="text" id="bachContact" readonly class="w-full p-2 bg-gray-100 border rounded text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Joining Date *</label>
+                    <input type="date" id="bachStartDate" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t">
+                    <button type="button" onclick="closeModal('modalAddBachelorResident')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium">Add Resident</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -888,7 +934,7 @@
         let facultyData = [];
         let societiesData = [
             { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai (+91 9820055443)', billSubmittedBy: 'Mulla Mustafa (+91 9876543210)' },
-            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011122)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
+            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011223)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
         ];
         let societyDocs = [];
         let maintLogs = [];
@@ -1012,7 +1058,7 @@
                     usersList = data.users || usersList;
                 } else {
                     estatesData = [
-                        { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [] }
+                        { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [], residents: [] }
                     ];
                     await saveCloudData();
                 }
@@ -1163,7 +1209,8 @@
                 gas: document.getElementById('flatGas').value,
                 isBachelor: isBachelor,
                 capacity: isBachelor ? parseInt(document.getElementById('flatBedCapacity').value) : 0,
-                archive: []
+                archive: [],
+                residents: []
             };
 
             if(id) {
@@ -1190,22 +1237,34 @@
             }
         };
 
+        // ENHANCED ALLOCATION TABLE (BACHELOR FLATS WITH >=1 RESIDENTS OMITTED FROM VACANT FILTER)
         window.renderAllocationTable = function() {
             const tbody = document.getElementById('allocationTableBody');
             const searchInput = document.getElementById('allocSearch');
             const search = searchInput ? searchInput.value.toLowerCase() : '';
+            const statusFilter = document.getElementById('allocStatusFilter') ? document.getElementById('allocStatusFilter').value : '';
+
             tbody.innerHTML = '';
 
-            estatesData.filter(e => !e.isBachelor).filter(e => {
+            estatesData.filter(e => {
                 const wingStr = e.wing ? ` (${e.wing})` : '';
-                const fullStr = `${e.building}${wingStr} ${e.flatNo} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''}`.toLowerCase();
-                return fullStr.includes(search);
+                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+
+                const fullStr = `${e.building}${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''}`.toLowerCase();
+                const matchSearch = fullStr.includes(search);
+
+                let matchStatus = true;
+                if(statusFilter === 'vacant') matchStatus = !isFlatOccupied;
+                if(statusFilter === 'allocated') matchStatus = isFlatOccupied;
+
+                return matchSearch && matchStatus;
             }).forEach(e => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50";
                 const wingBadge = e.wing ? ` (${e.wing})` : '';
 
-                const tenure = e.occupant ? calculateElapsed(e.startDate) : '-';
+                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+                const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
 
                 const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
                 const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -1217,21 +1276,47 @@
                     lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
                 }
 
+                let displayOccupant = e.occupant || '-';
+                let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
+
+                if(e.isBachelor) {
+                    if(e.residents && e.residents.length > 0) {
+                        displayOccupant = e.residents.map(r => r.name).join(', ');
+                        displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
+                    } else {
+                        displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
+                    }
+                }
+
                 tr.innerHTML = `
-                    <td class="p-3 font-semibold">${e.building}${wingBadge} - ${e.flatNo}</td>
                     <td class="p-3">
-                        ${e.occupant ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
+                        <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
+                        <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
                     </td>
-                    <td class="p-3 font-medium text-gray-900">${e.occupant || '-'}</td>
-                    <td class="p-3 text-xs font-mono">${e.its ? `${e.its}<br/>${e.contact || ''}` : '-'}</td>
+                    <td class="p-3">
+                        ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
+                    </td>
+                    <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
+                    <td class="p-3 text-xs font-mono">${displayItsContact}</td>
                     <td class="p-3 text-xs">${e.startDate || '-'}</td>
                     <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
                     <td class="p-3 text-xs">${lastMaintStr}</td>
                     <td class="p-3 text-center">
-                        <button onclick="openAllocationModal('${e.id}')" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                        <button onclick="${e.isBachelor ? `switchSubHeader('bachelor')` : `openAllocationModal('${e.id}')`}" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
+            });
+        };
+
+        // FACULTY SEARCH IN ALLOCATION MODAL
+        window.filterAllocFacultyDropdown = function() {
+            const query = document.getElementById('allocFacultySearch').value.toLowerCase();
+            const select = document.getElementById('allocFacultySelect');
+            select.innerHTML = '<option value="">-- Choose from Directory --</option>';
+
+            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(query)).forEach(f => {
+                select.innerHTML += `<option value="${f.id}">${f.name} (ITS: ${f.its})</option>`;
             });
         };
 
@@ -1243,11 +1328,8 @@
             const wingBadge = flat.wing ? ` (${flat.wing})` : '';
             document.getElementById('allocModalTitle').innerText = `Allocation: ${flat.building}${wingBadge} ${flat.flatNo}`;
             
-            const select = document.getElementById('allocFacultySelect');
-            select.innerHTML = '<option value="">-- Select Faculty Member --</option>';
-            facultyData.forEach(f => {
-                select.innerHTML += `<option value="${f.id}">${f.name} (ITS: ${f.its})</option>`;
-            });
+            document.getElementById('allocFacultySearch').value = '';
+            filterAllocFacultyDropdown();
 
             document.getElementById('allocIts').value = flat.its || '';
             document.getElementById('allocContact').value = flat.contact || '';
@@ -1344,6 +1426,187 @@
             await saveCloudData();
             closeModal('modalAllocation');
             renderAllocationTable();
+        };
+
+        // BACHELOR FLATS MANAGER
+        window.renderBachelorGrid = function() {
+            const grid = document.getElementById('bachelorGrid');
+            grid.innerHTML = '';
+
+            const bachelorFlats = estatesData.filter(e => e.isBachelor);
+            if(bachelorFlats.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-gray-400 col-span-2 text-center py-8">No flats currently designated as Bachelor Flats.</p>';
+                return;
+            }
+
+            bachelorFlats.forEach(e => {
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+                const residents = e.residents || [];
+
+                let residentItems = '';
+                if(residents.length === 0) {
+                    residentItems = '<p class="text-xs text-gray-400 italic">No residents assigned yet.</p>';
+                } else {
+                    residents.forEach((r, rIdx) => {
+                        residentItems += `
+                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-xs border">
+                                <div>
+                                    <strong class="text-emerald-900">${r.name}</strong> <span class="text-gray-500">(ITS: ${r.its})</span>
+                                    <br/><span class="text-[10px] text-gray-400">Since: ${r.startDate || '-'} | ${r.contact || ''}</span>
+                                </div>
+                                <button onclick="removeBachelorResident('${e.id}', ${rIdx})" class="text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
+                            </div>
+                        `;
+                    });
+                }
+
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h4 class="font-bold text-emerald-900">${e.building}${wingBadge} - Flat ${e.flatNo}</h4>
+                                <span class="text-xs text-gray-500">${e.type} (${e.sqft} SqFt)</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Capacity: ${residents.length}/${e.capacity || 4} Beds</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <h5 class="text-xs font-bold text-gray-700 uppercase flex justify-between items-center">
+                                <span>Current Residents:</span>
+                                <button onclick="openAddBachelorResidentModal('${e.id}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] px-2 py-1 rounded font-normal transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-user-plus"></i> <span>+ Add Resident</span>
+                                </button>
+                            </h5>
+                            <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                                ${residentItems}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        window.filterBachFacultyDropdown = function() {
+            const query = document.getElementById('bachFacultySearch').value.toLowerCase();
+            const select = document.getElementById('bachFacultySelect');
+            select.innerHTML = '<option value="">-- Choose Faculty Member --</option>';
+
+            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(query)).forEach(f => {
+                select.innerHTML += `<option value="${f.id}">${f.name} (ITS: ${f.its})</option>`;
+            });
+        };
+
+        window.openAddBachelorResidentModal = function(flatId) {
+            const flat = estatesData.find(e => e.id === flatId);
+            if(!flat) return;
+
+            document.getElementById('bachFlatId').value = flat.id;
+            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
+            document.getElementById('bachModalTitle').innerText = `Add Resident: ${flat.building}${wingBadge} ${flat.flatNo}`;
+
+            document.getElementById('bachFacultySearch').value = '';
+            filterBachFacultyDropdown();
+
+            document.getElementById('bachIts').value = '';
+            document.getElementById('bachContact').value = '';
+            document.getElementById('bachStartDate').value = new Date().toISOString().split('T')[0];
+
+            document.getElementById('modalAddBachelorResident').classList.remove('hidden');
+        };
+
+        window.autoFillBachResidentDetails = function() {
+            const facId = document.getElementById('bachFacultySelect').value;
+            const fac = facultyData.find(f => f.id === facId);
+            if(fac) {
+                document.getElementById('bachIts').value = fac.its;
+                document.getElementById('bachContact').value = fac.contact;
+            }
+        };
+
+        window.saveBachelorResident = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('bachFlatId').value;
+            const flat = estatesData.find(e => e.id === flatId);
+            if(!flat) return;
+
+            const facId = document.getElementById('bachFacultySelect').value;
+            const fac = facultyData.find(f => f.id === facId);
+            if(!fac) return;
+
+            if(!flat.residents) flat.residents = [];
+            flat.residents.push({
+                name: fac.name,
+                its: fac.its,
+                contact: fac.contact,
+                startDate: document.getElementById('bachStartDate').value
+            });
+
+            await saveCloudData();
+            closeModal('modalAddBachelorResident');
+            renderBachelorGrid();
+            renderAllocationTable();
+            renderVacantBills();
+        };
+
+        window.removeBachelorResident = async function(flatId, resIndex) {
+            const flat = estatesData.find(e => e.id === flatId);
+            if(flat && flat.residents) {
+                flat.residents.splice(resIndex, 1);
+                await saveCloudData();
+                renderBachelorGrid();
+                renderAllocationTable();
+                renderVacantBills();
+            }
+        };
+
+        // VACANT/BACHELOR FLATS BILLS TRACKER (INCLUDES ALL BACHELOR FLATS IRRESPECTIVE OF OCCUPANCY)
+        window.renderVacantBills = function() {
+            const tbody = document.getElementById('vacantBillsTableBody');
+            tbody.innerHTML = '';
+            const month = document.getElementById('billMonthPicker').value;
+
+            // Include ALL bachelor flats regardless of occupancy + vacant regular flats
+            const eligibleFlats = estatesData.filter(e => e.isBachelor || !e.occupant);
+
+            if(eligibleFlats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400 text-xs">No vacant or bachelor flats found for bill tracking.</td></tr>';
+                return;
+            }
+
+            eligibleFlats.forEach(e => {
+                const billKey = `${e.id}_${month}`;
+                const billData = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+
+                let categoryTag = '<span class="text-xs text-amber-700 font-semibold">Vacant Flat</span>';
+                if(e.isBachelor) {
+                    const residentCount = e.residents ? e.residents.length : 0;
+                    categoryTag = `<span class="text-xs text-amber-800 font-bold bg-amber-100 px-1.5 py-0.5 rounded">Bachelor Flat (${residentCount} Resident${residentCount === 1 ? '' : 's'})</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3"><strong class="text-gray-800">${e.building}${wingBadge} ${e.flatNo}</strong><br/>${categoryTag}</td>
+                    <td class="p-3 text-xs font-mono">Elec: ${e.elec || 'N/A'}<br/>Gas: ${e.gas || 'N/A'}</td>
+                    <td class="p-3">${billData.elecPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
+                    <td class="p-3">${billData.gasPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
+                        <button onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.toggleBillStatus = async function(billKey, field) {
+            if(!vacantBills[billKey]) vacantBills[billKey] = { elecPaid: false, gasPaid: false };
+            vacantBills[billKey][field] = !vacantBills[billKey][field];
+            await saveCloudData();
+            renderVacantBills();
         };
 
         function populateFlatMaintenanceDropdown() {
@@ -1458,39 +1721,6 @@
                     </div>
                 `;
             });
-        };
-
-        window.renderVacantBills = function() {
-            const tbody = document.getElementById('vacantBillsTableBody');
-            tbody.innerHTML = '';
-            const month = document.getElementById('billMonthPicker').value;
-            const eligibleFlats = estatesData.filter(e => e.isBachelor || !e.occupant);
-
-            eligibleFlats.forEach(e => {
-                const billKey = `${e.id}_${month}`;
-                const billData = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
-                tr.innerHTML = `
-                    <td class="p-3"><strong class="text-gray-800">${e.building}${wingBadge} ${e.flatNo}</strong><br/><span class="text-xs text-amber-700 font-semibold">${e.isBachelor ? 'Bachelor Flat' : 'Vacant Flat'}</span></td>
-                    <td class="p-3 text-xs font-mono">Elec: ${e.elec || 'N/A'}<br/>Gas: ${e.gas || 'N/A'}</td>
-                    <td class="p-3">${billData.elecPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
-                    <td class="p-3">${billData.gasPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
-                    <td class="p-3 text-center space-x-1">
-                        <button onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
-                        <button onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
-
-        window.toggleBillStatus = async function(billKey, field) {
-            if(!vacantBills[billKey]) vacantBills[billKey] = { elecPaid: false, gasPaid: false };
-            vacantBills[billKey][field] = !vacantBills[billKey][field];
-            await saveCloudData();
-            renderVacantBills();
         };
 
         window.renderFacultyTable = function() {
@@ -1694,13 +1924,23 @@
             document.getElementById('intCategoryBadge').innerText = flat.isBachelor ? `Bachelor (${flat.capacity} Beds)` : 'Regular';
             document.getElementById('intCategoryBadge').className = flat.isBachelor ? 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800' : 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800';
 
-            document.getElementById('intStatusBadge').className = flat.occupant ? 'bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold';
-            document.getElementById('intStatusBadge').innerText = flat.occupant ? 'Allocated' : 'Vacant';
-            document.getElementById('intOccupantName').innerText = flat.occupant || '-';
-            document.getElementById('intIts').innerText = flat.its || '-';
-            document.getElementById('intContact').innerText = flat.contact || '-';
+            const isFlatOccupied = flat.isBachelor ? (flat.residents && flat.residents.length > 0) : !!flat.occupant;
+
+            document.getElementById('intStatusBadge').className = isFlatOccupied ? 'bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold';
+            document.getElementById('intStatusBadge').innerText = isFlatOccupied ? 'Allocated' : 'Vacant';
+            
+            if(flat.isBachelor) {
+                document.getElementById('intOccupantName').innerText = (flat.residents && flat.residents.length > 0) ? flat.residents.map(r => r.name).join(', ') : '-';
+                document.getElementById('intIts').innerText = `${flat.residents ? flat.residents.length : 0}/${flat.capacity || 4} Beds Assigned`;
+                document.getElementById('intContact').innerText = '-';
+            } else {
+                document.getElementById('intOccupantName').innerText = flat.occupant || '-';
+                document.getElementById('intIts').innerText = flat.its || '-';
+                document.getElementById('intContact').innerText = flat.contact || '-';
+            }
+
             document.getElementById('intAllocSince').innerText = flat.startDate || '-';
-            document.getElementById('intTenure').innerText = flat.occupant ? calculateElapsed(flat.startDate) : '-';
+            document.getElementById('intTenure').innerText = isFlatOccupied ? calculateElapsed(flat.startDate) : '-';
 
             const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
             document.getElementById('intMaintCount').innerText = `${flatMaintLogs.length} Log(s)`;
@@ -1714,10 +1954,11 @@
                 document.getElementById('intLastMaintTime').innerText = '-';
             }
 
-            const isVacantOrBachelor = flat.isBachelor || !flat.occupant;
+            // Bachelor flats always show utility status summary along with vacant regular flats
+            const isTrackedInBills = flat.isBachelor || !flat.occupant;
             const billsContainer = document.getElementById('intBillsContainer');
 
-            if(isVacantOrBachelor) {
+            if(isTrackedInBills) {
                 const currentMonth = document.getElementById('billMonthPicker').value || new Date().toISOString().slice(0, 7);
                 const billKey = `${flat.id}_${currentMonth}`;
                 const bill = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
@@ -1783,15 +2024,6 @@
             }
 
             container.classList.remove('hidden');
-        };
-
-        window.renderBachelorGrid = function() {
-            const grid = document.getElementById('bachelorGrid');
-            grid.innerHTML = '';
-            estatesData.filter(e => e.isBachelor).forEach(e => {
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
-                grid.innerHTML += `<div class="bg-white p-4 rounded-lg shadow border space-y-3"><div class="flex justify-between items-center border-b pb-2"><h4 class="font-bold text-emerald-900">${e.building}${wingBadge} - ${e.flatNo}</h4><span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Beds: ${e.capacity}</span></div></div>`;
-            });
         };
 
         window.openImportModal = function(target) {
@@ -1894,7 +2126,8 @@
                             its: matchedIts,
                             contact: matchedContact,
                             startDate: allocDate,
-                            archive: []
+                            archive: [],
+                            residents: []
                         });
                     });
 

@@ -693,13 +693,15 @@
             
             <form id="allocForm" onsubmit="saveAllocation(event)" class="space-y-3">
                 <input type="hidden" id="allocFlatId">
-                <div>
-                    <label class="text-xs font-semibold block mb-1">Search & Select Current Faculty Member *</label>
-                    <input type="text" id="allocFacultySearch" oninput="filterAllocFacultyDropdown()" placeholder="Type faculty name or ITS to filter..." class="w-full p-2 border rounded text-xs mb-1 bg-gray-50">
-                    <select id="allocFacultySelect" onchange="autoFillFacultyDetails()" required class="w-full p-2 border rounded text-sm">
-                        <option value="">-- Choose from Directory --</option>
-                    </select>
+                <input type="hidden" id="allocSelectedFacId">
+                
+                <!-- INTEGRATED SEARCH & SELECT FACULTY DROPDOWN -->
+                <div class="relative">
+                    <label class="text-xs font-semibold block mb-1">Type or Select Faculty Member *</label>
+                    <input type="text" id="allocFacultyInput" onfocus="filterAllocFacultyInteractive()" oninput="filterAllocFacultyInteractive()" placeholder="Type to search faculty name or ITS..." autocomplete="off" class="w-full p-2 border rounded text-sm bg-white font-medium">
+                    <div id="allocFacultyDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto z-50 divide-y"></div>
                 </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-xs font-semibold block mb-1">ITS Number</label>
@@ -759,13 +761,15 @@
             </div>
             <form id="bachResidentForm" onsubmit="saveBachelorResident(event)" class="space-y-3">
                 <input type="hidden" id="bachFlatId">
-                <div>
-                    <label class="text-xs font-semibold block mb-1">Search Faculty Name or ITS</label>
-                    <input type="text" id="bachFacultySearch" oninput="filterBachFacultyDropdown()" placeholder="Type to filter faculty..." class="w-full p-2 border rounded text-xs mb-1 bg-gray-50">
-                    <select id="bachFacultySelect" onchange="autoFillBachResidentDetails()" required class="w-full p-2 border rounded text-sm">
-                        <option value="">-- Choose Faculty Member --</option>
-                    </select>
+                <input type="hidden" id="bachSelectedFacId">
+
+                <!-- INTEGRATED SEARCH & SELECT FACULTY DROPDOWN -->
+                <div class="relative">
+                    <label class="text-xs font-semibold block mb-1">Type or Select Resident *</label>
+                    <input type="text" id="bachFacultyInput" onfocus="filterBachFacultyInteractive()" oninput="filterBachFacultyInteractive()" placeholder="Type to search faculty name or ITS..." autocomplete="off" class="w-full p-2 border rounded text-sm bg-white font-medium">
+                    <div id="bachFacultyDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto z-50 divide-y"></div>
                 </div>
+
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="text-xs font-semibold block mb-1">ITS Number</label>
@@ -934,7 +938,7 @@
         let facultyData = [];
         let societiesData = [
             { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai (+91 9820055443)', billSubmittedBy: 'Mulla Mustafa (+91 9876543210)' },
-            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011223)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
+            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011122)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
         ];
         let societyDocs = [];
         let maintLogs = [];
@@ -999,6 +1003,16 @@
                 reader.readAsDataURL(file);
             });
         }
+
+        // Close dropdowns on clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#allocFacultyInput') && !e.target.closest('#allocFacultyDropdown')) {
+                document.getElementById('allocFacultyDropdown')?.classList.add('hidden');
+            }
+            if (!e.target.closest('#bachFacultyInput') && !e.target.closest('#bachFacultyDropdown')) {
+                document.getElementById('bachFacultyDropdown')?.classList.add('hidden');
+            }
+        });
 
         onAuthStateChanged(auth, async (user) => {
             const loginOverlay = document.getElementById('loginOverlay');
@@ -1237,7 +1251,7 @@
             }
         };
 
-        // ENHANCED ALLOCATION TABLE (BACHELOR FLATS WITH >=1 RESIDENTS OMITTED FROM VACANT FILTER)
+        // ALLOCATION TABLE
         window.renderAllocationTable = function() {
             const tbody = document.getElementById('allocationTableBody');
             const searchInput = document.getElementById('allocSearch');
@@ -1309,16 +1323,35 @@
             });
         };
 
-        // FACULTY SEARCH IN ALLOCATION MODAL
-        window.filterAllocFacultyDropdown = function() {
-            const query = document.getElementById('allocFacultySearch').value.toLowerCase();
-            const select = document.getElementById('allocFacultySelect');
-            select.innerHTML = '<option value="">-- Choose from Directory --</option>';
+        // INTERACTIVE TYPE & SEARCH DROPDOWN FOR ALLOCATION MODAL
+        window.filterAllocFacultyInteractive = function() {
+            const inputVal = document.getElementById('allocFacultyInput').value.toLowerCase();
+            const dropdown = document.getElementById('allocFacultyDropdown');
+            dropdown.innerHTML = '';
 
-            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(query)).forEach(f => {
-                select.innerHTML += `<option value="${f.id}">${f.name} (ITS: ${f.its})</option>`;
-            });
+            const filtered = facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(inputVal));
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="p-2 text-xs text-gray-400 italic">No faculty found</div>';
+            } else {
+                filtered.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = "p-2 hover:bg-emerald-50 cursor-pointer text-xs flex justify-between items-center transition";
+                    item.innerHTML = `<span class="font-bold text-gray-800">${f.name}</span><span class="text-gray-500 font-mono">ITS: ${f.its}</span>`;
+                    item.onclick = () => selectAllocFaculty(f);
+                    dropdown.appendChild(item);
+                });
+            }
+            dropdown.classList.remove('hidden');
         };
+
+        function selectAllocFaculty(fac) {
+            document.getElementById('allocFacultyInput').value = fac.name;
+            document.getElementById('allocSelectedFacId').value = fac.id;
+            document.getElementById('allocIts').value = fac.its;
+            document.getElementById('allocContact').value = fac.contact;
+            document.getElementById('allocFacultyDropdown').classList.add('hidden');
+        }
 
         window.openAllocationModal = function(id) {
             const flat = estatesData.find(e => e.id === id);
@@ -1328,9 +1361,8 @@
             const wingBadge = flat.wing ? ` (${flat.wing})` : '';
             document.getElementById('allocModalTitle').innerText = `Allocation: ${flat.building}${wingBadge} ${flat.flatNo}`;
             
-            document.getElementById('allocFacultySearch').value = '';
-            filterAllocFacultyDropdown();
-
+            document.getElementById('allocFacultyInput').value = flat.occupant || '';
+            document.getElementById('allocSelectedFacId').value = '';
             document.getElementById('allocIts').value = flat.its || '';
             document.getElementById('allocContact').value = flat.contact || '';
             document.getElementById('allocStartDate').value = flat.startDate || '';
@@ -1389,25 +1421,17 @@
             }
         };
 
-        window.autoFillFacultyDetails = function() {
-            const facId = document.getElementById('allocFacultySelect').value;
-            const fac = facultyData.find(f => f.id === facId);
-            if(fac) {
-                document.getElementById('allocIts').value = fac.its;
-                document.getElementById('allocContact').value = fac.contact;
-            }
-        };
-
         window.saveAllocation = async function(e) {
             e.preventDefault();
             const flatId = document.getElementById('allocFlatId').value;
             const flat = estatesData.find(e => e.id === flatId);
             if(!flat) return;
 
-            const facId = document.getElementById('allocFacultySelect').value;
-            const fac = facultyData.find(f => f.id === facId);
+            const facName = document.getElementById('allocFacultyInput').value;
+            const facIts = document.getElementById('allocIts').value;
+            const facContact = document.getElementById('allocContact').value;
 
-            if(flat.occupant && flat.occupant !== fac.name) {
+            if(flat.occupant && flat.occupant !== facName) {
                 if(!flat.archive) flat.archive = [];
                 flat.archive.push({
                     occupant: flat.occupant,
@@ -1418,9 +1442,9 @@
                 });
             }
 
-            flat.occupant = fac.name;
-            flat.its = fac.its;
-            flat.contact = fac.contact;
+            flat.occupant = facName;
+            flat.its = facIts;
+            flat.contact = facContact;
             flat.startDate = document.getElementById('allocStartDate').value;
 
             await saveCloudData();
@@ -1488,15 +1512,35 @@
             });
         };
 
-        window.filterBachFacultyDropdown = function() {
-            const query = document.getElementById('bachFacultySearch').value.toLowerCase();
-            const select = document.getElementById('bachFacultySelect');
-            select.innerHTML = '<option value="">-- Choose Faculty Member --</option>';
+        // INTERACTIVE TYPE & SEARCH DROPDOWN FOR BACHELOR MODAL
+        window.filterBachFacultyInteractive = function() {
+            const inputVal = document.getElementById('bachFacultyInput').value.toLowerCase();
+            const dropdown = document.getElementById('bachFacultyDropdown');
+            dropdown.innerHTML = '';
 
-            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(query)).forEach(f => {
-                select.innerHTML += `<option value="${f.id}">${f.name} (ITS: ${f.its})</option>`;
-            });
+            const filtered = facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(inputVal));
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="p-2 text-xs text-gray-400 italic">No faculty found</div>';
+            } else {
+                filtered.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = "p-2 hover:bg-emerald-50 cursor-pointer text-xs flex justify-between items-center transition";
+                    item.innerHTML = `<span class="font-bold text-gray-800">${f.name}</span><span class="text-gray-500 font-mono">ITS: ${f.its}</span>`;
+                    item.onclick = () => selectBachFaculty(f);
+                    dropdown.appendChild(item);
+                });
+            }
+            dropdown.classList.remove('hidden');
         };
+
+        function selectBachFaculty(fac) {
+            document.getElementById('bachFacultyInput').value = fac.name;
+            document.getElementById('bachSelectedFacId').value = fac.id;
+            document.getElementById('bachIts').value = fac.its;
+            document.getElementById('bachContact').value = fac.contact;
+            document.getElementById('bachFacultyDropdown').classList.add('hidden');
+        }
 
         window.openAddBachelorResidentModal = function(flatId) {
             const flat = estatesData.find(e => e.id === flatId);
@@ -1506,23 +1550,13 @@
             const wingBadge = flat.wing ? ` (${flat.wing})` : '';
             document.getElementById('bachModalTitle').innerText = `Add Resident: ${flat.building}${wingBadge} ${flat.flatNo}`;
 
-            document.getElementById('bachFacultySearch').value = '';
-            filterBachFacultyDropdown();
-
+            document.getElementById('bachFacultyInput').value = '';
+            document.getElementById('bachSelectedFacId').value = '';
             document.getElementById('bachIts').value = '';
             document.getElementById('bachContact').value = '';
             document.getElementById('bachStartDate').value = new Date().toISOString().split('T')[0];
 
             document.getElementById('modalAddBachelorResident').classList.remove('hidden');
-        };
-
-        window.autoFillBachResidentDetails = function() {
-            const facId = document.getElementById('bachFacultySelect').value;
-            const fac = facultyData.find(f => f.id === facId);
-            if(fac) {
-                document.getElementById('bachIts').value = fac.its;
-                document.getElementById('bachContact').value = fac.contact;
-            }
         };
 
         window.saveBachelorResident = async function(e) {
@@ -1531,15 +1565,17 @@
             const flat = estatesData.find(e => e.id === flatId);
             if(!flat) return;
 
-            const facId = document.getElementById('bachFacultySelect').value;
-            const fac = facultyData.find(f => f.id === facId);
-            if(!fac) return;
+            const facName = document.getElementById('bachFacultyInput').value;
+            const facIts = document.getElementById('bachIts').value;
+            const facContact = document.getElementById('bachContact').value;
+
+            if(!facName) return alert("Please select or enter a resident name.");
 
             if(!flat.residents) flat.residents = [];
             flat.residents.push({
-                name: fac.name,
-                its: fac.its,
-                contact: fac.contact,
+                name: facName,
+                its: facIts,
+                contact: facContact,
                 startDate: document.getElementById('bachStartDate').value
             });
 
@@ -1561,13 +1597,12 @@
             }
         };
 
-        // VACANT/BACHELOR FLATS BILLS TRACKER (INCLUDES ALL BACHELOR FLATS IRRESPECTIVE OF OCCUPANCY)
+        // VACANT/BACHELOR FLATS BILLS TRACKER
         window.renderVacantBills = function() {
             const tbody = document.getElementById('vacantBillsTableBody');
             tbody.innerHTML = '';
             const month = document.getElementById('billMonthPicker').value;
 
-            // Include ALL bachelor flats regardless of occupancy + vacant regular flats
             const eligibleFlats = estatesData.filter(e => e.isBachelor || !e.occupant);
 
             if(eligibleFlats.length === 0) {
@@ -1954,7 +1989,6 @@
                 document.getElementById('intLastMaintTime').innerText = '-';
             }
 
-            // Bachelor flats always show utility status summary along with vacant regular flats
             const isTrackedInBills = flat.isBachelor || !flat.occupant;
             const billsContainer = document.getElementById('intBillsContainer');
 

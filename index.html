@@ -11,11 +11,25 @@
     <!-- SheetJS for Excel/CSV Import/Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
+        /* Increased baseline font size by 1pt (approx 17px base) */
+        html { font-size: 17px; }
         .active-tab { border-bottom: 3px solid #10B981; color: #065F46; font-weight: 600; }
         .sub-tab-active { background-color: #065F46; color: white; }
+        
+        /* Integrated view 4pt boost styling class */
+        .integrated-boost {
+            font-size: 1.25rem !important; /* +4pt increase (~20px/21px) */
+            line-height: 1.6;
+        }
+        .integrated-boost h2 { font-size: 1.85rem !important; }
+        .integrated-boost h3 { font-size: 1.5rem !important; }
+        .integrated-boost label { font-size: 1.1rem !important; }
+        .integrated-boost input, .integrated-boost select { font-size: 1.15rem !important; }
+        .integrated-boost table { font-size: 1.1rem !important; }
+        .integrated-boost p, .integrated-boost span { font-size: 1.15rem !important; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col text-sm">
 
     <!-- LOGIN OVERLAY -->
     <div id="loginOverlay" class="fixed inset-0 bg-emerald-950 bg-opacity-95 z-50 flex items-center justify-center p-4">
@@ -287,12 +301,12 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="societyGrid"></div>
 
-                <!-- Document Vault -->
+                <!-- Document Vault - Segregated & Alphabetized -->
                 <div class="bg-white p-5 rounded-lg shadow border space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
                         <div>
                             <h3 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-vault text-amber-600 mr-2"></i>Society Document Vault</h3>
-                            <p class="text-xs text-gray-500">Filter and search official receipts, NOCs, agreements, and uploaded PDFs.</p>
+                            <p class="text-xs text-gray-500">Auto-segregated by society name & alphabetically ordered official receipts, NOCs, and agreements.</p>
                         </div>
                         <button onclick="openUploadDocModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                             <i class="fa-solid fa-upload"></i>
@@ -302,99 +316,86 @@
 
                     <div class="flex flex-col sm:flex-row gap-3">
                         <select id="docFilterSociety" onchange="renderSocietyDocs()" class="p-2 border rounded text-sm sm:w-1/3">
-                            <option value="">All 13 Societies</option>
+                            <option value="">All Societies</option>
                         </select>
-                        <input type="text" id="docSearchQuery" oninput="renderSocietyDocs()" placeholder="Search document name or details..." class="p-2 border rounded text-sm sm:w-2/3">
+                        <input type="text" id="docSearchQuery" oninput="renderSocietyDocs()" placeholder="Search document title or notes..." class="p-2 border rounded text-sm sm:w-2/3">
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-gray-50 border-b text-gray-600 uppercase text-xs">
-                                <tr>
-                                    <th class="p-3">Society Name</th>
-                                    <th class="p-3">Document Title</th>
-                                    <th class="p-3">Date</th>
-                                    <th class="p-3">Notes</th>
-                                    <th class="p-3 text-center">Google Drive File</th>
-                                </tr>
-                            </thead>
-                            <tbody id="societyDocsTableBody" class="divide-y"></tbody>
-                        </table>
-                    </div>
+                    <div id="societyDocsContainer" class="space-y-4"></div>
                 </div>
             </div>
 
-            <!-- SUB-HEADER 7: INTEGRATED VIEW -->
-            <div id="sec-integrated" class="hidden space-y-6">
-                <div class="bg-white p-5 rounded-lg shadow border space-y-3">
-                    <div class="border-b pb-2">
-                        <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-layer-group text-amber-600"></i>
+            <!-- SUB-HEADER 7: INTEGRATED VIEW (+4pt Enhanced Readability) -->
+            <div id="sec-integrated" class="hidden space-y-6 integrated-boost">
+                <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
+                    <div class="border-b pb-3">
+                        <h2 class="text-2xl font-extrabold text-gray-900 flex items-center space-x-3">
+                            <i class="fa-solid fa-layer-group text-amber-600 text-2xl"></i>
                             <span>Integrated Master Flat Profile</span>
                         </h2>
-                        <p class="text-xs text-gray-500">Select any estate flat to pull complete aggregated data from all sub-headers instantly.</p>
+                        <p class="text-sm text-gray-600 mt-1">Select any estate flat to pull complete aggregated data from all sub-headers instantly in high visibility mode.</p>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                    <div class="flex flex-col sm:flex-row gap-4 pt-2">
                         <div class="sm:w-1/2">
-                            <label class="text-xs font-semibold text-gray-700 block mb-1">Select Flat</label>
-                            <select id="integratedFlatSelect" onchange="renderIntegratedView()" class="w-full p-2.5 border rounded-lg text-sm bg-gray-50 font-medium text-emerald-900">
+                            <label class="text-sm font-bold text-gray-800 block mb-1">Select Flat</label>
+                            <select id="integratedFlatSelect" onchange="renderIntegratedView()" class="w-full p-3 border-2 border-emerald-600 rounded-lg text-base bg-emerald-50 font-bold text-emerald-950 shadow-sm">
                                 <option value="">-- Choose Building & Flat Number --</option>
                             </select>
                         </div>
                         <div class="sm:w-1/2">
-                            <label class="text-xs font-semibold text-gray-700 block mb-1">Search Keyword</label>
-                            <input type="text" id="integratedSearch" oninput="filterIntegratedDropdown()" placeholder="Filter dropdown by building or flat..." class="w-full p-2.5 border rounded-lg text-sm">
+                            <label class="text-sm font-bold text-gray-800 block mb-1">Search Keyword</label>
+                            <input type="text" id="integratedSearch" oninput="filterIntegratedDropdown()" placeholder="Filter dropdown by building or flat..." class="w-full p-3 border rounded-lg text-base shadow-sm">
                         </div>
                     </div>
                 </div>
 
                 <div id="integratedContentDisplay" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         
                         <!-- Card 1: Estate Specs -->
-                        <div class="bg-white p-5 rounded-lg shadow border space-y-3 border-l-4 border-l-emerald-600">
-                            <h3 class="font-bold text-gray-800 border-b pb-2 text-sm flex items-center justify-between">
-                                <span><i class="fa-solid fa-building text-emerald-600 mr-2"></i>Estate Specifications</span>
-                                <span id="intCategoryBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold"></span>
+                        <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-emerald-600">
+                            <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg flex items-center justify-between">
+                                <span><i class="fa-solid fa-building text-emerald-600 mr-2"></i>Estate Specs</span>
+                                <span id="intCategoryBadge" class="text-xs px-3 py-1 rounded-full font-bold"></span>
                             </h3>
-                            <div class="text-xs space-y-2 text-gray-700">
-                                <p><strong>Building & Wing:</strong> <span id="intBuildingWing"></span></p>
+                            <div class="space-y-3 text-gray-800">
+                                <p><strong>Building & Wing:</strong> <span id="intBuildingWing" class="font-semibold"></span></p>
                                 <p><strong>Flat No:</strong> <span id="intFlatNo" class="font-bold text-emerald-800"></span></p>
                                 <p><strong>Type & Size:</strong> <span id="intTypeSqft"></span></p>
                                 <p><strong>Registered Owner:</strong> <span id="intOwner"></span></p>
-                                <p><strong>Electricity CA:</strong> <span id="intElec" class="font-mono"></span></p>
-                                <p><strong>Gas CA:</strong> <span id="intGas" class="font-mono"></span></p>
+                                <p><strong>Electricity CA:</strong> <span id="intElec" class="font-mono bg-gray-100 px-2 py-0.5 rounded"></span></p>
+                                <p><strong>Gas CA:</strong> <span id="intGas" class="font-mono bg-gray-100 px-2 py-0.5 rounded"></span></p>
                             </div>
                         </div>
 
                         <!-- Card 2: Current Occupant -->
-                        <div class="bg-white p-5 rounded-lg shadow border space-y-3 border-l-4 border-l-blue-600">
-                            <h3 class="font-bold text-gray-800 border-b pb-2 text-sm">
-                                <i class="fa-solid fa-user-check text-blue-600 mr-2"></i>Current Occupant Status
+                        <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-blue-600">
+                            <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg">
+                                <i class="fa-solid fa-user-check text-blue-600 mr-2"></i>Occupant Status
                             </h3>
-                            <div class="text-xs space-y-2 text-gray-700">
+                            <div class="space-y-3 text-gray-800">
                                 <p><strong>Status:</strong> <span id="intStatusBadge"></span></p>
-                                <p><strong>Occupant Name:</strong> <span id="intOccupantName" class="font-bold"></span></p>
+                                <p><strong>Occupant Name:</strong> <span id="intOccupantName" class="font-bold text-gray-900"></span></p>
                                 <p><strong>ITS Number:</strong> <span id="intIts" class="font-mono"></span></p>
                                 <p><strong>Contact:</strong> <span id="intContact"></span></p>
                                 <p><strong>Allocated Since:</strong> <span id="intAllocSince"></span></p>
-                                <p><strong>Tenure Duration:</strong> <span id="intTenure" class="text-emerald-800 font-bold"></span></p>
+                                <p><strong>Tenure Duration:</strong> <span id="intTenure" class="text-emerald-800 font-extrabold"></span></p>
                             </div>
                         </div>
 
                         <!-- Card 3: Utility & Maintenance Overview -->
-                        <div class="bg-white p-5 rounded-lg shadow border space-y-3 border-l-4 border-l-amber-600">
-                            <h3 class="font-bold text-gray-800 border-b pb-2 text-sm">
+                        <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-amber-600">
+                            <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg">
                                 <i class="fa-solid fa-chart-line text-amber-600 mr-2"></i>Maintenance & Bills Summary
                             </h3>
-                            <div class="text-xs space-y-2 text-gray-700">
+                            <div class="space-y-3 text-gray-800">
                                 <p><strong>Total Refurbishments:</strong> <span id="intMaintCount" class="font-bold"></span></p>
                                 <p><strong>Last Maintenance:</strong> <span id="intLastMaintType" class="font-bold text-amber-800"></span></p>
                                 <p><strong>Time Since Last Work:</strong> <span id="intLastMaintTime"></span></p>
                                 
-                                <div id="intBillsContainer" class="pt-2 border-t mt-2 space-y-1.5 hidden">
-                                    <p class="text-[11px] font-bold text-amber-900 uppercase"><i class="fa-solid fa-receipt mr-1"></i> Department Bill Tracking (Vacant/Bachelor):</p>
+                                <div id="intBillsContainer" class="pt-3 border-t mt-2 space-y-2 hidden">
+                                    <p class="text-xs font-extrabold text-amber-900 uppercase"><i class="fa-solid fa-receipt mr-1"></i> Department Bill Tracking:</p>
                                     <p><strong>Electricity Bill:</strong> <span id="intElecBill"></span></p>
                                     <p><strong>Gas Bill:</strong> <span id="intGasBill"></span></p>
                                 </div>
@@ -404,30 +405,30 @@
                     </div>
 
                     <!-- Row 2: Maintenance Logs History & Photos -->
-                    <div class="bg-white p-5 rounded-lg shadow border space-y-4">
-                        <h3 class="text-md font-bold text-gray-800 border-b pb-2">
+                    <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
+                        <h3 class="text-xl font-bold text-gray-900 border-b pb-3">
                             <i class="fa-solid fa-screwdriver-wrench text-emerald-700 mr-2"></i>Refurbishment & Maintenance History
                         </h3>
-                        <div id="intMaintLogsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        <div id="intMaintLogsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                     </div>
 
                     <!-- Row 3: Allocation Archive History -->
-                    <div class="bg-white p-5 rounded-lg shadow border space-y-3">
-                        <h3 class="text-md font-bold text-gray-800 border-b pb-2">
+                    <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
+                        <h3 class="text-xl font-bold text-gray-900 border-b pb-3">
                             <i class="fa-solid fa-box-archive text-amber-700 mr-2"></i>Past Occupants & Allocation Archive
                         </h3>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-gray-100 text-gray-700 uppercase font-semibold">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-100 text-gray-800 uppercase font-bold text-sm">
                                     <tr>
-                                        <th class="p-2.5">Resident Name</th>
-                                        <th class="p-2.5">ITS Number</th>
-                                        <th class="p-2.5">Contact</th>
-                                        <th class="p-2.5">Start Date</th>
-                                        <th class="p-2.5">End Date</th>
+                                        <th class="p-3">Resident Name</th>
+                                        <th class="p-3">ITS Number</th>
+                                        <th class="p-3">Contact</th>
+                                        <th class="p-3">Start Date</th>
+                                        <th class="p-3">End Date</th>
                                     </tr>
                                 </thead>
-                                <tbody id="intArchiveTableBody" class="divide-y"></tbody>
+                                <tbody id="intArchiveTableBody" class="divide-y text-base"></tbody>
                             </table>
                         </div>
                     </div>
@@ -728,17 +729,19 @@
                 </h4>
                 <form id="manualPastForm" onsubmit="addManualPastHistory(event)" class="bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="pastName" placeholder="Past Resident Name *" required class="p-1.5 border rounded text-xs bg-white">
-                        <input type="text" id="pastIts" placeholder="ITS Number (Optional)" class="p-1.5 border rounded text-xs bg-white">
+                        <!-- ONLY Resident Name is compulsory -->
+                        <input type="text" id="pastName" placeholder="Past Resident Name *" required class="p-1.5 border rounded text-xs bg-white col-span-2">
+                        <input type="text" id="pastIts" placeholder="ITS Number (Optional)" class="p-1.5 border rounded text-xs bg-white col-span-2">
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="text-[10px] text-gray-600 block">Start Date *</label>
-                            <input type="date" id="pastStartDate" required class="w-full p-1 border rounded text-xs bg-white">
+                            <!-- Start & End Date are now OPTIONAL -->
+                            <label class="text-[10px] text-gray-600 block">Start Date (Optional)</label>
+                            <input type="date" id="pastStartDate" class="w-full p-1 border rounded text-xs bg-white">
                         </div>
                         <div>
-                            <label class="text-[10px] text-gray-600 block">End Date *</label>
-                            <input type="date" id="pastEndDate" required class="w-full p-1 border rounded text-xs bg-white">
+                            <label class="text-[10px] text-gray-600 block">End Date (Optional)</label>
+                            <input type="date" id="pastEndDate" class="w-full p-1 border rounded text-xs bg-white">
                         </div>
                     </div>
                     <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-1.5 rounded text-xs font-bold transition">+ Add to Past History Archive</button>
@@ -1380,7 +1383,7 @@
                         <div class="py-1 flex justify-between items-center">
                             <div>
                                 <strong>${a.occupant}</strong> ${a.its ? `(ITS: ${a.its})` : ''}<br/>
-                                <span class="text-gray-500">${a.startDate} to ${a.endDate}</span>
+                                <span class="text-gray-500">${a.startDate || 'Start: -'} to ${a.endDate || 'End: -'}</span>
                             </div>
                             <button onclick="deleteArchiveEntry('${flat.id}', ${idx})" class="text-red-500 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
                         </div>`;
@@ -1390,18 +1393,22 @@
             }
         }
 
+        // PAST ALLOCATION HISTORY: ONLY NAME COMPULSORY (Start & End Date optional)
         window.addManualPastHistory = async function(e) {
             e.preventDefault();
             const flatId = document.getElementById('allocFlatId').value;
             const flat = estatesData.find(e => e.id === flatId);
             if(!flat) return;
 
+            const occupantName = document.getElementById('pastName').value;
+            if(!occupantName) return alert("Resident name is compulsory.");
+
             if(!flat.archive) flat.archive = [];
             flat.archive.push({
-                occupant: document.getElementById('pastName').value,
-                its: document.getElementById('pastIts').value,
-                startDate: document.getElementById('pastStartDate').value,
-                endDate: document.getElementById('pastEndDate').value
+                occupant: occupantName,
+                its: document.getElementById('pastIts').value || '',
+                startDate: document.getElementById('pastStartDate').value || '',
+                endDate: document.getElementById('pastEndDate').value || ''
             });
 
             await saveCloudData();
@@ -1820,22 +1827,48 @@
             closeModal('modalAddSociety');
             renderSocieties();
             populateSocietyDropdowns();
+            renderSocietyDocs();
             alert("Society added successfully!");
         };
 
+        // DELETE SOCIETY IN HEADER 6
+        window.deleteSociety = async function(id) {
+            const soc = societiesData.find(s => s.id === id);
+            if(confirm(`Are you sure you want to delete "${soc ? soc.name : 'this society'}"?`)) {
+                societiesData = societiesData.filter(s => s.id !== id);
+                await saveCloudData();
+                renderSocieties();
+                populateSocietyDropdowns();
+                renderSocietyDocs();
+            }
+        };
+
+        // RENDER SOCIETIES WITH DELETE OPTION
         window.renderSocieties = function() {
             const grid = document.getElementById('societyGrid');
             grid.innerHTML = '';
-            societiesData.forEach(s => {
+            
+            // Sort societies ALPHABETICALLY
+            const sorted = [...societiesData].sort((a,b) => a.name.localeCompare(b.name));
+
+            sorted.forEach(s => {
                 grid.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
-                        <div class="flex justify-between items-start">
-                            <h4 class="font-bold text-emerald-900">${s.name}</h4>
-                            <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">${s.cycle}</span>
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-2 flex flex-col justify-between">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-emerald-900">${s.name}</h4>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">${s.cycle}</span>
+                            </div>
+                            <p class="text-xs text-gray-600"><strong>Flats:</strong> ${s.flats}</p>
+                            <p class="text-xs text-gray-600"><strong>Society Contact:</strong> ${s.contactPerson}</p>
+                            <p class="text-xs text-gray-600"><strong>Bill Responsible:</strong> ${s.billSubmittedBy}</p>
                         </div>
-                        <p class="text-xs text-gray-600"><strong>Flats:</strong> ${s.flats}</p>
-                        <p class="text-xs text-gray-600"><strong>Society Contact:</strong> ${s.contactPerson}</p>
-                        <p class="text-xs text-gray-600"><strong>Bill Responsible:</strong> ${s.billSubmittedBy}</p>
+                        <div class="pt-2 border-t flex justify-end">
+                            <button onclick="deleteSociety('${s.id}')" class="text-xs text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span>Delete Society</span>
+                            </button>
+                        </div>
                     </div>`;
             });
         };
@@ -1843,35 +1876,88 @@
         window.populateSocietyDropdowns = function() {
             const selDoc = document.getElementById('docFilterSociety');
             const selUpload = document.getElementById('docSocietySelect');
-            selDoc.innerHTML = '<option value="">All 13 Societies</option>';
+            selDoc.innerHTML = '<option value="">All Societies</option>';
             selUpload.innerHTML = '';
-            societiesData.forEach(s => {
+            
+            const sorted = [...societiesData].sort((a,b) => a.name.localeCompare(b.name));
+            sorted.forEach(s => {
                 selDoc.innerHTML += `<option value="${s.name}">${s.name}</option>`;
                 selUpload.innerHTML += `<option value="${s.name}">${s.name}</option>`;
             });
         };
 
+        // SOCIETY VAULT AUTO-SEGREGATED & ALPHABETICALLY ORDERED
         window.renderSocietyDocs = function() {
-            const tbody = document.getElementById('societyDocsTableBody');
+            const container = document.getElementById('societyDocsContainer');
             const socFilter = document.getElementById('docFilterSociety').value;
             const query = document.getElementById('docSearchQuery').value.toLowerCase();
-            tbody.innerHTML = '';
+            container.innerHTML = '';
 
-            societyDocs.filter(d => {
+            const filtered = societyDocs.filter(d => {
                 const matchSoc = !socFilter || d.society === socFilter;
                 const matchQuery = `${d.title} ${d.notes}`.toLowerCase().includes(query);
                 return matchSoc && matchQuery;
-            }).forEach(d => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50 text-xs";
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold">${d.society}</td>
-                    <td class="p-3 font-bold text-gray-800">${d.title}</td>
-                    <td class="p-3 text-gray-500">${d.date}</td>
-                    <td class="p-3 text-gray-600">${d.notes || '-'}</td>
-                    <td class="p-3 text-center"><a href="${d.fileUrl}" target="_blank" class="text-amber-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf"></i> View File</a></td>
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="p-6 text-center text-gray-400 text-xs bg-gray-50 rounded border">No uploaded vault documents match your criteria.</div>';
+                return;
+            }
+
+            // Group by Society Name
+            const grouped = {};
+            filtered.forEach(doc => {
+                if(!grouped[doc.society]) grouped[doc.society] = [];
+                grouped[doc.society].push(doc);
+            });
+
+            // Sort Society names ALPHABETICALLY
+            const sortedSocieties = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+
+            sortedSocieties.forEach(socName => {
+                // Sort docs ALPHABETICALLY inside each group by Title
+                const docsInSoc = grouped[socName].sort((a, b) => a.title.localeCompare(b.title));
+
+                const socBlock = document.createElement('div');
+                socBlock.className = "bg-gray-50 border rounded-lg overflow-hidden shadow-sm space-y-2";
+                
+                let rows = docsInSoc.map(d => `
+                    <tr class="border-b bg-white hover:bg-emerald-50/40 text-xs transition">
+                        <td class="p-3 font-bold text-gray-800">${d.title}</td>
+                        <td class="p-3 text-gray-500">${d.date || '-'}</td>
+                        <td class="p-3 text-gray-600">${d.notes || '-'}</td>
+                        <td class="p-3 text-center">
+                            <a href="${d.fileUrl}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded inline-flex items-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>Open File</span>
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+
+                socBlock.innerHTML = `
+                    <div class="bg-emerald-900 text-emerald-100 px-4 py-2.5 font-bold text-sm flex justify-between items-center">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-folder-closed text-emerald-400"></i>
+                            <span>${socName}</span>
+                        </span>
+                        <span class="bg-emerald-800 text-emerald-200 text-xs px-2 py-0.5 rounded-full font-semibold">${docsInSoc.length} file(s)</span>
+                    </div>
+                    <div class="overflow-x-auto p-2">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-100 border-b text-gray-600 uppercase text-[11px]">
+                                <tr>
+                                    <th class="p-2">Document Title</th>
+                                    <th class="p-2">Upload Date</th>
+                                    <th class="p-2">Notes / Context</th>
+                                    <th class="p-2 text-center">Drive Link</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+                container.appendChild(socBlock);
             });
         };
 
@@ -1957,11 +2043,11 @@
             document.getElementById('intElec').innerText = flat.elec || '-';
             document.getElementById('intGas').innerText = flat.gas || '-';
             document.getElementById('intCategoryBadge').innerText = flat.isBachelor ? `Bachelor (${flat.capacity} Beds)` : 'Regular';
-            document.getElementById('intCategoryBadge').className = flat.isBachelor ? 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800' : 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800';
+            document.getElementById('intCategoryBadge').className = flat.isBachelor ? 'text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-900' : 'text-xs px-2.5 py-1 rounded-full font-bold bg-blue-100 text-blue-900';
 
             const isFlatOccupied = flat.isBachelor ? (flat.residents && flat.residents.length > 0) : !!flat.occupant;
 
-            document.getElementById('intStatusBadge').className = isFlatOccupied ? 'bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold';
+            document.getElementById('intStatusBadge').className = isFlatOccupied ? 'bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold';
             document.getElementById('intStatusBadge').innerText = isFlatOccupied ? 'Allocated' : 'Vacant';
             
             if(flat.isBachelor) {
@@ -2012,25 +2098,25 @@
             const logsGrid = document.getElementById('intMaintLogsContainer');
             logsGrid.innerHTML = '';
             if(flatMaintLogs.length === 0) {
-                logsGrid.innerHTML = '<p class="text-xs text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
+                logsGrid.innerHTML = '<p class="text-sm text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
             } else {
                 flatMaintLogs.forEach(m => {
                     function renderMedia(url, direct, type, label) {
                         if(!url) return '';
-                        if(type === 'video') return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-32 object-cover rounded border"></video></div>`;
-                        if(type === 'pdf') return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-32 object-cover rounded border"></div>`;
+                        if(type === 'video') return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-40 object-cover rounded border"></video></div>`;
+                        if(type === 'pdf') return `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                        return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-40 object-cover rounded border"></div>`;
                     }
 
                     logsGrid.innerHTML += `
-                        <div class="bg-gray-50 p-3 rounded border space-y-1.5 text-xs">
-                            <div class="flex justify-between items-center border-b pb-1">
-                                <span class="font-bold text-amber-800">${m.type || 'Refurbishment'}</span>
-                                <span class="font-bold text-emerald-800">₹${m.cost || '0'}</span>
+                        <div class="bg-gray-50 p-4 rounded-lg border space-y-2 text-sm">
+                            <div class="flex justify-between items-center border-b pb-2">
+                                <span class="font-bold text-amber-800 text-base">${m.type || 'Refurbishment'}</span>
+                                <span class="font-bold text-emerald-800 text-base">₹${m.cost || '0'}</span>
                             </div>
-                            <p class="text-gray-700">${m.desc}</p>
-                            <p class="text-[10px] text-gray-400">Date: ${m.date}</p>
-                            <div class="grid grid-cols-2 gap-2">
+                            <p class="text-gray-800">${m.desc}</p>
+                            <p class="text-xs text-gray-500">Date: ${m.date}</p>
+                            <div class="grid grid-cols-2 gap-3">
                                 ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
                                 ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
                             </div>
@@ -2041,17 +2127,17 @@
             const archBody = document.getElementById('intArchiveTableBody');
             archBody.innerHTML = '';
             if(!flat.archive || flat.archive.length === 0) {
-                archBody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-400">No past allocation history recorded for this flat.</td></tr>';
+                archBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 text-sm">No past allocation history recorded for this flat.</td></tr>';
             } else {
                 flat.archive.forEach(a => {
                     const tr = document.createElement('tr');
                     tr.className = "border-b hover:bg-gray-50";
                     tr.innerHTML = `
-                        <td class="p-2.5 font-semibold text-gray-800">${a.occupant}</td>
-                        <td class="p-2.5 font-mono">${a.its || '-'}</td>
-                        <td class="p-2.5">${a.contact || '-'}</td>
-                        <td class="p-2.5">${a.startDate || '-'}</td>
-                        <td class="p-2.5 text-gray-500">${a.endDate || 'Present'}</td>
+                        <td class="p-3 font-semibold text-gray-800">${a.occupant}</td>
+                        <td class="p-3 font-mono">${a.its || '-'}</td>
+                        <td class="p-3">${a.contact || '-'}</td>
+                        <td class="p-3">${a.startDate || '-'}</td>
+                        <td class="p-3 text-gray-600">${a.endDate || 'Present'}</td>
                     `;
                     archBody.appendChild(tr);
                 });

@@ -698,14 +698,14 @@
         </div>
     </div>
 
-    <!-- Modal: Add Maintenance Log -->
-    <div id="modalAddMaintenance" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="text-lg font-bold text-gray-800">Add Refurbishment / Maintenance Log</h3>
-                <button onclick="closeModal('modalAddMaintenance')" class="text-gray-500 text-xl font-bold">&times;</button>
-            </div>
-            <form id="maintForm" onsubmit="saveMaintenanceLog(event)" class="space-y-3">
+    <!-- Modal: Add / Edit Maintenance Log -->
+<div id="modalAddMaintenance" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="text-lg font-bold text-gray-800" id="maintModalTitle">Add Refurbishment / Maintenance Log</h3>
+            <button onclick="closeModal('modalAddMaintenance')" class="text-gray-500 text-xl font-bold">&times;</button>
+        </div>
+        <form id="maintForm" onsubmit="saveMaintenanceLog(event)" class="space-y-3">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-xs font-semibold block mb-1">Select Flat *</label>
@@ -2050,113 +2050,155 @@
             });
         }
 
-        window.openAddMaintenanceModal = function() {
-            document.getElementById('maintForm').reset();
-            populateFlatMaintenanceDropdown();
-            document.getElementById('modalAddMaintenance').classList.remove('hidden');
-        };
+       window.openAddMaintenanceModal = function() {
+    document.getElementById('maintForm').reset();
+    populateFlatMaintenanceDropdown();
+    document.getElementById('maintModalTitle').innerText = 'Add Refurbishment / Maintenance Log';
+    document.getElementById('maintForm').dataset.editId = '';
+    document.getElementById('modalAddMaintenance').classList.remove('hidden');
+};
 
-        window.saveMaintenanceLog = async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnSaveMaint');
-            btn.innerText = "Uploading Media to Drive...";
-            btn.disabled = true;
+window.openEditMaintenanceLog = function(id) {
+    const log = maintLogs.find(m => String(m.id) === String(id));
+    if(!log) return;
 
-            const beforeFile = document.getElementById('maintBeforeInput').files[0];
-            const afterFile = document.getElementById('maintAfterInput').files[0];
+    populateFlatMaintenanceDropdown();
+    document.getElementById('maintForm').reset();
+    
+    document.getElementById('maintFlatSelect').value = log.flat;
+    document.getElementById('maintType').value = log.type || 'Refurbishment';
+    document.getElementById('maintDesc').value = log.desc || '';
+    document.getElementById('maintCost').value = log.cost || '';
+    document.getElementById('maintDate').value = log.date || '';
 
-            let beforeUrl = "", beforeDirect = "", beforeType = "";
-            let afterUrl = "", afterDirect = "", afterType = "";
+    document.getElementById('maintModalTitle').innerText = 'Edit Maintenance Log';
+    document.getElementById('maintForm').dataset.editId = log.id;
+    
+    document.getElementById('modalAddMaintenance').classList.remove('hidden');
+};
 
-            try {
-                if(beforeFile) {
-                    const res = await uploadFileToDrive(beforeFile);
-                    beforeUrl = res.fileUrl;
-                    beforeDirect = res.directImgUrl;
-                    beforeType = beforeFile.type.startsWith('video') ? 'video' : (beforeFile.type.includes('pdf') ? 'pdf' : 'image');
-                }
-                if(afterFile) {
-                    const res = await uploadFileToDrive(afterFile);
-                    afterUrl = res.fileUrl;
-                    afterDirect = res.directImgUrl;
-                    afterType = afterFile.type.startsWith('video') ? 'video' : (afterFile.type.includes('pdf') ? 'pdf' : 'image');
-                }
-            } catch(err) {
-                alert("Upload failed: " + err);
-                btn.innerText = "Upload & Save Log";
-                btn.disabled = false;
-                return;
+window.saveMaintenanceLog = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveMaint');
+    const editId = e.target.dataset.editId;
+    btn.innerText = "Processing...";
+    btn.disabled = true;
+
+    const beforeFile = document.getElementById('maintBeforeInput').files[0];
+    const afterFile = document.getElementById('maintAfterInput').files[0];
+
+    let existingLog = editId ? maintLogs.find(m => String(m.id) === String(editId)) : null;
+
+    let beforeUrl = existingLog ? existingLog.beforeUrl : "";
+    let beforeDirect = existingLog ? existingLog.beforeDirect : "";
+    let beforeType = existingLog ? existingLog.beforeType : "";
+
+    let afterUrl = existingLog ? existingLog.afterUrl : "";
+    let afterDirect = existingLog ? existingLog.afterDirect : "";
+    let afterType = existingLog ? existingLog.afterType : "";
+
+    try {
+        if(beforeFile) {
+            btn.innerText = "Uploading BEFORE Media...";
+            const res = await uploadFileToDrive(beforeFile);
+            beforeUrl = res.fileUrl;
+            beforeDirect = res.directImgUrl;
+            beforeType = beforeFile.type.startsWith('video') ? 'video' : (beforeFile.type.includes('pdf') ? 'pdf' : 'image');
+        }
+        if(afterFile) {
+            btn.innerText = "Uploading AFTER Media...";
+            const res = await uploadFileToDrive(afterFile);
+            afterUrl = res.fileUrl;
+            afterDirect = res.directImgUrl;
+            afterType = afterFile.type.startsWith('video') ? 'video' : (afterFile.type.includes('pdf') ? 'pdf' : 'image');
+        }
+    } catch(err) {
+        alert("Upload failed: " + err);
+        btn.innerText = "Upload & Save Log";
+        btn.disabled = false;
+        return;
+    }
+
+    const logRecord = {
+        id: editId ? editId : Date.now().toString(),
+        flat: document.getElementById('maintFlatSelect').value,
+        type: document.getElementById('maintType').value,
+        desc: document.getElementById('maintDesc').value,
+        cost: document.getElementById('maintCost').value,
+        date: document.getElementById('maintDate').value,
+        beforeUrl, beforeDirect, beforeType,
+        afterUrl, afterDirect, afterType
+    };
+
+    if(editId) {
+        const idx = maintLogs.findIndex(m => String(m.id) === String(editId));
+        if(idx !== -1) maintLogs[idx] = logRecord;
+    } else {
+        maintLogs.push(logRecord);
+    }
+
+    await saveCloudData();
+    btn.innerText = "Upload & Save Log";
+    btn.disabled = false;
+    closeModal('modalAddMaintenance');
+    renderMaintenanceGrid();
+    renderAllocationTable();
+};
+       window.renderMaintenanceGrid = function() {
+    const grid = document.getElementById('maintenanceGrid');
+    const rawSearch = (document.getElementById('maintSearch') ? document.getElementById('maintSearch').value : '').toLowerCase().trim();
+    const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+    grid.innerHTML = '';
+
+    const filteredLogs = maintLogs.filter(m => {
+        const fullCorpus = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost} ${m.date}`.toLowerCase();
+        return searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+    });
+
+    // Sort by Most Recent Work Done
+    filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if(filteredLogs.length === 0) {
+        grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
+        return;
+    }
+
+    filteredLogs.forEach(m => {
+        function renderMedia(url, direct, type, label) {
+            if(!url) return '';
+            if(type === 'video') {
+                return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
+            } else if(type === 'pdf') {
+                return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+            } else {
+                return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
             }
+        }
 
-            maintLogs.push({
-                id: Date.now().toString(),
-                flat: document.getElementById('maintFlatSelect').value,
-                type: document.getElementById('maintType').value,
-                desc: document.getElementById('maintDesc').value,
-                cost: document.getElementById('maintCost').value,
-                date: document.getElementById('maintDate').value,
-                beforeUrl, beforeDirect, beforeType,
-                afterUrl, afterDirect, afterType
-            });
+        const safeId = String(m.id).replace(/'/g, "\\'");
 
-            await saveCloudData();
-            btn.innerText = "Upload & Save Log";
-            btn.disabled = false;
-            closeModal('modalAddMaintenance');
-            renderMaintenanceGrid();
-            renderAllocationTable();
-        };
-
-        window.renderMaintenanceGrid = function() {
-            const grid = document.getElementById('maintenanceGrid');
-            const rawSearch = (document.getElementById('maintSearch') ? document.getElementById('maintSearch').value : '').toLowerCase().trim();
-            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
-            grid.innerHTML = '';
-
-            const filteredLogs = maintLogs.filter(m => {
-                const fullCorpus = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost} ${m.date}`.toLowerCase();
-                return searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
-            });
-
-            filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            if(filteredLogs.length === 0) {
-                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
-                return;
-            }
-
-            filteredLogs.forEach(m => {
-                function renderMedia(url, direct, type, label) {
-                    if(!url) return '';
-                    if(type === 'video') {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
-                    } else if(type === 'pdf') {
-                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
-                    } else {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
-                    }
-                }
-
-                grid.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
-                        <div class="flex justify-between items-start border-b pb-2">
-                            <div>
-                                <h4 class="font-bold text-gray-800">${m.flat}</h4>
-                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
-                            </div>
-                            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
-                        </div>
-                        <p class="text-xs text-gray-600">${m.desc}</p>
-                        <p class="text-[10px] text-gray-400 font-semibold">Completed on: ${m.date}</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
-                            ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
-                        </div>
+        grid.innerHTML += `
+            <div class="bg-white p-4 rounded-lg shadow border space-y-2">
+                <div class="flex justify-between items-start border-b pb-2">
+                    <div>
+                        <h4 class="font-bold text-gray-800">${m.flat}</h4>
+                        <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
                     </div>
-                `;
-            });
-        };
-
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
+                        <button onclick="openEditMaintenanceLog('${safeId}')" class="text-blue-600 hover:text-blue-800 text-sm ml-1" title="Edit Maintenance Log"><i class="fa-solid fa-pen-to-square"></i></button>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-600">${m.desc}</p>
+                <p class="text-[10px] text-gray-400 font-semibold">Completed on: ${m.date}</p>
+                <div class="grid grid-cols-2 gap-2">
+                    ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                    ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                </div>
+            </div>
+        `;
+    });
+};
         window.renderFacultyTable = function() {
             const tbody = document.getElementById('facultyTableBody');
             const search = document.getElementById('facultySearch').value.toLowerCase();

@@ -1032,6 +1032,27 @@
             { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] }
         ];
 
+        window.handleGoogleSignIn = async function() {
+            const errEl = document.getElementById('loginErrorMsg');
+            if (errEl) errEl.classList.add('hidden');
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                const provider = new GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Auth error:", error);
+                if (errEl) {
+                    errEl.innerText = error.message || "Failed to sign in. Please try again.";
+                    errEl.classList.remove('hidden');
+                }
+            }
+        };
+
+        window.handleSignOut = async function() {
+            await signOut(auth);
+        };
+
         function calculateElapsed(startDateStr) {
             if(!startDateStr) return '-';
             const start = new Date(startDateStr);
@@ -1167,25 +1188,6 @@
                 loginOverlay.classList.remove('hidden');
             }
         });
-
-        window.handleGoogleSignIn = async function() {
-            const errEl = document.getElementById('loginErrorMsg');
-            errEl.classList.add('hidden');
-            try {
-                await setPersistence(auth, browserLocalPersistence);
-                const provider = new GoogleAuthProvider();
-                provider.setCustomParameters({ prompt: 'select_account' });
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("Auth error:", error);
-                errEl.innerText = error.message || "Failed to sign in. Please try again.";
-                errEl.classList.remove('hidden');
-            }
-        };
-
-        window.handleSignOut = async function() {
-            await signOut(auth);
-        };
 
         async function loadCloudData() {
             try {
@@ -2521,31 +2523,219 @@
                 billsContainer.classList.add('hidden');
             }
 
-            const logsGrid = document.getElementById('intMaintLogsContainer');
-            logsGrid.innerHTML = '';
-            if(flatMaintLogs.length === 0) {
-                logsGrid.innerHTML = '<p class="text-sm text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
-            } else {
-                flatMaintLogs.forEach(m => {
-                    function renderMedia(url, direct, type, label) {
-                        if(!url) return '';
-                        if(type === 'video') return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-40 object-cover rounded border"></video></div>`;
-                        if(type === 'pdf') return `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
-                        return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-40 object-cover rounded border"></div>`;
+           const logsGrid = document.getElementById('intMaintLogsContainer');
+                    logsGrid.innerHTML = '';
+                    if(flatMaintLogs.length === 0) {
+                        logsGrid.innerHTML = '<p class="text-sm text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
+                    } else {
+                        flatMaintLogs.forEach(m => {
+                            function renderMedia(url, direct, type, label) {
+                                if(!url) return '';
+                                if(type === 'video') return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-40 object-cover rounded border"></video></div>`;
+                                if(type === 'pdf') return `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                                return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-40 object-cover rounded border"></div>`;
+                            }
+
+                            logsGrid.innerHTML += `
+                                <div class="bg-gray-50 p-4 rounded-lg border space-y-2 text-sm">
+                                    <div class="flex justify-between items-center border-b pb-2">
+                                        <span class="font-bold text-amber-800 text-base">${m.type || 'Refurbishment'}</span>
+                                        <span class="font-bold text-emerald-800 text-base">₹${m.cost || '0'}</span>
+                                    </div>
+                                    <p class="text-gray-800">${m.desc}</p>
+                                    <p class="text-xs text-gray-500">Date: ${m.date}</p>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                                        ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                                    </div>
+                                </div>`;
+                        });
                     }
 
-                    logsGrid.innerHTML += `
-                        <div class="bg-gray-50 p-4 rounded-lg border space-y-2 text-sm">
-                            <div class="flex justify-between items-center border-b pb-2">
-                                <span class="font-bold text-amber-800 text-base">${m.type || 'Refurbishment'}</span>
-                                <span class="font-bold text-emerald-800 text-base">₹${m.cost || '0'}</span>
-                            </div>
-                            <p class="text-gray-800">${m.desc}</p>
-                            <p class="text-xs text-gray-500">Date: ${m.date}</p>
-                            <div class="grid grid-cols-2 gap-3">
-                                ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
-                                ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
-                            </div>
-                        </div>`;
-                });
-            }
+                    const archBody = document.getElementById('intArchiveTableBody');
+                    archBody.innerHTML = '';
+                    if(!flat.archive || flat.archive.length === 0) {
+                        archBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 text-sm">No past allocation history recorded for this flat.</td></tr>';
+                    } else {
+                        flat.archive.forEach(a => {
+                            const tr = document.createElement('tr');
+                            tr.className = "border-b hover:bg-gray-50";
+                            tr.innerHTML = `
+                                <td class="p-3 font-semibold text-gray-800">${a.occupant}</td>
+                                <td class="p-3 font-mono">${a.its || '-'}</td>
+                                <td class="p-3">${a.contact || '-'}</td>
+                                <td class="p-3">${a.startDate || '-'}</td>
+                                <td class="p-3 text-gray-600">${a.endDate || 'Present'}</td>
+                            `;
+                            archBody.appendChild(tr);
+                        });
+                    }
+
+                    container.classList.remove('hidden');
+                };
+
+                window.openImportModal = function(target) {
+                    document.getElementById('importTypeTarget').value = target;
+                    document.getElementById('modalImport').classList.remove('hidden');
+                };
+
+                window.processExcelImport = function() {
+                    const fileInput = document.getElementById('excelFileInput');
+                    const target = document.getElementById('importTypeTarget').value;
+                    if(!fileInput.files[0]) return alert("Please select a file!");
+
+                    const reader = new FileReader();
+                    reader.onload = async function(e) {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { raw: false, dateNF: 'yyyy-mm-dd' });
+
+                        if(target === 'estates') {
+                            jsonData.forEach(row => {
+                                const getVal = (keys) => {
+                                    for(let k of Object.keys(row)) {
+                                        if(keys.some(key => k.trim().toLowerCase() === key.toLowerCase())) {
+                                            return row[k];
+                                        }
+                                    }
+                                    return '';
+                                };
+
+                                let rawBuilding = getVal(['Building & Wing', 'Building', 'Building Name', 'Estate']);
+                                let buildingName = 'Unassigned';
+                                let wingName = '';
+
+                                if(rawBuilding) {
+                                    if(rawBuilding.includes('-')) {
+                                        const parts = rawBuilding.split('-');
+                                        buildingName = parts[0].trim();
+                                        wingName = parts.slice(1).join('-').trim();
+                                    } else {
+                                        buildingName = rawBuilding.trim();
+                                    }
+                                }
+                                if(!wingName) {
+                                    wingName = getVal(['Wing', 'Wing Name']);
+                                }
+
+                                const flatNo = getVal(['Flat No', 'Flat Number', 'Flat']) || '00';
+
+                                const rawTypeSize = getVal(['Type & Size', 'Type', 'Flat Type']);
+                                let flatType = '2 BHK';
+                                let sqftSize = 800;
+
+                                if(rawTypeSize) {
+                                    if(rawTypeSize.toLowerCase().includes('1 bhk')) flatType = '1 BHK';
+                                    else if(rawTypeSize.toLowerCase().includes('2 bhk')) flatType = '2 BHK';
+                                    else if(rawTypeSize.toLowerCase().includes('3 bhk')) flatType = '3 BHK';
+                                    else if(rawTypeSize.toLowerCase().includes('studio')) flatType = 'Studio';
+
+                                    const sqftMatch = rawTypeSize.match(/(\d+)\s*(sqft|sq ft)/i);
+                                    if(sqftMatch) sqftSize = parseInt(sqftMatch[1]);
+                                }
+                                const explicitSqft = getVal(['SqFt', 'Size', 'Sq Ft']);
+                                if(explicitSqft) sqftSize = parseInt(explicitSqft) || sqftSize;
+
+                                const categoryStr = getVal(['Category', 'Flat Category']);
+                                const isBachelor = categoryStr.toLowerCase().includes('bachelor');
+
+                                const occupantName = getVal(['Current Occupant', 'Occupant', 'Faculty Name', 'Resident']).toString().trim();
+                                let allocDate = getVal(['Allocated Since', 'Allocation Date', 'Start Date']).toString().trim();
+
+                                if(allocDate && !isNaN(Date.parse(allocDate))) {
+                                    allocDate = new Date(allocDate).toISOString().split('T')[0];
+                                }
+
+                                let matchedIts = '';
+                                let matchedContact = '';
+
+                                if(occupantName) {
+                                    const foundFac = facultyData.find(f => f.name.toLowerCase().trim() === occupantName.toLowerCase());
+                                    if(foundFac) {
+                                        matchedIts = foundFac.its;
+                                        matchedContact = foundFac.contact;
+                                    }
+                                }
+
+                                estatesData.push({
+                                    id: Date.now().toString() + Math.random().toString().slice(2,5),
+                                    building: buildingName,
+                                    wing: wingName,
+                                    flatNo: flatNo.toString().trim(),
+                                    type: flatType,
+                                    sqft: sqftSize,
+                                    owner: getVal(['Owner', 'Registered Owner']) || 'Dawat-e-Hadiyah',
+                                    elec: getVal(['Electricity CA Number', 'Electricity CA', 'Elec CA']) || '',
+                                    gas: getVal(['Gas CA Number', 'Gas CA']) || '',
+                                    isBachelor: isBachelor,
+                                    capacity: isBachelor ? 4 : 0,
+                                    occupant: occupantName,
+                                    its: matchedIts,
+                                    contact: matchedContact,
+                                    startDate: allocDate,
+                                    archive: [],
+                                    residents: []
+                                });
+                            });
+
+                            renderEstateTable();
+                            renderAllocationTable();
+                            populateIntegratedFlatDropdown();
+                        } else if(target === 'faculty') {
+                            jsonData.forEach(row => {
+                                facultyData.push({
+                                    id: Date.now().toString() + Math.random().toString().slice(2,5),
+                                    its: row['ITS'] || row['ITS Number'] || '00000000',
+                                    name: row['Name'] || row['Faculty Name'] || 'Faculty Member',
+                                    contact: row['Contact'] || row['Mobile'] || '-'
+                                });
+                            });
+                            renderFacultyTable();
+                        }
+
+                        await saveCloudData();
+                        closeModal('modalImport');
+                        alert("Import completed successfully!");
+                    };
+                    reader.readAsArrayBuffer(fileInput.files[0]);
+                };
+
+                window.renderUsersList = function() {
+                    const tbody = document.getElementById('userListTableBody');
+                    tbody.innerHTML = '';
+                    usersList.forEach(u => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b hover:bg-gray-50 text-xs";
+                        tr.innerHTML = `<td class="p-3 font-semibold text-gray-800">${u.email}</td><td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span></td><td class="p-3 text-gray-600">${u.permissions.map(p => `Sub ${p}`).join(', ')}</td><td class="p-3 text-center">${u.role !== 'Admin' ? `<button onclick="removeUser('${u.email}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button>` : 'Owner'}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                };
+
+                window.handleInviteUser = async function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('inviteEmail').value;
+                    const role = document.getElementById('inviteRole').value;
+                    const perms = [];
+                    for(let i=1; i<=7; i++) {
+                        if(document.getElementById(`perm-${i}`)?.checked) perms.push(i);
+                    }
+                    usersList.push({ email, role, permissions: perms });
+                    await saveCloudData();
+                    renderUsersList();
+                    document.getElementById('inviteUserForm').reset();
+                    alert(`User invitation created for ${email}`);
+                };
+
+                window.removeUser = async function(email) {
+                    usersList = usersList.filter(u => u.email !== email);
+                    await saveCloudData();
+                    renderUsersList();
+                };
+
+                window.closeModal = function(modalId) {
+                    document.getElementById(modalId).classList.add('hidden');
+                };
+            </script>
+        </body>
+        </html>

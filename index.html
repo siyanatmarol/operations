@@ -8,29 +8,32 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS for Excel/CSV Import/Export -->
+    <!-- SheetJS for Excel Import/Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF & jsPDF-AutoTable for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* Increased baseline font size by 1pt */
+        /* Baseline font size */
         html { font-size: 17px; }
         .active-tab { border-bottom: 3px solid #10B981; color: #ffffff; font-weight: 600; }
         
-        /* Sub-header styling: Active = Green background + White text | Inactive = Black text */
+        /* Sub-header styling */
         .sub-tab-active { background-color: #065F46 !important; color: #ffffff !important; font-weight: 600; }
         .sub-tab-inactive { background-color: #f3f4f6; color: #111827 !important; font-weight: 500; }
         .sub-tab-inactive:hover { background-color: #e5e7eb; }
 
-        /* Integrated view 4pt boost styling class */
+        /* Integrated view font size adjusted down by 2pt */
         .integrated-boost {
-            font-size: 1.25rem !important; /* +4pt increase */
-            line-height: 1.6;
+            font-size: 1.1rem !important;
+            line-height: 1.5;
         }
-        .integrated-boost h2 { font-size: 1.85rem !important; }
-        .integrated-boost h3 { font-size: 1.5rem !important; }
-        .integrated-boost label { font-size: 1.1rem !important; }
-        .integrated-boost input, .integrated-boost select { font-size: 1.15rem !important; }
-        .integrated-boost table { font-size: 1.1rem !important; }
-        .integrated-boost p, .integrated-boost span { font-size: 1.15rem !important; }
+        .integrated-boost h2 { font-size: 1.6rem !important; }
+        .integrated-boost h3 { font-size: 1.3rem !important; }
+        .integrated-boost label { font-size: 1.0rem !important; }
+        .integrated-boost input, .integrated-boost select { font-size: 1.05rem !important; }
+        .integrated-boost table { font-size: 1.0rem !important; }
+        .integrated-boost p, .integrated-boost span { font-size: 1.05rem !important; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col text-sm">
@@ -150,7 +153,15 @@
                     <div class="flex flex-wrap gap-2">
                         <button onclick="openImportModal('estates')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                             <i class="fa-solid fa-file-excel"></i>
-                            <span>Import / Export Excel</span>
+                            <span>Import Excel</span>
+                        </button>
+                        <button onclick="exportData('estate-details', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('estate-details', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
                         </button>
                         <button onclick="openAddFlatModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                             <i class="fa-solid fa-plus"></i>
@@ -201,7 +212,15 @@
                         <h2 class="text-xl font-bold text-gray-800">Faculty Flat Allocations</h2>
                         <p class="text-xs text-gray-500">Track current faculty occupants, tenure duration, last maintenance, and archived history.</p>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <div class="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                        <button onclick="exportData('allocation', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('allocation', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
+                        </button>
                         <select id="allocStatusFilter" onchange="renderAllocationTable()" class="p-2 border rounded text-sm bg-white">
                             <option value="">All Allocation Status</option>
                             <option value="vacant">Vacant Flats Only</option>
@@ -237,7 +256,15 @@
                         <h2 class="text-xl font-bold text-gray-800">Flat Refurbishment & Maintenance Records</h2>
                         <p class="text-xs text-gray-500">Log works with maintenance types (Refurbishment, Redevelopment, etc.) and before/after photos.</p>
                     </div>
-                    <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                    <div class="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                        <button onclick="exportData('maintenance', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('maintenance', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
+                        </button>
                         <input type="text" id="maintSearch" oninput="renderMaintenanceGrid()" placeholder="Search Building, Flat No, Type or Details..." class="p-2 border rounded text-sm w-full sm:w-64">
                         <button onclick="openAddMaintenanceModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center justify-center space-x-1 whitespace-nowrap">
                             <i class="fa-solid fa-plus"></i>
@@ -251,10 +278,20 @@
 
             <!-- SUB-HEADER 4: BACHELOR FLATS -->
             <div id="sec-bachelor" class="hidden space-y-4">
-                <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Bachelor Accommodation Manager</h2>
                         <p class="text-xs text-gray-500">Manage individual bed spaces, residents, and ITS details for bachelor flats.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="exportData('bachelor', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('bachelor', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
+                        </button>
                     </div>
                 </div>
 
@@ -460,6 +497,14 @@
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="openImportModal('faculty')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition">Import CSV/Excel List</button>
+                    <button onclick="exportData('faculty', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>Export Excel</span>
+                    </button>
+                    <button onclick="exportData('faculty', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Export PDF</span>
+                    </button>
                     <button onclick="openAddFacultyModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition">+ Add Faculty Member</button>
                 </div>
             </div>
@@ -722,9 +767,15 @@
                     <label class="text-xs font-semibold block mb-1">Allocation Start Date *</label>
                     <input type="date" id="allocStartDate" required class="w-full p-2 border rounded text-sm">
                 </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('modalAllocation')" class="px-4 py-2 border rounded text-sm">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium">Update Current Occupant</button>
+                <div class="flex justify-between items-center pt-2 border-t">
+                    <button type="button" onclick="markFlatAsVacant()" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold transition flex items-center space-x-1">
+                        <i class="fa-solid fa-user-minus"></i>
+                        <span>Mark as Vacant</span>
+                    </button>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="closeModal('modalAllocation')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Update Current Occupant</button>
+                    </div>
                 </div>
             </form>
 
@@ -1225,6 +1276,128 @@
             if(secName === 'integrated') populateIntegratedFlatDropdown();
         };
 
+        // GLOBAL EXPORT FUNCTION FOR EXCEL & PDF
+        window.exportData = function(section, format) {
+            let data = [];
+            let fileName = "";
+            let columns = [];
+
+            if (section === 'estate-details') {
+                fileName = "Estate_Master_Directory";
+                columns = ["Building", "Wing", "Flat No", "Type", "SqFt", "Owner", "Elec CA", "Gas CA", "Category"];
+                data = estatesData.map(e => [
+                    e.building,
+                    e.wing || '-',
+                    e.flatNo,
+                    e.type,
+                    e.sqft,
+                    e.owner,
+                    e.elec || '-',
+                    e.gas || '-',
+                    e.isBachelor ? `Bachelor (${e.capacity} Beds)` : 'Regular'
+                ]);
+            } else if (section === 'allocation') {
+                fileName = "Faculty_Flat_Allocations";
+                columns = ["Building & Flat", "Category", "Status", "Occupant", "ITS Number", "Contact", "Allocated Since", "Tenure"];
+                data = estatesData.map(e => {
+                    const wing = e.wing ? ` (${e.wing})` : '';
+                    const isOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+                    let occupant = e.occupant || '-';
+                    let its = e.its || '-';
+                    let contact = e.contact || '-';
+                    if (e.isBachelor) {
+                        occupant = (e.residents && e.residents.length > 0) ? e.residents.map(r => r.name).join(', ') : 'Vacant';
+                        its = `${e.residents ? e.residents.length : 0}/${e.capacity || 4} Beds Assigned`;
+                        contact = '-';
+                    }
+                    return [
+                        `${e.building}${wing} - Flat ${e.flatNo}`,
+                        e.isBachelor ? 'Bachelor Flat' : (e.type || 'Regular'),
+                        isOccupied ? 'Allocated' : 'Vacant',
+                        occupant,
+                        its,
+                        contact,
+                        e.startDate || '-',
+                        isOccupied ? calculateElapsed(e.startDate) : '-'
+                    ];
+                });
+            } else if (section === 'maintenance') {
+                fileName = "Maintenance_Refurbishment_Records";
+                columns = ["Flat", "Maintenance Type", "Description", "Cost (INR)", "Completion Date"];
+                data = maintLogs.map(m => [
+                    m.flat,
+                    m.type || 'Refurbishment',
+                    m.desc,
+                    m.cost || '0',
+                    m.date
+                ]);
+            } else if (section === 'bachelor') {
+                fileName = "Bachelor_Accommodation_Details";
+                columns = ["Building & Flat", "Capacity", "Resident Name", "ITS Number", "Contact", "Joining Date"];
+                const bachelorFlats = estatesData.filter(e => e.isBachelor);
+                bachelorFlats.forEach(e => {
+                    const wing = e.wing ? ` (${e.wing})` : '';
+                    if (e.residents && e.residents.length > 0) {
+                        e.residents.forEach(r => {
+                            data.push([
+                                `${e.building}${wing} - Flat ${e.flatNo}`,
+                                `${e.residents.length}/${e.capacity || 4} Beds`,
+                                r.name,
+                                r.its || '-',
+                                r.contact || '-',
+                                r.startDate || '-'
+                            ]);
+                        });
+                    } else {
+                        data.push([
+                            `${e.building}${wing} - Flat ${e.flatNo}`,
+                            `0/${e.capacity || 4} Beds`,
+                            'No Residents Assigned',
+                            '-',
+                            '-',
+                            '-'
+                        ]);
+                    }
+                });
+            } else if (section === 'faculty') {
+                fileName = "Faculty_Master_Directory";
+                columns = ["ITS Number", "Faculty Name", "Contact Number"];
+                data = facultyData.map(f => [
+                    f.its,
+                    f.name,
+                    f.contact
+                ]);
+            }
+
+            if (data.length === 0) {
+                alert("No records available to export!");
+                return;
+            }
+
+            if (format === 'excel') {
+                const ws = XLSX.utils.aoa_to_sheet([columns, ...data]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "ExportData");
+                XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape' });
+                doc.setFontSize(14);
+                doc.text(fileName.replace(/_/g, ' '), 14, 15);
+                doc.setFontSize(9);
+                doc.text(`Exported on: ${new Date().toLocaleDateString()} | Aljamea Marol Facilities Management`, 14, 21);
+                doc.autoTable({
+                    head: [columns],
+                    body: data,
+                    startY: 25,
+                    theme: 'grid',
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [6, 95, 70] }
+                });
+                doc.save(`${fileName}_${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+        };
+
         window.renderEstateTable = function() {
             const tbody = document.getElementById('estateTableBody');
             const search = document.getElementById('estateSearch').value.toLowerCase();
@@ -1457,6 +1630,40 @@
 
             renderModalArchiveList(flat);
             document.getElementById('modalAllocation').classList.remove('hidden');
+        };
+
+        // MARK FLAT AS VACANT & MOVE OCCUPANT TO PAST HISTORY ARCHIVE
+        window.markFlatAsVacant = async function() {
+            const flatId = document.getElementById('allocFlatId').value;
+            const flat = estatesData.find(e => e.id === flatId);
+            if (!flat) return;
+
+            if (!flat.occupant) {
+                alert("This flat is already vacant.");
+                return;
+            }
+
+            if (confirm(`Are you sure you want to mark this flat as vacant? ${flat.occupant} will be transferred to the Past Allocation Archive.`)) {
+                if (!flat.archive) flat.archive = [];
+                flat.archive.push({
+                    occupant: flat.occupant,
+                    its: flat.its || '',
+                    contact: flat.contact || '',
+                    startDate: flat.startDate || '',
+                    endDate: new Date().toISOString().split('T')[0]
+                });
+
+                flat.occupant = '';
+                flat.its = '';
+                flat.contact = '';
+                flat.startDate = '';
+
+                await saveCloudData();
+                closeModal('modalAllocation');
+                renderAllocationTable();
+                renderVacantBills();
+                alert("Flat marked as vacant and occupant details moved to archive!");
+            }
         };
 
         function renderModalArchiveList(flat) {

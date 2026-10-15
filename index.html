@@ -1486,77 +1486,75 @@
         };
 
         window.renderAllocationTable = function() {
-            const tbody = document.getElementById('allocationTableBody');
-            const searchInput = document.getElementById('allocSearch');
-            const search = searchInput ? searchInput.value.toLowerCase() : '';
-            const statusFilter = document.getElementById('allocStatusFilter') ? document.getElementById('allocStatusFilter').value : '';
+    const tbody = document.getElementById('allocationTableBody');
+    const searchInput = document.getElementById('allocSearch');
+    const search = searchInput ? searchInput.value.toLowerCase() : '';
+    const statusFilter = document.getElementById('allocStatusFilter') ? document.getElementById('allocStatusFilter').value : '';
 
-            tbody.innerHTML = '';
+    tbody.innerHTML = '';
 
-            estatesData.filter(e => {
-                const wingStr = e.wing ? ` (${e.wing})` : '';
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+    estatesData.filter(e => {
+        const wingStr = e.wing ? ` (${e.wing})` : '';
+        const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
 
-                const fullStr = `${e.building}${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''}`.toLowerCase();
-                const matchSearch = fullStr.includes(search);
+        const fullStr = `${e.building}${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''}`.toLowerCase();
+        const matchSearch = fullStr.includes(search);
 
-                let matchStatus = true;
-                if(statusFilter === 'vacant') matchStatus = !isFlatOccupied;
-                if(statusFilter === 'allocated') matchStatus = isFlatOccupied;
+        let matchStatus = true;
+        if(statusFilter === 'vacant') matchStatus = !isFlatOccupied;
+        if(statusFilter === 'allocated') matchStatus = isFlatOccupied;
 
-                return matchSearch && matchStatus;
-            }).forEach(e => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
+        return matchSearch && matchStatus;
+    }).forEach(e => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-gray-50";
+        const wingBadge = e.wing ? ` (${e.wing})` : '';
 
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
-                const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
+        const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+        const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
 
-                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
-                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
-                
-                let lastMaintStr = '-';
-                if(flatMaintLogs.length > 0) {
-                    const lastLog = flatMaintLogs[0];
-                    const elapsed = calculateElapsed(lastLog.date);
-                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
-                }
+        const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
+        const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        let lastMaintStr = '-';
+        if(flatMaintLogs.length > 0) {
+            const lastLog = flatMaintLogs[0];
+            const elapsed = calculateElapsed(lastLog.date);
+            lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
+        }
 
-                let displayOccupant = e.occupant || '-';
-                let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
+        let displayOccupant = e.occupant || '-';
+        let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
 
-                if(e.isBachelor) {
-                    if(e.residents && e.residents.length > 0) {
-                        displayOccupant = e.residents.map(r => r.name).join(', ');
-                        displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
-                    } else {
-                        displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
-                    }
-                }
+        if(e.isBachelor) {
+            if(e.residents && e.residents.length > 0) {
+                displayOccupant = e.residents.map(r => r.name).join(', ');
+                displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
+            } else {
+                displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
+            }
+        }
 
-                const safeId = String(e.id).replace(/'/g, "\\'");
-
-                tr.innerHTML = `
-                    <td class="p-3">
-                        <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
-                        <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
-                    </td>
-                    <td class="p-3">
-                        ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
-                    </td>
-                    <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
-                    <td class="p-3 text-xs font-mono">${displayItsContact}</td>
-                    <td class="p-3 text-xs">${e.startDate || '-'}</td>
-                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
-                    <td class="p-3 text-xs">${lastMaintStr}</td>
-                    <td class="p-3 text-center">
-                        <button onclick="${e.isBachelor ? `switchSubHeader('bachelor')` : `openAllocationModal('${safeId}')`}" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
+        tr.innerHTML = `
+            <td class="p-3">
+                <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
+                <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
+            </td>
+            <td class="p-3">
+                ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
+            </td>
+            <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
+            <td class="p-3 text-xs font-mono">${displayItsContact}</td>
+            <td class="p-3 text-xs">${e.startDate || '-'}</td>
+            <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
+            <td class="p-3 text-xs">${lastMaintStr}</td>
+            <td class="p-3 text-center">
+                <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
 
         window.filterAllocFacultyInteractive = function() {
             const inputVal = document.getElementById('allocFacultyInput').value.toLowerCase();

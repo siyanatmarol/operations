@@ -1384,45 +1384,64 @@
             }
         };
 
-        window.renderEstateTable = function() {
-            const tbody = document.getElementById('estateTableBody');
-            const search = document.getElementById('estateSearch').value.toLowerCase();
-            const typeFilter = document.getElementById('estateTypeFilter').value;
-            const categoryFilter = document.getElementById('estateCategoryFilter').value;
+      window.renderEstateTable = function() {
+    const tbody = document.getElementById('estateTableBody');
+    const rawSearch = document.getElementById('estateSearch').value.toLowerCase().trim();
+    const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+    const typeFilter = document.getElementById('estateTypeFilter').value;
+    const categoryFilter = document.getElementById('estateCategoryFilter').value;
 
-            tbody.innerHTML = '';
+    tbody.innerHTML = '';
 
-            estatesData.filter(e => {
-                const wingStr = e.wing ? ` (${e.wing})` : '';
-                const matchSearch = `${e.building} ${wingStr} ${e.flatNo} ${e.owner} ${e.elec} ${e.gas}`.toLowerCase().includes(search);
-                const matchType = !typeFilter || e.type === typeFilter;
-                const matchCategory = !categoryFilter || (categoryFilter === 'bachelor' ? e.isBachelor : !e.isBachelor);
-                return matchSearch && matchType && matchCategory;
-            }).forEach(e => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 border-b";
-                const wingBadge = e.wing ? `<span class="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">${e.wing}</span>` : '';
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-800">${e.building}${wingBadge}</td>
-                    <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
-                    <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
-                    <td class="p-3">${e.owner}</td>
-                    <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
-                    <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
-                    <td class="p-3">
-                        ${e.isBachelor 
-                            ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
-                            : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
-                    </td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
+    // Filter data
+    const filteredData = estatesData.filter(e => {
+        const wingStr = e.wing || '';
+        const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.owner} ${e.elec} ${e.gas}`.toLowerCase();
+        
+        // Smart Search: Every token typed must be found somewhere in the combined record string
+        const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+        const matchType = !typeFilter || e.type === typeFilter;
+        const matchCategory = !categoryFilter || (categoryFilter === 'bachelor' ? e.isBachelor : !e.isBachelor);
+        
+        return matchSearch && matchType && matchCategory;
+    });
 
+    // Alphabetical Sorting: Building -> Wing -> Flat Number
+    filteredData.sort((a, b) => {
+        const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
+        if (bComp !== 0) return bComp;
+
+        const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
+        if (wComp !== 0) return wComp;
+
+        return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
+    // Render Table
+    filteredData.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-gray-50 border-b";
+        const wingBadge = e.wing ? `<span class="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">${e.wing}</span>` : '';
+        tr.innerHTML = `
+            <td class="p-3 font-semibold text-gray-800">${e.building}${wingBadge}</td>
+            <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
+            <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
+            <td class="p-3">${e.owner}</td>
+            <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
+            <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
+            <td class="p-3">
+                ${e.isBachelor 
+                    ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
+                    : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
+            </td>
+            <td class="p-3 text-center space-x-2">
+                <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
         window.toggleBachelorCapacityInput = function() {
             const chk = document.getElementById('flatIsBachelor').checked;
             document.getElementById('bachelorCapacityBox').classList.toggle('hidden', !chk);
@@ -1498,77 +1517,98 @@
             }
         };
 
-        window.renderAllocationTable = function() {
-            const tbody = document.getElementById('allocationTableBody');
-            const searchInput = document.getElementById('allocSearch');
-            const search = searchInput ? searchInput.value.toLowerCase() : '';
-            const statusFilter = document.getElementById('allocStatusFilter') ? document.getElementById('allocStatusFilter').value : '';
+       window.renderAllocationTable = function() {
+    const tbody = document.getElementById('allocationTableBody');
+    const rawSearch = (document.getElementById('allocSearch') ? document.getElementById('allocSearch').value : '').toLowerCase().trim();
+    const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+    const statusFilter = document.getElementById('allocStatusFilter') ? document.getElementById('allocStatusFilter').value : '';
 
-            tbody.innerHTML = '';
+    tbody.innerHTML = '';
 
-            estatesData.filter(e => {
-                const wingStr = e.wing ? ` (${e.wing})` : '';
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+    // Filter Data
+    const filteredData = estatesData.filter(e => {
+        const wingStr = e.wing || '';
+        const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+        
+        let residentsText = '';
+        if (e.isBachelor && e.residents) {
+            residentsText = e.residents.map(r => `${r.name} ${r.its}`).join(' ');
+        }
 
-                const fullStr = `${e.building}${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''}`.toLowerCase();
-                const matchSearch = fullStr.includes(search);
+        const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''} ${residentsText}`.toLowerCase();
+        
+        // Smart Search matching across all entered keywords
+        const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
 
-                let matchStatus = true;
-                if(statusFilter === 'vacant') matchStatus = !isFlatOccupied;
-                if(statusFilter === 'allocated') matchStatus = isFlatOccupied;
+        let matchStatus = true;
+        if(statusFilter === 'vacant') matchStatus = !isFlatOccupied;
+        if(statusFilter === 'allocated') matchStatus = isFlatOccupied;
 
-                return matchSearch && matchStatus;
-            }).forEach(e => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
+        return matchSearch && matchStatus;
+    });
 
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
-                const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
+    // Alphabetical Sorting: Building -> Wing -> Flat Number
+    filteredData.sort((a, b) => {
+        const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
+        if (bComp !== 0) return bComp;
 
-                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
-                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
-                
-                let lastMaintStr = '-';
-                if(flatMaintLogs.length > 0) {
-                    const lastLog = flatMaintLogs[0];
-                    const elapsed = calculateElapsed(lastLog.date);
-                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
-                }
+        const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
+        if (wComp !== 0) return wComp;
 
-                let displayOccupant = e.occupant || '-';
-                let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
+        return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
+    });
 
-                if(e.isBachelor) {
-                    if(e.residents && e.residents.length > 0) {
-                        displayOccupant = e.residents.map(r => r.name).join(', ');
-                        displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
-                    } else {
-                        displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
-                    }
-                }
+    // Render Table
+    filteredData.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-gray-50";
+        const wingBadge = e.wing ? ` (${e.wing})` : '';
 
-                tr.innerHTML = `
-                    <td class="p-3">
-                        <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
-                        <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
-                    </td>
-                    <td class="p-3">
-                        ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
-                    </td>
-                    <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
-                    <td class="p-3 text-xs font-mono">${displayItsContact}</td>
-                    <td class="p-3 text-xs">${e.startDate || '-'}</td>
-                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
-                    <td class="p-3 text-xs">${lastMaintStr}</td>
-                    <td class="p-3 text-center">
-                        <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
+        const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+        const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
 
+        const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
+        const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        let lastMaintStr = '-';
+        if(flatMaintLogs.length > 0) {
+            const lastLog = flatMaintLogs[0];
+            const elapsed = calculateElapsed(lastLog.date);
+            lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
+        }
+
+        let displayOccupant = e.occupant || '-';
+        let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
+
+        if(e.isBachelor) {
+            if(e.residents && e.residents.length > 0) {
+                displayOccupant = e.residents.map(r => r.name).join(', ');
+                displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
+            } else {
+                displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
+            }
+        }
+
+        tr.innerHTML = `
+            <td class="p-3">
+                <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
+                <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
+            </td>
+            <td class="p-3">
+                ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
+            </td>
+            <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
+            <td class="p-3 text-xs font-mono">${displayItsContact}</td>
+            <td class="p-3 text-xs">${e.startDate || '-'}</td>
+            <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
+            <td class="p-3 text-xs">${lastMaintStr}</td>
+            <td class="p-3 text-center">
+                <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
         window.filterAllocFacultyInteractive = function() {
             const inputVal = document.getElementById('allocFacultyInput').value.toLowerCase();
             const dropdown = document.getElementById('allocFacultyDropdown');
@@ -2000,54 +2040,57 @@
             renderAllocationTable();
         };
 
-        window.renderMaintenanceGrid = function() {
-            const grid = document.getElementById('maintenanceGrid');
-            const searchInput = document.getElementById('maintSearch');
-            const search = searchInput ? searchInput.value.toLowerCase() : '';
-            grid.innerHTML = '';
+       window.renderMaintenanceGrid = function() {
+    const grid = document.getElementById('maintenanceGrid');
+    const rawSearch = (document.getElementById('maintSearch') ? document.getElementById('maintSearch').value : '').toLowerCase().trim();
+    const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+    grid.innerHTML = '';
 
-            const filteredLogs = maintLogs.filter(m => {
-                const textStr = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost}`.toLowerCase();
-                return textStr.includes(search);
-            });
+    // Filter Logs
+    const filteredLogs = maintLogs.filter(m => {
+        const fullCorpus = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost} ${m.date}`.toLowerCase();
+        return searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+    });
 
-            if(filteredLogs.length === 0) {
-                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
-                return;
+    // Sort by Most Recent Work Done (Newest Completion Date First)
+    filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if(filteredLogs.length === 0) {
+        grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
+        return;
+    }
+
+    filteredLogs.forEach(m => {
+        function renderMedia(url, direct, type, label) {
+            if(!url) return '';
+            if(type === 'video') {
+                return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
+            } else if(type === 'pdf') {
+                return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+            } else {
+                return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
             }
+        }
 
-            filteredLogs.forEach(m => {
-                function renderMedia(url, direct, type, label) {
-                    if(!url) return '';
-                    if(type === 'video') {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
-                    } else if(type === 'pdf') {
-                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
-                    } else {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
-                    }
-                }
-
-                grid.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
-                        <div class="flex justify-between items-start border-b pb-2">
-                            <div>
-                                <h4 class="font-bold text-gray-800">${m.flat}</h4>
-                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
-                            </div>
-                            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
-                        </div>
-                        <p class="text-xs text-gray-600">${m.desc}</p>
-                        <p class="text-[10px] text-gray-400">Completed on: ${m.date}</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
-                            ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
-                        </div>
+        grid.innerHTML += `
+            <div class="bg-white p-4 rounded-lg shadow border space-y-2">
+                <div class="flex justify-between items-start border-b pb-2">
+                    <div>
+                        <h4 class="font-bold text-gray-800">${m.flat}</h4>
+                        <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
                     </div>
-                `;
-            });
-        };
-
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
+                </div>
+                <p class="text-xs text-gray-600">${m.desc}</p>
+                <p class="text-[10px] text-gray-400 font-semibold">Completed on: ${m.date}</p>
+                <div class="grid grid-cols-2 gap-2">
+                    ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                    ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                </div>
+            </div>
+        `;
+    });
+};
         window.renderFacultyTable = function() {
             const tbody = document.getElementById('facultyTableBody');
             const search = document.getElementById('facultySearch').value.toLowerCase();

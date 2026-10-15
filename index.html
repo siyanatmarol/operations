@@ -883,33 +883,33 @@
         </div>
     </div>
 
-    <!-- Modal: Add Faculty -->
-    <div id="modalFaculty" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
-            <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="text-lg font-bold text-gray-800">Add Faculty Member</h3>
-                <button onclick="closeModal('modalFaculty')" class="text-gray-500 text-xl font-bold">&times;</button>
-            </div>
-            <form id="facultyForm" onsubmit="saveFacultyRecord(event)" class="space-y-3">
-                <div>
-                    <label class="text-xs font-semibold block mb-1">ITS Number *</label>
-                    <input type="text" id="facultyIts" required class="w-full p-2 border rounded text-sm">
-                </div>
-                <div>
-                    <label class="text-xs font-semibold block mb-1">Full Name *</label>
-                    <input type="text" id="facultyName" required class="w-full p-2 border rounded text-sm">
-                </div>
-                <div>
-                    <label class="text-xs font-semibold block mb-1">Contact Number *</label>
-                    <input type="text" id="facultyContact" required class="w-full p-2 border rounded text-sm">
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('modalFaculty')" class="px-4 py-2 border rounded text-sm">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium">Save Faculty</button>
-                </div>
-            </form>
+   <!-- Modal: Add / Edit Faculty -->
+<div id="modalFaculty" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+        <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="text-lg font-bold text-gray-800" id="facultyModalTitle">Add Faculty Member</h3>
+            <button onclick="closeModal('modalFaculty')" class="text-gray-500 text-xl font-bold">&times;</button>
         </div>
+        <form id="facultyForm" onsubmit="saveFacultyRecord(event)" class="space-y-3">
+            <div>
+                <label class="text-xs font-semibold block mb-1">ITS Number *</label>
+                <input type="text" id="facultyIts" required class="w-full p-2 border rounded text-sm">
+            </div>
+            <div>
+                <label class="text-xs font-semibold block mb-1">Full Name *</label>
+                <input type="text" id="facultyName" required class="w-full p-2 border rounded text-sm">
+            </div>
+            <div>
+                <label class="text-xs font-semibold block mb-1">Contact Number *</label>
+                <input type="text" id="facultyContact" required class="w-full p-2 border rounded text-sm">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="closeModal('modalFaculty')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Faculty</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Modal: Society Document Vault Uploader -->
     <div id="modalUploadDoc" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
@@ -2091,42 +2091,88 @@
         `;
     });
 };
-        window.renderFacultyTable = function() {
-            const tbody = document.getElementById('facultyTableBody');
-            const search = document.getElementById('facultySearch').value.toLowerCase();
-            tbody.innerHTML = '';
+      window.renderFacultyTable = function() {
+    const tbody = document.getElementById('facultyTableBody');
+    const search = document.getElementById('facultySearch').value.toLowerCase();
+    tbody.innerHTML = '';
 
-            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(search)).forEach(f => {
-                const safeId = String(f.id).replace(/'/g, "\\'");
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-emerald-800">${f.its}</td>
-                    <td class="p-3 font-medium">${f.name}</td>
-                    <td class="p-3 text-gray-600">${f.contact}</td>
-                    <td class="p-3 text-center"><button onclick="deleteFaculty('${safeId}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button></td>
-                `;
-                tbody.appendChild(tr);
+    facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(search)).forEach(f => {
+        const safeId = String(f.id).replace(/'/g, "\\'");
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-gray-50";
+        tr.innerHTML = `
+            <td class="p-3 font-mono font-bold text-emerald-800">${f.its}</td>
+            <td class="p-3 font-medium text-gray-900">${f.name}</td>
+            <td class="p-3 text-gray-600">${f.contact}</td>
+            <td class="p-3 text-center space-x-2">
+                <button onclick="openEditFaculty('${safeId}')" class="text-blue-600 hover:text-blue-800" title="Edit Faculty"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deleteFaculty('${safeId}')" class="text-red-600 hover:text-red-800" title="Delete Faculty"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+       window.openAddFacultyModal = function() {
+    document.getElementById('facultyForm').reset();
+    document.getElementById('facultyModalTitle').innerText = 'Add Faculty Member';
+    // Store empty ID to indicate creation mode
+    document.getElementById('facultyForm').dataset.editId = '';
+    document.getElementById('modalFaculty').classList.remove('hidden');
+};
+
+window.openEditFaculty = function(id) {
+    const fac = facultyData.find(f => String(f.id) === String(id));
+    if(!fac) return;
+
+    document.getElementById('facultyIts').value = fac.its || '';
+    document.getElementById('facultyName').value = fac.name || '';
+    document.getElementById('facultyContact').value = fac.contact || '';
+    document.getElementById('facultyModalTitle').innerText = 'Edit Faculty Member';
+    // Store target ID on form
+    document.getElementById('facultyForm').dataset.editId = fac.id;
+    
+    document.getElementById('modalFaculty').classList.remove('hidden');
+};
+
+window.saveFacultyRecord = async function(e) {
+    e.preventDefault();
+    const editId = e.target.dataset.editId;
+    const its = document.getElementById('facultyIts').value.trim();
+    const name = document.getElementById('facultyName').value.trim();
+    const contact = document.getElementById('facultyContact').value.trim();
+
+    if (editId) {
+        // Update existing record
+        const idx = facultyData.findIndex(f => String(f.id) === String(editId));
+        if (idx !== -1) {
+            const oldName = facultyData[idx].name;
+            facultyData[idx] = { ...facultyData[idx], its, name, contact };
+
+            // Update matching estate allocations automatically
+            estatesData.forEach(e => {
+                if (e.occupant === oldName) {
+                    e.occupant = name;
+                    e.its = its;
+                    e.contact = contact;
+                }
             });
-        };
+        }
+    } else {
+        // Add new record
+        facultyData.push({
+            id: Date.now().toString(),
+            its,
+            name,
+            contact
+        });
+    }
 
-        window.openAddFacultyModal = function() {
-            document.getElementById('facultyForm').reset();
-            document.getElementById('modalFaculty').classList.remove('hidden');
-        };
-
-        window.saveFacultyRecord = async function(e) {
-            e.preventDefault();
-            facultyData.push({
-                id: Date.now().toString(),
-                its: document.getElementById('facultyIts').value,
-                name: document.getElementById('facultyName').value,
-                contact: document.getElementById('facultyContact').value
-            });
-            await saveCloudData();
-            closeModal('modalFaculty');
-            renderFacultyTable();
-        };
+    await saveCloudData();
+    closeModal('modalFaculty');
+    renderFacultyTable();
+    renderAllocationTable();
+};
 
         window.deleteFaculty = async function(id) {
             facultyData = facultyData.filter(f => String(f.id) !== String(id));

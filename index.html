@@ -14,20 +14,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* Baseline font size */
         html { font-size: 17px; }
         .active-tab { border-bottom: 3px solid #10B981; color: #ffffff; font-weight: 600; }
-        
-        /* Sub-header styling */
         .sub-tab-active { background-color: #065F46 !important; color: #ffffff !important; font-weight: 600; }
         .sub-tab-inactive { background-color: #f3f4f6; color: #111827 !important; font-weight: 500; }
         .sub-tab-inactive:hover { background-color: #e5e7eb; }
-
-        /* Integrated view font size adjusted down by 2pt */
-        .integrated-boost {
-            font-size: 1.1rem !important;
-            line-height: 1.5;
-        }
+        .integrated-boost { font-size: 1.1rem !important; line-height: 1.5; }
         .integrated-boost h2 { font-size: 1.6rem !important; }
         .integrated-boost h3 { font-size: 1.3rem !important; }
         .integrated-boost label { font-size: 1.0rem !important; }
@@ -51,7 +43,7 @@
                 <p class="text-xs text-gray-500 mt-1">Aljamea-tus-Saifiyah Facilities Management Dept</p>
             </div>
             <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-xs text-amber-800 text-left">
-                <i class="fa-solid fa-shield-halved mr-1"></i> Authorized access only. Sign in with your registered Google account to access estates, faculty allocations, and maintenance records.
+                <i class="fa-solid fa-shield-halved mr-1"></i> Authorized access only. Sign in with your registered Google account.
             </div>
             <button onclick="handleGoogleSignIn()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg shadow transition flex items-center justify-center space-x-3">
                 <i class="fa-brands fa-google text-red-500 text-lg"></i>
@@ -61,7 +53,7 @@
         </div>
     </div>
 
-    <!-- Top Navigation Header -->
+    <!-- Header -->
     <header class="bg-emerald-900 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
             <div class="flex items-center space-x-3 mb-3 md:mb-0">
@@ -77,7 +69,7 @@
                     <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">User</span>
                     <span id="currentUserRole" class="text-xs bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">User</span>
                 </div>
-                <button onclick="handleSignOut()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1" title="Sign Out">
+                <button onclick="handleSignOut()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Sign Out</span>
                 </button>
@@ -303,7 +295,7 @@
                 <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Vacant/Bachelor Flats Bills</h2>
-                        <p class="text-xs text-gray-500">Track monthly Electricity & Gas bill receipts and payment status. Missing bills are auto-highlighted.</p>
+                        <p class="text-xs text-gray-500">Track monthly Electricity & Gas bill receipts and payment status.</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         <label class="text-sm font-semibold text-gray-700">Filter Month:</label>
@@ -342,12 +334,11 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="societyGrid"></div>
 
-                <!-- Document Vault -->
                 <div class="bg-white p-5 rounded-lg shadow border space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
                         <div>
                             <h3 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-vault text-amber-600 mr-2"></i>Society Document Vault</h3>
-                            <p class="text-xs text-gray-500">Auto-segregated by society name & alphabetically ordered official receipts, NOCs, and agreements.</p>
+                            <p class="text-xs text-gray-500">Auto-segregated by society name & alphabetically ordered.</p>
                         </div>
                         <button onclick="openUploadDocModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                             <i class="fa-solid fa-upload"></i>
@@ -374,7 +365,7 @@
                             <i class="fa-solid fa-layer-group text-amber-600 text-2xl"></i>
                             <span>Integrated Master Flat Profile</span>
                         </h2>
-                        <p class="text-sm text-gray-600 mt-1">Select any estate flat to pull complete aggregated data from all sub-headers instantly in high visibility mode.</p>
+                        <p class="text-sm text-gray-600 mt-1">Select any estate flat to pull complete aggregated data from all sub-headers instantly.</p>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-4 pt-2">
@@ -393,8 +384,6 @@
 
                 <div id="integratedContentDisplay" class="hidden space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        
-                        <!-- Card 1: Estate Specs -->
                         <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-emerald-600">
                             <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg flex items-center justify-between">
                                 <span><i class="fa-solid fa-building text-emerald-600 mr-2"></i>Estate Specs</span>
@@ -410,7 +399,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 2: Current Occupant -->
                         <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-blue-600">
                             <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg">
                                 <i class="fa-solid fa-user-check text-blue-600 mr-2"></i>Occupant Status
@@ -425,7 +413,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 3: Utility & Maintenance Overview -->
                         <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-amber-600">
                             <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg">
                                 <i class="fa-solid fa-chart-line text-amber-600 mr-2"></i>Maintenance & Bills Summary
@@ -442,10 +429,8 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
-                    <!-- Row 2: Maintenance Logs History & Photos -->
                     <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
                         <h3 class="text-xl font-bold text-gray-900 border-b pb-3">
                             <i class="fa-solid fa-screwdriver-wrench text-emerald-700 mr-2"></i>Refurbishment & Maintenance History
@@ -453,7 +438,6 @@
                         <div id="intMaintLogsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                     </div>
 
-                    <!-- Row 3: Allocation Archive History -->
                     <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
                         <h3 class="text-xl font-bold text-gray-900 border-b pb-3">
                             <i class="fa-solid fa-box-archive text-amber-700 mr-2"></i>Past Occupants & Allocation Archive
@@ -473,7 +457,6 @@
                             </table>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -488,7 +471,7 @@
             </div>
         </div>
 
-        <!-- MODULE: FACULTY DIRECTORY (Accessible to All) -->
+        <!-- MODULE: FACULTY DIRECTORY -->
         <div id="module-faculty-dir" class="hidden space-y-4">
             <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
                 <div>
@@ -527,7 +510,7 @@
             </div>
         </div>
 
-        <!-- MODULE: ADMIN ACCESS & INVITATIONS (Admin Only) -->
+        <!-- MODULE: ADMIN ACCESS & INVITATIONS -->
         <div id="module-admin-access" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-lg shadow border space-y-4">
                 <div class="border-b pb-4">
@@ -535,13 +518,10 @@
                         <i class="fa-solid fa-user-shield text-emerald-700"></i>
                         <span>User Access Control & Invited Permissions</span>
                     </h2>
-                    <p class="text-xs text-gray-500 mt-1">
-                        Primary Admins: <strong class="text-emerald-800">murtaza.kheraluwala@jameasaifiyah.edu</strong> & <strong class="text-emerald-800">fm.marol@jameasaifiyah.edu</strong>.
-                    </p>
                 </div>
 
                 <form id="inviteUserForm" onsubmit="handleInviteUser(event)" class="bg-gray-50 p-4 rounded-lg border space-y-3">
-                    <h3 class="text-sm font-bold text-gray-700 uppercase">Invite New Team Member (Any Email Domain)</h3>
+                    <h3 class="text-sm font-bold text-gray-700 uppercase">Invite New Team Member</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="sm:col-span-2">
                             <label class="text-xs font-semibold text-gray-600 block mb-1">User Email Address</label>
@@ -550,14 +530,14 @@
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">System Role</label>
                             <select id="inviteRole" class="w-full p-2 border rounded text-sm">
-                                <option value="User">Standard User (Restricted Sub-headers)</option>
-                                <option value="Admin">Administrator (Full Access)</option>
+                                <option value="User">Standard User</option>
+                                <option value="Admin">Administrator</option>
                             </select>
                         </div>
                     </div>
 
                     <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Allowed Sub-Header Permissions (Dawat Estates):</label>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Allowed Sub-Header Permissions:</label>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                             <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-1" checked> <span>1. Estate Details</span></label>
                             <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-2" checked> <span>2. Allocation</span></label>
@@ -598,10 +578,9 @@
     <!-- FOOTER -->
     <footer class="bg-emerald-950 text-emerald-400 text-xs py-4 border-t border-emerald-800 text-center">
         <p>Aljamea-tus-Saifiyah Facilities Management Dept (Marol) &copy; 2026. All rights reserved.</p>
-        <p class="text-emerald-500 text-[10px] mt-1">Firebase Cloud Active | Google Drive Direct Uploader Connected</p>
     </footer>
 
-    <!-- MODALS SECTION -->
+    <!-- MODALS -->
 
     <!-- Modal: Add / Edit Estate Flat -->
     <div id="modalAddFlat" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
@@ -703,7 +682,7 @@
 
                 <div>
                     <label class="text-xs font-semibold block mb-1">Work Description / Details *</label>
-                    <textarea id="maintDesc" required placeholder="e.g. Complete kitchen tiling, painting & plumbing overhaul..." class="w-full p-2 border rounded text-sm h-20"></textarea>
+                    <textarea id="maintDesc" required placeholder="e.g. Complete kitchen tiling, painting..." class="w-full p-2 border rounded text-sm h-20"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -717,12 +696,12 @@
                 </div>
                 
                 <div class="bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
-                    <label class="text-xs font-bold text-amber-900 block"><i class="fa-solid fa-camera text-amber-600 mr-1"></i> BEFORE Media (Photo / Video / PDF)</label>
+                    <label class="text-xs font-bold text-amber-900 block"><i class="fa-solid fa-camera text-amber-600 mr-1"></i> BEFORE Media</label>
                     <input type="file" id="maintBeforeInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
                 </div>
 
                 <div class="bg-emerald-50 p-3 rounded border border-emerald-200 space-y-2">
-                    <label class="text-xs font-bold text-emerald-900 block"><i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> AFTER Media (Photo / Video / PDF)</label>
+                    <label class="text-xs font-bold text-emerald-900 block"><i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> AFTER Media</label>
                     <input type="file" id="maintAfterInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
                 </div>
 
@@ -734,7 +713,7 @@
         </div>
     </div>
 
-    <!-- Modal: Allocation & Past History Manual Entry -->
+    <!-- Modal: Allocation & Past History -->
     <div id="modalAllocation" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -746,7 +725,6 @@
                 <input type="hidden" id="allocFlatId">
                 <input type="hidden" id="allocSelectedFacId">
                 
-                <!-- INTEGRATED SEARCH & SELECT FACULTY DROPDOWN -->
                 <div class="relative">
                     <label class="text-xs font-semibold block mb-1">Type or Select Faculty Member *</label>
                     <input type="text" id="allocFacultyInput" onfocus="filterAllocFacultyInteractive()" oninput="filterAllocFacultyInteractive()" placeholder="Type to search faculty name or ITS..." autocomplete="off" class="w-full p-2 border rounded text-sm bg-white font-medium">
@@ -765,7 +743,7 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold block mb-1">Allocation Start Date *</label>
-                    <input type="date" id="allocStartDate" required class="w-full p-2 border rounded text-sm">
+                    <input type="date" id="allocStartDate" class="w-full p-2 border rounded text-sm">
                 </div>
                 <div class="flex justify-between items-center pt-2 border-t">
                     <button type="button" onclick="markFlatAsVacant()" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold transition flex items-center space-x-1">
@@ -820,7 +798,6 @@
                 <input type="hidden" id="bachFlatId">
                 <input type="hidden" id="bachSelectedFacId">
 
-                <!-- INTEGRATED SEARCH & SELECT FACULTY DROPDOWN -->
                 <div class="relative">
                     <label class="text-xs font-semibold block mb-1">Type or Select Resident *</label>
                     <input type="text" id="bachFacultyInput" onfocus="filterBachFacultyInteractive()" oninput="filterBachFacultyInteractive()" placeholder="Type to search faculty name or ITS..." autocomplete="off" class="w-full p-2 border rounded text-sm bg-white font-medium">
@@ -862,8 +839,8 @@
                     <input type="text" id="socName" required placeholder="e.g. Saifee Complex Society" class="w-full p-2 border rounded text-sm">
                 </div>
                 <div>
-                    <label class="text-xs font-semibold block mb-1">2. Count of Flats (by type) *</label>
-                    <input type="text" id="socFlats" required placeholder="e.g. 12 Flats (2 BHK) & 4 Flats (1 BHK)" class="w-full p-2 border rounded text-sm">
+                    <label class="text-xs font-semibold block mb-1">2. Count of Flats *</label>
+                    <input type="text" id="socFlats" required placeholder="e.g. 12 Flats (2 BHK)" class="w-full p-2 border rounded text-sm">
                 </div>
                 <div>
                     <label class="text-xs font-semibold block mb-1">3. Maintenance Bill System Frequency *</label>
@@ -878,7 +855,7 @@
                     <input type="text" id="socContactPerson" required placeholder="e.g. Shk Shabbir Bhai (+91 9820055443)" class="w-full p-2 border rounded text-sm">
                 </div>
                 <div>
-                    <label class="text-xs font-semibold block mb-1">5. Bill Submission Responsible Person Name & Number *</label>
+                    <label class="text-xs font-semibold block mb-1">5. Bill Submission Responsible Person *</label>
                     <input type="text" id="socBillSubmittedBy" required placeholder="e.g. Mulla Mustafa (+91 9876543210)" class="w-full p-2 border rounded text-sm">
                 </div>
 
@@ -898,7 +875,7 @@
                 <button onclick="closeModal('modalImport')" class="text-gray-500 text-xl font-bold">&times;</button>
             </div>
             <div class="space-y-3">
-                <p class="text-xs text-gray-600">Select or drop your spreadsheet (.xlsx, .csv). The system auto-matches occupant names with your Faculty Directory to pull ITS & Contact details!</p>
+                <p class="text-xs text-gray-600">Select or drop your spreadsheet (.xlsx, .csv).</p>
                 <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="w-full border p-2 text-sm rounded">
                 <input type="hidden" id="importTypeTarget">
                 <button onclick="processExcelImport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-bold transition">Process Import</button>
@@ -1063,7 +1040,6 @@
             });
         }
 
-        // Close dropdowns on clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#allocFacultyInput') && !e.target.closest('#allocFacultyDropdown')) {
                 document.getElementById('allocFacultyDropdown')?.classList.add('hidden');
@@ -1091,7 +1067,6 @@
                     return;
                 }
 
-                // Setup Admin status & explicit sub-header permissions
                 isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
                 document.getElementById('currentUserRole').innerText = isUserAdmin ? 'Administrator' : 'Standard User';
                 
@@ -1227,7 +1202,6 @@
                 document.getElementById('mod-' + m).classList.remove('active-tab');
             });
 
-            // Prevent standard user access to Admin Access module
             if (modName === 'admin-access' && !isUserAdmin) {
                 alert("Access Denied: Admin privileges required.");
                 modName = 'dawat-estates';
@@ -1276,7 +1250,6 @@
             if(secName === 'integrated') populateIntegratedFlatDropdown();
         };
 
-        // GLOBAL EXPORT FUNCTION FOR EXCEL & PDF
         window.exportData = function(section, format) {
             let data = [];
             let fileName = "";
@@ -1450,7 +1423,7 @@
         };
 
         window.openEditFlat = function(id) {
-            const flat = estatesData.find(e => e.id === id);
+            const flat = estatesData.find(e => String(e.id) === String(id));
             if(!flat) return;
             document.getElementById('flatId').value = flat.id;
             document.getElementById('flatBuilding').value = flat.building;
@@ -1473,7 +1446,7 @@
             const id = document.getElementById('flatId').value;
             const isBachelor = document.getElementById('flatIsBachelor').checked;
             const flatObj = {
-                id: id || Date.now().toString(),
+                id: id ? String(id) : Date.now().toString(),
                 building: document.getElementById('flatBuilding').value,
                 wing: document.getElementById('flatWing').value,
                 flatNo: document.getElementById('flatNo').value,
@@ -1489,8 +1462,8 @@
             };
 
             if(id) {
-                const idx = estatesData.findIndex(item => item.id === id);
-                estatesData[idx] = { ...estatesData[idx], ...flatObj };
+                const idx = estatesData.findIndex(item => String(item.id) === String(id));
+                if(idx !== -1) estatesData[idx] = { ...estatesData[idx], ...flatObj };
             } else {
                 estatesData.push(flatObj);
             }
@@ -1504,7 +1477,7 @@
 
         window.deleteFlat = async function(id) {
             if(confirm("Are you sure you want to delete this flat record?")) {
-                estatesData = estatesData.filter(e => e.id !== id);
+                estatesData = estatesData.filter(e => String(e.id) !== String(id));
                 await saveCloudData();
                 renderEstateTable();
                 renderAllocationTable();
@@ -1512,7 +1485,6 @@
             }
         };
 
-        // ALLOCATION TABLE
         window.renderAllocationTable = function() {
             const tbody = document.getElementById('allocationTableBody');
             const searchInput = document.getElementById('allocSearch');
@@ -1563,6 +1535,8 @@
                     }
                 }
 
+                const safeId = String(e.id).replace(/'/g, "\\'");
+
                 tr.innerHTML = `
                     <td class="p-3">
                         <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
@@ -1577,14 +1551,13 @@
                     <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
                     <td class="p-3 text-xs">${lastMaintStr}</td>
                     <td class="p-3 text-center">
-                        <button onclick="${e.isBachelor ? `switchSubHeader('bachelor')` : `openAllocationModal('${e.id}')`}" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                        <button onclick="${e.isBachelor ? `switchSubHeader('bachelor')` : `openAllocationModal('${safeId}')`}" class="bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         };
 
-        // INTERACTIVE TYPE & SEARCH DROPDOWN FOR ALLOCATION MODAL
         window.filterAllocFacultyInteractive = function() {
             const inputVal = document.getElementById('allocFacultyInput').value.toLowerCase();
             const dropdown = document.getElementById('allocFacultyDropdown');
@@ -1615,7 +1588,7 @@
         }
 
         window.openAllocationModal = function(id) {
-            const flat = estatesData.find(e => e.id === id);
+            const flat = estatesData.find(e => String(e.id) === String(id));
             if(!flat) return;
 
             document.getElementById('allocFlatId').value = flat.id;
@@ -1632,18 +1605,17 @@
             document.getElementById('modalAllocation').classList.remove('hidden');
         };
 
-        // MARK FLAT AS VACANT & MOVE OCCUPANT TO PAST HISTORY ARCHIVE
         window.markFlatAsVacant = async function() {
             const flatId = document.getElementById('allocFlatId').value;
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if (!flat) return;
 
-            if (!flat.occupant) {
+            if (!flat.occupant || flat.occupant.trim() === '') {
                 alert("This flat is already vacant.");
                 return;
             }
 
-            if (confirm(`Are you sure you want to mark this flat as vacant? ${flat.occupant} will be transferred to the Past Allocation Archive.`)) {
+            if (confirm(`Are you sure you want to mark this flat as vacant? ${flat.occupant} will be moved to the Past Allocation Archive.`)) {
                 if (!flat.archive) flat.archive = [];
                 flat.archive.push({
                     occupant: flat.occupant,
@@ -1671,13 +1643,14 @@
             archList.innerHTML = '';
             if(flat.archive && flat.archive.length > 0) {
                 flat.archive.forEach((a, idx) => {
+                    const safeId = String(flat.id).replace(/'/g, "\\'");
                     archList.innerHTML += `
                         <div class="py-1 flex justify-between items-center">
                             <div>
                                 <strong>${a.occupant}</strong> ${a.its ? `(ITS: ${a.its})` : ''}<br/>
                                 <span class="text-gray-500">${a.startDate || 'Start: -'} to ${a.endDate || 'End: -'}</span>
                             </div>
-                            <button onclick="deleteArchiveEntry('${flat.id}', ${idx})" class="text-red-500 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteArchiveEntry('${safeId}', ${idx})" class="text-red-500 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
                         </div>`;
                 });
             } else {
@@ -1685,11 +1658,10 @@
             }
         }
 
-        // PAST ALLOCATION HISTORY: ONLY NAME COMPULSORY
         window.addManualPastHistory = async function(e) {
             e.preventDefault();
             const flatId = document.getElementById('allocFlatId').value;
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(!flat) return;
 
             const occupantName = document.getElementById('pastName').value;
@@ -1711,7 +1683,7 @@
         };
 
         window.deleteArchiveEntry = async function(flatId, index) {
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(flat && flat.archive) {
                 flat.archive.splice(index, 1);
                 await saveCloudData();
@@ -1723,20 +1695,26 @@
         window.saveAllocation = async function(e) {
             e.preventDefault();
             const flatId = document.getElementById('allocFlatId').value;
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(!flat) return;
 
             const facName = document.getElementById('allocFacultyInput').value;
             const facIts = document.getElementById('allocIts').value;
             const facContact = document.getElementById('allocContact').value;
+            const startDateVal = document.getElementById('allocStartDate').value;
 
-            if(flat.occupant && flat.occupant !== facName) {
+            if (!facName || facName.trim() === '') {
+                alert("Please select or enter a faculty member.");
+                return;
+            }
+
+            if(flat.occupant && flat.occupant.trim() !== '' && flat.occupant !== facName) {
                 if(!flat.archive) flat.archive = [];
                 flat.archive.push({
                     occupant: flat.occupant,
-                    its: flat.its,
-                    contact: flat.contact,
-                    startDate: flat.startDate,
+                    its: flat.its || '',
+                    contact: flat.contact || '',
+                    startDate: flat.startDate || '',
                     endDate: new Date().toISOString().split('T')[0]
                 });
             }
@@ -1744,14 +1722,14 @@
             flat.occupant = facName;
             flat.its = facIts;
             flat.contact = facContact;
-            flat.startDate = document.getElementById('allocStartDate').value;
+            flat.startDate = startDateVal || new Date().toISOString().split('T')[0];
 
             await saveCloudData();
             closeModal('modalAllocation');
             renderAllocationTable();
+            alert("Allocation updated successfully!");
         };
 
-        // BACHELOR FLATS MANAGER
         window.renderBachelorGrid = function() {
             const grid = document.getElementById('bachelorGrid');
             grid.innerHTML = '';
@@ -1771,17 +1749,20 @@
                     residentItems = '<p class="text-xs text-gray-400 italic">No residents assigned yet.</p>';
                 } else {
                     residents.forEach((r, rIdx) => {
+                        const safeId = String(e.id).replace(/'/g, "\\'");
                         residentItems += `
                             <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-xs border">
                                 <div>
                                     <strong class="text-emerald-900">${r.name}</strong> <span class="text-gray-500">(ITS: ${r.its})</span>
                                     <br/><span class="text-[10px] text-gray-400">Since: ${r.startDate || '-'} | ${r.contact || ''}</span>
                                 </div>
-                                <button onclick="removeBachelorResident('${e.id}', ${rIdx})" class="text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
+                                <button onclick="removeBachelorResident('${safeId}', ${rIdx})" class="text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
                             </div>
                         `;
                     });
                 }
+
+                const safeId = String(e.id).replace(/'/g, "\\'");
 
                 grid.innerHTML += `
                     <div class="bg-white p-4 rounded-lg shadow border space-y-3">
@@ -1798,7 +1779,7 @@
                         <div class="space-y-1.5">
                             <h5 class="text-xs font-bold text-gray-700 uppercase flex justify-between items-center">
                                 <span>Current Residents:</span>
-                                <button onclick="openAddBachelorResidentModal('${e.id}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] px-2 py-1 rounded font-normal transition flex items-center space-x-1">
+                                <button onclick="openAddBachelorResidentModal('${safeId}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] px-2 py-1 rounded font-normal transition flex items-center space-x-1">
                                     <i class="fa-solid fa-user-plus"></i> <span>+ Add Resident</span>
                                 </button>
                             </h5>
@@ -1811,7 +1792,6 @@
             });
         };
 
-        // INTERACTIVE TYPE & SEARCH DROPDOWN FOR BACHELOR MODAL
         window.filterBachFacultyInteractive = function() {
             const inputVal = document.getElementById('bachFacultyInput').value.toLowerCase();
             const dropdown = document.getElementById('bachFacultyDropdown');
@@ -1842,7 +1822,7 @@
         }
 
         window.openAddBachelorResidentModal = function(flatId) {
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(!flat) return;
 
             document.getElementById('bachFlatId').value = flat.id;
@@ -1861,7 +1841,7 @@
         window.saveBachelorResident = async function(e) {
             e.preventDefault();
             const flatId = document.getElementById('bachFlatId').value;
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(!flat) return;
 
             const facName = document.getElementById('bachFacultyInput').value;
@@ -1886,7 +1866,7 @@
         };
 
         window.removeBachelorResident = async function(flatId, resIndex) {
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(flat && flat.residents) {
                 flat.residents.splice(resIndex, 1);
                 await saveCloudData();
@@ -1896,7 +1876,6 @@
             }
         };
 
-        // VACANT/BACHELOR FLATS BILLS TRACKER
         window.renderVacantBills = function() {
             const tbody = document.getElementById('vacantBillsTableBody');
             tbody.innerHTML = '';
@@ -2063,13 +2042,14 @@
             tbody.innerHTML = '';
 
             facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(search)).forEach(f => {
+                const safeId = String(f.id).replace(/'/g, "\\'");
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50";
                 tr.innerHTML = `
                     <td class="p-3 font-mono font-bold text-emerald-800">${f.its}</td>
                     <td class="p-3 font-medium">${f.name}</td>
                     <td class="p-3 text-gray-600">${f.contact}</td>
-                    <td class="p-3 text-center"><button onclick="deleteFaculty('${f.id}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button></td>
+                    <td class="p-3 text-center"><button onclick="deleteFaculty('${safeId}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -2094,7 +2074,7 @@
         };
 
         window.deleteFaculty = async function(id) {
-            facultyData = facultyData.filter(f => f.id !== id);
+            facultyData = facultyData.filter(f => String(f.id) !== String(id));
             await saveCloudData();
             renderFacultyTable();
         };
@@ -2123,11 +2103,10 @@
             alert("Society added successfully!");
         };
 
-        // DELETE SOCIETY IN HEADER 6
         window.deleteSociety = async function(id) {
-            const soc = societiesData.find(s => s.id === id);
+            const soc = societiesData.find(s => String(s.id) === String(id));
             if(confirm(`Are you sure you want to delete "${soc ? soc.name : 'this society'}"?`)) {
-                societiesData = societiesData.filter(s => s.id !== id);
+                societiesData = societiesData.filter(s => String(s.id) !== String(id));
                 await saveCloudData();
                 renderSocieties();
                 populateSocietyDropdowns();
@@ -2135,15 +2114,14 @@
             }
         };
 
-        // RENDER SOCIETIES WITH DELETE OPTION
         window.renderSocieties = function() {
             const grid = document.getElementById('societyGrid');
             grid.innerHTML = '';
             
-            // Sort societies ALPHABETICALLY
             const sorted = [...societiesData].sort((a,b) => a.name.localeCompare(b.name));
 
             sorted.forEach(s => {
+                const safeId = String(s.id).replace(/'/g, "\\'");
                 grid.innerHTML += `
                     <div class="bg-white p-4 rounded-lg shadow border space-y-2 flex flex-col justify-between">
                         <div class="space-y-2">
@@ -2156,7 +2134,7 @@
                             <p class="text-xs text-gray-600"><strong>Bill Responsible:</strong> ${s.billSubmittedBy}</p>
                         </div>
                         <div class="pt-2 border-t flex justify-end">
-                            <button onclick="deleteSociety('${s.id}')" class="text-xs text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                            <button onclick="deleteSociety('${safeId}')" class="text-xs text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
                                 <i class="fa-solid fa-trash-can"></i>
                                 <span>Delete Society</span>
                             </button>
@@ -2178,7 +2156,6 @@
             });
         };
 
-        // SOCIETY VAULT AUTO-SEGREGATED & ALPHABETICALLY ORDERED
         window.renderSocietyDocs = function() {
             const container = document.getElementById('societyDocsContainer');
             const socFilter = document.getElementById('docFilterSociety').value;
@@ -2196,18 +2173,15 @@
                 return;
             }
 
-            // Group by Society Name
             const grouped = {};
             filtered.forEach(doc => {
                 if(!grouped[doc.society]) grouped[doc.society] = [];
                 grouped[doc.society].push(doc);
             });
 
-            // Sort Society names ALPHABETICALLY
             const sortedSocieties = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
 
             sortedSocieties.forEach(socName => {
-                // Sort docs ALPHABETICALLY inside each group by Title
                 const docsInSoc = grouped[socName].sort((a, b) => a.title.localeCompare(b.title));
 
                 const socBlock = document.createElement('div');
@@ -2322,7 +2296,7 @@
                 return;
             }
 
-            const flat = estatesData.find(e => e.id === flatId);
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(!flat) return;
 
             const wingBadge = flat.wing ? ` (${flat.wing})` : '';

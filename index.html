@@ -2500,13 +2500,19 @@ window.saveMaintenanceLog = async function(e) {
             }
         };
 
-      function getBuildingSocietyList() {
+     function getBuildingSocietyList() {
     const socMap = new Map();
+
+    // List of building names to explicitly exclude from Society Maintenance
+    const excludedBuildings = ['faculty bldg', 'najmi bldg'];
 
     // Auto-extract building names from Estate Directory
     estatesData.forEach(e => {
         const bName = (e.building || '').trim();
         if(!bName) return;
+
+        // Skip excluded buildings
+        if(excludedBuildings.includes(bName.toLowerCase())) return;
 
         if(!socMap.has(bName)) {
             socMap.set(bName, {
@@ -2524,9 +2530,11 @@ window.saveMaintenanceLog = async function(e) {
         if(e.type === '2 BHK') sObj.count2Bhk++;
     });
 
-    // Merge custom added societies
+    // Merge custom added societies (filtering out excluded ones as well)
     societiesData.forEach(s => {
         const sName = s.name.trim();
+        if(excludedBuildings.includes(sName.toLowerCase())) return;
+
         if(!socMap.has(sName)) {
             socMap.set(sName, {
                 name: sName,
@@ -2563,7 +2571,13 @@ window.renderSocieties = function() {
         const contactPerson = custom.contactPerson || 'Not Specified';
         const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
 
-        const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'} (${s.count1Bhk} 1 BHK, ${s.count2Bhk} 2 BHK)`;
+      // Build dynamic breakdown excluding zero counts
+        const bhkParts = [];
+        if (s.count1Bhk > 0) bhkParts.push(`1 BHK - ${s.count1Bhk}`);
+        if (s.count2Bhk > 0) bhkParts.push(`2 BHK - ${s.count2Bhk}`);
+        
+        const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
+        const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
         const safeName = s.name.replace(/'/g, "\\'");
 
         grid.innerHTML += `

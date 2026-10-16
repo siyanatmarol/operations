@@ -1200,6 +1200,7 @@
         let societyDocs = [];
         let maintLogs = [];
         let vacantBills = {};
+        let societyBillsData = {};
         
         let superAdmins = [
             'murtaza.kheraluwala@jameasaifiyah.edu',
@@ -1379,6 +1380,7 @@
                     societyDocs = data.docs || [];
                     maintLogs = data.maint || [];
                     vacantBills = data.bills || {};
+                    societyBillsData = data.socBills || {};
                     usersList = data.users || usersList;
                 } else {
                     estatesData = [
@@ -1400,6 +1402,7 @@
                     docs: societyDocs,
                     maint: maintLogs,
                     bills: vacantBills,
+    socBills: societyBillsData,
                     users: usersList
                 });
             } catch (err) {
@@ -2497,35 +2500,420 @@ window.saveMaintenanceLog = async function(e) {
             }
         };
 
-        window.renderSocieties = function() {
-            const grid = document.getElementById('societyGrid');
-            grid.innerHTML = '';
-            
-            const sorted = [...societiesData].sort((a,b) => a.name.localeCompare(b.name));
+      function getBuildingSocietyList() {
+    const socMap = new Map();
 
-            sorted.forEach(s => {
-                const safeId = String(s.id).replace(/'/g, "\\'");
-                grid.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow border space-y-2 flex flex-col justify-between">
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-start">
-                                <h4 class="font-bold text-emerald-900">${s.name}</h4>
-                                <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">${s.cycle}</span>
-                            </div>
-                            <p class="text-xs text-gray-600"><strong>Flats:</strong> ${s.flats}</p>
-                            <p class="text-xs text-gray-600"><strong>Society Contact:</strong> ${s.contactPerson}</p>
-                            <p class="text-xs text-gray-600"><strong>Bill Responsible:</strong> ${s.billSubmittedBy}</p>
-                        </div>
-                        <div class="pt-2 border-t flex justify-end">
-                            <button onclick="deleteSociety('${safeId}')" class="text-xs text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
-                                <i class="fa-solid fa-trash-can"></i>
-                                <span>Delete Society</span>
-                            </button>
-                        </div>
-                    </div>`;
+    // Auto-extract building names from Estate Directory
+    estatesData.forEach(e => {
+        const bName = (e.building || '').trim();
+        if(!bName) return;
+
+        if(!socMap.has(bName)) {
+            socMap.set(bName, {
+                name: bName,
+                totalFlats: 0,
+                count1Bhk: 0,
+                count2Bhk: 0,
+                isAuto: true
             });
-        };
+        }
 
+        const sObj = socMap.get(bName);
+        sObj.totalFlats++;
+        if(e.type === '1 BHK') sObj.count1Bhk++;
+        if(e.type === '2 BHK') sObj.count2Bhk++;
+    });
+
+    // Merge custom added societies
+    societiesData.forEach(s => {
+        const sName = s.name.trim();
+        if(!socMap.has(sName)) {
+            socMap.set(sName, {
+                name: sName,
+                totalFlats: parseInt(s.flats) || 0,
+                count1Bhk: 0,
+                count2Bhk: 0,
+                isAuto: false,
+                customData: s
+            });
+        } else {
+            const existing = socMap.get(sName);
+            existing.customData = s;
+        }
+    });
+
+    return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
+}
+
+window.renderSocieties = function() {
+    const grid = document.getElementById('societyGrid');
+    if(!grid) return;
+    grid.innerHTML = '';
+
+    const list = getBuildingSocietyList();
+
+    if(list.length === 0) {
+        grid.innerHTML = '<p class="text-xs text-gray-400 col-span-3 text-center py-6">No societies found or created yet.</p>';
+        return;
+    }
+
+    list.forEach(s => {
+        const custom = s.customData || {};
+        const cycle = custom.cycle || 'Quarterly';
+        const contactPerson = custom.contactPerson || 'Not Specified';
+        const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
+
+        const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'} (${s.count1Bhk} 1 BHK, ${s.count2Bhk} 2 BHK)`;
+        const safeName = s.name.replace(/'/g, "\\'");
+
+        grid.innerHTML += `
+            <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <div class="flex justify-between items-start border-b pb-2">
+                        <div>
+                            <h4 class="font-bold text-emerald-900 text-base">${s.name}</h4>
+                            <span class="text-xs font-semibold text-emerald-700">${flatDisplay}</span>
+                        </div>
+                        <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">${cycle}</span>
+                    </div>
+
+                    <div class="text-xs space-y-1 text-gray-700">
+                        <p><strong>Contact Person:</strong> ${contactPerson}</p>
+                        <p><strong>Bill Responsible:</strong> ${billSubmittedBy}</p>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t space-y-2">
+                    <button onclick="openBillsSummaryModal('${safeName}', '${cycle}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
+                        <i class="fa-solid fa-calculator"></i>
+                        <span>Bills Summary</span>
+                    </button>
+                    
+                    <div class="flex justify-between items-center pt-1 text-xs">
+                        <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span>Edit Society</span>
+                        </button>
+                        <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+    });
+
+    populateSocietyDropdowns();
+    renderSocietyOverviewMetric();
+};
+
+window.renderSocietyOverviewMetric = function() {
+    const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
+    let grandTotal = 0;
+
+    const list = getBuildingSocietyList();
+    list.forEach(s => {
+        const dataKey = `${s.name}_${selYear}`;
+        const record = societyBillsData[dataKey];
+        if(record) {
+            if(record.regular) {
+                Object.values(record.regular).forEach(b => {
+                    grandTotal += (parseFloat(b.amount) || 0);
+                });
+            }
+            if(record.other) {
+                record.other.forEach(b => {
+                    grandTotal += (parseFloat(b.amount) || 0);
+                });
+            }
+        }
+    });
+
+    const displayEl = document.getElementById('societyOverviewTotalAmount');
+    if(displayEl) displayEl.innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+};
+
+window.openEditSocietyModal = function(socName) {
+    const list = getBuildingSocietyList();
+    const soc = list.find(s => s.name === socName);
+
+    document.getElementById('editSocietyTargetName').value = socName;
+    document.getElementById('editSocNameDisplay').value = socName;
+
+    const custom = (soc && soc.customData) ? soc.customData : {};
+    document.getElementById('editSocCycle').value = custom.cycle || 'Quarterly';
+    document.getElementById('editSocContactPerson').value = custom.contactPerson || '';
+    document.getElementById('editSocBillSubmittedBy').value = custom.billSubmittedBy || '';
+
+    document.getElementById('modalEditSociety').classList.remove('hidden');
+};
+
+window.saveSocietyEditRecord = async function(e) {
+    e.preventDefault();
+    const socName = document.getElementById('editSocietyTargetName').value;
+    const cycle = document.getElementById('editSocCycle').value;
+    const contactPerson = document.getElementById('editSocContactPerson').value;
+    const billSubmittedBy = document.getElementById('editSocBillSubmittedBy').value;
+
+    const idx = societiesData.findIndex(s => s.name === socName);
+    if(idx !== -1) {
+        societiesData[idx] = { ...societiesData[idx], cycle, contactPerson, billSubmittedBy };
+    } else {
+        societiesData.push({
+            id: Date.now().toString(),
+            name: socName,
+            flats: '0',
+            cycle,
+            contactPerson,
+            billSubmittedBy
+        });
+    }
+
+    await saveCloudData();
+    closeModal('modalEditSociety');
+    renderSocieties();
+};
+
+window.deleteSocietyRecord = async function(socName) {
+    if(confirm(`Are you sure you want to delete "${socName}" society configurations?`)) {
+        societiesData = societiesData.filter(s => s.name !== socName);
+        await saveCloudData();
+        renderSocieties();
+    }
+};
+
+// BILLS SUMMARY POPUP HANDLERS
+let currentSummarySocName = '';
+let currentSummaryCycle = '';
+
+window.openBillsSummaryModal = function(socName, cycle) {
+    currentSummarySocName = socName;
+    currentSummaryCycle = cycle;
+
+    document.getElementById('billsSummaryTitle').innerText = `${socName} Maintenance Bills Summary`;
+    document.getElementById('billsSummarySubtitle').innerText = `Frequency: ${cycle} System`;
+
+    renderBillsSummaryModalContent();
+    document.getElementById('modalBillsSummary').classList.remove('hidden');
+};
+
+window.renderBillsSummaryModalContent = function() {
+    const selYear = document.getElementById('billsSummaryYearSelect').value;
+    const dataKey = `${currentSummarySocName}_${selYear}`;
+
+    if(!societyBillsData[dataKey]) {
+        societyBillsData[dataKey] = { regular: {}, other: [] };
+    }
+    const currentData = societyBillsData[dataKey];
+
+    // 1. Build Regular Bills Table based on Frequency
+    const tbodyReg = document.getElementById('regularBillsTableBody');
+    tbodyReg.innerHTML = '';
+    let regularPeriods = [];
+
+    if(currentSummaryCycle === 'Yearly') {
+        regularPeriods = [{ key: 'Yearly', label: `Annual Bill (${selYear})` }];
+    } else if(currentSummaryCycle === 'Quarterly') {
+        regularPeriods = [
+            { key: 'Q1', label: 'Q1 (Jan - Mar)' },
+            { key: 'Q2', label: 'Q2 (Apr - Jun)' },
+            { key: 'Q3', label: 'Q3 (Jul - Sep)' },
+            { key: 'Q4', label: 'Q4 (Oct - Dec)' }
+        ];
+    } else {
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        regularPeriods = monthNames.map((m, idx) => ({ key: `M${idx+1}`, label: m }));
+    }
+
+    let regularSum = 0;
+
+    regularPeriods.forEach(p => {
+        const pData = currentData.regular[p.key] || { date: '', amount: 0, fileUrl: '' };
+        regularSum += (parseFloat(pData.amount) || 0);
+
+        const safeKey = p.key;
+
+        tbodyReg.innerHTML += `
+            <tr class="hover:bg-gray-50 border-b">
+                <td class="p-2.5 font-bold text-gray-800">${p.label}</td>
+                <td class="p-2.5"><input type="date" value="${pData.date || ''}" onchange="updateRegularBillRow('${safeKey}', 'date', this.value)" class="p-1 border rounded text-xs bg-white"></td>
+                <td class="p-2.5"><input type="number" placeholder="0" value="${pData.amount || ''}" onchange="updateRegularBillRow('${safeKey}', 'amount', this.value)" class="p-1 border rounded text-xs w-28 bg-white font-bold text-emerald-900"></td>
+                <td class="p-2.5">
+                    ${pData.fileUrl 
+                        ? `<a href="${pData.fileUrl}" target="_blank" class="text-emerald-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
+                        : '<span class="text-gray-400 italic">No File</span>'}
+                    <input type="file" accept=".pdf,image/*" onchange="uploadRegularBillFile('${safeKey}', this)" class="block text-[10px] mt-1">
+                </td>
+                <td class="p-2.5 text-center">
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Auto-Saved</span>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('regularBillsTotalSum').innerText = `₹${regularSum.toLocaleString('en-IN')}`;
+
+    // 2. Build Other Bills Table
+    const tbodyOther = document.getElementById('otherBillsTableBody');
+    tbodyOther.innerHTML = '';
+    let otherSum = 0;
+
+    if(!currentData.other || currentData.other.length === 0) {
+        tbodyOther.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 italic">No additional or other bills recorded for this year.</td></tr>';
+    } else {
+        currentData.other.forEach((b, idx) => {
+            otherSum += (parseFloat(b.amount) || 0);
+            tbodyOther.innerHTML += `
+                <tr class="hover:bg-gray-50 border-b">
+                    <td class="p-2.5">${b.date || '-'}</td>
+                    <td class="p-2.5 font-bold text-amber-900">₹${(parseFloat(b.amount) || 0).toLocaleString('en-IN')}</td>
+                    <td class="p-2.5 text-gray-800">${b.desc || '-'}</td>
+                    <td class="p-2.5">
+                        ${b.fileUrl 
+                            ? `<a href="${b.fileUrl}" target="_blank" class="text-amber-800 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
+                            : '<span class="text-gray-400 italic">None</span>'}
+                    </td>
+                    <td class="p-2.5 text-center space-x-2">
+                        <button onclick="editOtherBillRow(${idx})" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteOtherBillRow(${idx})" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    document.getElementById('otherBillsTotalSum').innerText = `₹${otherSum.toLocaleString('en-IN')}`;
+
+    // 3. Grand Total Calculation
+    const grandTotal = regularSum + otherSum;
+    document.getElementById('grandBillsTotalSum').innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+
+    renderSocietyOverviewMetric();
+};
+
+window.updateRegularBillRow = async function(periodKey, field, value) {
+    const selYear = document.getElementById('billsSummaryYearSelect').value;
+    const dataKey = `${currentSummarySocName}_${selYear}`;
+
+    if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
+    if(!societyBillsData[dataKey].regular[periodKey]) {
+        societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
+    }
+
+    societyBillsData[dataKey].regular[periodKey][field] = value;
+    await saveCloudData();
+    renderBillsSummaryModalContent();
+};
+
+window.uploadRegularBillFile = async function(periodKey, inputEl) {
+    const file = inputEl.files[0];
+    if(!file) return;
+
+    try {
+        const res = await uploadFileToDrive(file);
+        const selYear = document.getElementById('billsSummaryYearSelect').value;
+        const dataKey = `${currentSummarySocName}_${selYear}`;
+
+        if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
+        if(!societyBillsData[dataKey].regular[periodKey]) {
+            societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
+        }
+
+        societyBillsData[dataKey].regular[periodKey].fileUrl = res.fileUrl;
+        await saveCloudData();
+        renderBillsSummaryModalContent();
+    } catch(err) {
+        alert("File upload failed: " + err);
+    }
+};
+
+window.openAddOtherBillRow = function() {
+    document.getElementById('otherBillEditIndex').value = '-1';
+    document.getElementById('otherBillDateInput').value = new Date().toISOString().split('T')[0];
+    document.getElementById('otherBillAmountInput').value = '';
+    document.getElementById('otherBillDescInput').value = '';
+    document.getElementById('otherBillFileInput').value = '';
+    document.getElementById('otherBillInputBox').classList.remove('hidden');
+};
+
+window.closeOtherBillInputBox = function() {
+    document.getElementById('otherBillInputBox').classList.add('hidden');
+};
+
+window.saveOtherBillRow = async function() {
+    const editIdx = parseInt(document.getElementById('otherBillEditIndex').value);
+    const date = document.getElementById('otherBillDateInput').value;
+    const amount = document.getElementById('otherBillAmountInput').value;
+    const desc = document.getElementById('otherBillDescInput').value;
+    const file = document.getElementById('otherBillFileInput').files[0];
+
+    if(!amount || !desc) {
+        alert("Please enter Bill Amount and Description.");
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveOtherBill');
+    btn.innerText = "Processing...";
+    btn.disabled = true;
+
+    const selYear = document.getElementById('billsSummaryYearSelect').value;
+    const dataKey = `${currentSummarySocName}_${selYear}`;
+
+    if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
+
+    let fileUrl = editIdx >= 0 && societyBillsData[dataKey].other[editIdx] ? societyBillsData[dataKey].other[editIdx].fileUrl : "";
+
+    if(file) {
+        try {
+            const res = await uploadFileToDrive(file);
+            fileUrl = res.fileUrl;
+        } catch(err) {
+            alert("File upload failed: " + err);
+            btn.innerText = "Save Other Bill";
+            btn.disabled = false;
+            return;
+        }
+    }
+
+    const record = { id: Date.now().toString(), date, amount, desc, fileUrl };
+
+    if(editIdx >= 0) {
+        societyBillsData[dataKey].other[editIdx] = record;
+    } else {
+        societyBillsData[dataKey].other.push(record);
+    }
+
+    await saveCloudData();
+    btn.innerText = "Save Other Bill";
+    btn.disabled = false;
+    closeOtherBillInputBox();
+    renderBillsSummaryModalContent();
+};
+
+window.editOtherBillRow = function(index) {
+    const selYear = document.getElementById('billsSummaryYearSelect').value;
+    const dataKey = `${currentSummarySocName}_${selYear}`;
+    const record = societyBillsData[dataKey].other[index];
+    if(!record) return;
+
+    document.getElementById('otherBillEditIndex').value = index;
+    document.getElementById('otherBillDateInput').value = record.date || '';
+    document.getElementById('otherBillAmountInput').value = record.amount || '';
+    document.getElementById('otherBillDescInput').value = record.desc || '';
+    document.getElementById('otherBillFileInput').value = '';
+
+    document.getElementById('otherBillInputBox').classList.remove('hidden');
+};
+
+window.deleteOtherBillRow = async function(index) {
+    if(confirm("Delete this other bill record?")) {
+        const selYear = document.getElementById('billsSummaryYearSelect').value;
+        const dataKey = `${currentSummarySocName}_${selYear}`;
+        societyBillsData[dataKey].other.splice(index, 1);
+        await saveCloudData();
+        renderBillsSummaryModalContent();
+    }
+};
         window.populateSocietyDropdowns = function() {
             const selDoc = document.getElementById('docFilterSociety');
             const selUpload = document.getElementById('docSocietySelect');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Siyanat - Operations</title>
+    <title>Siyanat - Operations</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -162,40 +162,28 @@
                     </div>
                 </div>
 
-                <!-- Overview Metrics Cards for Estate Details -->
+                <!-- Overview Metrics Clickable Cards for Estate Details -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between">
+                    <button id="cardBtnTotalFlats" onclick="setEstateCardFilter('all')" class="bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-90">
                         <span class="text-xs uppercase tracking-wider font-semibold opacity-90">Total Flats</span>
                         <span id="cardTotalFlats" class="text-3xl font-extrabold mt-1">0</span>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border flex flex-col justify-between">
-                        <span class="text-xs text-gray-500 font-semibold uppercase">1 BHK Flats</span>
+                    </button>
+                    <button id="cardBtn1BhkFlats" onclick="setEstateCardFilter('1bhk')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500">
+                        <span class="text-xs text-gray-500 font-semibold uppercase">1 BHK</span>
                         <span id="card1BhkFlats" class="text-2xl font-bold text-gray-800 mt-1">0</span>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border flex flex-col justify-between">
-                        <span class="text-xs text-gray-500 font-semibold uppercase">2 BHK Flats</span>
+                    </button>
+                    <button id="cardBtn2BhkFlats" onclick="setEstateCardFilter('2bhk')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500">
+                        <span class="text-xs text-gray-500 font-semibold uppercase">2 BHK</span>
                         <span id="card2BhkFlats" class="text-2xl font-bold text-gray-800 mt-1">0</span>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border flex flex-col justify-between">
+                    </button>
+                    <button id="cardBtnBachelorFlats" onclick="setEstateCardFilter('bachelor')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-amber-500">
                         <span class="text-xs text-gray-500 font-semibold uppercase">Bachelor Flats</span>
                         <span id="cardBachelorFlats" class="text-2xl font-bold text-amber-700 mt-1">0</span>
-                    </div>
+                    </button>
                 </div>
 
-                <div class="bg-white p-4 rounded-lg shadow border flex flex-col sm:flex-row gap-3">
-                    <input type="text" id="estateSearch" oninput="renderEstateTable()" placeholder="Search Building Name, Wing, Flat No, Owner, or CA Number..." class="w-full sm:w-1/2 p-2 border rounded text-sm">
-                    <select id="estateTypeFilter" onchange="renderEstateTable()" class="p-2 border rounded text-sm">
-                        <option value="">All BHK Types</option>
-                        <option value="1 BHK">1 BHK</option>
-                        <option value="2 BHK">2 BHK</option>
-                        <option value="3 BHK">3 BHK</option>
-                        <option value="Studio">Studio</option>
-                    </select>
-                    <select id="estateCategoryFilter" onchange="renderEstateTable()" class="p-2 border rounded text-sm">
-                        <option value="">All Flat Types (Regular & Bachelor)</option>
-                        <option value="regular">Regular Faculty Flats</option>
-                        <option value="bachelor">Bachelor Flats Only</option>
-                    </select>
+                <div class="bg-white p-4 rounded-lg shadow border">
+                    <input type="text" id="estateSearch" oninput="renderEstateTable()" placeholder="Search Building Name, Wing, Flat No, Owner, or CA Number..." class="w-full p-2 border rounded text-sm">
                 </div>
 
                 <div class="bg-white rounded-lg shadow border overflow-x-auto">
@@ -233,18 +221,13 @@
                             <i class="fa-solid fa-file-pdf"></i>
                             <span>Export PDF</span>
                         </button>
-                        <select id="allocStatusFilter" onchange="renderAllocationTable()" class="p-2 border rounded text-sm bg-white">
-                            <option value="">All Allocation Status</option>
-                            <option value="vacant">Vacant Flats Only</option>
-                            <option value="allocated">Allocated Flats Only</option>
-                        </select>
                         <input type="text" id="allocSearch" oninput="renderAllocationTable()" placeholder="Search Faculty Name, Building, Flat No..." class="w-full sm:w-64 p-2 border rounded text-sm">
                     </div>
                 </div>
 
-                <!-- Overview Metrics Cards for Allocation -->
+                <!-- Overview Metrics Clickable Cards for Allocation -->
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white p-4 rounded-lg shadow border border-l-4 border-l-emerald-600 flex justify-between items-center">
+                    <button id="cardBtnAllocatedFlats" onclick="setAllocCardFilter('allocated')" class="bg-white p-4 rounded-lg shadow border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition">
                         <div>
                             <span class="text-xs text-gray-500 font-semibold uppercase block">Allocated Flats</span>
                             <span id="cardAllocatedFlats" class="text-2xl font-bold text-emerald-800 mt-1">0</span>
@@ -252,8 +235,8 @@
                         <div class="bg-emerald-100 text-emerald-800 p-3 rounded-full text-lg">
                             <i class="fa-solid fa-user-check"></i>
                         </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg shadow border border-l-4 border-l-amber-600 flex justify-between items-center">
+                    </button>
+                    <button id="cardBtnVacantFlats" onclick="setAllocCardFilter('vacant')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:border-amber-500">
                         <div>
                             <span class="text-xs text-gray-500 font-semibold uppercase block">Vacant Flats</span>
                             <span id="cardVacantFlats" class="text-2xl font-bold text-amber-800 mt-1">0</span>
@@ -261,7 +244,7 @@
                         <div class="bg-amber-100 text-amber-800 p-3 rounded-full text-lg">
                             <i class="fa-solid fa-door-open"></i>
                         </div>
-                    </div>
+                    </button>
                 </div>
 
                 <div class="bg-white rounded-lg shadow border overflow-x-auto">
@@ -640,6 +623,7 @@
     <footer class="bg-emerald-950 text-emerald-400 text-xs py-4 border-t border-emerald-800 text-center">
         <p>Aljamea-tus-Saifiyah Facilities Management Dept (Marol) &copy; 2026. All rights reserved.</p>
     </footer>
+    
     <!-- MODALS -->
 
     <!-- Modal: Add / Edit Estate Flat -->
@@ -1252,6 +1236,9 @@
             return res.join(' ');
         }
 
+        let selectedEstateFilter = 'all'; // 'all', '1bhk', '2bhk', 'bachelor'
+        let selectedAllocFilter = 'allocated'; // Default to Allocated Flats view
+
         function updateOverviewMetrics() {
             const totalFlats = estatesData.length;
             const count1Bhk = estatesData.filter(e => e.type === '1 BHK').length;
@@ -1281,39 +1268,233 @@
             if (document.getElementById('cardVacantFlats')) document.getElementById('cardVacantFlats').innerText = countVacant;
         }
 
-       async function uploadFileToDrive(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const base64Data = e.target.result.split(',')[1];
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8'
-                    },
-                    body: JSON.stringify({
-                        filename: file.name,
-                        mimeType: file.type,
-                        base64: base64Data
-                    })
-                });
+        window.setEstateCardFilter = function(filter) {
+            selectedEstateFilter = filter;
+            
+            const btnMap = {
+                'all': 'cardBtnTotalFlats',
+                '1bhk': 'cardBtn1BhkFlats',
+                '2bhk': 'cardBtn2BhkFlats',
+                'bachelor': 'cardBtnBachelorFlats'
+            };
 
-                const result = await response.json();
-                if (result.status === 'success') {
-                    resolve(result);
+            Object.keys(btnMap).forEach(key => {
+                const btn = document.getElementById(btnMap[key]);
+                if (!btn) return;
+                if (key === filter) {
+                    btn.className = "bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-90";
+                    btn.querySelectorAll('span')[0].className = "text-xs uppercase tracking-wider font-semibold opacity-90";
+                    btn.querySelectorAll('span')[1].className = "text-3xl font-extrabold mt-1 text-white";
                 } else {
-                    reject(result.message);
+                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500";
+                    btn.querySelectorAll('span')[0].className = "text-xs text-gray-500 font-semibold uppercase";
+                    btn.querySelectorAll('span')[1].className = "text-2xl font-bold text-gray-800 mt-1";
                 }
-            } catch(err) {
-                reject(err);
-            }
+            });
+
+            renderEstateTable();
         };
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-    });
-}
+
+        window.renderEstateTable = function() {
+            updateOverviewMetrics();
+            const tbody = document.getElementById('estateTableBody');
+            const rawSearch = (document.getElementById('estateSearch')?.value || '').toLowerCase().trim();
+            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+
+            tbody.innerHTML = '';
+
+            const filteredData = estatesData.filter(e => {
+                const wingStr = e.wing || '';
+                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.owner} ${e.elec} ${e.gas}`.toLowerCase();
+                
+                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+                
+                let matchCategory = true;
+                if (selectedEstateFilter === '1bhk') matchCategory = (e.type === '1 BHK');
+                else if (selectedEstateFilter === '2bhk') matchCategory = (e.type === '2 BHK');
+                else if (selectedEstateFilter === 'bachelor') matchCategory = e.isBachelor;
+                
+                return matchSearch && matchCategory;
+            });
+
+            filteredData.sort((a, b) => {
+                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
+                if (bComp !== 0) return bComp;
+
+                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
+                if (wComp !== 0) return wComp;
+
+                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            filteredData.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 border-b";
+                const wingBadge = e.wing ? `<span class="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">${e.wing}</span>` : '';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-gray-800">${e.building}${wingBadge}</td>
+                    <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
+                    <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
+                    <td class="p-3">${e.owner}</td>
+                    <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
+                    <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
+                    <td class="p-3">
+                        ${e.isBachelor 
+                            ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
+                            : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
+                    </td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.setAllocCardFilter = function(filter) {
+            selectedAllocFilter = filter;
+
+            const btnMap = {
+                'allocated': 'cardBtnAllocatedFlats',
+                'vacant': 'cardBtnVacantFlats'
+            };
+
+            Object.keys(btnMap).forEach(key => {
+                const btn = document.getElementById(btnMap[key]);
+                if (!btn) return;
+                if (key === filter) {
+                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition";
+                } else {
+                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:border-emerald-500";
+                }
+            });
+
+            renderAllocationTable();
+        };
+
+        window.renderAllocationTable = function() {
+            updateOverviewMetrics();
+            const tbody = document.getElementById('allocationTableBody');
+            const rawSearch = (document.getElementById('allocSearch') ? document.getElementById('allocSearch').value : '').toLowerCase().trim();
+            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+
+            tbody.innerHTML = '';
+
+            const filteredData = estatesData.filter(e => {
+                const wingStr = e.wing || '';
+                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+                
+                let residentsText = '';
+                if (e.isBachelor && e.residents) {
+                    residentsText = e.residents.map(r => `${r.name} ${r.its}`).join(' ');
+                }
+
+                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''} ${residentsText}`.toLowerCase();
+                
+                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+
+                let matchStatus = true;
+                if (selectedAllocFilter === 'vacant') matchStatus = !isFlatOccupied;
+                else if (selectedAllocFilter === 'allocated') matchStatus = isFlatOccupied;
+
+                return matchSearch && matchStatus;
+            });
+
+            filteredData.sort((a, b) => {
+                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
+                if (bComp !== 0) return bComp;
+
+                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
+                if (wComp !== 0) return wComp;
+
+                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            filteredData.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+
+                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+                const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
+
+                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
+                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+                
+                let lastMaintStr = '-';
+                if(flatMaintLogs.length > 0) {
+                    const lastLog = flatMaintLogs[0];
+                    const elapsed = calculateElapsed(lastLog.date);
+                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
+                }
+
+                let displayOccupant = e.occupant || '-';
+                let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
+
+                if(e.isBachelor) {
+                    if(e.residents && e.residents.length > 0) {
+                        displayOccupant = e.residents.map(r => r.name).join(', ');
+                        displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
+                    } else {
+                        displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
+                    }
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
+                        <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
+                    </td>
+                    <td class="p-3">
+                        ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
+                    </td>
+                    <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
+                    <td class="p-3 text-xs font-mono">${displayItsContact}</td>
+                    <td class="p-3 text-xs">${e.startDate || '-'}</td>
+                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
+                    <td class="p-3 text-xs">${lastMaintStr}</td>
+                    <td class="p-3 text-center">
+                        <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        async function uploadFileToDrive(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64Data = e.target.result.split(',')[1];
+                    try {
+                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'cors',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8'
+                            },
+                            body: JSON.stringify({
+                                filename: file.name,
+                                mimeType: file.type,
+                                base64: base64Data
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            resolve(result);
+                        } else {
+                            reject(result.message);
+                        }
+                    } catch(err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#allocFacultyInput') && !e.target.closest('#allocFacultyDropdown')) {
@@ -1641,62 +1822,6 @@
             }
         };
 
-        window.renderEstateTable = function() {
-            updateOverviewMetrics();
-            const tbody = document.getElementById('estateTableBody');
-            const rawSearch = document.getElementById('estateSearch').value.toLowerCase().trim();
-            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
-            const typeFilter = document.getElementById('estateTypeFilter').value;
-            const categoryFilter = document.getElementById('estateCategoryFilter').value;
-
-            tbody.innerHTML = '';
-
-            const filteredData = estatesData.filter(e => {
-                const wingStr = e.wing || '';
-                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.owner} ${e.elec} ${e.gas}`.toLowerCase();
-                
-                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
-                const matchType = !typeFilter || e.type === typeFilter;
-                const matchCategory = !categoryFilter || (categoryFilter === 'bachelor' ? e.isBachelor : !e.isBachelor);
-                
-                return matchSearch && matchType && matchCategory;
-            });
-
-            filteredData.sort((a, b) => {
-                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
-                if (bComp !== 0) return bComp;
-
-                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
-                if (wComp !== 0) return wComp;
-
-                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
-            });
-
-            filteredData.forEach(e => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 border-b";
-                const wingBadge = e.wing ? `<span class="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">${e.wing}</span>` : '';
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-800">${e.building}${wingBadge}</td>
-                    <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
-                    <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
-                    <td class="p-3">${e.owner}</td>
-                    <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
-                    <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
-                    <td class="p-3">
-                        ${e.isBachelor 
-                            ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
-                            : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
-                    </td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
-
         window.toggleBachelorCapacityInput = function() {
             const chk = document.getElementById('flatIsBachelor').checked;
             document.getElementById('bachelorCapacityBox').classList.toggle('hidden', !chk);
@@ -1770,96 +1895,6 @@
                 renderAllocationTable();
                 populateIntegratedFlatDropdown();
             }
-        };
-
-        window.renderAllocationTable = function() {
-            updateOverviewMetrics();
-            const tbody = document.getElementById('allocationTableBody');
-            const rawSearch = (document.getElementById('allocSearch') ? document.getElementById('allocSearch').value : '').toLowerCase().trim();
-            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
-            const statusFilter = document.getElementById('allocStatusFilter') ? document.getElementById('allocStatusFilter').value : '';
-
-            tbody.innerHTML = '';
-
-            const filteredData = estatesData.filter(e => {
-                const wingStr = e.wing || '';
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
-                
-                let residentsText = '';
-                if (e.isBachelor && e.residents) {
-                    residentsText = e.residents.map(r => `${r.name} ${r.its}`).join(' ');
-                }
-
-                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''} ${residentsText}`.toLowerCase();
-                
-                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
-
-                let matchStatus = true;
-                if(statusFilter === 'vacant') matchStatus = !isFlatOccupied;
-                if(statusFilter === 'allocated') matchStatus = isFlatOccupied;
-
-                return matchSearch && matchStatus;
-            });
-
-            filteredData.sort((a, b) => {
-                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
-                if (bComp !== 0) return bComp;
-
-                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
-                if (wComp !== 0) return wComp;
-
-                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
-            });
-
-            filteredData.forEach(e => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
-
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
-                const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
-
-                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
-                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
-                
-                let lastMaintStr = '-';
-                if(flatMaintLogs.length > 0) {
-                    const lastLog = flatMaintLogs[0];
-                    const elapsed = calculateElapsed(lastLog.date);
-                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
-                }
-
-                let displayOccupant = e.occupant || '-';
-                let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
-
-                if(e.isBachelor) {
-                    if(e.residents && e.residents.length > 0) {
-                        displayOccupant = e.residents.map(r => r.name).join(', ');
-                        displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
-                    } else {
-                        displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
-                    }
-                }
-
-                tr.innerHTML = `
-                    <td class="p-3">
-                        <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
-                        <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
-                    </td>
-                    <td class="p-3">
-                        ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
-                    </td>
-                    <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
-                    <td class="p-3 text-xs font-mono">${displayItsContact}</td>
-                    <td class="p-3 text-xs">${e.startDate || '-'}</td>
-                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
-                    <td class="p-3 text-xs">${lastMaintStr}</td>
-                    <td class="p-3 text-center">
-                        <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
         };
 
         window.filterAllocFacultyInteractive = function() {
@@ -2551,92 +2586,91 @@
             return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
         }
 
-       window.renderSocieties = function() {
-    const grid = document.getElementById('societyGrid');
-    if(!grid) return;
-    grid.innerHTML = '';
+        window.renderSocieties = function() {
+            const grid = document.getElementById('societyGrid');
+            if(!grid) return;
+            grid.innerHTML = '';
 
-    const list = getBuildingSocietyList();
-    const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
+            const list = getBuildingSocietyList();
+            const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
 
-    if(list.length === 0) {
-        grid.innerHTML = '<p class="text-xs text-gray-400 col-span-3 text-center py-6">No societies found or created yet.</p>';
-        return;
-    }
-
-    list.forEach(s => {
-        const custom = s.customData || {};
-        const cycle = custom.cycle || 'Quarterly';
-        const contactPerson = custom.contactPerson || 'Not Specified';
-        const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
-
-        // Calculate society total expense for selected year
-        const dataKey = `${s.name}_${selYear}`;
-        const record = societyBillsData[dataKey];
-        let socTotalAmount = 0;
-        if(record) {
-            if(record.regular) {
-                Object.values(record.regular).forEach(b => {
-                    socTotalAmount += (parseFloat(b.amount) || 0);
-                });
+            if(list.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-gray-400 col-span-3 text-center py-6">No societies found or created yet.</p>';
+                return;
             }
-            if(record.other) {
-                record.other.forEach(b => {
-                    socTotalAmount += (parseFloat(b.amount) || 0);
-                });
-            }
-        }
 
-        // Build dynamic breakdown excluding zero counts
-        const bhkParts = [];
-        if (s.count1Bhk > 0) bhkParts.push(`1 BHK - ${s.count1Bhk}`);
-        if (s.count2Bhk > 0) bhkParts.push(`2 BHK - ${s.count2Bhk}`);
-        
-        const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
-        const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
-        const safeName = s.name.replace(/'/g, "\\'");
+            list.forEach(s => {
+                const custom = s.customData || {};
+                const cycle = custom.cycle || 'Quarterly';
+                const contactPerson = custom.contactPerson || 'Not Specified';
+                const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
 
-        grid.innerHTML += `
-            <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
-                <div class="space-y-2">
-                    <div class="flex justify-between items-start border-b pb-2">
-                        <div>
-                            <h4 class="font-bold text-emerald-900 text-base">${s.name}</h4>
-                            <span class="text-xs font-semibold text-emerald-700 block">${flatDisplay}</span>
-                            <span class="text-xs font-bold text-red-600 block mt-0.5">Total Bills (${selYear}): ₹${socTotalAmount.toLocaleString('en-IN')}</span>
+                const dataKey = `${s.name}_${selYear}`;
+                const record = societyBillsData[dataKey];
+                let socTotalAmount = 0;
+                if(record) {
+                    if(record.regular) {
+                        Object.values(record.regular).forEach(b => {
+                            socTotalAmount += (parseFloat(b.amount) || 0);
+                        });
+                    }
+                    if(record.other) {
+                        record.other.forEach(b => {
+                            socTotalAmount += (parseFloat(b.amount) || 0);
+                        });
+                    }
+                }
+
+                const bhkParts = [];
+                if (s.count1Bhk > 0) bhkParts.push(`1 BHK - ${s.count1Bhk}`);
+                if (s.count2Bhk > 0) bhkParts.push(`2 BHK - ${s.count2Bhk}`);
+                
+                const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
+                const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
+                const safeName = s.name.replace(/'/g, "\\'");
+
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start border-b pb-2">
+                                <div>
+                                    <h4 class="font-bold text-emerald-900 text-base">${s.name}</h4>
+                                    <span class="text-xs font-semibold text-emerald-700 block">${flatDisplay}</span>
+                                    <span class="text-xs font-bold text-red-600 block mt-0.5">Total Bills (${selYear}): ₹${socTotalAmount.toLocaleString('en-IN')}</span>
+                                </div>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">${cycle}</span>
+                            </div>
+
+                            <div class="text-xs space-y-1 text-gray-700">
+                                <p><strong>Contact Person:</strong> ${contactPerson}</p>
+                                <p><strong>Bill Responsible:</strong> ${billSubmittedBy}</p>
+                            </div>
                         </div>
-                        <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">${cycle}</span>
-                    </div>
 
-                    <div class="text-xs space-y-1 text-gray-700">
-                        <p><strong>Contact Person:</strong> ${contactPerson}</p>
-                        <p><strong>Bill Responsible:</strong> ${billSubmittedBy}</p>
-                    </div>
-                </div>
+                        <div class="pt-3 border-t space-y-2">
+                            <button onclick="openBillsSummaryModal('${safeName}', '${cycle}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-calculator"></i>
+                                <span>Bills Summary</span>
+                            </button>
+                            
+                            <div class="flex justify-between items-center pt-1 text-xs">
+                                <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    <span>Edit Society</span>
+                                </button>
+                                <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
 
-                <div class="pt-3 border-t space-y-2">
-                    <button onclick="openBillsSummaryModal('${safeName}', '${cycle}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
-                        <i class="fa-solid fa-calculator"></i>
-                        <span>Bills Summary</span>
-                    </button>
-                    
-                    <div class="flex justify-between items-center pt-1 text-xs">
-                        <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                            <span>Edit Society</span>
-                        </button>
-                        <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
-                            <i class="fa-solid fa-trash-can"></i>
-                            <span>Delete</span>
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-    });
+            populateSocietyDropdowns();
+            renderSocietyOverviewMetric();
+        };
 
-    populateSocietyDropdowns();
-    renderSocietyOverviewMetric();
-};
         window.renderSocietyOverviewMetric = function() {
             const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
             let grandTotal = 0;

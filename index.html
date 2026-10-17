@@ -2586,7 +2586,7 @@
             return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
         }
 
-        window.renderSocieties = function() {
+       window.renderSocieties = function() {
             const grid = document.getElementById('societyGrid');
             if(!grid) return;
             grid.innerHTML = '';
@@ -2599,7 +2599,7 @@
                 return;
             }
 
-            list.forEach(s => {
+            list.forEach((s, index) => {
                 const custom = s.customData || {};
                 const cycle = custom.cycle || 'Quarterly';
                 const contactPerson = custom.contactPerson || 'Not Specified';
@@ -2627,7 +2627,6 @@
                 
                 const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
                 const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
-                const safeName = s.name.replace(/'/g, "\\'");
 
                 grid.innerHTML += `
                     <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
@@ -2648,17 +2647,17 @@
                         </div>
 
                         <div class="pt-3 border-t space-y-2">
-                            <button onclick="openBillsSummaryModal('${safeName}', '${cycle}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
+                            <button onclick="openBillsSummaryByIndex(${index})" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
                                 <i class="fa-solid fa-calculator"></i>
                                 <span>Bills Summary</span>
                             </button>
                             
                             <div class="flex justify-between items-center pt-1 text-xs">
-                                <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
+                                <button onclick="openEditSocietyByIndex(${index})" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                     <span>Edit Society</span>
                                 </button>
-                                <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                                <button onclick="deleteSocietyByIndex(${index})" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
                                     <i class="fa-solid fa-trash-can"></i>
                                     <span>Delete</span>
                                 </button>
@@ -2670,7 +2669,7 @@
             populateSocietyDropdowns();
             renderSocietyOverviewMetric();
         };
-
+        
         window.renderSocietyOverviewMetric = function() {
             const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
             let grandTotal = 0;
@@ -2749,6 +2748,30 @@
         let currentSummarySocName = '';
         let currentSummaryCycle = '';
 
+        window.openBillsSummaryByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (!soc) return;
+            const custom = soc.customData || {};
+            const cycle = custom.cycle || 'Quarterly';
+            openBillsSummaryModal(soc.name, cycle);
+        };
+
+        window.openEditSocietyByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (soc) openEditSocietyModal(soc.name);
+        };
+
+        window.deleteSocietyByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (soc) deleteSocietyRecord(soc.name);
+        };
+
+        let currentSummarySocName = '';
+        let currentSummaryCycle = '';
+
         window.openBillsSummaryModal = function(socName, cycle) {
             currentSummarySocName = socName;
             currentSummaryCycle = cycle;
@@ -2759,7 +2782,7 @@
             renderBillsSummaryModalContent();
             document.getElementById('modalBillsSummary').classList.remove('hidden');
         };
-
+        
         window.renderBillsSummaryModalContent = function() {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
             const dataKey = `${currentSummarySocName}_${selYear}`;

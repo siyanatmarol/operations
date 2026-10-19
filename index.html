@@ -2586,7 +2586,7 @@
             return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
         }
 
-       window.renderSocieties = function() {
+      window.renderSocieties = function() {
             const grid = document.getElementById('societyGrid');
             if(!grid) return;
             grid.innerHTML = '';
@@ -2668,6 +2668,27 @@
 
             populateSocietyDropdowns();
             renderSocietyOverviewMetric();
+        };
+
+        window.openBillsSummaryByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (!soc) return;
+            const custom = soc.customData || {};
+            const cycle = custom.cycle || 'Quarterly';
+            openBillsSummaryModal(soc.name, cycle);
+        };
+
+        window.openEditSocietyByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (soc) openEditSocietyModal(soc.name);
+        };
+
+        window.deleteSocietyByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (soc) deleteSocietyRecord(soc.name);
         };
         
         window.renderSocietyOverviewMetric = function() {

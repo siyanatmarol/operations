@@ -2599,7 +2599,7 @@
                 return;
             }
 
-            list.forEach((s, index) => {
+          list.forEach((s) => {
                 const custom = s.customData || {};
                 const cycle = custom.cycle || 'Quarterly';
                 const contactPerson = custom.contactPerson || 'Not Specified';
@@ -2628,6 +2628,8 @@
                 const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
                 const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
 
+                const safeName = s.name.replace(/'/g, "\\'");
+
                 grid.innerHTML += `
                     <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
                         <div class="space-y-2">
@@ -2647,17 +2649,17 @@
                         </div>
 
                         <div class="pt-3 border-t space-y-2">
-                            <button onclick="openBillsSummaryByIndex(${index})" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
+                            <button onclick="openBillsSummaryByName('${safeName}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
                                 <i class="fa-solid fa-calculator"></i>
                                 <span>Bills Summary</span>
                             </button>
                             
                             <div class="flex justify-between items-center pt-1 text-xs">
-                                <button onclick="openEditSocietyByIndex(${index})" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
+                                <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                     <span>Edit Society</span>
                                 </button>
-                                <button onclick="deleteSocietyByIndex(${index})" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                                <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
                                     <i class="fa-solid fa-trash-can"></i>
                                     <span>Delete</span>
                                 </button>
@@ -2670,45 +2672,32 @@
             renderSocietyOverviewMetric();
         };
 
-     window.openBillsSummaryByIndex = function(index) {
+   window.openBillsSummaryByName = function(socName) {
+    if (!socName) return;
+
+    // Find the building object directly by name instead of index
     const list = getBuildingSocietyList();
-    const soc = list[index];
+    const soc = list.find(s => s.name.trim() === socName.trim());
 
-    if (!soc || !soc.name) {
-        console.error("Auto-generated society record not found at index:", index);
-        return;
-    }
-
-    const custom = soc.customData || {};
-    // Default auto-pulled buildings to 'Quarterly' if no custom cycle is set
+    const custom = (soc && soc.customData) ? soc.customData : {};
     const cycle = custom.cycle || 'Quarterly';
 
-    currentSummarySocName = soc.name.trim();
+    currentSummarySocName = socName.trim();
     currentSummaryCycle = cycle;
 
-    // Safely populate modal text headers
     const titleEl = document.getElementById('billsSummaryTitle');
     const subtitleEl = document.getElementById('billsSummarySubtitle');
     if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
     if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
 
-    // Ensure societyBillsData object exists for this building & year
-    const yearSelect = document.getElementById('billsSummaryYearSelect');
-    const selYear = yearSelect ? yearSelect.value : '2026';
-    const dataKey = `${currentSummarySocName}_${selYear}`;
-
-    if (!societyBillsData[dataKey]) {
-        societyBillsData[dataKey] = { regular: {}, other: [] };
-    }
-
-    // Render inner content table
+    // Render table rows
     renderBillsSummaryModalContent();
 
-    // Show modal
+    // Open modal
     const modal = document.getElementById('modalBillsSummary');
     if (modal) modal.classList.remove('hidden');
 };
-
+        
         window.openEditSocietyByIndex = function(index) {
             const list = getBuildingSocietyList();
             const soc = list[index];
@@ -2796,15 +2785,37 @@
             }
         };
 
-        window.openBillsSummaryModal = function(socName, cycle) {
-    currentSummarySocName = socName;
+       // 1. Declare state variables first
+let currentSummarySocName = '';
+let currentSummaryCycle = '';
+
+// 2. Updated function by name
+window.openBillsSummaryByName = function(socName) {
+    if (!socName) return;
+
+    const list = getBuildingSocietyList();
+    const soc = list.find(s => s.name.trim() === socName.trim());
+
+    const custom = (soc && soc.customData) ? soc.customData : {};
+    const cycle = custom.cycle || 'Quarterly';
+
+    currentSummarySocName = socName.trim();
     currentSummaryCycle = cycle;
 
-    document.getElementById('billsSummaryTitle').innerText = `${socName} Maintenance Bills Summary`;
-    document.getElementById('billsSummarySubtitle').innerText = `Frequency: ${cycle} System`;
+    const titleEl = document.getElementById('billsSummaryTitle');
+    const subtitleEl = document.getElementById('billsSummarySubtitle');
+    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
+    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
 
     renderBillsSummaryModalContent();
-    document.getElementById('modalBillsSummary').classList.remove('hidden');
+
+    const modal = document.getElementById('modalBillsSummary');
+    if (modal) modal.classList.remove('hidden');
+};
+
+// 3. Keep openBillsSummaryModal as a safe alias
+window.openBillsSummaryModal = function(socName, cycle) {
+    openBillsSummaryByName(socName);
 };
 
         let currentSummarySocName = '';

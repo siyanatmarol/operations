@@ -2670,14 +2670,23 @@
             renderSocietyOverviewMetric();
         };
 
-        window.openBillsSummaryByIndex = function(index) {
-            const list = getBuildingSocietyList();
-            const soc = list[index];
-            if (!soc) return;
-            const custom = soc.customData || {};
-            const cycle = custom.cycle || 'Quarterly';
-            openBillsSummaryModal(soc.name, cycle);
-        };
+       window.openBillsSummaryByIndex = function(index) {
+    const list = getBuildingSocietyList();
+    const soc = list[index];
+    if (!soc) return;
+    const custom = soc.customData || {};
+    const cycle = custom.cycle || 'Quarterly';
+    
+    // Ensure modal gets clean parameters
+    currentSummarySocName = soc.name;
+    currentSummaryCycle = cycle;
+
+    document.getElementById('billsSummaryTitle').innerText = `${soc.name} Maintenance Bills Summary`;
+    document.getElementById('billsSummarySubtitle').innerText = `Frequency: ${cycle} System`;
+
+    renderBillsSummaryModalContent();
+    document.getElementById('modalBillsSummary').classList.remove('hidden');
+};
 
         window.openEditSocietyByIndex = function(index) {
             const list = getBuildingSocietyList();
@@ -2765,6 +2774,17 @@
                 renderSocieties();
             }
         };
+
+        window.openBillsSummaryModal = function(socName, cycle) {
+    currentSummarySocName = socName;
+    currentSummaryCycle = cycle;
+
+    document.getElementById('billsSummaryTitle').innerText = `${socName} Maintenance Bills Summary`;
+    document.getElementById('billsSummarySubtitle').innerText = `Frequency: ${cycle} System`;
+
+    renderBillsSummaryModalContent();
+    document.getElementById('modalBillsSummary').classList.remove('hidden');
+};
 
         let currentSummarySocName = '';
         let currentSummaryCycle = '';

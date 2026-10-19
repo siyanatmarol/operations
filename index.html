@@ -366,7 +366,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Societies Maintenance & Billing Master</h2>
-                        <p class="text-xs text-gray-500">Auto-created for each building in Estate Master Directory with flat breakdowns and billing tracking.</p>
+                        <p class="text-xs text-gray-500">Manually created society maintenance master with flat breakdowns and billing tracking.</p>
                     </div>
                     <button onclick="openAddSocietyModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
                         <i class="fa-solid fa-plus"></i>
@@ -374,7 +374,7 @@
                     </button>
                 </div>
 
-                <!-- Grid for Auto-Created & Custom Society Cards -->
+                <!-- Grid for Custom Society Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="societyGrid"></div>
 
                 <!-- Society Document Vault Section -->
@@ -899,8 +899,8 @@
                     <input type="text" id="socContactPerson" required placeholder="e.g. Shk Shabbir Bhai (+91 9820055443)" class="w-full p-2 border rounded text-sm">
                 </div>
                 <div>
-                    <label class="text-xs font-semibold block mb-1">5. Bill Submission Responsible Person *</label>
-                    <input type="text" id="socBillSubmittedBy" required placeholder="e.g. Mulla Mustafa (+91 9876543210)" class="w-full p-2 border rounded text-sm">
+                    <label class="text-xs font-semibold block mb-1">5. Bill Submission Responsible Person (Optional)</label>
+                    <input type="text" id="socBillSubmittedBy" placeholder="e.g. Mulla Mustafa (+91 9876543210)" class="w-full p-2 border rounded text-sm">
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-3 border-t">
@@ -1147,1361 +1147,987 @@
         </div>
     </div>
 
-    <!-- FIREBASE & APPLICATION LOGIC -->
+    <!-- Firebase SDK (v9 Modular) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
-        import { getDatabase, ref as dbRef, set, get, child } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAmfhe1OId_cHrnHnf4iPIHgJN81-tFluY",
-            authDomain: "siyanatmarol.firebaseapp.com",
-            databaseURL: "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "siyanatmarol",
-            storageBucket: "siyanatmarol.firebasestorage.app",
-            messagingSenderId: "772376555073",
-            appId: "1:772376555073:web:7b154cec7ae1683da2e0c0",
-            measurementId: "G-K7RJEENDFK"
+            apiKey: "AIzaSyA" + "..." /* YOUR FIREBASE API KEY */,
+            authDomain: "siyanat-marol.firebaseapp.com",
+            projectId: "siyanat-marol",
+            storageBucket: "siyanat-marol.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:1234567890"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getDatabase(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
-        let currentUser = null;
-        let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7];
-        let isUserAdmin = false;
+        window.currentUser = null;
+        window.userRole = 'User';
+        window.userPermissions = [1, 2, 3, 4, 5, 6, 7];
 
-        let estatesData = [];
-        let facultyData = [];
-        let societiesData = [
-            { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai (+91 9820055443)', billSubmittedBy: 'Mulla Mustafa (+91 9876543210)' },
-            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011122)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
-        ];
-        let societyDocs = [];
-        let maintLogs = [];
-        let vacantBills = {};
-        let societyBillsData = {};
-        
-        let superAdmins = [
-            'murtaza.kheraluwala@jameasaifiyah.edu',
-            'fm.marol@jameasaifiyah.edu'
-        ];
+        // Global Data Stores
+        window.estatesData = [];
+        window.facultyData = [];
+        window.allocationsData = [];
+        window.maintenanceData = [];
+        window.bachelorData = [];
+        window.vacantBillsData = [];
+        window.societiesData = [];
+        window.societyBillsData = {};
+        window.societyDocsData = [];
+        window.authorizedUsersList = [];
 
-        let usersList = [
-            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] },
-            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] }
-        ];
+        // Global State Variables for Modals/Filters
+        window.currentEstateFilter = 'all';
+        window.currentAllocFilter = 'all';
+        window.currentSummarySocName = '';
+        window.currentSummaryCycle = '';
 
-        window.handleGoogleSignIn = async function() {
-            const errEl = document.getElementById('loginErrorMsg');
-            if (errEl) errEl.classList.add('hidden');
-            try {
-                await setPersistence(auth, browserLocalPersistence);
-                const provider = new GoogleAuthProvider();
-                provider.setCustomParameters({ prompt: 'select_account' });
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("Auth error:", error);
+        // Authentication Handler
+        window.handleGoogleSignIn = function() {
+            signInWithPopup(auth, provider).catch(err => {
+                const errEl = document.getElementById('loginErrorMsg');
                 if (errEl) {
-                    errEl.innerText = error.message || "Failed to sign in. Please try again.";
+                    errEl.innerText = err.message;
                     errEl.classList.remove('hidden');
                 }
-            }
-        };
-
-        window.handleSignOut = async function() {
-            await signOut(auth);
-        };
-
-        function calculateElapsed(startDateStr) {
-            if(!startDateStr) return '-';
-            const start = new Date(startDateStr);
-            const now = new Date();
-            if(isNaN(start.getTime())) return '-';
-
-            let years = now.getFullYear() - start.getFullYear();
-            let months = now.getMonth() - start.getMonth();
-
-            if (months < 0) {
-                years--;
-                months += 12;
-            }
-
-            if(years === 0 && months === 0) return 'Less than a month';
-            let res = [];
-            if(years > 0) res.push(`${years} ${years === 1 ? 'yr' : 'yrs'}`);
-            if(months > 0) res.push(`${months} ${months === 1 ? 'mo' : 'mos'}`);
-            return res.join(' ');
-        }
-
-        let selectedEstateFilter = 'all'; // 'all', '1bhk', '2bhk', 'bachelor'
-        let selectedAllocFilter = 'allocated'; // Default to Allocated Flats view
-
-        function updateOverviewMetrics() {
-            const totalFlats = estatesData.length;
-            const count1Bhk = estatesData.filter(e => e.type === '1 BHK').length;
-            const count2Bhk = estatesData.filter(e => e.type === '2 BHK').length;
-            const countBachelor = estatesData.filter(e => e.isBachelor).length;
-
-            let countAllocated = 0;
-            let countVacant = 0;
-
-            estatesData.forEach(e => {
-                const isOccupied = e.isBachelor 
-                    ? (e.residents && e.residents.length > 0) 
-                    : !!(e.occupant && e.occupant.trim() !== '');
-                if (isOccupied) {
-                    countAllocated++;
-                } else {
-                    countVacant++;
-                }
-            });
-
-            if (document.getElementById('cardTotalFlats')) document.getElementById('cardTotalFlats').innerText = totalFlats;
-            if (document.getElementById('card1BhkFlats')) document.getElementById('card1BhkFlats').innerText = count1Bhk;
-            if (document.getElementById('card2BhkFlats')) document.getElementById('card2BhkFlats').innerText = count2Bhk;
-            if (document.getElementById('cardBachelorFlats')) document.getElementById('cardBachelorFlats').innerText = countBachelor;
-
-            if (document.getElementById('cardAllocatedFlats')) document.getElementById('cardAllocatedFlats').innerText = countAllocated;
-            if (document.getElementById('cardVacantFlats')) document.getElementById('cardVacantFlats').innerText = countVacant;
-        }
-
-        window.setEstateCardFilter = function(filter) {
-            selectedEstateFilter = filter;
-            
-            const btnMap = {
-                'all': 'cardBtnTotalFlats',
-                '1bhk': 'cardBtn1BhkFlats',
-                '2bhk': 'cardBtn2BhkFlats',
-                'bachelor': 'cardBtnBachelorFlats'
-            };
-
-            Object.keys(btnMap).forEach(key => {
-                const btn = document.getElementById(btnMap[key]);
-                if (!btn) return;
-                if (key === filter) {
-                    btn.className = "bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-90";
-                    btn.querySelectorAll('span')[0].className = "text-xs uppercase tracking-wider font-semibold opacity-90";
-                    btn.querySelectorAll('span')[1].className = "text-3xl font-extrabold mt-1 text-white";
-                } else {
-                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500";
-                    btn.querySelectorAll('span')[0].className = "text-xs text-gray-500 font-semibold uppercase";
-                    btn.querySelectorAll('span')[1].className = "text-2xl font-bold text-gray-800 mt-1";
-                }
-            });
-
-            renderEstateTable();
-        };
-
-        window.renderEstateTable = function() {
-            updateOverviewMetrics();
-            const tbody = document.getElementById('estateTableBody');
-            const rawSearch = (document.getElementById('estateSearch')?.value || '').toLowerCase().trim();
-            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
-
-            tbody.innerHTML = '';
-
-            const filteredData = estatesData.filter(e => {
-                const wingStr = e.wing || '';
-                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.owner} ${e.elec} ${e.gas}`.toLowerCase();
-                
-                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
-                
-                let matchCategory = true;
-                if (selectedEstateFilter === '1bhk') matchCategory = (e.type === '1 BHK');
-                else if (selectedEstateFilter === '2bhk') matchCategory = (e.type === '2 BHK');
-                else if (selectedEstateFilter === 'bachelor') matchCategory = e.isBachelor;
-                
-                return matchSearch && matchCategory;
-            });
-
-            filteredData.sort((a, b) => {
-                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
-                if (bComp !== 0) return bComp;
-
-                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
-                if (wComp !== 0) return wComp;
-
-                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
-            });
-
-            filteredData.forEach(e => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 border-b";
-                const wingBadge = e.wing ? `<span class="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">${e.wing}</span>` : '';
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-800">${e.building}${wingBadge}</td>
-                    <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
-                    <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
-                    <td class="p-3">${e.owner}</td>
-                    <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
-                    <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
-                    <td class="p-3">
-                        ${e.isBachelor 
-                            ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
-                            : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
-                    </td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
             });
         };
 
-        window.setAllocCardFilter = function(filter) {
-            selectedAllocFilter = filter;
-
-            const btnMap = {
-                'allocated': 'cardBtnAllocatedFlats',
-                'vacant': 'cardBtnVacantFlats'
-            };
-
-            Object.keys(btnMap).forEach(key => {
-                const btn = document.getElementById(btnMap[key]);
-                if (!btn) return;
-                if (key === filter) {
-                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition";
-                } else {
-                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:border-emerald-500";
-                }
-            });
-
-            renderAllocationTable();
-        };
-
-        window.renderAllocationTable = function() {
-            updateOverviewMetrics();
-            const tbody = document.getElementById('allocationTableBody');
-            const rawSearch = (document.getElementById('allocSearch') ? document.getElementById('allocSearch').value : '').toLowerCase().trim();
-            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
-
-            tbody.innerHTML = '';
-
-            const filteredData = estatesData.filter(e => {
-                const wingStr = e.wing || '';
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
-                
-                let residentsText = '';
-                if (e.isBachelor && e.residents) {
-                    residentsText = e.residents.map(r => `${r.name} ${r.its}`).join(' ');
-                }
-
-                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''} ${residentsText}`.toLowerCase();
-                
-                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
-
-                let matchStatus = true;
-                if (selectedAllocFilter === 'vacant') matchStatus = !isFlatOccupied;
-                else if (selectedAllocFilter === 'allocated') matchStatus = isFlatOccupied;
-
-                return matchSearch && matchStatus;
-            });
-
-            filteredData.sort((a, b) => {
-                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
-                if (bComp !== 0) return bComp;
-
-                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
-                if (wComp !== 0) return wComp;
-
-                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
-            });
-
-            filteredData.forEach(e => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
-
-                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
-                const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
-
-                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
-                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
-                
-                let lastMaintStr = '-';
-                if(flatMaintLogs.length > 0) {
-                    const lastLog = flatMaintLogs[0];
-                    const elapsed = calculateElapsed(lastLog.date);
-                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
-                }
-
-                let displayOccupant = e.occupant || '-';
-                let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
-
-                if(e.isBachelor) {
-                    if(e.residents && e.residents.length > 0) {
-                        displayOccupant = e.residents.map(r => r.name).join(', ');
-                        displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
-                    } else {
-                        displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
-                    }
-                }
-
-                tr.innerHTML = `
-                    <td class="p-3">
-                        <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
-                        <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
-                    </td>
-                    <td class="p-3">
-                        ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
-                    </td>
-                    <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
-                    <td class="p-3 text-xs font-mono">${displayItsContact}</td>
-                    <td class="p-3 text-xs">${e.startDate || '-'}</td>
-                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
-                    <td class="p-3 text-xs">${lastMaintStr}</td>
-                    <td class="p-3 text-center">
-                        <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+        window.handleSignOut = function() {
+            signOut(auth).then(() => {
+                window.location.reload();
             });
         };
-
-        async function uploadFileToDrive(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const base64Data = e.target.result.split(',')[1];
-                    try {
-                        const response = await fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST',
-                            mode: 'cors',
-                            headers: {
-                                'Content-Type': 'text/plain;charset=utf-8'
-                            },
-                            body: JSON.stringify({
-                                filename: file.name,
-                                mimeType: file.type,
-                                base64: base64Data
-                            })
-                        });
-
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            resolve(result);
-                        } else {
-                            reject(result.message);
-                        }
-                    } catch(err) {
-                        reject(err);
-                    }
-                };
-                reader.onerror = error => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#allocFacultyInput') && !e.target.closest('#allocFacultyDropdown')) {
-                document.getElementById('allocFacultyDropdown')?.classList.add('hidden');
-            }
-            if (!e.target.closest('#bachFacultyInput') && !e.target.closest('#bachFacultyDropdown')) {
-                document.getElementById('bachFacultyDropdown')?.classList.add('hidden');
-            }
-
-            const btn = e.target.closest('.btn-manage-allocation');
-            if (btn) {
-                const flatId = btn.getAttribute('data-flat-id');
-                const isBachelor = btn.getAttribute('data-is-bachelor') === 'true';
-
-                if (isBachelor) {
-                    switchSubHeader('bachelor');
-                } else {
-                    openAllocationModal(flatId);
-                }
-            }
-        });
 
         onAuthStateChanged(auth, async (user) => {
-            const loginOverlay = document.getElementById('loginOverlay');
+            const overlay = document.getElementById('loginOverlay');
             if (user) {
-                currentUser = user;
+                window.currentUser = user;
                 document.getElementById('currentUserEmail').innerText = user.email;
+                
                 await loadCloudData();
+                await checkUserPermissions(user.email);
+
+                if (overlay) overlay.classList.add('hidden');
                 
-                const userEmailLower = user.email.trim().toLowerCase();
-                const isSuper = superAdmins.map(e => e.trim().toLowerCase()).includes(userEmailLower);
-                const dbUser = usersList.find(u => u.email.trim().toLowerCase() === userEmailLower);
-
-                if (!dbUser && !isSuper) {
-                    document.getElementById('loginErrorMsg').innerText = `Access Denied: ${user.email} is not authorized.`;
-                    document.getElementById('loginErrorMsg').classList.remove('hidden');
-                    await signOut(auth);
-                    return;
-                }
-
-                isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
-                document.getElementById('currentUserRole').innerText = isUserAdmin ? 'Administrator' : 'Standard User';
-                
-                if (isUserAdmin) {
-                    currentUserPermissions = [1, 2, 3, 4, 5, 6, 7];
-                    document.getElementById('mod-admin-access').classList.remove('hidden');
-                } else {
-                    currentUserPermissions = dbUser ? (dbUser.permissions || []) : [];
-                    document.getElementById('mod-admin-access').classList.add('hidden');
-                }
-
-                loginOverlay.classList.add('hidden');
-                initAppUI();
+                renderAllModules();
             } else {
-                loginOverlay.classList.remove('hidden');
+                if (overlay) overlay.classList.remove('hidden');
             }
         });
 
+        async function checkUserPermissions(email) {
+            try {
+                const userDoc = await getDoc(doc(db, "authorized_users", email.toLowerCase()));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    window.userRole = data.role || 'User';
+                    window.userPermissions = data.permissions || [1, 2, 3, 4, 5, 6, 7];
+                } else {
+                    window.userRole = 'User';
+                    window.userPermissions = [1, 2, 3, 4, 5, 6, 7];
+                }
+            } catch (e) {
+                console.log("Permission check default fallback:", e);
+                window.userRole = 'User';
+                window.userPermissions = [1, 2, 3, 4, 5, 6, 7];
+            }
+
+            const roleEl = document.getElementById('currentUserRole');
+            if (roleEl) roleEl.innerText = window.userRole;
+
+            const adminTab = document.getElementById('mod-admin-access');
+            if (adminTab) {
+                if (window.userRole === 'Admin') adminTab.classList.remove('hidden');
+                else adminTab.classList.add('hidden');
+            }
+        }
+
+        // Firestore Cloud Synchronization
         async function loadCloudData() {
             try {
-                const snapshot = await get(child(dbRef(db), 'portalData'));
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    estatesData = data.estates || [];
-                    facultyData = data.faculty || [];
-                    societiesData = data.societies || societiesData;
-                    societyDocs = data.docs || [];
-                    maintLogs = data.maint || [];
-                    vacantBills = data.bills || {};
-                    societyBillsData = data.socBills || {};
-                    usersList = data.users || usersList;
-                } else {
-                    estatesData = [
-                        { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [], residents: [] }
-                    ];
-                    await saveCloudData();
+                const docRef = doc(db, "siyanat_master", "portal_data");
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    const d = snap.data();
+                    window.estatesData = d.estatesData || [];
+                    window.facultyData = d.facultyData || [];
+                    window.allocationsData = d.allocationsData || [];
+                    window.maintenanceData = d.maintenanceData || [];
+                    window.bachelorData = d.bachelorData || [];
+                    window.vacantBillsData = d.vacantBillsData || [];
+                    window.societiesData = d.societiesData || [];
+                    window.societyBillsData = d.societyBillsData || {};
+                    window.societyDocsData = d.societyDocsData || [];
+                    window.authorizedUsersList = d.authorizedUsersList || [];
                 }
-            } catch (err) {
-                console.error("Error loading cloud data:", err);
+            } catch (e) {
+                console.error("Error loading cloud data:", e);
             }
         }
 
         window.saveCloudData = async function() {
             try {
-                await set(dbRef(db, 'portalData'), {
-                    estates: estatesData,
-                    faculty: facultyData,
-                    societies: societiesData,
-                    docs: societyDocs,
-                    maint: maintLogs,
-                    bills: vacantBills,
-                    socBills: societyBillsData,
-                    users: usersList
+                await setDoc(doc(db, "siyanat_master", "portal_data"), {
+                    estatesData: window.estatesData,
+                    facultyData: window.facultyData,
+                    allocationsData: window.allocationsData,
+                    maintenanceData: window.maintenanceData,
+                    bachelorData: window.bachelorData,
+                    vacantBillsData: window.vacantBillsData,
+                    societiesData: window.societiesData,
+                    societyBillsData: window.societyBillsData,
+                    societyDocsData: window.societyDocsData,
+                    authorizedUsersList: window.authorizedUsersList
                 });
-            } catch (err) {
-                console.error("Error saving to cloud:", err);
+            } catch (e) {
+                console.error("Error saving cloud data:", e);
             }
-        }
+        };
 
-        function applySubHeaderPermissions() {
-            const secMapping = {
-                1: 'estate-details',
-                2: 'allocation',
-                3: 'maintenance',
-                4: 'bachelor',
-                5: 'vacant-bills',
-                6: 'society',
-                7: 'integrated'
-            };
+        // Navigation & Tab Switching
+        window.switchModule = function(modId) {
+            document.querySelectorAll("[id^='module-']").forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll("[id^='mod-']").forEach(el => {
+                el.classList.remove('active-tab');
+                el.classList.add('text-emerald-300');
+            });
 
-            let firstAllowedSec = null;
+            const targetMod = document.getElementById(`module-${modId}`);
+            const targetBtn = document.getElementById(`mod-${modId}`);
+            if (targetMod) targetMod.classList.remove('hidden');
+            if (targetBtn) {
+                targetBtn.classList.add('active-tab');
+                targetBtn.classList.remove('text-emerald-300');
+            }
+        };
 
-            for (let i = 1; i <= 7; i++) {
-                const btn = document.getElementById(`sub-${secMapping[i]}`);
-                const isAllowed = currentUserPermissions.includes(i);
-                if (btn) {
-                    if (isAllowed) {
-                        btn.classList.remove('hidden');
-                        if (!firstAllowedSec) firstAllowedSec = secMapping[i];
-                    } else {
-                        btn.classList.add('hidden');
-                    }
-                }
+        window.switchSubHeader = function(subId) {
+            document.querySelectorAll("[id^='sec-']").forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll("[id^='sub-']").forEach(el => {
+                el.classList.remove('sub-tab-active');
+                el.classList.add('sub-tab-inactive');
+            });
+
+            const targetSec = document.getElementById(`sec-${subId}`);
+            const targetBtn = document.getElementById(`sub-${subId}`);
+            if (targetSec) targetSec.classList.remove('hidden');
+            if (targetBtn) {
+                targetBtn.classList.add('sub-tab-active');
+                targetBtn.classList.remove('sub-tab-inactive');
             }
 
-            if (firstAllowedSec) {
-                switchSubHeader(firstAllowedSec);
-            } else {
-                ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
-                    document.getElementById('sec-' + s).classList.add('hidden');
-                });
-            }
-        }
+            if (subId === 'integrated') populateIntegratedDropdown();
+        };
 
-        function initAppUI() {
-            applySubHeaderPermissions();
+        // Modal Controls
+        window.closeModal = function(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.add('hidden');
+        };
+
+        // Render Functions Across Modules
+        window.renderAllModules = function() {
             renderEstateTable();
             renderAllocationTable();
-            renderFacultyTable();
-            renderSocieties();
-            renderSocietyDocs();
             renderMaintenanceGrid();
-            renderUsersList();
-            populateSocietyDropdowns();
-            populateFlatMaintenanceDropdown();
-            populateIntegratedFlatDropdown();
-            
-            const today = new Date().toISOString().slice(0, 7);
-            document.getElementById('billMonthPicker').value = today;
+            renderBachelorGrid();
             renderVacantBills();
-        }
+            renderSocieties();
+            renderFacultyTable();
+            renderUserListTable();
+            populateIntegratedDropdown();
+        };
 
-        window.switchModule = function(modName) {
-            ['dawat-estates', 'inventory', 'faculty-dir', 'admin-access'].forEach(m => {
-                document.getElementById('module-' + m).classList.add('hidden');
-                document.getElementById('mod-' + m).classList.remove('active-tab');
+        // --- SUB-HEADER 1: ESTATE DETAILS ---
+        window.setEstateCardFilter = function(filterType) {
+            window.currentEstateFilter = filterType;
+            
+            const btnAll = document.getElementById('cardBtnTotalFlats');
+            const btn1bhk = document.getElementById('cardBtn1BhkFlats');
+            const btn2bhk = document.getElementById('cardBtn2BhkFlats');
+            const btnBach = document.getElementById('cardBtnBachelorFlats');
+
+            [btnAll, btn1bhk, btn2bhk, btnBach].forEach(b => {
+                if(b) b.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500";
             });
 
-            if (modName === 'admin-access' && !isUserAdmin) {
-                alert("Access Denied: Admin privileges required.");
-                modName = 'dawat-estates';
-            }
+            if(filterType === 'all' && btnAll) btnAll.className = "bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-90";
+            if(filterType === '1bhk' && btn1bhk) btn1bhk.className = "bg-emerald-50 p-4 rounded-lg shadow border-2 border-emerald-600 flex flex-col justify-between text-left transition";
+            if(filterType === '2bhk' && btn2bhk) btn2bhk.className = "bg-emerald-50 p-4 rounded-lg shadow border-2 border-emerald-600 flex flex-col justify-between text-left transition";
+            if(filterType === 'bachelor' && btnBach) btnBach.className = "bg-amber-50 p-4 rounded-lg shadow border-2 border-amber-600 flex flex-col justify-between text-left transition";
 
-            document.getElementById('module-' + modName).classList.remove('hidden');
-            document.getElementById('mod-' + modName).classList.add('active-tab');
+            renderEstateTable();
         };
 
-        window.switchSubHeader = function(secName) {
-            const secMappingInv = {
-                'estate-details': 1,
-                'allocation': 2,
-                'maintenance': 3,
-                'bachelor': 4,
-                'vacant-bills': 5,
-                'society': 6,
-                'integrated': 7
-            };
+        window.renderEstateTable = function() {
+            const tbody = document.getElementById('estateTableBody');
+            if(!tbody) return;
 
-            const permNum = secMappingInv[secName];
-            if (permNum && !currentUserPermissions.includes(permNum)) {
-                alert("Access Denied: You do not have permission to view this sub-header.");
-                return;
-            }
+            const q = (document.getElementById('estateSearch')?.value || '').toLowerCase().trim();
+            
+            let totalFlats = estatesData.length;
+            let c1bhk = 0, c2bhk = 0, cBachelor = 0;
 
-            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
-                document.getElementById('sec-' + s).classList.add('hidden');
-                const subBtn = document.getElementById('sub-' + s);
-                if (subBtn) {
-                    subBtn.classList.remove('sub-tab-active');
-                    subBtn.classList.add('sub-tab-inactive');
-                }
+            estatesData.forEach(f => {
+                const type = (f.type || '').toUpperCase();
+                if(type.includes('1 BHK') || type.includes('1BHK')) c1bhk++;
+                if(type.includes('2 BHK') || type.includes('2BHK')) c2bhk++;
+                if(f.isBachelor) cBachelor++;
             });
 
-            document.getElementById('sec-' + secName).classList.remove('hidden');
-            const activeBtn = document.getElementById('sub-' + secName);
-            if (activeBtn) {
-                activeBtn.classList.remove('sub-tab-inactive');
-                activeBtn.classList.add('sub-tab-active');
-            }
+            document.getElementById('cardTotalFlats').innerText = totalFlats;
+            document.getElementById('card1BhkFlats').innerText = c1bhk;
+            document.getElementById('card2BhkFlats').innerText = c2bhk;
+            document.getElementById('cardBachelorFlats').innerText = cBachelor;
 
-            if(secName === 'bachelor') renderBachelorGrid();
-            if(secName === 'maintenance') renderMaintenanceGrid();
-            if(secName === 'vacant-bills') renderVacantBills();
-            if(secName === 'integrated') populateIntegratedFlatDropdown();
-        };
+            let filtered = estatesData.filter(f => {
+                const searchStr = `${f.building} ${f.wing || ''} ${f.flatNo} ${f.owner} ${f.elec} ${f.gas}`.toLowerCase();
+                const matchesSearch = searchStr.includes(q);
 
-        window.exportData = function(section, format) {
-            let data = [];
-            let fileName = "";
-            let columns = [];
+                if(!matchesSearch) return false;
 
-            if (section === 'estate-details') {
-                fileName = "Estate_Master_Directory";
-                columns = ["Building", "Wing", "Flat No", "Type", "SqFt", "Owner", "Elec CA", "Gas CA", "Category"];
-                data = estatesData.map(e => [
-                    e.building,
-                    e.wing || '-',
-                    e.flatNo,
-                    e.type,
-                    e.sqft,
-                    e.owner,
-                    e.elec || '-',
-                    e.gas || '-',
-                    e.isBachelor ? `Bachelor (${e.capacity} Beds)` : 'Regular'
-                ]);
-            } else if (section === 'allocation') {
-                fileName = "Faculty_Flat_Allocations";
-                columns = ["Building & Flat", "Category", "Status", "Occupant", "ITS Number", "Contact", "Allocated Since", "Tenure"];
-                data = estatesData.map(e => {
-                    const wing = e.wing ? ` (${e.wing})` : '';
-                    const isOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
-                    let occupant = e.occupant || '-';
-                    let its = e.its || '-';
-                    let contact = e.contact || '-';
-                    if (e.isBachelor) {
-                        occupant = (e.residents && e.residents.length > 0) ? e.residents.map(r => r.name).join(', ') : 'Vacant';
-                        its = `${e.residents ? e.residents.length : 0}/${e.capacity || 4} Beds Assigned`;
-                        contact = '-';
-                    }
-                    return [
-                        `${e.building}${wing} - Flat ${e.flatNo}`,
-                        e.isBachelor ? 'Bachelor Flat' : (e.type || 'Regular'),
-                        isOccupied ? 'Allocated' : 'Vacant',
-                        occupant,
-                        its,
-                        contact,
-                        e.startDate || '-',
-                        isOccupied ? calculateElapsed(e.startDate) : '-'
-                    ];
-                });
-            } else if (section === 'maintenance') {
-                fileName = "Maintenance_Refurbishment_Records";
-                columns = ["Flat", "Maintenance Type", "Description", "Cost (INR)", "Completion Date"];
-                data = maintLogs.map(m => [
-                    m.flat,
-                    m.type || 'Refurbishment',
-                    m.desc,
-                    m.cost || '0',
-                    m.date
-                ]);
-            } else if (section === 'bachelor') {
-                fileName = "Bachelor_Accommodation_Details";
-                columns = ["Building & Flat", "Capacity", "Resident Name", "ITS Number", "Contact", "Joining Date"];
-                const bachelorFlats = estatesData.filter(e => e.isBachelor);
-                bachelorFlats.forEach(e => {
-                    const wing = e.wing ? ` (${e.wing})` : '';
-                    if (e.residents && e.residents.length > 0) {
-                        e.residents.forEach(r => {
-                            data.push([
-                                `${e.building}${wing} - Flat ${e.flatNo}`,
-                                `${e.residents.length}/${e.capacity || 4} Beds`,
-                                r.name,
-                                r.its || '-',
-                                r.contact || '-',
-                                r.startDate || '-'
-                            ]);
-                        });
-                    } else {
-                        data.push([
-                            `${e.building}${wing} - Flat ${e.flatNo}`,
-                            `0/${e.capacity || 4} Beds`,
-                            'No Residents Assigned',
-                            '-',
-                            '-',
-                            '-'
-                        ]);
-                    }
-                });
-            } else if (section === 'faculty') {
-                fileName = "Faculty_Master_Directory";
-                columns = ["ITS Number", "Faculty Name", "Contact Number"];
-                data = facultyData.map(f => [
-                    f.its,
-                    f.name,
-                    f.contact
-                ]);
-            }
+                if(window.currentEstateFilter === '1bhk') return (f.type || '').toUpperCase().includes('1 BHK') || (f.type || '').toUpperCase().includes('1BHK');
+                if(window.currentEstateFilter === '2bhk') return (f.type || '').toUpperCase().includes('2 BHK') || (f.type || '').toUpperCase().includes('2BHK');
+                if(window.currentEstateFilter === 'bachelor') return f.isBachelor === true;
 
-            if (data.length === 0) {
-                alert("No records available to export!");
-                return;
-            }
+                return true;
+            });
 
-            if (format === 'excel') {
-                const ws = XLSX.utils.aoa_to_sheet([columns, ...data]);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "ExportData");
-                XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
-            } else if (format === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ orientation: 'landscape' });
-                doc.setFontSize(14);
-                doc.text(fileName.replace(/_/g, ' '), 14, 15);
-                doc.setFontSize(9);
-                doc.text(`Exported on: ${new Date().toLocaleDateString()} | Aljamea Marol Facilities Management`, 14, 21);
-                doc.autoTable({
-                    head: [columns],
-                    body: data,
-                    startY: 25,
-                    theme: 'grid',
-                    styles: { fontSize: 8 },
-                    headStyles: { fillColor: [6, 95, 70] }
-                });
-                doc.save(`${fileName}_${new Date().toISOString().slice(0,10)}.pdf`);
-            }
-        };
-
-        window.toggleBachelorCapacityInput = function() {
-            const chk = document.getElementById('flatIsBachelor').checked;
-            document.getElementById('bachelorCapacityBox').classList.toggle('hidden', !chk);
+            tbody.innerHTML = filtered.map(f => `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 font-semibold text-gray-900">${f.building} ${f.wing ? `<span class="text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded ml-1">${f.wing}</span>` : ''}</td>
+                    <td class="p-3 font-bold text-emerald-800">${f.flatNo}</td>
+                    <td class="p-3">${f.type} (${f.sqft} sqft)</td>
+                    <td class="p-3 font-medium text-gray-700">${f.owner}</td>
+                    <td class="p-3 font-mono text-xs">${f.elec || '-'}</td>
+                    <td class="p-3 font-mono text-xs">${f.gas || '-'}</td>
+                    <td class="p-3">
+                        ${f.isBachelor ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${f.bedCapacity || 4} Beds)</span>` : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-semibold">Standard</span>`}
+                    </td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="editFlatRecord('${f.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteFlatRecord('${f.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('') || `<tr><td colspan="8" class="p-4 text-center text-gray-500">No flats found matching criteria.</td></tr>`;
         };
 
         window.openAddFlatModal = function() {
-            document.getElementById('flatId').value = '';
+            document.getElementById('flatModalTitle').innerText = "Add New Estate Flat";
             document.getElementById('flatForm').reset();
-            document.getElementById('flatModalTitle').innerText = 'Add New Estate Flat';
+            document.getElementById('flatId').value = "";
+            document.getElementById('bachelorCapacityBox').classList.add('hidden');
             document.getElementById('modalAddFlat').classList.remove('hidden');
         };
 
-        window.openEditFlat = function(id) {
-            const flat = estatesData.find(e => String(e.id) === String(id));
-            if(!flat) return;
-            document.getElementById('flatId').value = flat.id;
-            document.getElementById('flatBuilding').value = flat.building;
-            document.getElementById('flatWing').value = flat.wing || '';
-            document.getElementById('flatNo').value = flat.flatNo;
-            document.getElementById('flatType').value = flat.type;
-            document.getElementById('flatSqft').value = flat.sqft;
-            document.getElementById('flatOwner').value = flat.owner;
-            document.getElementById('flatElec').value = flat.elec;
-            document.getElementById('flatGas').value = flat.gas;
-            document.getElementById('flatIsBachelor').checked = flat.isBachelor;
-            document.getElementById('flatBedCapacity').value = flat.capacity || 4;
-            toggleBachelorCapacityInput();
-            document.getElementById('flatModalTitle').innerText = 'Edit Estate Flat';
-            document.getElementById('modalAddFlat').classList.remove('hidden');
+        window.toggleBachelorCapacityInput = function() {
+            const chk = document.getElementById('flatIsBachelor');
+            const box = document.getElementById('bachelorCapacityBox');
+            if(chk && box) {
+                if(chk.checked) box.classList.remove('hidden');
+                else box.classList.add('hidden');
+            }
         };
 
         window.saveFlatRecord = async function(e) {
             e.preventDefault();
-            const id = document.getElementById('flatId').value;
+            const id = document.getElementById('flatId').value || Date.now().toString();
+            const building = document.getElementById('flatBuilding').value;
+            const wing = document.getElementById('flatWing').value;
+            const flatNo = document.getElementById('flatNo').value;
+            const type = document.getElementById('flatType').value;
+            const sqft = document.getElementById('flatSqft').value;
+            const owner = document.getElementById('flatOwner').value;
+            const elec = document.getElementById('flatElec').value;
+            const gas = document.getElementById('flatGas').value;
             const isBachelor = document.getElementById('flatIsBachelor').checked;
-            const flatObj = {
-                id: id ? String(id) : Date.now().toString(),
-                building: document.getElementById('flatBuilding').value,
-                wing: document.getElementById('flatWing').value,
-                flatNo: document.getElementById('flatNo').value,
-                type: document.getElementById('flatType').value,
-                sqft: parseInt(document.getElementById('flatSqft').value),
-                owner: document.getElementById('flatOwner').value,
-                elec: document.getElementById('flatElec').value,
-                gas: document.getElementById('flatGas').value,
-                isBachelor: isBachelor,
-                capacity: isBachelor ? parseInt(document.getElementById('flatBedCapacity').value) : 0,
-                archive: [],
-                residents: []
-            };
+            const bedCapacity = isBachelor ? parseInt(document.getElementById('flatBedCapacity').value) || 4 : 0;
 
-            if(id) {
-                const idx = estatesData.findIndex(item => String(item.id) === String(id));
-                if(idx !== -1) estatesData[idx] = { ...estatesData[idx], ...flatObj };
-            } else {
-                estatesData.push(flatObj);
-            }
+            const existingIdx = estatesData.findIndex(f => f.id === id);
+            const flatObj = { id, building, wing, flatNo, type, sqft, owner, elec, gas, isBachelor, bedCapacity };
+
+            if(existingIdx >= 0) estatesData[existingIdx] = flatObj;
+            else estatesData.push(flatObj);
+
             await saveCloudData();
             closeModal('modalAddFlat');
-            renderEstateTable();
-            renderAllocationTable();
-            populateFlatMaintenanceDropdown();
-            populateIntegratedFlatDropdown();
+            renderAllModules();
         };
 
-        window.deleteFlat = async function(id) {
-            if(confirm("Are you sure you want to delete this flat record?")) {
-                estatesData = estatesData.filter(e => String(e.id) !== String(id));
-                await saveCloudData();
-                renderEstateTable();
-                renderAllocationTable();
-                populateIntegratedFlatDropdown();
-            }
-        };
-
-        window.filterAllocFacultyInteractive = function() {
-            const inputVal = document.getElementById('allocFacultyInput').value.toLowerCase();
-            const dropdown = document.getElementById('allocFacultyDropdown');
-            dropdown.innerHTML = '';
-
-            const filtered = facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(inputVal));
-
-            if (filtered.length === 0) {
-                dropdown.innerHTML = '<div class="p-2 text-xs text-gray-400 italic">No faculty found</div>';
-            } else {
-                filtered.forEach(f => {
-                    const item = document.createElement('div');
-                    item.className = "p-2 hover:bg-emerald-50 cursor-pointer text-xs flex justify-between items-center transition";
-                    item.innerHTML = `<span class="font-bold text-gray-800">${f.name}</span><span class="text-gray-500 font-mono">ITS: ${f.its}</span>`;
-                    item.onclick = () => selectAllocFaculty(f);
-                    dropdown.appendChild(item);
-                });
-            }
-            dropdown.classList.remove('hidden');
-        };
-
-        function selectAllocFaculty(fac) {
-            document.getElementById('allocFacultyInput').value = fac.name;
-            document.getElementById('allocSelectedFacId').value = fac.id;
-            document.getElementById('allocIts').value = fac.its;
-            document.getElementById('allocContact').value = fac.contact;
-            document.getElementById('allocFacultyDropdown').classList.add('hidden');
-        }
-
-        window.openAllocationModal = function(id) {
-            const flat = estatesData.find(e => String(e.id) === String(id));
-            if(!flat) return;
-
-            document.getElementById('allocFlatId').value = flat.id;
-            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
-            document.getElementById('allocModalTitle').innerText = `Allocation: ${flat.building}${wingBadge} ${flat.flatNo}`;
+        window.editFlatRecord = function(id) {
+            const f = estatesData.find(x => x.id === id);
+            if(!f) return;
             
-            document.getElementById('allocFacultyInput').value = flat.occupant || '';
-            document.getElementById('allocSelectedFacId').value = '';
-            document.getElementById('allocIts').value = flat.its || '';
-            document.getElementById('allocContact').value = flat.contact || '';
-            document.getElementById('allocStartDate').value = flat.startDate || '';
+            document.getElementById('flatModalTitle').innerText = "Edit Estate Flat";
+            document.getElementById('flatId').value = f.id;
+            document.getElementById('flatBuilding').value = f.building;
+            document.getElementById('flatWing').value = f.wing || '';
+            document.getElementById('flatNo').value = f.flatNo;
+            document.getElementById('flatType').value = f.type;
+            document.getElementById('flatSqft').value = f.sqft;
+            document.getElementById('flatOwner').value = f.owner;
+            document.getElementById('flatElec').value = f.elec || '';
+            document.getElementById('flatGas').value = f.gas || '';
+            
+            const chk = document.getElementById('flatIsBachelor');
+            chk.checked = !!f.isBachelor;
+            toggleBachelorCapacityInput();
+            if(f.isBachelor) document.getElementById('flatBedCapacity').value = f.bedCapacity || 4;
 
-            renderModalArchiveList(flat);
+            document.getElementById('modalAddFlat').classList.remove('hidden');
+        };
+
+        window.deleteFlatRecord = async function(id) {
+            if(confirm("Are you sure you want to delete this flat record?")) {
+                window.estatesData = estatesData.filter(f => f.id !== id);
+                await saveCloudData();
+                renderAllModules();
+            }
+        };
+
+        // --- SUB-HEADER 2: ALLOCATION ---
+        window.setAllocCardFilter = function(filterType) {
+            window.currentAllocFilter = filterType;
+            
+            const btnAlloc = document.getElementById('cardBtnAllocatedFlats');
+            const btnVac = document.getElementById('cardBtnVacantFlats');
+
+            if(filterType === 'allocated') {
+                btnAlloc.className = "bg-white p-4 rounded-lg shadow border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition";
+                btnVac.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:border-amber-500";
+            } else {
+                btnAlloc.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:border-emerald-500";
+                btnVac.className = "bg-white p-4 rounded-lg shadow border-2 border-amber-600 ring-2 ring-amber-500/50 flex justify-between items-center text-left transition";
+            }
+
+            renderAllocationTable();
+        };
+
+        window.renderAllocationTable = function() {
+            const tbody = document.getElementById('allocationTableBody');
+            if(!tbody) return;
+
+            const q = (document.getElementById('allocSearch')?.value || '').toLowerCase().trim();
+
+            let cAllocated = 0, cVacant = 0;
+
+            estatesData.forEach(f => {
+                const alloc = allocationsData.find(a => a.flatId === f.id && a.isCurrent);
+                if(alloc) cAllocated++;
+                else cVacant++;
+            });
+
+            document.getElementById('cardAllocatedFlats').innerText = cAllocated;
+            document.getElementById('cardVacantFlats').innerText = cVacant;
+
+            let filtered = estatesData.filter(f => {
+                const alloc = allocationsData.find(a => a.flatId === f.id && a.isCurrent);
+                const isOccupied = !!alloc;
+
+                if(window.currentAllocFilter === 'allocated' && !isOccupied) return false;
+                if(window.currentAllocFilter === 'vacant' && isOccupied) return false;
+
+                const searchStr = `${f.building} ${f.wing || ''} ${f.flatNo} ${alloc?.residentName || ''} ${alloc?.its || ''}`.toLowerCase();
+                return searchStr.includes(q);
+            });
+
+            tbody.innerHTML = filtered.map(f => {
+                const alloc = allocationsData.find(a => a.flatId === f.id && a.isCurrent);
+                const lastMaint = maintenanceData.filter(m => m.flatId === f.id).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+
+                let tenureStr = '-';
+                if(alloc && alloc.startDate) {
+                    const start = new Date(alloc.startDate);
+                    const now = new Date();
+                    const diffMonths = Math.floor((now - start) / (1000 * 60 * 60 * 24 * 30.4375));
+                    const years = Math.floor(diffMonths / 12);
+                    const months = diffMonths % 12;
+                    tenureStr = `${years > 0 ? `${years}y ` : ''}${months}m`;
+                }
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3">
+                            <div class="font-bold text-gray-900">${f.building} ${f.wing ? `(${f.wing})` : ''} - Flat ${f.flatNo}</div>
+                            <div class="text-xs text-gray-500">${f.type}</div>
+                        </td>
+                        <td class="p-3">
+                            ${alloc ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>` : `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>`}
+                        </td>
+                        <td class="p-3 font-semibold text-gray-800">${alloc ? alloc.residentName : 'None (Vacant)'}</td>
+                        <td class="p-3 text-xs">
+                            <div>ITS: <span class="font-mono">${alloc?.its || '-'}</span></div>
+                            <div>Contact: ${alloc?.contact || '-'}</div>
+                        </td>
+                        <td class="p-3 text-xs text-gray-600">${alloc?.startDate || '-'}</td>
+                        <td class="p-3 text-xs font-bold text-emerald-800">${tenureStr}</td>
+                        <td class="p-3 text-xs">
+                            ${lastMaint ? `<span class="font-semibold text-amber-800">${lastMaint.type}</span> (${lastMaint.date})` : 'No Record'}
+                        </td>
+                        <td class="p-3 text-center">
+                            <button onclick="openAllocationModal('${f.id}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-3 py-1.5 rounded transition font-bold">Manage</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('') || `<tr><td colspan="8" class="p-4 text-center text-gray-500">No allocation records found.</td></tr>`;
+        };
+
+        window.openAllocationModal = function(flatId) {
+            const f = estatesData.find(x => x.id === flatId);
+            if(!f) return;
+
+            document.getElementById('allocModalTitle').innerText = `Manage Allocation - ${f.building} ${f.flatNo}`;
+            document.getElementById('allocFlatId').value = f.id;
+            
+            const alloc = allocationsData.find(a => a.flatId === f.id && a.isCurrent);
+            document.getElementById('allocFacultyInput').value = alloc ? alloc.residentName : '';
+            document.getElementById('allocIts').value = alloc ? alloc.its : '';
+            document.getElementById('allocContact').value = alloc ? alloc.contact : '';
+            document.getElementById('allocStartDate').value = alloc ? alloc.startDate : '';
+
+            renderAllocArchiveList(f.id);
             document.getElementById('modalAllocation').classList.remove('hidden');
         };
 
-        window.markFlatAsVacant = async function() {
-            const flatId = document.getElementById('allocFlatId').value;
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
-            if (!flat) return;
-
-            if (!flat.occupant || flat.occupant.trim() === '') {
-                alert("This flat is already vacant.");
+        window.filterAllocFacultyInteractive = function() {
+            const input = document.getElementById('allocFacultyInput').value.toLowerCase();
+            const dropdown = document.getElementById('allocFacultyDropdown');
+            
+            if(!input) {
+                dropdown.classList.add('hidden');
                 return;
             }
 
-            if (confirm(`Are you sure you want to mark this flat as vacant? ${flat.occupant} will be moved to the Past Allocation Archive.`)) {
-                if (!flat.archive) flat.archive = [];
-                flat.archive.push({
-                    occupant: flat.occupant,
-                    its: flat.its || '',
-                    contact: flat.contact || '',
-                    startDate: flat.startDate || '',
-                    endDate: new Date().toISOString().split('T')[0]
-                });
+            const matches = facultyData.filter(fac => 
+                fac.name.toLowerCase().includes(input) || fac.its.toLowerCase().includes(input)
+            );
 
-                flat.occupant = '';
-                flat.its = '';
-                flat.contact = '';
-                flat.startDate = '';
-
-                await saveCloudData();
-                closeModal('modalAllocation');
-                renderAllocationTable();
-                renderVacantBills();
-                alert("Flat marked as vacant and occupant details moved to archive!");
+            if(matches.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
             }
+
+            dropdown.innerHTML = matches.map(fac => `
+                <div onclick="selectAllocFaculty('${fac.id}')" class="p-2 hover:bg-emerald-50 cursor-pointer text-xs">
+                    <div class="font-bold text-gray-800">${fac.name}</div>
+                    <div class="text-gray-500">ITS: ${fac.its} | Mob: ${fac.contact}</div>
+                </div>
+            `).join('');
+
+            dropdown.classList.remove('hidden');
         };
 
-        function renderModalArchiveList(flat) {
-            const archList = document.getElementById('allocArchiveList');
-            archList.innerHTML = '';
-            if(flat.archive && flat.archive.length > 0) {
-                flat.archive.forEach((a, idx) => {
-                    const safeId = String(flat.id).replace(/'/g, "\\'");
-                    archList.innerHTML += `
-                        <div class="py-1 flex justify-between items-center">
-                            <div>
-                                <strong>${a.occupant}</strong> ${a.its ? `(ITS: ${a.its})` : ''}<br/>
-                                <span class="text-gray-500">${a.startDate || 'Start: -'} to ${a.endDate || 'End: -'}</span>
-                            </div>
-                            <button onclick="deleteArchiveEntry('${safeId}', ${idx})" class="text-red-500 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
-                        </div>`;
-                });
-            } else {
-                archList.innerHTML = '<span class="text-gray-400">No past allocation history recorded.</span>';
-            }
-        }
+        window.selectAllocFaculty = function(facId) {
+            const fac = facultyData.find(x => x.id === facId);
+            if(!fac) return;
 
-        window.addManualPastHistory = async function(e) {
-            e.preventDefault();
-            const flatId = document.getElementById('allocFlatId').value;
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
-            if(!flat) return;
-
-            const occupantName = document.getElementById('pastName').value;
-            if(!occupantName) return alert("Resident name is compulsory.");
-
-            if(!flat.archive) flat.archive = [];
-            flat.archive.push({
-                occupant: occupantName,
-                its: document.getElementById('pastIts').value || '',
-                startDate: document.getElementById('pastStartDate').value || '',
-                endDate: document.getElementById('pastEndDate').value || ''
-            });
-
-            await saveCloudData();
-            document.getElementById('manualPastForm').reset();
-            renderModalArchiveList(flat);
-            renderAllocationTable();
-            alert("Past allocation record added!");
-        };
-
-        window.deleteArchiveEntry = async function(flatId, index) {
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
-            if(flat && flat.archive) {
-                flat.archive.splice(index, 1);
-                await saveCloudData();
-                renderModalArchiveList(flat);
-                renderAllocationTable();
-            }
+            document.getElementById('allocFacultyInput').value = fac.name;
+            document.getElementById('allocIts').value = fac.its;
+            document.getElementById('allocContact').value = fac.contact;
+            document.getElementById('allocSelectedFacId').value = fac.id;
+            document.getElementById('allocFacultyDropdown').classList.add('hidden');
         };
 
         window.saveAllocation = async function(e) {
             e.preventDefault();
             const flatId = document.getElementById('allocFlatId').value;
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
-            if(!flat) return;
+            const residentName = document.getElementById('allocFacultyInput').value;
+            const its = document.getElementById('allocIts').value;
+            const contact = document.getElementById('allocContact').value;
+            const startDate = document.getElementById('allocStartDate').value;
 
-            const facName = document.getElementById('allocFacultyInput').value;
-            const facIts = document.getElementById('allocIts').value;
-            const facContact = document.getElementById('allocContact').value;
-            const startDateVal = document.getElementById('allocStartDate').value;
+            // Archive old current allocation
+            allocationsData.forEach(a => {
+                if(a.flatId === flatId && a.isCurrent) {
+                    a.isCurrent = false;
+                    a.endDate = new Date().toISOString().split('T')[0];
+                }
+            });
 
-            if (!facName || facName.trim() === '') {
-                alert("Please select or enter a faculty member.");
-                return;
-            }
-
-            if(flat.occupant && flat.occupant.trim() !== '' && flat.occupant !== facName) {
-                if(!flat.archive) flat.archive = [];
-                flat.archive.push({
-                    occupant: flat.occupant,
-                    its: flat.its || '',
-                    contact: flat.contact || '',
-                    startDate: flat.startDate || '',
-                    endDate: new Date().toISOString().split('T')[0]
+            if(residentName) {
+                allocationsData.push({
+                    id: Date.now().toString(),
+                    flatId,
+                    residentName,
+                    its,
+                    contact,
+                    startDate,
+                    endDate: null,
+                    isCurrent: true
                 });
             }
-
-            flat.occupant = facName;
-            flat.its = facIts;
-            flat.contact = facContact;
-            flat.startDate = startDateVal || new Date().toISOString().split('T')[0];
 
             await saveCloudData();
             closeModal('modalAllocation');
             renderAllocationTable();
-            alert("Allocation updated successfully!");
+            populateIntegratedDropdown();
         };
 
-        window.renderBachelorGrid = function() {
-            const grid = document.getElementById('bachelorGrid');
-            grid.innerHTML = '';
-
-            const bachelorFlats = estatesData.filter(e => e.isBachelor);
-            if(bachelorFlats.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-gray-400 col-span-2 text-center py-8">No flats currently designated as Bachelor Flats.</p>';
-                return;
-            }
-
-            bachelorFlats.forEach(e => {
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
-                const residents = e.residents || [];
-
-                let residentItems = '';
-                if(residents.length === 0) {
-                    residentItems = '<p class="text-xs text-gray-400 italic">No residents assigned yet.</p>';
-                } else {
-                    residents.forEach((r, rIdx) => {
-                        const safeId = String(e.id).replace(/'/g, "\\'");
-                        residentItems += `
-                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-xs border">
-                                <div>
-                                    <strong class="text-emerald-900">${r.name}</strong> <span class="text-gray-500">(ITS: ${r.its})</span>
-                                    <br/><span class="text-[10px] text-gray-400">Since: ${r.startDate || '-'} | ${r.contact || ''}</span>
-                                </div>
-                                <button onclick="removeBachelorResident('${safeId}', ${rIdx})" class="text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
-                            </div>
-                        `;
-                    });
+        window.markFlatAsVacant = async function() {
+            const flatId = document.getElementById('allocFlatId').value;
+            allocationsData.forEach(a => {
+                if(a.flatId === flatId && a.isCurrent) {
+                    a.isCurrent = false;
+                    a.endDate = new Date().toISOString().split('T')[0];
                 }
+            });
 
-                const safeId = String(e.id).replace(/'/g, "\\'");
+            await saveCloudData();
+            closeModal('modalAllocation');
+            renderAllocationTable();
+        };
 
-                grid.innerHTML += `
+        window.addManualPastHistory = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('allocFlatId').value;
+            const residentName = document.getElementById('pastName').value;
+            const its = document.getElementById('pastIts').value;
+            const startDate = document.getElementById('pastStartDate').value;
+            const endDate = document.getElementById('pastEndDate').value;
+
+            allocationsData.push({
+                id: Date.now().toString(),
+                flatId,
+                residentName,
+                its,
+                contact: '',
+                startDate,
+                endDate,
+                isCurrent: false
+            });
+
+            await saveCloudData();
+            document.getElementById('manualPastForm').reset();
+            renderAllocArchiveList(flatId);
+        };
+
+        window.renderAllocArchiveList = function(flatId) {
+            const container = document.getElementById('allocArchiveList');
+            if(!container) return;
+
+            const archives = allocationsData.filter(a => a.flatId === flatId && !a.isCurrent);
+            
+            container.innerHTML = archives.map(a => `
+                <div class="p-1.5 flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-gray-800">${a.residentName}</span>
+                        ${a.its ? `<span class="text-[10px] text-gray-500"> (ITS: ${a.its})</span>` : ''}
+                        <div class="text-[10px] text-gray-500">${a.startDate || '?'} to ${a.endDate || 'Present'}</div>
+                    </div>
+                    <button onclick="deleteAllocArchiveRecord('${a.id}', '${flatId}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('') || `<p class="text-gray-400 text-center py-2">No archived history available.</p>`;
+        };
+
+        window.deleteAllocArchiveRecord = async function(id, flatId) {
+            window.allocationsData = allocationsData.filter(a => a.id !== id);
+            await saveCloudData();
+            renderAllocArchiveList(flatId);
+        };
+
+        // --- SUB-HEADER 3: MAINTENANCE DATA ---
+        window.renderMaintenanceGrid = function() {
+            const container = document.getElementById('maintenanceGrid');
+            if(!container) return;
+
+            const q = (document.getElementById('maintSearch')?.value || '').toLowerCase().trim();
+
+            let filtered = maintenanceData.filter(m => {
+                const flat = estatesData.find(f => f.id === m.flatId);
+                const searchStr = `${flat?.building || ''} ${flat?.flatNo || ''} ${m.type} ${m.description}`.toLowerCase();
+                return searchStr.includes(q);
+            });
+
+            container.innerHTML = filtered.map(m => {
+                const flat = estatesData.find(f => f.id === m.flatId);
+                return `
                     <div class="bg-white p-4 rounded-lg shadow border space-y-3">
-                        <div class="flex justify-between items-center border-b pb-2">
+                        <div class="flex justify-between items-start border-b pb-2">
                             <div>
-                                <h4 class="font-bold text-emerald-900">${e.building}${wingBadge} - Flat ${e.flatNo}</h4>
-                                <span class="text-xs text-gray-500">${e.type} (${e.sqft} SqFt)</span>
+                                <h3 class="font-bold text-gray-900">${flat ? `${flat.building} - Flat${flat.flatNo}` : 'Unknown Flat'}</h3>
+                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type}</span>
                             </div>
-                            <div class="text-right">
-                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Capacity: ${residents.length}/${e.capacity || 4} Beds</span>
+                            <span class="text-xs font-bold text-emerald-800">₹${parseInt(m.cost || 0).toLocaleString()}</span>
+                        </div>
+                        <p class="text-xs text-gray-600">${m.description}</p>
+                        <div class="text-[11px] text-gray-500">Completed: ${m.date}</div>
+                        <div class="grid grid-cols-2 gap-2 pt-2 border-t text-xs">
+                            <div>
+                                <span class="font-bold block text-gray-700">Before:</span>
+                                ${m.beforeMedia ? `<a href="${m.beforeMedia}" target="_blank" class="text-blue-600 underline text-xs"><i class="fa-solid fa-image"></i> View Before</a>` : '<span class="text-gray-400">No file</span>'}
+                            </div>
+                            <div>
+                                <span class="font-bold block text-gray-700">After:</span>
+                                ${m.afterMedia ? `<a href="${m.afterMedia}" target="_blank" class="text-emerald-600 underline text-xs"><i class="fa-solid fa-image"></i> View After</a>` : '<span class="text-gray-400">No file</span>'}
                             </div>
                         </div>
-
-                        <div class="space-y-1.5">
-                            <h5 class="text-xs font-bold text-gray-700 uppercase flex justify-between items-center">
-                                <span>Current Residents:</span>
-                                <button onclick="openAddBachelorResidentModal('${safeId}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] px-2 py-1 rounded font-normal transition flex items-center space-x-1">
-                                    <i class="fa-solid fa-user-plus"></i> <span>+ Add Resident</span>
-                                </button>
-                            </h5>
-                            <div class="space-y-1.5 max-h-40 overflow-y-auto">
-                                ${residentItems}
-                            </div>
+                        <div class="flex justify-end pt-1">
+                            <button onclick="deleteMaintenanceLog('${m.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold"><i class="fa-solid fa-trash mr-1"></i> Delete Log</button>
                         </div>
                     </div>
                 `;
-            });
+            }).join('') || `<div class="col-span-2 bg-white p-6 rounded-lg text-center text-gray-500 border">No maintenance records logged yet.</div>`;
         };
-
-        window.filterBachFacultyInteractive = function() {
-            const inputVal = document.getElementById('bachFacultyInput').value.toLowerCase();
-            const dropdown = document.getElementById('bachFacultyDropdown');
-            dropdown.innerHTML = '';
-
-            const filtered = facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(inputVal));
-
-            if (filtered.length === 0) {
-                dropdown.innerHTML = '<div class="p-2 text-xs text-gray-400 italic">No faculty found</div>';
-            } else {
-                filtered.forEach(f => {
-                    const item = document.createElement('div');
-                    item.className = "p-2 hover:bg-emerald-50 cursor-pointer text-xs flex justify-between items-center transition";
-                    item.innerHTML = `<span class="font-bold text-gray-800">${f.name}</span><span class="text-gray-500 font-mono">ITS: ${f.its}</span>`;
-                    item.onclick = () => selectBachFaculty(f);
-                    dropdown.appendChild(item);
-                });
-            }
-            dropdown.classList.remove('hidden');
-        };
-
-        function selectBachFaculty(fac) {
-            document.getElementById('bachFacultyInput').value = fac.name;
-            document.getElementById('bachSelectedFacId').value = fac.id;
-            document.getElementById('bachIts').value = fac.its;
-            document.getElementById('bachContact').value = fac.contact;
-            document.getElementById('bachFacultyDropdown').classList.add('hidden');
-        }
-
-        window.openAddBachelorResidentModal = function(flatId) {
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
-            if(!flat) return;
-
-            document.getElementById('bachFlatId').value = flat.id;
-            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
-            document.getElementById('bachModalTitle').innerText = `Add Resident: ${flat.building}${wingBadge} ${flat.flatNo}`;
-
-            document.getElementById('bachFacultyInput').value = '';
-            document.getElementById('bachSelectedFacId').value = '';
-            document.getElementById('bachIts').value = '';
-            document.getElementById('bachContact').value = '';
-            document.getElementById('bachStartDate').value = new Date().toISOString().split('T')[0];
-
-            document.getElementById('modalAddBachelorResident').classList.remove('hidden');
-        };
-
-        window.saveBachelorResident = async function(e) {
-            e.preventDefault();
-            const flatId = document.getElementById('bachFlatId').value;
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
-            if(!flat) return;
-
-            const facName = document.getElementById('bachFacultyInput').value;
-            const facIts = document.getElementById('bachIts').value;
-            const facContact = document.getElementById('bachContact').value;
-
-            if(!facName) return alert("Please select or enter a resident name.");
-
-            if(!flat.residents) flat.residents = [];
-            flat.residents.push({
-                name: facName,
-                its: facIts,
-                contact: facContact,
-                startDate: document.getElementById('bachStartDate').value
-            });
-
-            await saveCloudData();
-            closeModal('modalAddBachelorResident');
-            renderBachelorGrid();
-            renderAllocationTable();
-            renderVacantBills();
-        };
-
-        window.removeBachelorResident = async function(flatId, resIndex) {
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
-            if(flat && flat.residents) {
-                flat.residents.splice(resIndex, 1);
-                await saveCloudData();
-                renderBachelorGrid();
-                renderAllocationTable();
-                renderVacantBills();
-            }
-        };
-
-        window.renderVacantBills = function() {
-            const tbody = document.getElementById('vacantBillsTableBody');
-            tbody.innerHTML = '';
-            const month = document.getElementById('billMonthPicker').value;
-
-            const eligibleFlats = estatesData.filter(e => e.isBachelor || !e.occupant);
-
-            if(eligibleFlats.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400 text-xs">No vacant or bachelor flats found for bill tracking.</td></tr>';
-                return;
-            }
-
-            eligibleFlats.forEach(e => {
-                const billKey = `${e.id}_${month}`;
-                const billData = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                const wingBadge = e.wing ? ` (${e.wing})` : '';
-
-                let categoryTag = '<span class="text-xs text-amber-700 font-semibold">Vacant Flat</span>';
-                if(e.isBachelor) {
-                    const residentCount = e.residents ? e.residents.length : 0;
-                    categoryTag = `<span class="text-xs text-amber-800 font-bold bg-amber-100 px-1.5 py-0.5 rounded">Bachelor Flat (${residentCount} Resident${residentCount === 1 ? '' : 's'})</span>`;
-                }
-
-                tr.innerHTML = `
-                    <td class="p-3"><strong class="text-gray-800">${e.building}${wingBadge} ${e.flatNo}</strong><br/>${categoryTag}</td>
-                    <td class="p-3 text-xs font-mono">Elec: ${e.elec || 'N/A'}<br/>Gas: ${e.gas || 'N/A'}</td>
-                    <td class="p-3">${billData.elecPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
-                    <td class="p-3">${billData.gasPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
-                    <td class="p-3 text-center space-x-1">
-                        <button onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
-                        <button onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
-
-        window.toggleBillStatus = async function(billKey, field) {
-            if(!vacantBills[billKey]) vacantBills[billKey] = { elecPaid: false, gasPaid: false };
-            vacantBills[billKey][field] = !vacantBills[billKey][field];
-            await saveCloudData();
-            renderVacantBills();
-        };
-
-        function populateFlatMaintenanceDropdown() {
-            const select = document.getElementById('maintFlatSelect');
-            select.innerHTML = '';
-            estatesData.forEach(e => {
-                const wing = e.wing ? ` (${e.wing})` : '';
-                select.innerHTML += `<option value="${e.building}${wing} - ${e.flatNo}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
-            });
-        }
 
         window.openAddMaintenanceModal = function() {
-            document.getElementById('maintForm').reset();
-            populateFlatMaintenanceDropdown();
-            document.getElementById('maintModalTitle').innerText = 'Add Refurbishment / Maintenance Log';
-            document.getElementById('maintForm').dataset.editId = '';
-            document.getElementById('modalAddMaintenance').classList.remove('hidden');
-        };
-
-        window.openEditMaintenanceLog = function(id) {
-            const log = maintLogs.find(m => String(m.id) === String(id));
-            if(!log) return;
-
-            populateFlatMaintenanceDropdown();
-            document.getElementById('maintForm').reset();
+            const select = document.getElementById('maintFlatSelect');
+            select.innerHTML = estatesData.map(f => `<option value="${f.id}">${f.building} - Flat ${f.flatNo}</option>`).join('');
             
-            document.getElementById('maintFlatSelect').value = log.flat;
-            document.getElementById('maintType').value = log.type || 'Refurbishment';
-            document.getElementById('maintDesc').value = log.desc || '';
-            document.getElementById('maintCost').value = log.cost || '';
-            document.getElementById('maintDate').value = log.date || '';
-
-            document.getElementById('maintModalTitle').innerText = 'Edit Maintenance Log';
-            document.getElementById('maintForm').dataset.editId = log.id;
-            
+            document.getElementById('maintForm').reset();
             document.getElementById('modalAddMaintenance').classList.remove('hidden');
         };
 
         window.saveMaintenanceLog = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSaveMaint');
-            const editId = e.target.dataset.editId;
             btn.innerText = "Processing...";
             btn.disabled = true;
+
+            const flatId = document.getElementById('maintFlatSelect').value;
+            const type = document.getElementById('maintType').value;
+            const description = document.getElementById('maintDesc').value;
+            const cost = document.getElementById('maintCost').value;
+            const date = document.getElementById('maintDate').value;
 
             const beforeFile = document.getElementById('maintBeforeInput').files[0];
             const afterFile = document.getElementById('maintAfterInput').files[0];
 
-            let existingLog = editId ? maintLogs.find(m => String(m.id) === String(editId)) : null;
+            let beforeMedia = null;
+            let afterMedia = null;
 
-            let beforeUrl = existingLog ? existingLog.beforeUrl : "";
-            let beforeDirect = existingLog ? existingLog.beforeDirect : "";
-            let beforeType = existingLog ? existingLog.beforeType : "";
+            if(beforeFile) beforeMedia = await fileToBase64(beforeFile);
+            if(afterFile) afterMedia = await fileToBase64(afterFile);
 
-            let afterUrl = existingLog ? existingLog.afterUrl : "";
-            let afterDirect = existingLog ? existingLog.afterDirect : "";
-            let afterType = existingLog ? existingLog.afterType : "";
-
-            try {
-                if(beforeFile) {
-                    btn.innerText = "Uploading BEFORE Media...";
-                    const res = await uploadFileToDrive(beforeFile);
-                    beforeUrl = res.fileUrl;
-                    beforeDirect = res.directImgUrl;
-                    beforeType = beforeFile.type.startsWith('video') ? 'video' : (beforeFile.type.includes('pdf') ? 'pdf' : 'image');
-                }
-                if(afterFile) {
-                    btn.innerText = "Uploading AFTER Media...";
-                    const res = await uploadFileToDrive(afterFile);
-                    afterUrl = res.fileUrl;
-                    afterDirect = res.directImgUrl;
-                    afterType = afterFile.type.startsWith('video') ? 'video' : (afterFile.type.includes('pdf') ? 'pdf' : 'image');
-                }
-            } catch(err) {
-                alert("Upload failed: " + err);
-                btn.innerText = "Upload & Save Log";
-                btn.disabled = false;
-                return;
-            }
-
-            const logRecord = {
-                id: editId ? editId : Date.now().toString(),
-                flat: document.getElementById('maintFlatSelect').value,
-                type: document.getElementById('maintType').value,
-                desc: document.getElementById('maintDesc').value,
-                cost: document.getElementById('maintCost').value,
-                date: document.getElementById('maintDate').value,
-                beforeUrl, beforeDirect, beforeType,
-                afterUrl, afterDirect, afterType
-            };
-
-            if(editId) {
-                const idx = maintLogs.findIndex(m => String(m.id) === String(editId));
-                if(idx !== -1) maintLogs[idx] = logRecord;
-            } else {
-                maintLogs.push(logRecord);
-            }
+            maintenanceData.push({
+                id: Date.now().toString(),
+                flatId,
+                type,
+                description,
+                cost,
+                date,
+                beforeMedia,
+                afterMedia
+            });
 
             await saveCloudData();
             btn.innerText = "Upload & Save Log";
             btn.disabled = false;
             closeModal('modalAddMaintenance');
             renderMaintenanceGrid();
-            renderAllocationTable();
         };
 
-        window.renderMaintenanceGrid = function() {
-            const grid = document.getElementById('maintenanceGrid');
-            const rawSearch = (document.getElementById('maintSearch') ? document.getElementById('maintSearch').value : '').toLowerCase().trim();
-            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
-            grid.innerHTML = '';
+        window.deleteMaintenanceLog = async function(id) {
+            if(confirm("Delete this maintenance record?")) {
+                window.maintenanceData = maintenanceData.filter(m => m.id !== id);
+                await saveCloudData();
+                renderMaintenanceGrid();
+            }
+        };
 
-            const filteredLogs = maintLogs.filter(m => {
-                const fullCorpus = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost} ${m.date}`.toLowerCase();
-                return searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
-            });
+        // --- SUB-HEADER 4: BACHELOR FLATS ---
+        window.renderBachelorGrid = function() {
+            const container = document.getElementById('bachelorGrid');
+            if(!container) return;
 
-            filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const bachelorFlats = estatesData.filter(f => f.isBachelor);
 
-            if(filteredLogs.length === 0) {
-                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
+            container.innerHTML = bachelorFlats.map(f => {
+                const residents = bachelorData.filter(b => b.flatId === f.id);
+                const capacity = f.bedCapacity || 4;
+
+                return `
+                    <div class="bg-white p-5 rounded-lg shadow border space-y-4">
+                        <div class="flex justify-between items-center border-b pb-3">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base">${f.building} - Flat ${f.flatNo}</h3>
+                                <p class="text-xs text-gray-500">Bed Capacity: ${capacity} Beds</p>
+                            </div>
+                            <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">${residents.length} / ${capacity} Occupied</span>
+                        </div>
+
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-bold text-gray-700 uppercase">Current Bachelor Residents:</h4>
+                            <div class="divide-y border rounded bg-gray-50">
+                                ${residents.map(r => `
+                                    <div class="p-2.5 flex justify-between items-center text-xs">
+                                        <div>
+                                            <div class="font-bold text-gray-900">${r.residentName}</div>
+                                            <div class="text-gray-500">ITS: ${r.its} \vert{} Contact:${r.contact}</div>
+                                            <div class="text-[10px] text-gray-400">Joined: ${r.startDate}</div>
+                                        </div>
+                                        <button onclick="removeBachelorResident('${r.id}')" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-user-xmark"></i></button>
+                                    </div>
+                                `).join('') || `<p class="p-3 text-xs text-center text-gray-400">No bachelor residents assigned.</p>`}
+                            </div>
+                        </div>
+
+                        ${residents.length < capacity ? `
+                            <button onclick="openAddBachelorResidentModal('${f.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 rounded font-bold transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Add Bed Resident</span>
+                            </button>
+                        ` : `
+                            <div class="text-center text-xs text-red-600 font-bold bg-red-50 p-2 rounded">Flat Full Capacity</div>
+                        `}
+                    </div>
+                `;
+            }).join('') || `<div class="col-span-2 bg-white p-6 rounded-lg text-center text-gray-500 border">No bachelor flats designated in Estate Details.</div>`;
+        };
+
+        window.openAddBachelorResidentModal = function(flatId) {
+            document.getElementById('bachFlatId').value = flatId;
+            document.getElementById('bachResidentForm').reset();
+            document.getElementById('modalAddBachelorResident').classList.remove('hidden');
+        };
+
+        window.filterBachFacultyInteractive = function() {
+            const input = document.getElementById('bachFacultyInput').value.toLowerCase();
+            const dropdown = document.getElementById('bachFacultyDropdown');
+            
+            if(!input) {
+                dropdown.classList.add('hidden');
                 return;
             }
 
-            filteredLogs.forEach(m => {
-                function renderMedia(url, direct, type, label) {
-                    if(!url) return '';
-                    if(type === 'video') {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
-                    } else if(type === 'pdf') {
-                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
-                    } else {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
-                    }
+            const matches = facultyData.filter(fac => 
+                fac.name.toLowerCase().includes(input) || fac.its.toLowerCase().includes(input)
+            );
+
+            if(matches.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = matches.map(fac => `
+                <div onclick="selectBachFaculty('${fac.id}')" class="p-2 hover:bg-emerald-50 cursor-pointer text-xs">
+                    <div class="font-bold text-gray-800">${fac.name}</div>
+                    <div class="text-gray-500">ITS: ${fac.its} | Mob: ${fac.contact}</div>
+                </div>
+            `).join('');
+
+            dropdown.classList.remove('hidden');
+        };
+
+        window.selectBachFaculty = function(facId) {
+            const fac = facultyData.find(x => x.id === facId);
+            if(!fac) return;
+
+            document.getElementById('bachFacultyInput').value = fac.name;
+            document.getElementById('bachIts').value = fac.its;
+            document.getElementById('bachContact').value = fac.contact;
+            document.getElementById('bachSelectedFacId').value = fac.id;
+            document.getElementById('bachFacultyDropdown').classList.add('hidden');
+        };
+
+        window.saveBachelorResident = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('bachFlatId').value;
+            const residentName = document.getElementById('bachFacultyInput').value;
+            const its = document.getElementById('bachIts').value;
+            const contact = document.getElementById('bachContact').value;
+            const startDate = document.getElementById('bachStartDate').value;
+
+            bachelorData.push({
+                id: Date.now().toString(),
+                flatId,
+                residentName,
+                its,
+                contact,
+                startDate
+            });
+
+            await saveCloudData();
+            closeModal('modalAddBachelorResident');
+            renderBachelorGrid();
+        };
+
+        window.removeBachelorResident = async function(id) {
+            if(confirm("Remove this resident from bachelor flat?")) {
+                window.bachelorData = bachelorData.filter(b => b.id !== id);
+                await saveCloudData();
+                renderBachelorGrid();
+            }
+        };
+
+        // --- SUB-HEADER 5: VACANT/BACHELOR FLATS BILLS ---
+        window.renderVacantBills = function() {
+            const tbody = document.getElementById('vacantBillsTableBody');
+            if(!tbody) return;
+
+            const monthPicker = document.getElementById('billMonthPicker');
+            if(!monthPicker.value) {
+                const now = new Date();
+                monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            const monthKey = monthPicker.value;
+
+            // Target vacant flats or bachelor flats
+            const targetFlats = estatesData.filter(f => {
+                const alloc = allocationsData.find(a => a.flatId === f.id && a.isCurrent);
+                return !alloc || f.isBachelor;
+            });
+
+            tbody.innerHTML = targetFlats.map(f => {
+                const bill = vacantBillsData.find(b => b.flatId === f.id && b.month === monthKey) || {};
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3">
+                            <div class="font-bold text-gray-900">${f.building} - Flat ${f.flatNo}</div>
+                            <div class="text-xs">${f.isBachelor ? '<span class="text-amber-700 font-bold">Bachelor Flat</span>' : '<span class="text-gray-500">Vacant Flat</span>'}</div>
+                        </td>
+                        <td class="p-3 text-xs font-mono">
+                            <div>Elec: ${f.elec || '-'}</div>
+                            <div>Gas: ${f.gas || '-'}</div>
+                        </td>
+                        <td class="p-3">
+                            <select onchange="updateVacantBillStatus('${f.id}', '${monthKey}', 'elecStatus', this.value)" class="p-1 border rounded text-xs font-bold ${bill.elecStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                                <option value="Pending" ${bill.elecStatus !== 'Paid' ? 'selected' : ''}>Pending</option>
+                                <option value="Paid" ${bill.elecStatus === 'Paid' ? 'selected' : ''}>Paid</option>
+                            </select>
+                        </td>
+                        <td class="p-3">
+                            <select onchange="updateVacantBillStatus('${f.id}', '${monthKey}', 'gasStatus', this.value)" class="p-1 border rounded text-xs font-bold ${bill.gasStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                                <option value="Pending" ${bill.gasStatus !== 'Paid' ? 'selected' : ''}>Pending</option>
+                                <option value="Paid" ${bill.gasStatus === 'Paid' ? 'selected' : ''}>Paid</option>
+                            </select>
+                        </td>
+                        <td class="p-3 text-center">
+                            <input type="file" accept="image/*,application/pdf" onchange="uploadVacantBillReceipt('${f.id}', '${monthKey}', this)" class="text-xs w-44">
+                            ${bill.receiptUrl ? `<a href="${bill.receiptUrl}" target="_blank" class="block text-xs text-blue-600 underline font-bold mt-1">View Receipt</a>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('') || `<tr><td colspan="5" class="p-4 text-center text-gray-500">No vacant or bachelor flats to display for bills.</td></tr>`;
+        };
+
+        window.updateVacantBillStatus = async function(flatId, month, field, val) {
+            let record = vacantBillsData.find(b => b.flatId === flatId && b.month === month);
+            if(!record) {
+                record = { flatId, month, elecStatus: 'Pending', gasStatus: 'Pending', receiptUrl: null };
+                vacantBillsData.push(record);
+            }
+            record[field] = val;
+            await saveCloudData();
+            renderVacantBills();
+        };
+
+        window.uploadVacantBillReceipt = async function(flatId, month, inputEl) {
+            const file = inputEl.files[0];
+            if(!file) return;
+
+            const base64 = await fileToBase64(file);
+            let record = vacantBillsData.find(b => b.flatId === flatId && b.month === month);
+            if(!record) {
+                record = { flatId, month, elecStatus: 'Pending', gasStatus: 'Pending', receiptUrl: null };
+                vacantBillsData.push(record);
+            }
+            record.receiptUrl = base64;
+            await saveCloudData();
+            renderVacantBills();
+        };
+
+        // --- SUB-HEADER 6: SOCIETY MAINTENANCE ---
+        function getBuildingSocietyList() {
+            const socMap = new Map();
+
+            societiesData.forEach(s => {
+                const sName = s.name ? s.name.trim() : '';
+                if(!sName) return;
+
+                if(!socMap.has(sName)) {
+                    socMap.set(sName, {
+                        name: sName,
+                        totalFlats: parseInt(s.flats) || 0,
+                        count1Bhk: 0,
+                        count2Bhk: 0,
+                        isAuto: false,
+                        customData: s
+                    });
                 }
+            });
 
-                const safeId = String(m.id).replace(/'/g, "\\'");
+            return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
+        }
 
-                grid.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
-                        <div class="flex justify-between items-start border-b pb-2">
-                            <div>
-                                <h4 class="font-bold text-gray-800">${m.flat}</h4>
-                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
+        window.renderSocieties = function() {
+            const grid = document.getElementById('societyGrid');
+            if(!grid) return;
+
+            const societies = getBuildingSocietyList();
+
+            grid.innerHTML = societies.map(soc => {
+                const custom = soc.customData || {};
+                const cycle = custom.cycle || 'Quarterly';
+                const contactPerson = custom.contactPerson || 'Not Specified';
+                const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
+
+                return `
+                    <div class="bg-white p-5 rounded-lg shadow border space-y-3 flex flex-col justify-between">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start border-b pb-2">
+                                <h3 class="font-bold text-gray-900 text-base">${soc.name}</h3>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">${cycle} System</span>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
-                                <button onclick="openEditMaintenanceLog('${safeId}')" class="text-blue-600 hover:text-blue-800 text-sm ml-1" title="Edit Maintenance Log"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <div class="text-xs text-gray-600 space-y-1">
+                                <p><strong>Flats Breakdown:</strong> ${soc.totalFlats} Total Flats</p>
+                                <p><strong>Society Contact:</strong> ${contactPerson}</p>
+                                <p><strong>Bill Responsible:</strong> ${billSubmittedBy}</p>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-600">${m.desc}</p>
-                        <p class="text-[10px] text-gray-400 font-semibold">Completed on: ${m.date}</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
-                            ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+
+                        <div class="pt-3 border-t space-y-2">
+                            <button onclick="openBillsSummaryByName('${soc.name}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs py-2 rounded font-bold transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-file-invoice"></i>
+                                <span>View Bills Summary</span>
+                            </button>
+                            <div class="flex justify-between items-center text-xs pt-1">
+                                <button onclick="openEditSocietyModal('${soc.name}')" class="text-blue-600 hover:text-blue-800 font-semibold"><i class="fa-solid fa-pen-to-square"></i> Edit Info</button>
+                                <button onclick="deleteSocietyRecord('${soc.name}')" class="text-red-600 hover:text-red-800 font-semibold"><i class="fa-solid fa-trash"></i> Delete</button>
+                            </div>
                         </div>
                     </div>
                 `;
-            });
+            }).join('') || `<div class="col-span-3 bg-white p-6 rounded-lg text-center text-gray-500 border">No societies registered yet. Click "Add Custom Society" to start.</div>`;
+
+            renderSocietyOverviewMetric();
+            populateSocietyDocFilterDropdown();
+            renderSocietyDocs();
         };
 
-        window.renderFacultyTable = function() {
-            const tbody = document.getElementById('facultyTableBody');
-            const search = document.getElementById('facultySearch').value.toLowerCase();
-            tbody.innerHTML = '';
+        window.renderSocietyOverviewMetric = function() {
+            const selectedYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
+            let grandTotal = 0;
 
-            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(search)).forEach(f => {
-                const safeId = String(f.id).replace(/'/g, "\\'");
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-emerald-800">${f.its}</td>
-                    <td class="p-3 font-medium text-gray-900">${f.name}</td>
-                    <td class="p-3 text-gray-600">${f.contact}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditFaculty('${safeId}')" class="text-blue-600 hover:text-blue-800" title="Edit Faculty"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteFaculty('${safeId}')" class="text-red-600 hover:text-red-800" title="Delete Faculty"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
+            Object.keys(societyBillsData).forEach(key => {
+                if(key.endsWith(`_${selectedYear}`)) {
+                    const data = societyBillsData[key] || {};
+                    
+                    // Regular bills sum
+                    const regMap = data.regularBills || {};
+                    Object.values(regMap).forEach(b => {
+                        grandTotal += parseFloat(b.amount || 0);
+                    });
 
-        window.openAddFacultyModal = function() {
-            document.getElementById('facultyForm').reset();
-            document.getElementById('facultyModalTitle').innerText = 'Add Faculty Member';
-            document.getElementById('facultyForm').dataset.editId = '';
-            document.getElementById('modalFaculty').classList.remove('hidden');
-        };
-
-        window.openEditFaculty = function(id) {
-            const fac = facultyData.find(f => String(f.id) === String(id));
-            if(!fac) return;
-
-            document.getElementById('facultyIts').value = fac.its || '';
-            document.getElementById('facultyName').value = fac.name || '';
-            document.getElementById('facultyContact').value = fac.contact || '';
-            document.getElementById('facultyModalTitle').innerText = 'Edit Faculty Member';
-            document.getElementById('facultyForm').dataset.editId = fac.id;
-            
-            document.getElementById('modalFaculty').classList.remove('hidden');
-        };
-
-        window.saveFacultyRecord = async function(e) {
-            e.preventDefault();
-            const editId = e.target.dataset.editId;
-            const its = document.getElementById('facultyIts').value.trim();
-            const name = document.getElementById('facultyName').value.trim();
-            const contact = document.getElementById('facultyContact').value.trim();
-
-            if (editId) {
-                const idx = facultyData.findIndex(f => String(f.id) === String(editId));
-                if (idx !== -1) {
-                    const oldName = facultyData[idx].name;
-                    facultyData[idx] = { ...facultyData[idx], its, name, contact };
-
-                    estatesData.forEach(e => {
-                        if (e.occupant === oldName) {
-                            e.occupant = name;
-                            e.its = its;
-                            e.contact = contact;
-                        }
+                    // Other bills sum
+                    const otherList = data.otherBills || [];
+                    otherList.forEach(b => {
+                        grandTotal += parseFloat(b.amount || 0);
                     });
                 }
-            } else {
-                facultyData.push({
-                    id: Date.now().toString(),
-                    its,
-                    name,
-                    contact
-                });
-            }
+            });
 
-            await saveCloudData();
-            closeModal('modalFaculty');
-            renderFacultyTable();
-            renderAllocationTable();
-        };
-
-        window.deleteFaculty = async function(id) {
-            facultyData = facultyData.filter(f => String(f.id) !== String(id));
-            await saveCloudData();
-            renderFacultyTable();
+            const totalEl = document.getElementById('societyOverviewTotalAmount');
+            if(totalEl) totalEl.innerText = `₹${grandTotal.toLocaleString()}`;
         };
 
         window.openAddSocietyModal = function() {
@@ -2517,260 +2143,44 @@
                 flats: document.getElementById('socFlats').value,
                 cycle: document.getElementById('socCycle').value,
                 contactPerson: document.getElementById('socContactPerson').value,
-                billSubmittedBy: document.getElementById('socBillSubmittedBy').value
+                billSubmittedBy: document.getElementById('socBillSubmittedBy').value || 'Not Specified'
             });
 
             await saveCloudData();
             closeModal('modalAddSociety');
             renderSocieties();
-            populateSocietyDropdowns();
-            renderSocietyDocs();
-            alert("Society added successfully!");
-        };
-
-        window.deleteSociety = async function(id) {
-            const soc = societiesData.find(s => String(s.id) === String(id));
-            if(confirm(`Are you sure you want to delete "${soc ? soc.name : 'this society'}"?`)) {
-                societiesData = societiesData.filter(s => String(s.id) !== String(id));
-                await saveCloudData();
-                renderSocieties();
-                populateSocietyDropdowns();
-                renderSocietyDocs();
-            }
-        };
-
-        function getBuildingSocietyList() {
-            const socMap = new Map();
-            const excludedBuildings = ['faculty bldg', 'najmi bldg'];
-
-            estatesData.forEach(e => {
-                const bName = (e.building || '').trim();
-                if(!bName) return;
-                if(excludedBuildings.includes(bName.toLowerCase())) return;
-
-                if(!socMap.has(bName)) {
-                    socMap.set(bName, {
-                        name: bName,
-                        totalFlats: 0,
-                        count1Bhk: 0,
-                        count2Bhk: 0,
-                        isAuto: true
-                    });
-                }
-
-                const sObj = socMap.get(bName);
-                sObj.totalFlats++;
-                if(e.type === '1 BHK') sObj.count1Bhk++;
-                if(e.type === '2 BHK') sObj.count2Bhk++;
-            });
-
-            societiesData.forEach(s => {
-                const sName = s.name.trim();
-                if(excludedBuildings.includes(sName.toLowerCase())) return;
-
-                if(!socMap.has(sName)) {
-                    socMap.set(sName, {
-                        name: sName,
-                        totalFlats: parseInt(s.flats) || 0,
-                        count1Bhk: 0,
-                        count2Bhk: 0,
-                        isAuto: false,
-                        customData: s
-                    });
-                } else {
-                    const existing = socMap.get(sName);
-                    existing.customData = s;
-                }
-            });
-
-            return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
-        }
-
-      window.renderSocieties = function() {
-            const grid = document.getElementById('societyGrid');
-            if(!grid) return;
-            grid.innerHTML = '';
-
-            const list = getBuildingSocietyList();
-            const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
-
-            if(list.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-gray-400 col-span-3 text-center py-6">No societies found or created yet.</p>';
-                return;
-            }
-
-          list.forEach((s) => {
-                const custom = s.customData || {};
-                const cycle = custom.cycle || 'Quarterly';
-                const contactPerson = custom.contactPerson || 'Not Specified';
-                const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
-
-                const dataKey = `${s.name}_${selYear}`;
-                const record = societyBillsData[dataKey];
-                let socTotalAmount = 0;
-                if(record) {
-                    if(record.regular) {
-                        Object.values(record.regular).forEach(b => {
-                            socTotalAmount += (parseFloat(b.amount) || 0);
-                        });
-                    }
-                    if(record.other) {
-                        record.other.forEach(b => {
-                            socTotalAmount += (parseFloat(b.amount) || 0);
-                        });
-                    }
-                }
-
-                const bhkParts = [];
-                if (s.count1Bhk > 0) bhkParts.push(`1 BHK - ${s.count1Bhk}`);
-                if (s.count2Bhk > 0) bhkParts.push(`2 BHK - ${s.count2Bhk}`);
-                
-                const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
-                const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
-
-                const safeName = s.name.replace(/'/g, "\\'");
-
-                grid.innerHTML += `
-                    <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-start border-b pb-2">
-                                <div>
-                                    <h4 class="font-bold text-emerald-900 text-base">${s.name}</h4>
-                                    <span class="text-xs font-semibold text-emerald-700 block">${flatDisplay}</span>
-                                    <span class="text-xs font-bold text-red-600 block mt-0.5">Total Bills (${selYear}): ₹${socTotalAmount.toLocaleString('en-IN')}</span>
-                                </div>
-                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">${cycle}</span>
-                            </div>
-
-                            <div class="text-xs space-y-1 text-gray-700">
-                                <p><strong>Contact Person:</strong> ${contactPerson}</p>
-                                <p><strong>Bill Responsible:</strong> ${billSubmittedBy}</p>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t space-y-2">
-                            <button onclick="openBillsSummaryByName('${safeName}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
-                                <i class="fa-solid fa-calculator"></i>
-                                <span>Bills Summary</span>
-                            </button>
-                            
-                            <div class="flex justify-between items-center pt-1 text-xs">
-                                <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                    <span>Edit Society</span>
-                                </button>
-                                <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                    <span>Delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-
-            populateSocietyDropdowns();
-            renderSocietyOverviewMetric();
-        };
-
-   window.openBillsSummaryByName = function(socName) {
-    if (!socName) return;
-
-    // Find the building object directly by name instead of index
-    const list = getBuildingSocietyList();
-    const soc = list.find(s => s.name.trim() === socName.trim());
-
-    const custom = (soc && soc.customData) ? soc.customData : {};
-    const cycle = custom.cycle || 'Quarterly';
-
-    currentSummarySocName = socName.trim();
-    currentSummaryCycle = cycle;
-
-    const titleEl = document.getElementById('billsSummaryTitle');
-    const subtitleEl = document.getElementById('billsSummarySubtitle');
-    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
-    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
-
-    // Render table rows
-    renderBillsSummaryModalContent();
-
-    // Open modal
-    const modal = document.getElementById('modalBillsSummary');
-    if (modal) modal.classList.remove('hidden');
-};
-        
-        window.openEditSocietyByIndex = function(index) {
-            const list = getBuildingSocietyList();
-            const soc = list[index];
-            if (soc) openEditSocietyModal(soc.name);
-        };
-
-        window.deleteSocietyByIndex = function(index) {
-            const list = getBuildingSocietyList();
-            const soc = list[index];
-            if (soc) deleteSocietyRecord(soc.name);
-        };
-        
-        window.renderSocietyOverviewMetric = function() {
-            const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
-            let grandTotal = 0;
-
-            const list = getBuildingSocietyList();
-            list.forEach(s => {
-                const dataKey = `${s.name}_${selYear}`;
-                const record = societyBillsData[dataKey];
-                if(record) {
-                    if(record.regular) {
-                        Object.values(record.regular).forEach(b => {
-                            grandTotal += (parseFloat(b.amount) || 0);
-                        });
-                    }
-                    if(record.other) {
-                        record.other.forEach(b => {
-                            grandTotal += (parseFloat(b.amount) || 0);
-                        });
-                    }
-                }
-            });
-
-            const displayEl = document.getElementById('societyOverviewTotalAmount');
-            if(displayEl) displayEl.innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
         };
 
         window.openEditSocietyModal = function(socName) {
             const list = getBuildingSocietyList();
-            const soc = list.find(s => s.name === socName);
+            const soc = list.find(s => s.name.trim() === socName.trim());
+            const custom = soc ? soc.customData : {};
 
             document.getElementById('editSocietyTargetName').value = socName;
             document.getElementById('editSocNameDisplay').value = socName;
-
-            const custom = (soc && soc.customData) ? soc.customData : {};
-            document.getElementById('editSocCycle').value = custom.cycle || 'Quarterly';
-            document.getElementById('editSocContactPerson').value = custom.contactPerson || '';
-            document.getElementById('editSocBillSubmittedBy').value = custom.billSubmittedBy || '';
+            document.getElementById('editSocCycle').value = custom?.cycle || 'Quarterly';
+            document.getElementById('editSocContactPerson').value = custom?.contactPerson || '';
+            document.getElementById('editSocBillSubmittedBy').value = custom?.billSubmittedBy || '';
 
             document.getElementById('modalEditSociety').classList.remove('hidden');
         };
 
         window.saveSocietyEditRecord = async function(e) {
             e.preventDefault();
-            const socName = document.getElementById('editSocietyTargetName').value;
+            const targetName = document.getElementById('editSocietyTargetName').value;
             const cycle = document.getElementById('editSocCycle').value;
             const contactPerson = document.getElementById('editSocContactPerson').value;
             const billSubmittedBy = document.getElementById('editSocBillSubmittedBy').value;
 
-            const idx = societiesData.findIndex(s => s.name === socName);
-            if(idx !== -1) {
-                societiesData[idx] = { ...societiesData[idx], cycle, contactPerson, billSubmittedBy };
-            } else {
-                societiesData.push({
-                    id: Date.now().toString(),
-                    name: socName,
-                    flats: '0',
-                    cycle,
-                    contactPerson,
-                    billSubmittedBy
-                });
+            let sObj = societiesData.find(s => s.name.trim() === targetName.trim());
+            if(!sObj) {
+                sObj = { id: Date.now().toString(), name: targetName };
+                societiesData.push(sObj);
             }
+
+            sObj.cycle = cycle;
+            sObj.contactPerson = contactPerson;
+            sObj.billSubmittedBy = billSubmittedBy;
 
             await saveCloudData();
             closeModal('modalEditSociety');
@@ -2778,179 +2188,148 @@
         };
 
         window.deleteSocietyRecord = async function(socName) {
-            if(confirm(`Are you sure you want to delete "${socName}" society configurations?`)) {
-                societiesData = societiesData.filter(s => s.name !== socName);
+            if(confirm(`Are you sure you want to delete ${socName}?`)) {
+                window.societiesData = societiesData.filter(s => s.name.trim() !== socName.trim());
                 await saveCloudData();
                 renderSocieties();
             }
         };
 
-       // 1. Declare state variables first
-let currentSummarySocName = '';
-let currentSummaryCycle = '';
+        // --- SOCIETY BILLS SUMMARY MODAL ---
+        window.openBillsSummaryByName = function(socName) {
+            if (!socName) return;
 
-// 2. Updated function by name
-window.openBillsSummaryByName = function(socName) {
-    if (!socName) return;
+            const list = getBuildingSocietyList();
+            const soc = list.find(s => s.name.trim() === socName.trim());
 
-    const list = getBuildingSocietyList();
-    const soc = list.find(s => s.name.trim() === socName.trim());
+            const custom = (soc && soc.customData) ? soc.customData : {};
+            const cycle = custom.cycle || 'Quarterly';
 
-    const custom = (soc && soc.customData) ? soc.customData : {};
-    const cycle = custom.cycle || 'Quarterly';
+            currentSummarySocName = socName.trim();
+            currentSummaryCycle = cycle;
 
-    currentSummarySocName = socName.trim();
-    currentSummaryCycle = cycle;
+            const titleEl = document.getElementById('billsSummaryTitle');
+            const subtitleEl = document.getElementById('billsSummarySubtitle');
+            if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
+            if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
 
-    const titleEl = document.getElementById('billsSummaryTitle');
-    const subtitleEl = document.getElementById('billsSummarySubtitle');
-    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
-    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
+            renderBillsSummaryModalContent();
 
-    renderBillsSummaryModalContent();
+            const modal = document.getElementById('modalBillsSummary');
+            if (modal) modal.classList.remove('hidden');
+        };
 
-    const modal = document.getElementById('modalBillsSummary');
-    if (modal) modal.classList.remove('hidden');
-};
-
-// 3. Keep openBillsSummaryModal as a safe alias
-window.openBillsSummaryModal = function(socName, cycle) {
-    openBillsSummaryByName(socName);
-};
+        window.openBillsSummaryModal = function(socName, cycle) {
+            openBillsSummaryByName(socName);
+        };
 
         window.renderBillsSummaryModalContent = function() {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
-
-            if(!societyBillsData[dataKey]) {
-                societyBillsData[dataKey] = { regular: {}, other: [] };
+            const key = `${currentSummarySocName}_${selYear}`;
+            
+            if(!societyBillsData[key]) {
+                societyBillsData[key] = { regularBills: {}, otherBills: [] };
             }
-            const currentData = societyBillsData[dataKey];
 
-            const tbodyReg = document.getElementById('regularBillsTableBody');
-            tbodyReg.innerHTML = '';
-            let regularPeriods = [];
+            const data = societyBillsData[key];
+            const regTbody = document.getElementById('regularBillsTableBody');
+            const otherTbody = document.getElementById('otherBillsTableBody');
 
-            if(currentSummaryCycle === 'Yearly') {
-                regularPeriods = [{ key: 'Yearly', label: `Annual Bill (${selYear})` }];
-            } else if(currentSummaryCycle === 'Quarterly') {
-                regularPeriods = [
-                    { key: 'Q1', label: 'Q1 (Jan - Mar)' },
-                    { key: 'Q2', label: 'Q2 (Apr - Jun)' },
-                    { key: 'Q3', label: 'Q3 (Jul - Sep)' },
-                    { key: 'Q4', label: 'Q4 (Oct - Dec)' }
-                ];
+            // Render Regular Bills Schedule
+            let periods = [];
+            if(currentSummaryCycle === 'Monthly') {
+                periods = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            } else if(currentSummaryCycle === 'Yearly') {
+                periods = [`Full Year ${selYear}`];
             } else {
-                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                regularPeriods = monthNames.map((m, idx) => ({ key: `M${idx+1}`, label: m }));
+                periods = ["Q1 (Jan-Mar)", "Q2 (Apr-Jun)", "Q3 (Jul-Sep)", "Q4 (Oct-Dec)"];
             }
 
-            let regularSum = 0;
+            let regTotal = 0;
+            regTbody.innerHTML = periods.map((p, idx) => {
+                const bill = data.regularBills[p] || {};
+                const amount = parseFloat(bill.amount || 0);
+                regTotal += amount;
 
-            regularPeriods.forEach(p => {
-                const pData = currentData.regular[p.key] || { date: '', amount: 0, fileUrl: '' };
-                regularSum += (parseFloat(pData.amount) || 0);
-
-                const safeKey = p.key;
-
-                tbodyReg.innerHTML += `
-                    <tr class="hover:bg-gray-50 border-b">
-                        <td class="p-2.5 font-bold text-gray-800">${p.label}</td>
-                        <td class="p-2.5"><input type="date" value="${pData.date || ''}" onchange="updateRegularBillRow('${safeKey}', 'date', this.value)" class="p-1 border rounded text-xs bg-white"></td>
-                        <td class="p-2.5"><input type="number" placeholder="0" value="${pData.amount || ''}" onchange="updateRegularBillRow('${safeKey}', 'amount', this.value)" class="p-1 border rounded text-xs w-28 bg-white font-bold text-emerald-900"></td>
+                return `
+                    <tr>
+                        <td class="p-2.5 font-bold text-gray-800">${p}</td>
                         <td class="p-2.5">
-                            ${pData.fileUrl 
-                                ? `<a href="${pData.fileUrl}" target="_blank" class="text-emerald-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
-                                : '<span class="text-gray-400 italic">No File</span>'}
-                            <input type="file" accept=".pdf,image/*" onchange="uploadRegularBillFile('${safeKey}', this)" class="block text-[10px] mt-1">
+                            <input type="date" value="${bill.date || ''}" onchange="updateRegularBillField('${key}', '${p}', 'date', this.value)" class="p-1 border rounded text-xs">
+                        </td>
+                        <td class="p-2.5">
+                            <input type="number" value="${bill.amount || ''}" placeholder="0" onchange="updateRegularBillField('${key}', '${p}', 'amount', this.value)" class="p-1 border rounded text-xs w-28 font-bold text-emerald-900">
+                        </td>
+                        <td class="p-2.5">
+                            <input type="file" accept=".pdf,image/*" onchange="uploadRegularBillReceipt('${key}', '${p}', this)" class="text-xs w-40">
+                            ${bill.receiptUrl ? `<a href="${bill.receiptUrl}" target="_blank" class="text-blue-600 underline font-bold ml-1">View Receipt</a>` : ''}
                         </td>
                         <td class="p-2.5 text-center">
-                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Auto-Saved</span>
+                            ${bill.amount ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Saved</span>` : '<span class="text-gray-400">Pending</span>'}
                         </td>
                     </tr>
                 `;
-            });
+            }).join('');
 
-            document.getElementById('regularBillsTotalSum').innerText = `₹${regularSum.toLocaleString('en-IN')}`;
+            document.getElementById('regularBillsTotalSum').innerText = `₹${regTotal.toLocaleString()}`;
 
-            const tbodyOther = document.getElementById('otherBillsTableBody');
-            tbodyOther.innerHTML = '';
-            let otherSum = 0;
+            // Render Other Bills
+            let otherTotal = 0;
+            const otherList = data.otherBills || [];
 
-            if(!currentData.other || currentData.other.length === 0) {
-                tbodyOther.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 italic">No additional or other bills recorded for this year.</td></tr>';
-            } else {
-                currentData.other.forEach((b, idx) => {
-                    otherSum += (parseFloat(b.amount) || 0);
-                    tbodyOther.innerHTML += `
-                        <tr class="hover:bg-gray-50 border-b">
-                            <td class="p-2.5">${b.date || '-'}</td>
-                            <td class="p-2.5 font-bold text-amber-900">₹${(parseFloat(b.amount) || 0).toLocaleString('en-IN')}</td>
-                            <td class="p-2.5 text-gray-800">${b.desc || '-'}</td>
-                            <td class="p-2.5">
-                                ${b.fileUrl 
-                                    ? `<a href="${b.fileUrl}" target="_blank" class="text-amber-800 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
-                                    : '<span class="text-gray-400 italic">None</span>'}
-                            </td>
-                            <td class="p-2.5 text-center space-x-2">
-                                <button onclick="editOtherBillRow(${idx})" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button onclick="deleteOtherBillRow(${idx})" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
+            otherTbody.innerHTML = otherList.map((b, idx) => {
+                const amount = parseFloat(b.amount || 0);
+                otherTotal += amount;
 
-            document.getElementById('otherBillsTotalSum').innerText = `₹${otherSum.toLocaleString('en-IN')}`;
+                return `
+                    <tr>
+                        <td class="p-2.5 font-semibold text-gray-800">${b.date || '-'}</td>
+                        <td class="p-2.5 font-bold text-amber-900">₹${amount.toLocaleString()}</td>
+                        <td class="p-2.5 text-gray-700">${b.description}</td>
+                        <td class="p-2.5">
+                            ${b.receiptUrl ? `<a href="${b.receiptUrl}" target="_blank" class="text-blue-600 underline font-bold">View Receipt</a>` : '<span class="text-gray-400">No receipt</span>'}
+                        </td>
+                        <td class="p-2.5 text-center space-x-2">
+                            <button onclick="editOtherBillRow('${key}', ${idx})" class="text-blue-600 hover:text-blue-800 font-bold"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteOtherBillRow('${key}', ${idx})" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('') || `<tr><td colspan="5" class="p-3 text-center text-gray-400">No additional/other bills added for this year.</td></tr>`;
 
-            const grandTotal = regularSum + otherSum;
-            document.getElementById('grandBillsTotalSum').innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+            document.getElementById('otherBillsTotalSum').innerText = `₹${otherTotal.toLocaleString()}`;
+            document.getElementById('grandBillsTotalSum').innerText = `₹${(regTotal + otherTotal).toLocaleString()}`;
+        };
 
+        window.updateRegularBillField = async function(key, period, field, val) {
+            if(!societyBillsData[key]) societyBillsData[key] = { regularBills: {}, otherBills: [] };
+            if(!societyBillsData[key].regularBills[period]) societyBillsData[key].regularBills[period] = {};
+
+            societyBillsData[key].regularBills[period][field] = val;
+            await saveCloudData();
+            renderBillsSummaryModalContent();
             renderSocietyOverviewMetric();
         };
 
-        window.updateRegularBillRow = async function(periodKey, field, value) {
-            const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
+        window.uploadRegularBillReceipt = async function(key, period, inputEl) {
+            const file = inputEl.files[0];
+            if(!file) return;
 
-            if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
-            if(!societyBillsData[dataKey].regular[periodKey]) {
-                societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
-            }
+            const base64 = await fileToBase64(file);
+            if(!societyBillsData[key]) societyBillsData[key] = { regularBills: {}, otherBills: [] };
+            if(!societyBillsData[key].regularBills[period]) societyBillsData[key].regularBills[period] = {};
 
-            societyBillsData[dataKey].regular[periodKey][field] = value;
+            societyBillsData[key].regularBills[period].receiptUrl = base64;
             await saveCloudData();
             renderBillsSummaryModalContent();
         };
 
-        window.uploadRegularBillFile = async function(periodKey, inputEl) {
-            const file = inputEl.files[0];
-            if(!file) return;
-
-            try {
-                const res = await uploadFileToDrive(file);
-                const selYear = document.getElementById('billsSummaryYearSelect').value;
-                const dataKey = `${currentSummarySocName}_${selYear}`;
-
-                if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
-                if(!societyBillsData[dataKey].regular[periodKey]) {
-                    societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
-                }
-
-                societyBillsData[dataKey].regular[periodKey].fileUrl = res.fileUrl;
-                await saveCloudData();
-                renderBillsSummaryModalContent();
-            } catch(err) {
-                alert("File upload failed: " + err);
-            }
-        };
-
         window.openAddOtherBillRow = function() {
-            document.getElementById('otherBillEditIndex').value = '-1';
-            document.getElementById('otherBillDateInput').value = new Date().toISOString().split('T')[0];
-            document.getElementById('otherBillAmountInput').value = '';
-            document.getElementById('otherBillDescInput').value = '';
-            document.getElementById('otherBillFileInput').value = '';
+            document.getElementById('otherBillEditIndex').value = "-1";
+            document.getElementById('otherBillDateInput').value = "";
+            document.getElementById('otherBillAmountInput').value = "";
+            document.getElementById('otherBillDescInput').value = "";
+            document.getElementById('otherBillFileInput').value = "";
             document.getElementById('otherBillInputBox').classList.remove('hidden');
         };
 
@@ -2959,165 +2338,126 @@ window.openBillsSummaryModal = function(socName, cycle) {
         };
 
         window.saveOtherBillRow = async function() {
-            const editIdx = parseInt(document.getElementById('otherBillEditIndex').value);
+            const selYear = document.getElementById('billsSummaryYearSelect').value;
+            const key = `${currentSummarySocName}_${selYear}`;
+
+            const idx = parseInt(document.getElementById('otherBillEditIndex').value);
             const date = document.getElementById('otherBillDateInput').value;
             const amount = document.getElementById('otherBillAmountInput').value;
-            const desc = document.getElementById('otherBillDescInput').value;
-            const file = document.getElementById('otherBillFileInput').files[0];
+            const description = document.getElementById('otherBillDescInput').value;
+            const fileInput = document.getElementById('otherBillFileInput');
 
-            if(!amount || !desc) {
-                alert("Please enter Bill Amount and Description.");
+            if(!date || !amount || !description) {
+                alert("Please fill date, amount, and description!");
                 return;
             }
 
-            const btn = document.getElementById('btnSaveOtherBill');
-            btn.innerText = "Processing...";
-            btn.disabled = true;
-
-            const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
-
-            if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
-
-            let fileUrl = editIdx >= 0 && societyBillsData[dataKey].other[editIdx] ? societyBillsData[dataKey].other[editIdx].fileUrl : "";
-
-            if(file) {
-                try {
-                    const res = await uploadFileToDrive(file);
-                    fileUrl = res.fileUrl;
-                } catch(err) {
-                    alert("File upload failed: " + err);
-                    btn.innerText = "Save Other Bill";
-                    btn.disabled = false;
-                    return;
-                }
+            let receiptUrl = null;
+            if(fileInput.files[0]) {
+                receiptUrl = await fileToBase64(fileInput.files[0]);
             }
 
-            const record = { id: Date.now().toString(), date, amount, desc, fileUrl };
+            if(!societyBillsData[key]) societyBillsData[key] = { regularBills: {}, otherBills: [] };
 
-            if(editIdx >= 0) {
-                societyBillsData[dataKey].other[editIdx] = record;
+            const billObj = { date, amount, description, receiptUrl };
+
+            if(idx >= 0) {
+                if(!receiptUrl) billObj.receiptUrl = societyBillsData[key].otherBills[idx].receiptUrl;
+                societyBillsData[key].otherBills[idx] = billObj;
             } else {
-                societyBillsData[dataKey].other.push(record);
+                societyBillsData[key].otherBills.push(billObj);
             }
 
             await saveCloudData();
-            btn.innerText = "Save Other Bill";
-            btn.disabled = false;
             closeOtherBillInputBox();
             renderBillsSummaryModalContent();
+            renderSocietyOverviewMetric();
         };
 
-        window.editOtherBillRow = function(index) {
-            const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
-            const record = societyBillsData[dataKey].other[index];
-            if(!record) return;
+        window.editOtherBillRow = function(key, idx) {
+            const item = societyBillsData[key].otherBills[idx];
+            if(!item) return;
 
-            document.getElementById('otherBillEditIndex').value = index;
-            document.getElementById('otherBillDateInput').value = record.date || '';
-            document.getElementById('otherBillAmountInput').value = record.amount || '';
-            document.getElementById('otherBillDescInput').value = record.desc || '';
-            document.getElementById('otherBillFileInput').value = '';
-
+            document.getElementById('otherBillEditIndex').value = idx;
+            document.getElementById('otherBillDateInput').value = item.date || '';
+            document.getElementById('otherBillAmountInput').value = item.amount || '';
+            document.getElementById('otherBillDescInput').value = item.description || '';
             document.getElementById('otherBillInputBox').classList.remove('hidden');
         };
 
-        window.deleteOtherBillRow = async function(index) {
+        window.deleteOtherBillRow = async function(key, idx) {
             if(confirm("Delete this other bill record?")) {
-                const selYear = document.getElementById('billsSummaryYearSelect').value;
-                const dataKey = `${currentSummarySocName}_${selYear}`;
-                societyBillsData[dataKey].other.splice(index, 1);
+                societyBillsData[key].otherBills.splice(idx, 1);
                 await saveCloudData();
                 renderBillsSummaryModalContent();
+                renderSocietyOverviewMetric();
             }
         };
 
-        window.populateSocietyDropdowns = function() {
-            const selDoc = document.getElementById('docFilterSociety');
-            const selUpload = document.getElementById('docSocietySelect');
-            selDoc.innerHTML = '<option value="">All Societies</option>';
-            selUpload.innerHTML = '';
-            
-            const sorted = [...societiesData].sort((a,b) => a.name.localeCompare(b.name));
-            sorted.forEach(s => {
-                selDoc.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-                selUpload.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-            });
-        };
+        // --- SOCIETY DOCUMENT VAULT ---
+        function populateSocietyDocFilterDropdown() {
+            const sel = document.getElementById('docFilterSociety');
+            if(!sel) return;
+
+            const societies = getBuildingSocietyList();
+            sel.innerHTML = `<option value="">All Societies</option>` + societies.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+        }
 
         window.renderSocietyDocs = function() {
             const container = document.getElementById('societyDocsContainer');
-            const socFilter = document.getElementById('docFilterSociety').value;
-            const query = document.getElementById('docSearchQuery').value.toLowerCase();
-            container.innerHTML = '';
+            if(!container) return;
 
-            const filtered = societyDocs.filter(d => {
-                const matchSoc = !socFilter || d.society === socFilter;
-                const matchQuery = `${d.title} ${d.notes}`.toLowerCase().includes(query);
-                return matchSoc && matchQuery;
+            const selectedSoc = document.getElementById('docFilterSociety')?.value || '';
+            const query = (document.getElementById('docSearchQuery')?.value || '').toLowerCase().trim();
+
+            let filtered = societyDocsData.filter(d => {
+                if(selectedSoc && d.societyName !== selectedSoc) return false;
+                const searchStr = `${d.title} ${d.notes || ''}`.toLowerCase();
+                return searchStr.includes(query);
             });
 
-            if (filtered.length === 0) {
-                container.innerHTML = '<div class="p-6 text-center text-gray-400 text-xs bg-gray-50 rounded border">No uploaded vault documents match your criteria.</div>';
-                return;
-            }
-
+            // Group by society name
             const grouped = {};
-            filtered.forEach(doc => {
-                if(!grouped[doc.society]) grouped[doc.society] = [];
-                grouped[doc.society].push(doc);
+            filtered.forEach(d => {
+                if(!grouped[d.societyName]) grouped[d.societyName] = [];
+                grouped[d.societyName].push(d);
             });
 
-            const sortedSocieties = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+            const sortedSocieties = Object.keys(grouped).sort((a,b) => a.localeCompare(b));
 
-            sortedSocieties.forEach(socName => {
-                const docsInSoc = grouped[socName].sort((a, b) => a.title.localeCompare(b.title));
-
-                const socBlock = document.createElement('div');
-                socBlock.className = "bg-gray-50 border rounded-lg overflow-hidden shadow-sm space-y-2";
-                
-                let rows = docsInSoc.map(d => `
-                    <tr class="border-b bg-white hover:bg-emerald-50/40 text-xs transition">
-                        <td class="p-3 font-bold text-gray-800">${d.title}</td>
-                        <td class="p-3 text-gray-500">${d.date || '-'}</td>
-                        <td class="p-3 text-gray-600">${d.notes || '-'}</td>
-                        <td class="p-3 text-center">
-                            <a href="${d.fileUrl}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded inline-flex items-center space-x-1 shadow-sm">
-                                <i class="fa-solid fa-file-pdf"></i>
-                                <span>Open File</span>
-                            </a>
-                        </td>
-                    </tr>
-                `).join('');
-
-                socBlock.innerHTML = `
-                    <div class="bg-emerald-900 text-emerald-100 px-4 py-2.5 font-bold text-sm flex justify-between items-center">
-                        <span class="flex items-center space-x-2">
-                            <i class="fa-solid fa-folder-closed text-emerald-400"></i>
-                            <span>${socName}</span>
-                        </span>
-                        <span class="bg-emerald-800 text-emerald-200 text-xs px-2 py-0.5 rounded-full font-semibold">${docsInSoc.length} file(s)</span>
+            container.innerHTML = sortedSocieties.map(socName => `
+                <div class="border rounded-lg bg-gray-50 p-4 space-y-3">
+                    <h4 class="font-bold text-gray-900 border-b pb-2 flex items-center justify-between">
+                        <span><i class="fa-solid fa-building text-emerald-700 mr-2"></i>${socName}</span>
+                        <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${grouped[socName].length} Documents</span>
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        ${grouped[socName].map(doc => `
+                            <div class="bg-white p-3 rounded shadow-sm border space-y-2 flex flex-col justify-between">
+                                <div>
+                                    <div class="font-bold text-gray-800 text-sm">${doc.title}</div>
+                                    <p class="text-xs text-gray-500 mt-1">${doc.notes || 'No notes added'}</p>
+                                    <span class="text-[10px] text-gray-400 block mt-1">Uploaded: ${doc.uploadDate || '-'}</span>
+                                </div>
+                                <div class="flex justify-between items-center border-t pt-2 mt-2">
+                                    <a href="${doc.fileUrl}" target="_blank" class="text-xs text-amber-700 font-bold underline flex items-center space-x-1">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                        <span>View Document</span>
+                                    </a>
+                                    <button onclick="deleteSocietyDoc('${doc.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
-                    <div class="overflow-x-auto p-2">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-100 border-b text-gray-600 uppercase text-[11px]">
-                                <tr>
-                                    <th class="p-2">Document Title</th>
-                                    <th class="p-2">Upload Date</th>
-                                    <th class="p-2">Notes / Context</th>
-                                    <th class="p-2 text-center">Drive Link</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
-                    </div>
-                `;
-                container.appendChild(socBlock);
-            });
+                </div>
+            `).join('') || `<p class="text-gray-500 text-center py-4">No society documents stored yet.</p>`;
         };
 
         window.openUploadDocModal = function() {
+            const sel = document.getElementById('docSocietySelect');
+            const societies = getBuildingSocietyList();
+            sel.innerHTML = societies.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+
             document.getElementById('docUploadForm').reset();
             document.getElementById('modalUploadDoc').classList.remove('hidden');
         };
@@ -3128,28 +2468,27 @@ window.openBillsSummaryModal = function(socName, cycle) {
             btn.innerText = "Uploading...";
             btn.disabled = true;
 
-            const docFile = document.getElementById('docFileInput').files[0];
-            let fileUrl = "";
+            const societyName = document.getElementById('docSocietySelect').value;
+            const title = document.getElementById('docTitle').value;
+            const notes = document.getElementById('docNotes').value;
+            const file = document.getElementById('docFileInput').files[0];
 
-            if(docFile) {
-                try {
-                    const uploadRes = await uploadFileToDrive(docFile);
-                    fileUrl = uploadRes.fileUrl;
-                } catch(err) {
-                    alert("Upload failed: " + err);
-                    btn.innerText = "Upload File";
-                    btn.disabled = false;
-                    return;
-                }
+            if(!file) {
+                alert("Please select a file!");
+                btn.innerText = "Upload File";
+                btn.disabled = false;
+                return;
             }
 
-            societyDocs.push({
+            const fileUrl = await fileToBase64(file);
+
+            societyDocsData.push({
                 id: Date.now().toString(),
-                society: document.getElementById('docSocietySelect').value,
-                title: document.getElementById('docTitle').value,
-                notes: document.getElementById('docNotes').value,
-                fileUrl: fileUrl,
-                date: new Date().toISOString().split('T')[0]
+                societyName,
+                title,
+                notes,
+                fileUrl,
+                uploadDate: new Date().toISOString().split('T')[0]
             });
 
             await saveCloudData();
@@ -3159,311 +2498,380 @@ window.openBillsSummaryModal = function(socName, cycle) {
             renderSocietyDocs();
         };
 
-        function populateIntegratedFlatDropdown() {
-            const select = document.getElementById('integratedFlatSelect');
-            const search = (document.getElementById('integratedSearch') ? document.getElementById('integratedSearch').value : '').toLowerCase();
-            select.innerHTML = '<option value="">-- Choose Building & Flat Number --</option>';
+        window.deleteSocietyDoc = async function(id) {
+            if(confirm("Delete this document?")) {
+                window.societyDocsData = societyDocsData.filter(d => d.id !== id);
+                await saveCloudData();
+                renderSocietyDocs();
+            }
+        };
 
-            estatesData.filter(e => {
-                const wing = e.wing ? ` (${e.wing})` : '';
-                return `${e.building}${wing} ${e.flatNo}`.toLowerCase().includes(search);
-            }).forEach(e => {
-                const wing = e.wing ? ` (${e.wing})` : '';
-                select.innerHTML += `<option value="${e.id}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
-            });
+        // --- SUB-HEADER 7: INTEGRATED VIEW ---
+        function populateIntegratedDropdown() {
+            const sel = document.getElementById('integratedFlatSelect');
+            if(!sel) return;
+
+            sel.innerHTML = `<option value="">-- Choose Building & Flat Number --</option>` + estatesData.map(f => `
+                <option value="${f.id}">${f.building} ${f.wing ? `(${f.wing})` : ''} - Flat ${f.flatNo}</option>
+            `).join('');
         }
 
         window.filterIntegratedDropdown = function() {
-            populateIntegratedFlatDropdown();
+            const q = document.getElementById('integratedSearch').value.toLowerCase();
+            const sel = document.getElementById('integratedFlatSelect');
+
+            const filtered = estatesData.filter(f => 
+                `${f.building} ${f.wing || ''} ${f.flatNo}`.toLowerCase().includes(q)
+            );
+
+            sel.innerHTML = `<option value="">-- Choose Building & Flat Number --</option>` + filtered.map(f => `
+                <option value="${f.id}">${f.building} ${f.wing ? `(${f.wing})` : ''} - Flat ${f.flatNo}</option>
+            `).join('');
         };
 
         window.renderIntegratedView = function() {
             const flatId = document.getElementById('integratedFlatSelect').value;
-            const container = document.getElementById('integratedContentDisplay');
+            const displayBox = document.getElementById('integratedContentDisplay');
 
             if(!flatId) {
-                container.classList.add('hidden');
+                displayBox.classList.add('hidden');
                 return;
             }
 
-            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            const flat = estatesData.find(f => f.id === flatId);
             if(!flat) return;
 
-            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
-            const flatKey = `${flat.building}${wingBadge} - ${flat.flatNo}`;
+            displayBox.classList.remove('hidden');
 
-            document.getElementById('intBuildingWing').innerText = `${flat.building}${wingBadge}`;
+            // 1. Estate Specs
+            document.getElementById('intBuildingWing').innerText = `${flat.building} ${flat.wing ? `(${flat.wing})` : ''}`;
             document.getElementById('intFlatNo').innerText = flat.flatNo;
-            document.getElementById('intTypeSqft').innerText = `${flat.type} (${flat.sqft} SqFt)`;
+            document.getElementById('intTypeSqft').innerText = `${flat.type} (${flat.sqft} sqft)`;
             document.getElementById('intOwner').innerText = flat.owner;
             document.getElementById('intElec').innerText = flat.elec || '-';
             document.getElementById('intGas').innerText = flat.gas || '-';
-            document.getElementById('intCategoryBadge').innerText = flat.isBachelor ? `Bachelor (${flat.capacity} Beds)` : 'Regular';
-            document.getElementById('intCategoryBadge').className = flat.isBachelor ? 'text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-900' : 'text-xs px-2.5 py-1 rounded-full font-bold bg-blue-100 text-blue-900';
 
-            const isFlatOccupied = flat.isBachelor ? (flat.residents && flat.residents.length > 0) : !!flat.occupant;
-
-            document.getElementById('intStatusBadge').className = isFlatOccupied ? 'bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold';
-            document.getElementById('intStatusBadge').innerText = isFlatOccupied ? 'Allocated' : 'Vacant';
-            
+            const catBadge = document.getElementById('intCategoryBadge');
             if(flat.isBachelor) {
-                document.getElementById('intOccupantName').innerText = (flat.residents && flat.residents.length > 0) ? flat.residents.map(r => r.name).join(', ') : '-';
-                document.getElementById('intIts').innerText = `${flat.residents ? flat.residents.length : 0}/${flat.capacity || 4} Beds Assigned`;
-                document.getElementById('intContact').innerText = '-';
+                catBadge.innerText = `Bachelor Flat (${flat.bedCapacity || 4} Beds)`;
+                catBadge.className = "text-xs px-3 py-1 rounded-full font-bold bg-amber-100 text-amber-800";
             } else {
-                document.getElementById('intOccupantName').innerText = flat.occupant || '-';
-                document.getElementById('intIts').innerText = flat.its || '-';
-                document.getElementById('intContact').innerText = flat.contact || '-';
+                catBadge.innerText = "Standard Flat";
+                catBadge.className = "text-xs px-3 py-1 rounded-full font-bold bg-emerald-100 text-emerald-800";
             }
 
-            document.getElementById('intAllocSince').innerText = flat.startDate || '-';
-            document.getElementById('intTenure').innerText = isFlatOccupied ? calculateElapsed(flat.startDate) : '-';
+            // 2. Occupant Status
+            const alloc = allocationsData.find(a => a.flatId === flat.id && a.isCurrent);
+            const statusBadge = document.getElementById('intStatusBadge');
 
-            const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
-            document.getElementById('intMaintCount').innerText = `${flatMaintLogs.length} Log(s)`;
-            
-            if(flatMaintLogs.length > 0) {
-                const latest = flatMaintLogs[0];
-                document.getElementById('intLastMaintType').innerText = latest.type || 'Refurbishment';
-                document.getElementById('intLastMaintTime').innerText = `${calculateElapsed(latest.date)} ago (${latest.date})`;
+            if(alloc) {
+                statusBadge.innerHTML = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">Allocated</span>`;
+                document.getElementById('intOccupantName').innerText = alloc.residentName;
+                document.getElementById('intIts').innerText = alloc.its || '-';
+                document.getElementById('intContact').innerText = alloc.contact || '-';
+                document.getElementById('intAllocSince').innerText = alloc.startDate || '-';
+
+                if(alloc.startDate) {
+                    const start = new Date(alloc.startDate);
+                    const now = new Date();
+                    const diffMonths = Math.floor((now - start) / (1000 * 60 * 60 * 24 * 30.4375));
+                    const years = Math.floor(diffMonths / 12);
+                    const months = diffMonths % 12;
+                    document.getElementById('intTenure').innerText = `${years > 0 ? `${years}y ` : ''}${months}m`;
+                } else {
+                    document.getElementById('intTenure').innerText = '-';
+                }
             } else {
-                document.getElementById('intLastMaintType').innerText = 'None Logged';
+                statusBadge.innerHTML = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">Vacant</span>`;
+                document.getElementById('intOccupantName').innerText = 'None (Vacant)';
+                document.getElementById('intIts').innerText = '-';
+                document.getElementById('intContact').innerText = '-';
+                document.getElementById('intAllocSince').innerText = '-';
+                document.getElementById('intTenure').innerText = '-';
+            }
+
+            // 3. Maintenance Summary
+            const maints = maintenanceData.filter(m => m.flatId === flat.id).sort((a,b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('intMaintCount').innerText = `${maints.length} Logged Works`;
+
+            if(maints.length > 0) {
+                const latest = maints[0];
+                document.getElementById('intLastMaintType').innerText = `${latest.type} (${latest.date})`;
+
+                const start = new Date(latest.date);
+                const now = new Date();
+                const diffMonths = Math.floor((now - start) / (1000 * 60 * 60 * 24 * 30.4375));
+                document.getElementById('intLastMaintTime').innerText = `${diffMonths} months ago`;
+            } else {
+                document.getElementById('intLastMaintType').innerText = 'No Maintenance Recorded';
                 document.getElementById('intLastMaintTime').innerText = '-';
             }
 
-            const isTrackedInBills = flat.isBachelor || !flat.occupant;
-            const billsContainer = document.getElementById('intBillsContainer');
+            // Vacant/Bachelor Bills Block
+            const billsBox = document.getElementById('intBillsContainer');
+            if(!alloc || flat.isBachelor) {
+                billsBox.classList.remove('hidden');
+                const now = new Date();
+                const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const bill = vacantBillsData.find(b => b.flatId === flat.id && b.month === monthKey) || {};
 
-            if(isTrackedInBills) {
-                const currentMonth = document.getElementById('billMonthPicker').value || new Date().toISOString().slice(0, 7);
-                const billKey = `${flat.id}_${currentMonth}`;
-                const bill = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
-                
-                document.getElementById('intElecBill').innerHTML = bill.elecPaid 
-                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
-                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
-                document.getElementById('intGasBill').innerHTML = bill.gasPaid 
-                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
-                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
-                
-                billsContainer.classList.remove('hidden');
+                document.getElementById('intElecBill').innerHTML = bill.elecStatus === 'Paid' ? '<span class="text-emerald-700 font-bold">Paid</span>' : '<span class="text-red-600 font-bold">Pending</span>';
+                document.getElementById('intGasBill').innerHTML = bill.gasStatus === 'Paid' ? '<span class="text-emerald-700 font-bold">Paid</span>' : '<span class="text-red-600 font-bold">Pending</span>';
             } else {
-                billsContainer.classList.add('hidden');
+                billsBox.classList.add('hidden');
             }
 
-            const logsGrid = document.getElementById('intMaintLogsContainer');
-            logsGrid.innerHTML = '';
-            if(flatMaintLogs.length === 0) {
-                logsGrid.innerHTML = '<p class="text-sm text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
-            } else {
-                flatMaintLogs.forEach(m => {
-                    function renderMedia(url, direct, type, label) {
-                        if(!url) return '';
-                        if(type === 'video') return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-40 object-cover rounded border"></video></div>`;
-                        if(type === 'pdf') return `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
-                        return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-40 object-cover rounded border"></div>`;
-                    }
+            // 4. Render Logs Grid
+            const logsContainer = document.getElementById('intMaintLogsContainer');
+            logsContainer.innerHTML = maints.map(m => `
+                <div class="bg-gray-50 p-4 rounded-lg border space-y-2 text-sm">
+                    <div class="flex justify-between items-center font-bold">
+                        <span class="text-amber-800">${m.type}</span>
+                        <span class="text-gray-500">${m.date}</span>
+                    </div>
+                    <p class="text-gray-700">${m.description}</p>
+                    <div class="text-xs font-bold text-emerald-800">Cost: ₹${parseInt(m.cost || 0).toLocaleString()}</div>
+                </div>
+            `).join('') || `<p class="text-gray-400 text-center py-4 col-span-2">No refurbishment or maintenance history.</p>`;
 
-                    logsGrid.innerHTML += `
-                        <div class="bg-gray-50 p-4 rounded-lg border space-y-2 text-sm">
-                            <div class="flex justify-between items-center border-b pb-2">
-                                <span class="font-bold text-amber-800 text-base">${m.type || 'Refurbishment'}</span>
-                                <span class="font-bold text-emerald-800 text-base">₹${m.cost || '0'}</span>
-                            </div>
-                            <p class="text-gray-800">${m.desc}</p>
-                            <p class="text-xs text-gray-500">Date: ${m.date}</p>
-                            <div class="grid grid-cols-2 gap-3">
-                                ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
-                                ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
-                            </div>
-                        </div>`;
-                });
-            }
+            // 5. Render Archive History Table
+            const archiveTbody = document.getElementById('intArchiveTableBody');
+            const archives = allocationsData.filter(a => a.flatId === flat.id && !a.isCurrent);
 
-            const archBody = document.getElementById('intArchiveTableBody');
-            archBody.innerHTML = '';
-            if(!flat.archive || flat.archive.length === 0) {
-                archBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 text-sm">No past allocation history recorded for this flat.</td></tr>';
-            } else {
-                flat.archive.forEach(a => {
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b hover:bg-gray-50";
-                    tr.innerHTML = `
-                        <td class="p-3 font-semibold text-gray-800">${a.occupant}</td>
-                        <td class="p-3 font-mono">${a.its || '-'}</td>
-                        <td class="p-3">${a.contact || '-'}</td>
-                        <td class="p-3">${a.startDate || '-'}</td>
-                        <td class="p-3 text-gray-600">${a.endDate || 'Present'}</td>
-                    `;
-                    archBody.appendChild(tr);
-                });
-            }
-
-            container.classList.remove('hidden');
+            archiveTbody.innerHTML = archives.map(a => `
+                <tr>
+                    <td class="p-3 font-semibold text-gray-800">${a.residentName}</td>
+                    <td class="p-3 font-mono">${a.its || '-'}</td>
+                    <td class="p-3">${a.contact || '-'}</td>
+                    <td class="p-3">${a.startDate || '-'}</td>
+                    <td class="p-3 text-amber-800 font-semibold">${a.endDate || 'Present'}</td>
+                </tr>
+            `).join('') || `<tr><td colspan="5" class="p-3 text-center text-gray-400">No past resident history found.</td></tr>`;
         };
 
-        window.openImportModal = function(target) {
-            document.getElementById('importTypeTarget').value = target;
+        // --- MODULE: FACULTY DIRECTORY ---
+        window.renderFacultyTable = function() {
+            const tbody = document.getElementById('facultyTableBody');
+            if(!tbody) return;
+
+            const q = (document.getElementById('facultySearch')?.value || '').toLowerCase().trim();
+
+            let filtered = facultyData.filter(f => 
+                f.name.toLowerCase().includes(q) || f.its.toLowerCase().includes(q)
+            );
+
+            tbody.innerHTML = filtered.map(f => `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 font-mono font-bold text-emerald-900">${f.its}</td>
+                    <td class="p-3 font-semibold text-gray-800">${f.name}</td>
+                    <td class="p-3">${f.contact}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="deleteFacultyRecord('${f.id}')" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('') || `<tr><td colspan="4" class="p-4 text-center text-gray-500">No faculty records found.</td></tr>`;
+        };
+
+        window.openAddFacultyModal = function() {
+            document.getElementById('facultyForm').reset();
+            document.getElementById('modalFaculty').classList.remove('hidden');
+        };
+
+        window.saveFacultyRecord = async function(e) {
+            e.preventDefault();
+            facultyData.push({
+                id: Date.now().toString(),
+                its: document.getElementById('facultyIts').value,
+                name: document.getElementById('facultyName').value,
+                contact: document.getElementById('facultyContact').value
+            });
+
+            await saveCloudData();
+            closeModal('modalFaculty');
+            renderFacultyTable();
+        };
+
+        window.deleteFacultyRecord = async function(id) {
+            if(confirm("Delete this faculty record?")) {
+                window.facultyData = facultyData.filter(f => f.id !== id);
+                await saveCloudData();
+                renderFacultyTable();
+            }
+        };
+
+        // --- MODULE: ADMIN ACCESS ---
+        window.renderUserListTable = function() {
+            const tbody = document.getElementById('userListTableBody');
+            if(!tbody) return;
+
+            tbody.innerHTML = authorizedUsersList.map((u, idx) => `
+                <tr>
+                    <td class="p-3 font-bold text-gray-800">${u.email}</td>
+                    <td class="p-3"><span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded font-bold">${u.role}</span></td>
+                    <td class="p-3 text-xs text-gray-600">${u.permissions?.join(', ') || 'All'}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="removeUserInvitation(${idx})" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('') || `<tr><td colspan="4" class="p-3 text-center text-gray-400">No user invitations created yet.</td></tr>`;
+        };
+
+        window.handleInviteUser = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('inviteEmail').value.toLowerCase().trim();
+            const role = document.getElementById('inviteRole').value;
+
+            const perms = [];
+            for(let i=1; i<=7; i++) {
+                if(document.getElementById(`perm-${i}`).checked) perms.push(i);
+            }
+
+            authorizedUsersList.push({ email, role, permissions: perms });
+
+            try {
+                await setDoc(doc(db, "authorized_users", email), { role, permissions: perms });
+                await saveCloudData();
+                document.getElementById('inviteUserForm').reset();
+                renderUserListTable();
+                alert("Invitation saved successfully!");
+            } catch (err) {
+                alert("Error saving invitation: " + err.message);
+            }
+        };
+
+        window.removeUserInvitation = async function(idx) {
+            if(confirm("Remove this user invitation?")) {
+                authorizedUsersList.splice(idx, 1);
+                await saveCloudData();
+                renderUserListTable();
+            }
+        };
+
+        // --- EXPORT & IMPORT UTILITIES ---
+        window.openImportModal = function(targetType) {
+            document.getElementById('importTypeTarget').value = targetType;
             document.getElementById('modalImport').classList.remove('hidden');
         };
 
         window.processExcelImport = function() {
             const fileInput = document.getElementById('excelFileInput');
             const target = document.getElementById('importTypeTarget').value;
-            if(!fileInput.files[0]) return alert("Please select a file!");
+
+            if(!fileInput.files[0]) {
+                alert("Please select an Excel or CSV file!");
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = async function(e) {
                 const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { raw: false, dateNF: 'yyyy-mm-dd' });
+                const json = XLSX.utils.sheet_to_json(firstSheet);
 
                 if(target === 'estates') {
-                    jsonData.forEach(row => {
-                        const getVal = (keys) => {
-                            for(let k of Object.keys(row)) {
-                                if(keys.some(key => k.trim().toLowerCase() === key.toLowerCase())) {
-                                    return row[k];
-                                }
-                            }
-                            return '';
-                        };
-
-                        let rawBuilding = getVal(['Building & Wing', 'Building', 'Building Name', 'Estate']);
-                        let buildingName = 'Unassigned';
-                        let wingName = '';
-
-                        if(rawBuilding) {
-                            if(rawBuilding.includes('-')) {
-                                const parts = rawBuilding.split('-');
-                                buildingName = parts[0].trim();
-                                wingName = parts.slice(1).join('-').trim();
-                            } else {
-                                buildingName = rawBuilding.trim();
-                            }
-                        }
-                        if(!wingName) {
-                            wingName = getVal(['Wing', 'Wing Name']);
-                        }
-
-                        const flatNo = getVal(['Flat No', 'Flat Number', 'Flat']) || '00';
-
-                        const rawTypeSize = getVal(['Type & Size', 'Type', 'Flat Type']);
-                        let flatType = '2 BHK';
-                        let sqftSize = 800;
-
-                        if(rawTypeSize) {
-                            if(rawTypeSize.toLowerCase().includes('1 bhk')) flatType = '1 BHK';
-                            else if(rawTypeSize.toLowerCase().includes('2 bhk')) flatType = '2 BHK';
-                            else if(rawTypeSize.toLowerCase().includes('3 bhk')) flatType = '3 BHK';
-                            else if(rawTypeSize.toLowerCase().includes('studio')) flatType = 'Studio';
-
-                            const sqftMatch = rawTypeSize.match(/(\d+)\s*(sqft|sq ft)/i);
-                            if(sqftMatch) sqftSize = parseInt(sqftMatch[1]);
-                        }
-                        const explicitSqft = getVal(['SqFt', 'Size', 'Sq Ft']);
-                        if(explicitSqft) sqftSize = parseInt(explicitSqft) || sqftSize;
-
-                        const categoryStr = getVal(['Category', 'Flat Category']);
-                        const isBachelor = categoryStr.toLowerCase().includes('bachelor');
-
-                        const occupantName = getVal(['Current Occupant', 'Occupant', 'Faculty Name', 'Resident']).toString().trim();
-                        let allocDate = getVal(['Allocated Since', 'Allocation Date', 'Start Date']).toString().trim();
-
-                        if(allocDate && !isNaN(Date.parse(allocDate))) {
-                            allocDate = new Date(allocDate).toISOString().split('T')[0];
-                        }
-
-                        let matchedIts = '';
-                        let matchedContact = '';
-
-                        if(occupantName) {
-                            const foundFac = facultyData.find(f => f.name.toLowerCase().trim() === occupantName.toLowerCase());
-                            if(foundFac) {
-                                matchedIts = foundFac.its;
-                                matchedContact = foundFac.contact;
-                            }
-                        }
-
+                    json.forEach(row => {
                         estatesData.push({
-                            id: Date.now().toString() + Math.random().toString().slice(2,5),
-                            building: buildingName,
-                            wing: wingName,
-                            flatNo: flatNo.toString().trim(),
-                            type: flatType,
-                            sqft: sqftSize,
-                            owner: getVal(['Owner', 'Registered Owner']) || 'Dawat-e-Hadiyah',
-                            elec: getVal(['Electricity CA Number', 'Electricity CA', 'Elec CA']) || '',
-                            gas: getVal(['Gas CA Number', 'Gas CA']) || '',
-                            isBachelor: isBachelor,
-                            capacity: isBachelor ? 4 : 0,
-                            occupant: occupantName,
-                            its: matchedIts,
-                            contact: matchedContact,
-                            startDate: allocDate,
-                            archive: [],
-                            residents: []
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
+                            building: row['Building'] || row['Building Name'] || 'Unknown',
+                            wing: row['Wing'] || '',
+                            flatNo: row['Flat No'] || row['Flat'] || '0',
+                            type: row['Type'] || '2 BHK',
+                            sqft: row['SqFt'] || row['Size'] || 800,
+                            owner: row['Owner'] || row['Registered Owner'] || 'Dawat',
+                            elec: row['Elec CA'] || row['Electricity CA'] || '',
+                            gas: row['Gas CA'] || '',
+                            isBachelor: false,
+                            bedCapacity: 0
                         });
                     });
-
-                    renderEstateTable();
-                    renderAllocationTable();
-                    populateIntegratedFlatDropdown();
                 } else if(target === 'faculty') {
-                    jsonData.forEach(row => {
+                    json.forEach(row => {
                         facultyData.push({
-                            id: Date.now().toString() + Math.random().toString().slice(2,5),
-                            its: row['ITS'] || row['ITS Number'] || '00000000',
-                            name: row['Name'] || row['Faculty Name'] || 'Faculty Member',
-                            contact: row['Contact'] || row['Mobile'] || '-'
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
+                            its: row['ITS'] || row['ITS Number'] || '',
+                            name: row['Name'] || row['Full Name'] || '',
+                            contact: row['Contact'] || row['Mobile'] || ''
                         });
                     });
-                    renderFacultyTable();
                 }
 
                 await saveCloudData();
                 closeModal('modalImport');
+                renderAllModules();
                 alert("Import completed successfully!");
             };
+
             reader.readAsArrayBuffer(fileInput.files[0]);
         };
 
-        window.renderUsersList = function() {
-            const tbody = document.getElementById('userListTableBody');
-            tbody.innerHTML = '';
-            usersList.forEach(u => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50 text-xs";
-                tr.innerHTML = `<td class="p-3 font-semibold text-gray-800">${u.email}</td><td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span></td><td class="p-3 text-gray-600">${u.permissions.map(p => `Sub ${p}`).join(', ')}</td><td class="p-3 text-center">${u.role !== 'Admin' ? `<button onclick="removeUser('${u.email}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button>` : 'Owner'}</td>`;
-                tbody.appendChild(tr);
-            });
-        };
+        window.exportData = function(subHeaderId, format) {
+            let exportRows = [];
+            let fileName = `Siyanat_${subHeaderId}_Export`;
 
-        window.handleInviteUser = async function(e) {
-            e.preventDefault();
-            const email = document.getElementById('inviteEmail').value;
-            const role = document.getElementById('inviteRole').value;
-            const perms = [];
-            for(let i=1; i<=7; i++) {
-                if(document.getElementById(`perm-${i}`)?.checked) perms.push(i);
+            if(subHeaderId === 'estate-details') {
+                exportRows = estatesData.map(f => ({
+                    "Building": f.building,
+                    "Wing": f.wing,
+                    "Flat No": f.flatNo,
+                    "Type": f.type,
+                    "SqFt": f.sqft,
+                    "Owner": f.owner,
+                    "Electricity CA": f.elec,
+                    "Gas CA": f.gas,
+                    "Is Bachelor": f.isBachelor ? 'Yes' : 'No'
+                }));
+            } else if(subHeaderId === 'allocation') {
+                exportRows = estatesData.map(f => {
+                    const alloc = allocationsData.find(a => a.flatId === f.id && a.isCurrent);
+                    return {
+                        "Building": f.building,
+                        "Flat No": f.flatNo,
+                        "Status": alloc ? 'Allocated' : 'Vacant',
+                        "Occupant": alloc?.residentName || 'Vacant',
+                        "ITS": alloc?.its || '-',
+                        "Contact": alloc?.contact || '-',
+                        "Start Date": alloc?.startDate || '-'
+                    };
+                });
+            } else if(subHeaderId === 'faculty') {
+                exportRows = facultyData.map(f => ({
+                    "ITS Number": f.its,
+                    "Full Name": f.name,
+                    "Contact Number": f.contact
+                }));
             }
-            usersList.push({ email, role, permissions: perms });
-            await saveCloudData();
-            renderUsersList();
-            document.getElementById('inviteUserForm').reset();
-            alert(`User invitation created for ${email}`);
+
+            if(format === 'excel') {
+                const ws = XLSX.utils.json_to_sheet(exportRows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                XLSX.writeFile(wb, `${fileName}.xlsx`);
+            } else if(format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.text(`Siyanat Marol - ${subHeaderId.toUpperCase()} REPORT`, 14, 15);
+                
+                if(exportRows.length > 0) {
+                    const headers = [Object.keys(exportRows[0])];
+                    const body = exportRows.map(r => Object.values(r));
+                    doc.autoTable({ head: headers, body: body, startY: 20 });
+                }
+                
+                doc.save(`${fileName}.pdf`);
+            }
         };
 
-        window.removeUser = async function(email) {
-            usersList = usersList.filter(u => u.email !== email);
-            await saveCloudData();
-            renderUsersList();
-        };
-
-        window.closeModal = function(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        };
+        // File Converter Helper
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,3472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siyanat - Operations</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel Import/Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF & jsPDF-AutoTable for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        html { font-size: 17px; }
+        .active-tab { border-bottom: 3px solid #10B981; color: #ffffff; font-weight: 600; }
+        .sub-tab-active { background-color: #065F46 !important; color: #ffffff !important; font-weight: 600; }
+        .sub-tab-inactive { background-color: #f3f4f6; color: #111827 !important; font-weight: 500; }
+        .sub-tab-inactive:hover { background-color: #e5e7eb; }
+        .integrated-boost { font-size: 1.1rem !important; line-height: 1.5; }
+        .integrated-boost h2 { font-size: 1.6rem !important; }
+        .integrated-boost h3 { font-size: 1.3rem !important; }
+        .integrated-boost label { font-size: 1.0rem !important; }
+        .integrated-boost input, .integrated-boost select { font-size: 1.05rem !important; }
+        .integrated-boost table { font-size: 1.0rem !important; }
+        .integrated-boost p, .integrated-boost span { font-size: 1.05rem !important; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col text-sm">
+
+    <!-- LOGIN OVERLAY -->
+    <div id="loginOverlay" class="fixed inset-0 bg-emerald-950 bg-opacity-95 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 text-center space-y-6">
+            <div class="flex justify-center">
+                <div class="bg-emerald-100 p-4 rounded-full text-emerald-800 text-3xl">
+                    <i class="fa-solid fa-building-user"></i>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Siyanat Marol Portal</h2>
+                <p class="text-xs text-gray-500 mt-1">Aljamea-tus-Saifiyah Facilities Management Dept</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-xs text-amber-800 text-left">
+                <i class="fa-solid fa-shield-halved mr-1"></i> Authorized access only. Sign in with your registered Google account.
+            </div>
+            <button onclick="handleGoogleSignIn()" class="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg shadow transition flex items-center justify-center space-x-3">
+                <i class="fa-brands fa-google text-red-500 text-lg"></i>
+                <span>Sign in with Google</span>
+            </button>
+            <p id="loginErrorMsg" class="text-xs text-red-600 font-semibold hidden"></p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-emerald-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3 mb-3 md:mb-0">
+                <i class="fa-solid font-bold fa-building-user text-3xl text-emerald-400"></i>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wide">Aljamea-tus-Saifiyah Facilities Management Dept (Marol)</h1>
+                    <p class="text-xs text-emerald-200 font-semibold mt-0.5">Operations Management Portal</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">User</span>
+                    <span id="currentUserRole" class="text-xs bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">User</span>
+                </div>
+                <button onclick="handleSignOut()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-emerald-950 border-t border-emerald-800">
+            <div class="max-w-7xl mx-auto px-4 flex space-x-2 overflow-x-auto">
+                <button onclick="switchModule('dawat-estates')" id="mod-dawat-estates" class="px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 active-tab">
+                    <i class="fa-solid fa-city text-emerald-400"></i>
+                    <span>Dawat Estates</span>
+                </button>
+                <button onclick="switchModule('inventory')" id="mod-inventory" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-key"></i>
+                    <span>Keys Inventory</span>
+                </button>
+                <button onclick="switchModule('faculty-dir')" id="mod-faculty-dir" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-id-card"></i>
+                    <span>Faculty Directory</span>
+                </button>
+                <button onclick="switchModule('admin-access')" id="mod-admin-access" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 hidden">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Admin Access & Invitations</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-grow">
+
+        <!-- MODULE: DAWAT ESTATES -->
+        <div id="module-dawat-estates" class="space-y-6">
+            
+            <div class="bg-white rounded-lg shadow p-2 flex flex-wrap gap-2 border">
+                <button onclick="switchSubHeader('estate-details')" id="sub-estate-details" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-active flex items-center space-x-2">
+                    <i class="fa-solid fa-building"></i>
+                    <span>1. Estate Details</span>
+                </button>
+                <button onclick="switchSubHeader('allocation')" id="sub-allocation" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
+                    <i class="fa-solid fa-key"></i>
+                    <span>2. Allocation</span>
+                </button>
+                <button onclick="switchSubHeader('maintenance')" id="sub-maintenance" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                    <span>3. Maintenance Data</span>
+                </button>
+                <button onclick="switchSubHeader('bachelor')" id="sub-bachelor" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
+                    <i class="fa-solid fa-user-group"></i>
+                    <span>4. Bachelor Flats</span>
+                </button>
+                <button onclick="switchSubHeader('vacant-bills')" id="sub-vacant-bills" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>5. Vacant/Bachelor Flats Bills</span>
+                </button>
+                <button onclick="switchSubHeader('society')" id="sub-society" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
+                    <i class="fa-solid fa-sitemap"></i>
+                    <span>6. Society Maintenance</span>
+                </button>
+                <button onclick="switchSubHeader('integrated')" id="sub-integrated" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>7. Integrated View</span>
+                </button>
+            </div>
+
+            <!-- SUB-HEADER 1: ESTATE DETAILS -->
+            <div id="sec-estate-details" class="space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Estates Master Directory</h2>
+                        <p class="text-xs text-gray-500">Manage all flats, wing designations, CA numbers, registered owners, and bachelor configurations.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="openImportModal('estates')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Import Excel</span>
+                        </button>
+                        <button onclick="exportData('estate-details', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('estate-details', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
+                        </button>
+                        <button onclick="openAddFlatModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add New Flat</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Overview Metrics Clickable Cards for Estate Details -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button id="cardBtnTotalFlats" onclick="setEstateCardFilter('all')" class="bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-90">
+                        <span class="text-xs uppercase tracking-wider font-semibold opacity-90">Total Flats</span>
+                        <span id="cardTotalFlats" class="text-3xl font-extrabold mt-1">0</span>
+                    </button>
+                    <button id="cardBtn1BhkFlats" onclick="setEstateCardFilter('1bhk')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500">
+                        <span class="text-xs text-gray-500 font-semibold uppercase">1 BHK</span>
+                        <span id="card1BhkFlats" class="text-2xl font-bold text-gray-800 mt-1">0</span>
+                    </button>
+                    <button id="cardBtn2BhkFlats" onclick="setEstateCardFilter('2bhk')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500">
+                        <span class="text-xs text-gray-500 font-semibold uppercase">2 BHK</span>
+                        <span id="card2BhkFlats" class="text-2xl font-bold text-gray-800 mt-1">0</span>
+                    </button>
+                    <button id="cardBtnBachelorFlats" onclick="setEstateCardFilter('bachelor')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-amber-500">
+                        <span class="text-xs text-gray-500 font-semibold uppercase">Bachelor Flats</span>
+                        <span id="cardBachelorFlats" class="text-2xl font-bold text-amber-700 mt-1">0</span>
+                    </button>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow border">
+                    <input type="text" id="estateSearch" oninput="renderEstateTable()" placeholder="Search Building Name, Wing, Flat No, Owner, or CA Number..." class="w-full p-2 border rounded text-sm">
+                </div>
+
+                <div class="bg-white rounded-lg shadow border overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">Building & Wing</th>
+                                <th class="p-3">Flat No</th>
+                                <th class="p-3">Type & Size</th>
+                                <th class="p-3">Owner</th>
+                                <th class="p-3">Electricity CA Number</th>
+                                <th class="p-3">Gas CA Number</th>
+                                <th class="p-3">Category</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="estateTableBody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SUB-HEADER 2: ALLOCATION -->
+            <div id="sec-allocation" class="hidden space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Estate Allocations</h2>
+                        <p class="text-xs text-gray-500">Track current faculty occupants, tenure duration, last maintenance, and archived history.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                        <button onclick="exportData('allocation', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('allocation', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
+                        </button>
+                        <input type="text" id="allocSearch" oninput="renderAllocationTable()" placeholder="Search Faculty Name, Building, Flat No..." class="w-full sm:w-64 p-2 border rounded text-sm">
+                    </div>
+                </div>
+
+                <!-- Overview Metrics Clickable Cards for Allocation -->
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="cardBtnAllocatedFlats" onclick="setAllocCardFilter('allocated')" class="bg-white p-4 rounded-lg shadow border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition">
+                        <div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase block">Allocated Flats</span>
+                            <span id="cardAllocatedFlats" class="text-2xl font-bold text-emerald-800 mt-1">0</span>
+                        </div>
+                        <div class="bg-emerald-100 text-emerald-800 p-3 rounded-full text-lg">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                    </button>
+                    <button id="cardBtnVacantFlats" onclick="setAllocCardFilter('vacant')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:border-amber-500">
+                        <div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase block">Vacant Flats</span>
+                            <span id="cardVacantFlats" class="text-2xl font-bold text-amber-800 mt-1">0</span>
+                        </div>
+                        <div class="bg-amber-100 text-amber-800 p-3 rounded-full text-lg">
+                            <i class="fa-solid fa-door-open"></i>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow border overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">Flat Details</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Current Occupant</th>
+                                <th class="p-3">ITS & Contact</th>
+                                <th class="p-3">Allocated Since</th>
+                                <th class="p-3">Tenure Duration</th>
+                                <th class="p-3">Last Maintenance</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allocationTableBody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SUB-HEADER 3: MAINTENANCE DATA -->
+            <div id="sec-maintenance" class="hidden space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Flat Refurbishment & Maintenance Records</h2>
+                        <p class="text-xs text-gray-500">Log works with maintenance types (Refurbishment, Redevelopment, etc.) and before/after photos.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                        <button onclick="exportData('maintenance', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('maintenance', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
+                        </button>
+                        <input type="text" id="maintSearch" oninput="renderMaintenanceGrid()" placeholder="Search Building, Flat No, Type or Details..." class="p-2 border rounded text-sm w-full sm:w-64">
+                        <button onclick="openAddMaintenanceModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center justify-center space-x-1 whitespace-nowrap">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add Maintenance Log</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="maintenanceGrid"></div>
+            </div>
+
+            <!-- SUB-HEADER 4: BACHELOR FLATS -->
+            <div id="sec-bachelor" class="hidden space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Bachelor Accommodation Manager</h2>
+                        <p class="text-xs text-gray-500">Manage individual bed spaces, residents, and ITS details for bachelor flats.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="exportData('bachelor', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>Export Excel</span>
+                        </button>
+                        <button onclick="exportData('bachelor', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Export PDF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="bachelorGrid"></div>
+            </div>
+
+            <!-- SUB-HEADER 5: VACANT/BACHELOR FLATS BILLS -->
+            <div id="sec-vacant-bills" class="hidden space-y-4">
+                <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Vacant/Bachelor Flats Bills</h2>
+                        <p class="text-xs text-gray-500">Track monthly Electricity & Gas bill receipts and payment status.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-semibold text-gray-700">Filter Month:</label>
+                        <input type="month" id="billMonthPicker" onchange="renderVacantBills()" class="p-2 border rounded text-sm">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow border overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">Flat & Status</th>
+                                <th class="p-3">CA Numbers</th>
+                                <th class="p-3">Electricity Bill Status</th>
+                                <th class="p-3">Gas Bill Status</th>
+                                <th class="p-3 text-center">Update Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vacantBillsTableBody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SUB-HEADER 6: SOCIETY MAINTENANCE -->
+            <div id="sec-society" class="hidden space-y-6">
+                <!-- Overview Metric Card for Society Maintenance -->
+                <div class="bg-white p-5 rounded-lg shadow border border-l-4 border-l-emerald-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Total Societies Expense Overview</span>
+                        <span id="societyOverviewTotalAmount" class="text-3xl font-extrabold text-emerald-900 mt-1 block">₹0</span>
+                        <p class="text-xs text-gray-500 mt-0.5">Aggregated regular maintenance & additional society bills for selected year.</p>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                        <label class="text-xs font-bold text-emerald-900 uppercase">Filter Year:</label>
+                        <select id="societyOverviewYearSelect" onchange="renderSocietyOverviewMetric()" class="p-1.5 border rounded text-xs font-bold bg-white text-emerald-950">
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Societies Maintenance & Billing Master</h2>
+                        <p class="text-xs text-gray-500">Auto-created for each building in Estate Master Directory with flat breakdowns and billing tracking.</p>
+                    </div>
+                    <button onclick="openAddSocietyModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Custom Society</span>
+                    </button>
+                </div>
+
+                <!-- Grid for Auto-Created & Custom Society Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="societyGrid"></div>
+
+                <!-- Society Document Vault Section -->
+                <div class="bg-white p-5 rounded-lg shadow border space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-vault text-amber-600 mr-2"></i>Society Document Vault</h3>
+                            <p class="text-xs text-gray-500">Auto-segregated by society name & alphabetically ordered.</p>
+                        </div>
+                        <button onclick="openUploadDocModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>Upload File</span>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <select id="docFilterSociety" onchange="renderSocietyDocs()" class="p-2 border rounded text-sm sm:w-1/3">
+                            <option value="">All Societies</option>
+                        </select>
+                        <input type="text" id="docSearchQuery" oninput="renderSocietyDocs()" placeholder="Search document title or notes..." class="p-2 border rounded text-sm sm:w-2/3">
+                    </div>
+
+                    <div id="societyDocsContainer" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- SUB-HEADER 7: INTEGRATED VIEW -->
+            <div id="sec-integrated" class="hidden space-y-6 integrated-boost">
+                <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
+                    <div class="border-b pb-3">
+                        <h2 class="text-2xl font-extrabold text-gray-900 flex items-center space-x-3">
+                            <i class="fa-solid fa-layer-group text-amber-600 text-2xl"></i>
+                            <span>Integrated Master Flat Profile</span>
+                        </h2>
+                        <p class="text-sm text-gray-600 mt-1">Select any estate flat to pull complete aggregated data from all sub-headers instantly.</p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 pt-2">
+                        <div class="sm:w-1/2">
+                            <label class="text-sm font-bold text-gray-800 block mb-1">Select Flat</label>
+                            <select id="integratedFlatSelect" onchange="renderIntegratedView()" class="w-full p-3 border-2 border-emerald-600 rounded-lg text-base bg-emerald-50 font-bold text-emerald-950 shadow-sm">
+                                <option value="">-- Choose Building & Flat Number --</option>
+                            </select>
+                        </div>
+                        <div class="sm:w-1/2">
+                            <label class="text-sm font-bold text-gray-800 block mb-1">Search Keyword</label>
+                            <input type="text" id="integratedSearch" oninput="filterIntegratedDropdown()" placeholder="Filter dropdown by building or flat..." class="w-full p-3 border rounded-lg text-base shadow-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="integratedContentDisplay" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-emerald-600">
+                            <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg flex items-center justify-between">
+                                <span><i class="fa-solid fa-building text-emerald-600 mr-2"></i>Estate Specs</span>
+                                <span id="intCategoryBadge" class="text-xs px-3 py-1 rounded-full font-bold"></span>
+                            </h3>
+                            <div class="space-y-3 text-gray-800">
+                                <p><strong>Building & Wing:</strong> <span id="intBuildingWing" class="font-semibold"></span></p>
+                                <p><strong>Flat No:</strong> <span id="intFlatNo" class="font-bold text-emerald-800"></span></p>
+                                <p><strong>Type & Size:</strong> <span id="intTypeSqft"></span></p>
+                                <p><strong>Registered Owner:</strong> <span id="intOwner"></span></p>
+                                <p><strong>Electricity CA:</strong> <span id="intElec" class="font-mono bg-gray-100 px-2 py-0.5 rounded"></span></p>
+                                <p><strong>Gas CA:</strong> <span id="intGas" class="font-mono bg-gray-100 px-2 py-0.5 rounded"></span></p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-blue-600">
+                            <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg">
+                                <i class="fa-solid fa-user-check text-blue-600 mr-2"></i>Occupant Status
+                            </h3>
+                            <div class="space-y-3 text-gray-800">
+                                <p><strong>Status:</strong> <span id="intStatusBadge"></span></p>
+                                <p><strong>Occupant Name:</strong> <span id="intOccupantName" class="font-bold text-gray-900"></span></p>
+                                <p><strong>ITS Number:</strong> <span id="intIts" class="font-mono"></span></p>
+                                <p><strong>Contact:</strong> <span id="intContact"></span></p>
+                                <p><strong>Allocated Since:</strong> <span id="intAllocSince"></span></p>
+                                <p><strong>Tenure Duration:</strong> <span id="intTenure" class="text-emerald-800 font-extrabold"></span></p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-amber-600">
+                            <h3 class="font-extrabold text-gray-900 border-b pb-2 text-lg">
+                                <i class="fa-solid fa-chart-line text-amber-600 mr-2"></i>Maintenance & Bills Summary
+                            </h3>
+                            <div class="space-y-3 text-gray-800">
+                                <p><strong>Total Refurbishments:</strong> <span id="intMaintCount" class="font-bold"></span></p>
+                                <p><strong>Last Maintenance:</strong> <span id="intLastMaintType" class="font-bold text-amber-800"></span></p>
+                                <p><strong>Time Since Last Work:</strong> <span id="intLastMaintTime"></span></p>
+                                
+                                <div id="intBillsContainer" class="pt-3 border-t mt-2 space-y-2 hidden">
+                                    <p class="text-xs font-extrabold text-amber-900 uppercase"><i class="fa-solid fa-receipt mr-1"></i> Department Bill Tracking:</p>
+                                    <p><strong>Electricity Bill:</strong> <span id="intElecBill"></span></p>
+                                    <p><strong>Gas Bill:</strong> <span id="intGasBill"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
+                        <h3 class="text-xl font-bold text-gray-900 border-b pb-3">
+                            <i class="fa-solid fa-screwdriver-wrench text-emerald-700 mr-2"></i>Refurbishment & Maintenance History
+                        </h3>
+                        <div id="intMaintLogsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
+                        <h3 class="text-xl font-bold text-gray-900 border-b pb-3">
+                            <i class="fa-solid fa-box-archive text-amber-700 mr-2"></i>Past Occupants & Allocation Archive
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-100 text-gray-800 uppercase font-bold text-sm">
+                                    <tr>
+                                        <th class="p-3">Resident Name</th>
+                                        <th class="p-3">ITS Number</th>
+                                        <th class="p-3">Contact</th>
+                                        <th class="p-3">Start Date</th>
+                                        <th class="p-3">End Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="intArchiveTableBody" class="divide-y text-base"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- MODULE: KEYS INVENTORY -->
+        <div id="module-inventory" class="hidden space-y-4">
+            <div class="bg-white p-6 rounded-lg shadow border text-center py-12">
+                <i class="fa-solid fa-key text-5xl text-emerald-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Keys Inventory Module</h2>
+                <p class="text-gray-500 max-w-lg mx-auto mt-2 text-sm">Track key sets, duplicate keys, master keys, and key logs across all estate flats.</p>
+            </div>
+        </div>
+
+        <!-- MODULE: FACULTY DIRECTORY -->
+        <div id="module-faculty-dir" class="hidden space-y-4">
+            <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Faculty Master Directory</h2>
+                    <p class="text-xs text-gray-500">Maintain faculty records, ITS numbers, and contact information for auto-completion.</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="openImportModal('faculty')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition">Import CSV/Excel List</button>
+                    <button onclick="exportData('faculty', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>Export Excel</span>
+                    </button>
+                    <button onclick="exportData('faculty', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Export PDF</span>
+                    </button>
+                    <button onclick="openAddFacultyModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition">+ Add Faculty Member</button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow border">
+                <input type="text" id="facultySearch" oninput="renderFacultyTable()" placeholder="Search Faculty Name or ITS Number..." class="w-full p-2 border rounded text-sm mb-4">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">ITS Number</th>
+                                <th class="p-3">Faculty Name</th>
+                                <th class="p-3">Contact Number</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="facultyTableBody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODULE: ADMIN ACCESS & INVITATIONS -->
+        <div id="module-admin-access" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow border space-y-4">
+                <div class="border-b pb-4">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-user-shield text-emerald-700"></i>
+                        <span>User Access Control & Invited Permissions</span>
+                    </h2>
+                </div>
+
+                <form id="inviteUserForm" onsubmit="handleInviteUser(event)" class="bg-gray-50 p-4 rounded-lg border space-y-3">
+                    <h3 class="text-sm font-bold text-gray-700 uppercase">Invite New Team Member</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">User Email Address</label>
+                            <input type="email" id="inviteEmail" required placeholder="e.g. staff@gmail.com" class="w-full p-2 border rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">System Role</label>
+                            <select id="inviteRole" class="w-full p-2 border rounded text-sm">
+                                <option value="User">Standard User</option>
+                                <option value="Admin">Administrator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Allowed Sub-Header Permissions:</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-1" checked> <span>1. Estate Details</span></label>
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-2" checked> <span>2. Allocation</span></label>
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-3" checked> <span>3. Maintenance</span></label>
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-4" checked> <span>4. Bachelor Flats</span></label>
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-5" checked> <span>5. Vacant Bills</span></label>
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-6" checked> <span>6. Society Tracking</span></label>
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-7" checked> <span>7. Integrated View</span></label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm font-medium transition">
+                        <i class="fa-solid fa-paper-plane mr-1"></i> Save Invitation to Cloud
+                    </button>
+                </form>
+
+                <div>
+                    <h3 class="text-sm font-bold text-gray-700 uppercase mb-2">Authorized System Users</h3>
+                    <div class="overflow-x-auto border rounded">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-100 text-gray-600 text-xs uppercase">
+                                <tr>
+                                    <th class="p-3">Email</th>
+                                    <th class="p-3">Role</th>
+                                    <th class="p-3">Allowed Sub-headers</th>
+                                    <th class="p-3 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userListTableBody" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-emerald-950 text-emerald-400 text-xs py-4 border-t border-emerald-800 text-center">
+        <p>Aljamea-tus-Saifiyah Facilities Management Dept (Marol) &copy; 2026. All rights reserved.</p>
+    </footer>
+    
+    <!-- MODALS -->
+
+    <!-- Modal: Add / Edit Estate Flat -->
+    <div id="modalAddFlat" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="flatModalTitle">Add New Estate Flat</h3>
+                <button onclick="closeModal('modalAddFlat')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="flatForm" onsubmit="saveFlatRecord(event)" class="space-y-3">
+                <input type="hidden" id="flatId">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Building Name *</label>
+                        <input type="text" id="flatBuilding" required class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Wing (Optional)</label>
+                        <input type="text" id="flatWing" placeholder="e.g. Wing A" class="w-full p-2 border rounded text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Flat Number *</label>
+                        <input type="text" id="flatNo" required class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Flat Type *</label>
+                        <select id="flatType" required class="w-full p-2 border rounded text-sm">
+                            <option value="1 BHK">1 BHK</option>
+                            <option value="2 BHK">2 BHK</option>
+                            <option value="3 BHK">3 BHK</option>
+                            <option value="Studio">Studio</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">SqFt Size *</label>
+                        <input type="number" id="flatSqft" required class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Registered Owner *</label>
+                        <input type="text" id="flatOwner" required class="w-full p-2 border rounded text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Electricity CA Number</label>
+                        <input type="text" id="flatElec" class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Gas CA Number</label>
+                        <input type="text" id="flatGas" class="w-full p-2 border rounded text-sm">
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 p-3 rounded border border-emerald-200 space-y-2">
+                    <label class="flex items-center space-x-2 text-sm font-bold text-emerald-900 cursor-pointer">
+                        <input type="checkbox" id="flatIsBachelor" onchange="toggleBachelorCapacityInput()" class="rounded text-emerald-600 focus:ring-emerald-500">
+                        <span>Designate as Bachelor Flat</span>
+                    </label>
+                    <div id="bachelorCapacityBox" class="hidden">
+                        <label class="text-xs font-semibold text-emerald-800 block mb-1">Total Bed Capacity</label>
+                        <input type="number" id="flatBedCapacity" value="4" min="1" class="w-full p-2 border rounded text-sm">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddFlat')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Flat Details</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Edit Maintenance Log -->
+    <div id="modalAddMaintenance" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="maintModalTitle">Add Refurbishment / Maintenance Log</h3>
+                <button onclick="closeModal('modalAddMaintenance')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="maintForm" onsubmit="saveMaintenanceLog(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Select Flat *</label>
+                        <select id="maintFlatSelect" required class="w-full p-2 border rounded text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Maintenance Type *</label>
+                        <select id="maintType" required class="w-full p-2 border rounded text-sm">
+                            <option value="Refurbishment">Refurbishment</option>
+                            <option value="Redevelopment">Redevelopment</option>
+                            <option value="Semi-refurbishment">Semi-refurbishment</option>
+                            <option value="New Development">New Development</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Work Description / Details *</label>
+                    <textarea id="maintDesc" required placeholder="e.g. Complete kitchen tiling, painting..." class="w-full p-2 border rounded text-sm h-20"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Total Expense (₹)</label>
+                        <input type="number" id="maintCost" placeholder="e.g. 45000" class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Completion Date *</label>
+                        <input type="date" id="maintDate" required class="w-full p-2 border rounded text-sm">
+                    </div>
+                </div>
+                
+                <div class="bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
+                    <label class="text-xs font-bold text-amber-900 block"><i class="fa-solid fa-camera text-amber-600 mr-1"></i> BEFORE Media</label>
+                    <input type="file" id="maintBeforeInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
+                </div>
+
+                <div class="bg-emerald-50 p-3 rounded border border-emerald-200 space-y-2">
+                    <label class="text-xs font-bold text-emerald-900 block"><i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i> AFTER Media</label>
+                    <input type="file" id="maintAfterInput" accept="image/*,video/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddMaintenance')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" id="btnSaveMaint" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Upload & Save Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Allocation & Past History -->
+    <div id="modalAllocation" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="allocModalTitle">Flat Allocation</h3>
+                <button onclick="closeModal('modalAllocation')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            
+            <form id="allocForm" onsubmit="saveAllocation(event)" class="space-y-3">
+                <input type="hidden" id="allocFlatId">
+                <input type="hidden" id="allocSelectedFacId">
+                
+                <div class="relative">
+                    <label class="text-xs font-semibold block mb-1">Type or Select Faculty Member *</label>
+                    <input type="text" id="allocFacultyInput" onfocus="filterAllocFacultyInteractive()" oninput="filterAllocFacultyInteractive()" placeholder="Type to search faculty name or ITS..." autocomplete="off" class="w-full p-2 border rounded text-sm bg-white font-medium">
+                    <div id="allocFacultyDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto z-50 divide-y"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">ITS Number</label>
+                        <input type="text" id="allocIts" readonly class="w-full p-2 bg-gray-100 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Contact Number</label>
+                        <input type="text" id="allocContact" readonly class="w-full p-2 bg-gray-100 border rounded text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Allocation Start Date *</label>
+                    <input type="date" id="allocStartDate" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t">
+                    <button type="button" onclick="markFlatAsVacant()" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold transition flex items-center space-x-1">
+                        <i class="fa-solid fa-user-minus"></i>
+                        <span>Mark as Vacant</span>
+                    </button>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="closeModal('modalAllocation')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Update Current Occupant</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="border-t pt-4 space-y-3">
+                <h4 class="text-xs font-bold text-gray-800 uppercase flex items-center justify-between">
+                    <span class="flex items-center space-x-1"><i class="fa-solid fa-clock-rotate-left text-amber-600"></i> <span>Add Past Allocation Record Manually</span></span>
+                </h4>
+                <form id="manualPastForm" onsubmit="addManualPastHistory(event)" class="bg-amber-50 p-3 rounded border border-amber-200 space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="pastName" placeholder="Past Resident Name *" required class="p-1.5 border rounded text-xs bg-white col-span-2">
+                        <input type="text" id="pastIts" placeholder="ITS Number (Optional)" class="p-1.5 border rounded text-xs bg-white col-span-2">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-gray-600 block">Start Date (Optional)</label>
+                            <input type="date" id="pastStartDate" class="w-full p-1 border rounded text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-600 block">End Date (Optional)</label>
+                            <input type="date" id="pastEndDate" class="w-full p-1 border rounded text-xs bg-white">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-1.5 rounded text-xs font-bold transition">+ Add to Past History Archive</button>
+                </form>
+
+                <div class="pt-2">
+                    <h5 class="text-xs font-bold text-gray-700 mb-1">Archived Past Resident History:</h5>
+                    <div id="allocArchiveList" class="space-y-2 text-xs max-h-36 overflow-y-auto bg-gray-50 p-2 border rounded divide-y"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Resident to Bachelor Flat -->
+    <div id="modalAddBachelorResident" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="bachModalTitle">Add Resident to Bachelor Flat</h3>
+                <button onclick="closeModal('modalAddBachelorResident')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="bachResidentForm" onsubmit="saveBachelorResident(event)" class="space-y-3">
+                <input type="hidden" id="bachFlatId">
+                <input type="hidden" id="bachSelectedFacId">
+
+                <div class="relative">
+                    <label class="text-xs font-semibold block mb-1">Type or Select Resident *</label>
+                    <input type="text" id="bachFacultyInput" onfocus="filterBachFacultyInteractive()" oninput="filterBachFacultyInteractive()" placeholder="Type to search faculty name or ITS..." autocomplete="off" class="w-full p-2 border rounded text-sm bg-white font-medium">
+                    <div id="bachFacultyDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto z-50 divide-y"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">ITS Number</label>
+                        <input type="text" id="bachIts" readonly class="w-full p-2 bg-gray-100 border rounded text-xs">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Contact</label>
+                        <input type="text" id="bachContact" readonly class="w-full p-2 bg-gray-100 border rounded text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Joining Date *</label>
+                    <input type="date" id="bachStartDate" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t">
+                    <button type="button" onclick="closeModal('modalAddBachelorResident')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium">Add Resident</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Society -->
+    <div id="modalAddSociety" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Add Society Details</h3>
+                <button onclick="closeModal('modalAddSociety')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="societyForm" onsubmit="saveSocietyRecord(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold block mb-1">1. Society Name *</label>
+                    <input type="text" id="socName" required placeholder="e.g. Saifee Complex Society" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">2. Count of Flats *</label>
+                    <input type="text" id="socFlats" required placeholder="e.g. 12 Flats (2 BHK)" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">3. Maintenance Bill System Frequency *</label>
+                    <select id="socCycle" required class="w-full p-2 border rounded text-sm">
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Yearly">Yearly</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">4. Society Contact Person Name & Number *</label>
+                    <input type="text" id="socContactPerson" required placeholder="e.g. Shk Shabbir Bhai (+91 9820055443)" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">5. Bill Submission Responsible Person *</label>
+                    <input type="text" id="socBillSubmittedBy" required placeholder="e.g. Mulla Mustafa (+91 9876543210)" class="w-full p-2 border rounded text-sm">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddSociety')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Society</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Society Details -->
+    <div id="modalEditSociety" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="editSocietyModalTitle">Edit Society Details</h3>
+                <button onclick="closeModal('modalEditSociety')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="editSocietyForm" onsubmit="saveSocietyEditRecord(event)" class="space-y-3">
+                <input type="hidden" id="editSocietyTargetName">
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Society / Building Name</label>
+                    <input type="text" id="editSocNameDisplay" disabled class="w-full p-2 border rounded text-sm bg-gray-100 font-bold">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Billing System Frequency *</label>
+                    <select id="editSocCycle" required class="w-full p-2 border rounded text-sm">
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Yearly">Yearly</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Society Contact Person Name & Number</label>
+                    <input type="text" id="editSocContactPerson" placeholder="e.g. Shk Shabbir (+91 9820055443)" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Bill Submission Responsible Person</label>
+                    <input type="text" id="editSocBillSubmittedBy" placeholder="e.g. Mulla Mustafa (+91 9876543210)" class="w-full p-2 border rounded text-sm">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalEditSociety')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Bills Summary Window -->
+    <div id="modalBillsSummary" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900" id="billsSummaryTitle">Society Maintenance Bills Summary</h3>
+                    <p class="text-xs text-gray-500" id="billsSummarySubtitle"></p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-1.5 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-300">
+                        <label class="text-xs font-bold text-emerald-900 uppercase">Select Year:</label>
+                        <select id="billsSummaryYearSelect" onchange="renderBillsSummaryModalContent()" class="p-1 border rounded text-xs font-bold bg-white text-emerald-950">
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+                    <button onclick="closeModal('modalBillsSummary')" class="text-gray-500 text-2xl font-bold hover:text-gray-800">&times;</button>
+                </div>
+            </div>
+
+            <!-- Section 1: Regular Society Maintenance Bills -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center space-x-1">
+                    <i class="fa-solid fa-file-invoice text-emerald-600"></i>
+                    <span>Regular Maintenance Schedule Bills</span>
+                </h4>
+                <div class="overflow-x-auto border rounded-lg shadow-sm">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-emerald-900 text-white uppercase text-[11px]">
+                            <tr>
+                                <th class="p-2.5">Period / Month</th>
+                                <th class="p-2.5">Bill Date</th>
+                                <th class="p-2.5">Bill Amount (₹)</th>
+                                <th class="p-2.5">Attached Receipt</th>
+                                <th class="p-2.5 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="regularBillsTableBody" class="divide-y bg-white"></tbody>
+                        <tfoot class="bg-emerald-50 font-bold border-t border-emerald-200">
+                            <tr>
+                                <td colspan="2" class="p-2.5 text-right text-emerald-950 uppercase">Regular Bills Total:</td>
+                                <td id="regularBillsTotalSum" class="p-2.5 text-emerald-950 text-sm">₹0</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 2: Segregated Other Bills -->
+            <div class="space-y-2 pt-2">
+                <div class="flex justify-between items-center border-b pb-1">
+                    <h4 class="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center space-x-1">
+                        <i class="fa-solid fa-receipt text-amber-600"></i>
+                        <span>Other / Additional Society Bills</span>
+                    </h4>
+                    <button onclick="openAddOtherBillRow()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs px-2.5 py-1 rounded font-bold transition flex items-center space-x-1">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Other Bill</span>
+                    </button>
+                </div>
+
+                <!-- Form to Add / Edit Other Bill -->
+                <div id="otherBillInputBox" class="hidden bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-2">
+                    <input type="hidden" id="otherBillEditIndex" value="-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[10px] font-bold text-amber-900 block">Bill Date *</label>
+                            <input type="date" id="otherBillDateInput" class="w-full p-1.5 border rounded text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-amber-900 block">Bill Amount (₹) *</label>
+                            <input type="number" id="otherBillAmountInput" placeholder="e.g. 5000" class="w-full p-1.5 border rounded text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-amber-900 block">Bill Description *</label>
+                            <input type="text" id="otherBillDescInput" placeholder="e.g. Water tank repair" class="w-full p-1.5 border rounded text-xs bg-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-amber-900 block">Attach PDF or Image</label>
+                        <input type="file" id="otherBillFileInput" accept=".pdf,image/*" class="w-full text-xs border p-1 rounded bg-white">
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-1">
+                        <button type="button" onclick="closeOtherBillInputBox()" class="px-3 py-1 border rounded text-xs bg-white">Cancel</button>
+                        <button type="button" onclick="saveOtherBillRow()" id="btnSaveOtherBill" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold">Save Other Bill</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border rounded-lg shadow-sm">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-amber-900 text-white uppercase text-[11px]">
+                            <tr>
+                                <th class="p-2.5">Bill Date</th>
+                                <th class="p-2.5">Amount (₹)</th>
+                                <th class="p-2.5">Description</th>
+                                <th class="p-2.5">Attached Receipt</th>
+                                <th class="p-2.5 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="otherBillsTableBody" class="divide-y bg-white"></tbody>
+                        <tfoot class="bg-amber-50 font-bold border-t border-amber-200">
+                            <tr>
+                                <td class="p-2.5 text-right text-amber-950 uppercase">Other Bills Total:</td>
+                                <td id="otherBillsTotalSum" class="p-2.5 text-amber-950 text-sm">₹0</td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Total Grand Summary Line -->
+            <div class="bg-gray-900 text-white p-3 rounded-lg flex justify-between items-center text-sm font-bold shadow">
+                <span class="uppercase tracking-wider">Grand Total (Regular + Other Bills):</span>
+                <span id="grandBillsTotalSum" class="text-xl font-extrabold text-emerald-400">₹0</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Excel / CSV Importer -->
+    <div id="modalImport" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Excel / CSV Data Import</h3>
+                <button onclick="closeModal('modalImport')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <div class="space-y-3">
+                <p class="text-xs text-gray-600">Select or drop your spreadsheet (.xlsx, .csv).</p>
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="w-full border p-2 text-sm rounded">
+                <input type="hidden" id="importTypeTarget">
+                <button onclick="processExcelImport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-bold transition">Process Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Edit Faculty -->
+    <div id="modalFaculty" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="facultyModalTitle">Add Faculty Member</h3>
+                <button onclick="closeModal('modalFaculty')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="facultyForm" onsubmit="saveFacultyRecord(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold block mb-1">ITS Number *</label>
+                    <input type="text" id="facultyIts" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Full Name *</label>
+                    <input type="text" id="facultyName" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Contact Number *</label>
+                    <input type="text" id="facultyContact" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modalFaculty')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Faculty</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Society Document Vault Uploader -->
+    <div id="modalUploadDoc" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Upload Society Document / Receipt</h3>
+                <button onclick="closeModal('modalUploadDoc')" class="text-gray-500 text-xl font-bold">&times;</button>
+            </div>
+            <form id="docUploadForm" onsubmit="saveSocietyDoc(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Society Name *</label>
+                    <select id="docSocietySelect" required class="w-full p-2 border rounded text-sm"></select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Document Title *</label>
+                    <input type="text" id="docTitle" required placeholder="e.g., Annual Maintenance NOC 2026" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Notes / Details</label>
+                    <textarea id="docNotes" class="w-full p-2 border rounded text-sm h-20"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Choose File (PDF or Image) *</label>
+                    <input type="file" id="docFileInput" accept=".pdf,image/*" required class="w-full text-xs border p-2 rounded">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('modalUploadDoc')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                    <button type="submit" id="btnUploadDoc" class="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium">Upload File</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIREBASE & APPLICATION LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+        import { getDatabase, ref as dbRef, set, get, child } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmfhe1OId_cHrnHnf4iPIHgJN81-tFluY",
+            authDomain: "siyanatmarol.firebaseapp.com",
+            databaseURL: "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "siyanatmarol",
+            storageBucket: "siyanatmarol.firebasestorage.app",
+            messagingSenderId: "772376555073",
+            appId: "1:772376555073:web:7b154cec7ae1683da2e0c0",
+            measurementId: "G-K7RJEENDFK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
+        let currentUser = null;
+        let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7];
+        let isUserAdmin = false;
+
+        let estatesData = [];
+        let facultyData = [];
+        let societiesData = [
+            { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai (+91 9820055443)', billSubmittedBy: 'Mulla Mustafa (+91 9876543210)' },
+            { id: '2', name: 'Burhani Heights', flats: '8 Flats (1 BHK)', cycle: 'Monthly', contactPerson: 'Mulla Abbas (+91 9820011122)', billSubmittedBy: 'Shk Husain (+91 9811223344)' }
+        ];
+        let societyDocs = [];
+        let maintLogs = [];
+        let vacantBills = {};
+        let societyBillsData = {};
+        
+        let superAdmins = [
+            'murtaza.kheraluwala@jameasaifiyah.edu',
+            'fm.marol@jameasaifiyah.edu'
+        ];
+
+        let usersList = [
+            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] },
+            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] }
+        ];
+
+        window.handleGoogleSignIn = async function() {
+            const errEl = document.getElementById('loginErrorMsg');
+            if (errEl) errEl.classList.add('hidden');
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+                const provider = new GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Auth error:", error);
+                if (errEl) {
+                    errEl.innerText = error.message || "Failed to sign in. Please try again.";
+                    errEl.classList.remove('hidden');
+                }
+            }
+        };
+
+        window.handleSignOut = async function() {
+            await signOut(auth);
+        };
+
+        function calculateElapsed(startDateStr) {
+            if(!startDateStr) return '-';
+            const start = new Date(startDateStr);
+            const now = new Date();
+            if(isNaN(start.getTime())) return '-';
+
+            let years = now.getFullYear() - start.getFullYear();
+            let months = now.getMonth() - start.getMonth();
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            if(years === 0 && months === 0) return 'Less than a month';
+            let res = [];
+            if(years > 0) res.push(`${years} ${years === 1 ? 'yr' : 'yrs'}`);
+            if(months > 0) res.push(`${months} ${months === 1 ? 'mo' : 'mos'}`);
+            return res.join(' ');
+        }
+
+        let selectedEstateFilter = 'all'; // 'all', '1bhk', '2bhk', 'bachelor'
+        let selectedAllocFilter = 'allocated'; // Default to Allocated Flats view
+
+        function updateOverviewMetrics() {
+            const totalFlats = estatesData.length;
+            const count1Bhk = estatesData.filter(e => e.type === '1 BHK').length;
+            const count2Bhk = estatesData.filter(e => e.type === '2 BHK').length;
+            const countBachelor = estatesData.filter(e => e.isBachelor).length;
+
+            let countAllocated = 0;
+            let countVacant = 0;
+
+            estatesData.forEach(e => {
+                const isOccupied = e.isBachelor 
+                    ? (e.residents && e.residents.length > 0) 
+                    : !!(e.occupant && e.occupant.trim() !== '');
+                if (isOccupied) {
+                    countAllocated++;
+                } else {
+                    countVacant++;
+                }
+            });
+
+            if (document.getElementById('cardTotalFlats')) document.getElementById('cardTotalFlats').innerText = totalFlats;
+            if (document.getElementById('card1BhkFlats')) document.getElementById('card1BhkFlats').innerText = count1Bhk;
+            if (document.getElementById('card2BhkFlats')) document.getElementById('card2BhkFlats').innerText = count2Bhk;
+            if (document.getElementById('cardBachelorFlats')) document.getElementById('cardBachelorFlats').innerText = countBachelor;
+
+            if (document.getElementById('cardAllocatedFlats')) document.getElementById('cardAllocatedFlats').innerText = countAllocated;
+            if (document.getElementById('cardVacantFlats')) document.getElementById('cardVacantFlats').innerText = countVacant;
+        }
+
+        window.setEstateCardFilter = function(filter) {
+            selectedEstateFilter = filter;
+            
+            const btnMap = {
+                'all': 'cardBtnTotalFlats',
+                '1bhk': 'cardBtn1BhkFlats',
+                '2bhk': 'cardBtn2BhkFlats',
+                'bachelor': 'cardBtnBachelorFlats'
+            };
+
+            Object.keys(btnMap).forEach(key => {
+                const btn = document.getElementById(btnMap[key]);
+                if (!btn) return;
+                if (key === filter) {
+                    btn.className = "bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-90";
+                    btn.querySelectorAll('span')[0].className = "text-xs uppercase tracking-wider font-semibold opacity-90";
+                    btn.querySelectorAll('span')[1].className = "text-3xl font-extrabold mt-1 text-white";
+                } else {
+                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:border-emerald-500";
+                    btn.querySelectorAll('span')[0].className = "text-xs text-gray-500 font-semibold uppercase";
+                    btn.querySelectorAll('span')[1].className = "text-2xl font-bold text-gray-800 mt-1";
+                }
+            });
+
+            renderEstateTable();
+        };
+
+        window.renderEstateTable = function() {
+            updateOverviewMetrics();
+            const tbody = document.getElementById('estateTableBody');
+            const rawSearch = (document.getElementById('estateSearch')?.value || '').toLowerCase().trim();
+            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+
+            tbody.innerHTML = '';
+
+            const filteredData = estatesData.filter(e => {
+                const wingStr = e.wing || '';
+                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.owner} ${e.elec} ${e.gas}`.toLowerCase();
+                
+                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+                
+                let matchCategory = true;
+                if (selectedEstateFilter === '1bhk') matchCategory = (e.type === '1 BHK');
+                else if (selectedEstateFilter === '2bhk') matchCategory = (e.type === '2 BHK');
+                else if (selectedEstateFilter === 'bachelor') matchCategory = e.isBachelor;
+                
+                return matchSearch && matchCategory;
+            });
+
+            filteredData.sort((a, b) => {
+                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
+                if (bComp !== 0) return bComp;
+
+                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
+                if (wComp !== 0) return wComp;
+
+                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            filteredData.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 border-b";
+                const wingBadge = e.wing ? `<span class="ml-1 text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">${e.wing}</span>` : '';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-gray-800">${e.building}${wingBadge}</td>
+                    <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
+                    <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
+                    <td class="p-3">${e.owner}</td>
+                    <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
+                    <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
+                    <td class="p-3">
+                        ${e.isBachelor 
+                            ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
+                            : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
+                    </td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.setAllocCardFilter = function(filter) {
+            selectedAllocFilter = filter;
+
+            const btnMap = {
+                'allocated': 'cardBtnAllocatedFlats',
+                'vacant': 'cardBtnVacantFlats'
+            };
+
+            Object.keys(btnMap).forEach(key => {
+                const btn = document.getElementById(btnMap[key]);
+                if (!btn) return;
+                if (key === filter) {
+                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition";
+                } else {
+                    btn.className = "bg-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:border-emerald-500";
+                }
+            });
+
+            renderAllocationTable();
+        };
+
+        window.renderAllocationTable = function() {
+            updateOverviewMetrics();
+            const tbody = document.getElementById('allocationTableBody');
+            const rawSearch = (document.getElementById('allocSearch') ? document.getElementById('allocSearch').value : '').toLowerCase().trim();
+            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+
+            tbody.innerHTML = '';
+
+            const filteredData = estatesData.filter(e => {
+                const wingStr = e.wing || '';
+                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+                
+                let residentsText = '';
+                if (e.isBachelor && e.residents) {
+                    residentsText = e.residents.map(r => `${r.name} ${r.its}`).join(' ');
+                }
+
+                const fullCorpus = `${e.building} ${wingStr} ${e.flatNo} ${e.type || ''} ${e.occupant || ''} ${e.its || ''} ${e.contact || ''} ${residentsText}`.toLowerCase();
+                
+                const matchSearch = searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+
+                let matchStatus = true;
+                if (selectedAllocFilter === 'vacant') matchStatus = !isFlatOccupied;
+                else if (selectedAllocFilter === 'allocated') matchStatus = isFlatOccupied;
+
+                return matchSearch && matchStatus;
+            });
+
+            filteredData.sort((a, b) => {
+                const bComp = a.building.localeCompare(b.building, undefined, { sensitivity: 'base' });
+                if (bComp !== 0) return bComp;
+
+                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
+                if (wComp !== 0) return wComp;
+
+                return a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            filteredData.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+
+                const isFlatOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+                const tenure = isFlatOccupied ? calculateElapsed(e.startDate) : '-';
+
+                const flatKey = `${e.building}${wingBadge} - ${e.flatNo}`;
+                const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+                
+                let lastMaintStr = '-';
+                if(flatMaintLogs.length > 0) {
+                    const lastLog = flatMaintLogs[0];
+                    const elapsed = calculateElapsed(lastLog.date);
+                    lastMaintStr = `<span class="font-bold text-emerald-800">${lastLog.type || 'Refurbishment'}</span><br/><span class="text-[11px] text-gray-500">${elapsed} ago</span>`;
+                }
+
+                let displayOccupant = e.occupant || '-';
+                let displayItsContact = e.its ? `${e.its}<br/>${e.contact || ''}` : '-';
+
+                if(e.isBachelor) {
+                    if(e.residents && e.residents.length > 0) {
+                        displayOccupant = e.residents.map(r => r.name).join(', ');
+                        displayItsContact = `<span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">${e.residents.length}/${e.capacity || 4} Beds Assigned</span>`;
+                    } else {
+                        displayOccupant = '<span class="text-gray-400 italic">No bachelor residents</span>';
+                    }
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <span class="font-bold text-gray-800">${e.building}${wingBadge} - ${e.flatNo}</span>
+                        <br/><span class="text-xs ${e.isBachelor ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} font-semibold px-2 py-0.5 rounded-full">${e.isBachelor ? 'Bachelor Flat' : (e.type || '2 BHK')}</span>
+                    </td>
+                    <td class="p-3">
+                        ${isFlatOccupied ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">Allocated</span>' : '<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Vacant</span>'}
+                    </td>
+                    <td class="p-3 font-medium text-gray-900">${displayOccupant}</td>
+                    <td class="p-3 text-xs font-mono">${displayItsContact}</td>
+                    <td class="p-3 text-xs">${e.startDate || '-'}</td>
+                    <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
+                    <td class="p-3 text-xs">${lastMaintStr}</td>
+                    <td class="p-3 text-center">
+                        <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        async function uploadFileToDrive(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64Data = e.target.result.split(',')[1];
+                    try {
+                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'cors',
+                            headers: {
+                                'Content-Type': 'text/plain;charset=utf-8'
+                            },
+                            body: JSON.stringify({
+                                filename: file.name,
+                                mimeType: file.type,
+                                base64: base64Data
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            resolve(result);
+                        } else {
+                            reject(result.message);
+                        }
+                    } catch(err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#allocFacultyInput') && !e.target.closest('#allocFacultyDropdown')) {
+                document.getElementById('allocFacultyDropdown')?.classList.add('hidden');
+            }
+            if (!e.target.closest('#bachFacultyInput') && !e.target.closest('#bachFacultyDropdown')) {
+                document.getElementById('bachFacultyDropdown')?.classList.add('hidden');
+            }
+
+            const btn = e.target.closest('.btn-manage-allocation');
+            if (btn) {
+                const flatId = btn.getAttribute('data-flat-id');
+                const isBachelor = btn.getAttribute('data-is-bachelor') === 'true';
+
+                if (isBachelor) {
+                    switchSubHeader('bachelor');
+                } else {
+                    openAllocationModal(flatId);
+                }
+            }
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            const loginOverlay = document.getElementById('loginOverlay');
+            if (user) {
+                currentUser = user;
+                document.getElementById('currentUserEmail').innerText = user.email;
+                await loadCloudData();
+                
+                const userEmailLower = user.email.trim().toLowerCase();
+                const isSuper = superAdmins.map(e => e.trim().toLowerCase()).includes(userEmailLower);
+                const dbUser = usersList.find(u => u.email.trim().toLowerCase() === userEmailLower);
+
+                if (!dbUser && !isSuper) {
+                    document.getElementById('loginErrorMsg').innerText = `Access Denied: ${user.email} is not authorized.`;
+                    document.getElementById('loginErrorMsg').classList.remove('hidden');
+                    await signOut(auth);
+                    return;
+                }
+
+                isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
+                document.getElementById('currentUserRole').innerText = isUserAdmin ? 'Administrator' : 'Standard User';
+                
+                if (isUserAdmin) {
+                    currentUserPermissions = [1, 2, 3, 4, 5, 6, 7];
+                    document.getElementById('mod-admin-access').classList.remove('hidden');
+                } else {
+                    currentUserPermissions = dbUser ? (dbUser.permissions || []) : [];
+                    document.getElementById('mod-admin-access').classList.add('hidden');
+                }
+
+                loginOverlay.classList.add('hidden');
+                initAppUI();
+            } else {
+                loginOverlay.classList.remove('hidden');
+            }
+        });
+
+        async function loadCloudData() {
+            try {
+                const snapshot = await get(child(dbRef(db), 'portalData'));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    estatesData = data.estates || [];
+                    facultyData = data.faculty || [];
+                    societiesData = data.societies || societiesData;
+                    societyDocs = data.docs || [];
+                    maintLogs = data.maint || [];
+                    vacantBills = data.bills || {};
+                    societyBillsData = data.socBills || {};
+                    usersList = data.users || usersList;
+                } else {
+                    estatesData = [
+                        { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [], residents: [] }
+                    ];
+                    await saveCloudData();
+                }
+            } catch (err) {
+                console.error("Error loading cloud data:", err);
+            }
+        }
+
+        window.saveCloudData = async function() {
+            try {
+                await set(dbRef(db, 'portalData'), {
+                    estates: estatesData,
+                    faculty: facultyData,
+                    societies: societiesData,
+                    docs: societyDocs,
+                    maint: maintLogs,
+                    bills: vacantBills,
+                    socBills: societyBillsData,
+                    users: usersList
+                });
+            } catch (err) {
+                console.error("Error saving to cloud:", err);
+            }
+        }
+
+        function applySubHeaderPermissions() {
+            const secMapping = {
+                1: 'estate-details',
+                2: 'allocation',
+                3: 'maintenance',
+                4: 'bachelor',
+                5: 'vacant-bills',
+                6: 'society',
+                7: 'integrated'
+            };
+
+            let firstAllowedSec = null;
+
+            for (let i = 1; i <= 7; i++) {
+                const btn = document.getElementById(`sub-${secMapping[i]}`);
+                const isAllowed = currentUserPermissions.includes(i);
+                if (btn) {
+                    if (isAllowed) {
+                        btn.classList.remove('hidden');
+                        if (!firstAllowedSec) firstAllowedSec = secMapping[i];
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                }
+            }
+
+            if (firstAllowedSec) {
+                switchSubHeader(firstAllowedSec);
+            } else {
+                ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
+                    document.getElementById('sec-' + s).classList.add('hidden');
+                });
+            }
+        }
+
+        function initAppUI() {
+            applySubHeaderPermissions();
+            renderEstateTable();
+            renderAllocationTable();
+            renderFacultyTable();
+            renderSocieties();
+            renderSocietyDocs();
+            renderMaintenanceGrid();
+            renderUsersList();
+            populateSocietyDropdowns();
+            populateFlatMaintenanceDropdown();
+            populateIntegratedFlatDropdown();
+            
+            const today = new Date().toISOString().slice(0, 7);
+            document.getElementById('billMonthPicker').value = today;
+            renderVacantBills();
+        }
+
+        window.switchModule = function(modName) {
+            ['dawat-estates', 'inventory', 'faculty-dir', 'admin-access'].forEach(m => {
+                document.getElementById('module-' + m).classList.add('hidden');
+                document.getElementById('mod-' + m).classList.remove('active-tab');
+            });
+
+            if (modName === 'admin-access' && !isUserAdmin) {
+                alert("Access Denied: Admin privileges required.");
+                modName = 'dawat-estates';
+            }
+
+            document.getElementById('module-' + modName).classList.remove('hidden');
+            document.getElementById('mod-' + modName).classList.add('active-tab');
+        };
+
+        window.switchSubHeader = function(secName) {
+            const secMappingInv = {
+                'estate-details': 1,
+                'allocation': 2,
+                'maintenance': 3,
+                'bachelor': 4,
+                'vacant-bills': 5,
+                'society': 6,
+                'integrated': 7
+            };
+
+            const permNum = secMappingInv[secName];
+            if (permNum && !currentUserPermissions.includes(permNum)) {
+                alert("Access Denied: You do not have permission to view this sub-header.");
+                return;
+            }
+
+            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
+                document.getElementById('sec-' + s).classList.add('hidden');
+                const subBtn = document.getElementById('sub-' + s);
+                if (subBtn) {
+                    subBtn.classList.remove('sub-tab-active');
+                    subBtn.classList.add('sub-tab-inactive');
+                }
+            });
+
+            document.getElementById('sec-' + secName).classList.remove('hidden');
+            const activeBtn = document.getElementById('sub-' + secName);
+            if (activeBtn) {
+                activeBtn.classList.remove('sub-tab-inactive');
+                activeBtn.classList.add('sub-tab-active');
+            }
+
+            if(secName === 'bachelor') renderBachelorGrid();
+            if(secName === 'maintenance') renderMaintenanceGrid();
+            if(secName === 'vacant-bills') renderVacantBills();
+            if(secName === 'integrated') populateIntegratedFlatDropdown();
+        };
+
+        window.exportData = function(section, format) {
+            let data = [];
+            let fileName = "";
+            let columns = [];
+
+            if (section === 'estate-details') {
+                fileName = "Estate_Master_Directory";
+                columns = ["Building", "Wing", "Flat No", "Type", "SqFt", "Owner", "Elec CA", "Gas CA", "Category"];
+                data = estatesData.map(e => [
+                    e.building,
+                    e.wing || '-',
+                    e.flatNo,
+                    e.type,
+                    e.sqft,
+                    e.owner,
+                    e.elec || '-',
+                    e.gas || '-',
+                    e.isBachelor ? `Bachelor (${e.capacity} Beds)` : 'Regular'
+                ]);
+            } else if (section === 'allocation') {
+                fileName = "Faculty_Flat_Allocations";
+                columns = ["Building & Flat", "Category", "Status", "Occupant", "ITS Number", "Contact", "Allocated Since", "Tenure"];
+                data = estatesData.map(e => {
+                    const wing = e.wing ? ` (${e.wing})` : '';
+                    const isOccupied = e.isBachelor ? (e.residents && e.residents.length > 0) : !!e.occupant;
+                    let occupant = e.occupant || '-';
+                    let its = e.its || '-';
+                    let contact = e.contact || '-';
+                    if (e.isBachelor) {
+                        occupant = (e.residents && e.residents.length > 0) ? e.residents.map(r => r.name).join(', ') : 'Vacant';
+                        its = `${e.residents ? e.residents.length : 0}/${e.capacity || 4} Beds Assigned`;
+                        contact = '-';
+                    }
+                    return [
+                        `${e.building}${wing} - Flat ${e.flatNo}`,
+                        e.isBachelor ? 'Bachelor Flat' : (e.type || 'Regular'),
+                        isOccupied ? 'Allocated' : 'Vacant',
+                        occupant,
+                        its,
+                        contact,
+                        e.startDate || '-',
+                        isOccupied ? calculateElapsed(e.startDate) : '-'
+                    ];
+                });
+            } else if (section === 'maintenance') {
+                fileName = "Maintenance_Refurbishment_Records";
+                columns = ["Flat", "Maintenance Type", "Description", "Cost (INR)", "Completion Date"];
+                data = maintLogs.map(m => [
+                    m.flat,
+                    m.type || 'Refurbishment',
+                    m.desc,
+                    m.cost || '0',
+                    m.date
+                ]);
+            } else if (section === 'bachelor') {
+                fileName = "Bachelor_Accommodation_Details";
+                columns = ["Building & Flat", "Capacity", "Resident Name", "ITS Number", "Contact", "Joining Date"];
+                const bachelorFlats = estatesData.filter(e => e.isBachelor);
+                bachelorFlats.forEach(e => {
+                    const wing = e.wing ? ` (${e.wing})` : '';
+                    if (e.residents && e.residents.length > 0) {
+                        e.residents.forEach(r => {
+                            data.push([
+                                `${e.building}${wing} - Flat ${e.flatNo}`,
+                                `${e.residents.length}/${e.capacity || 4} Beds`,
+                                r.name,
+                                r.its || '-',
+                                r.contact || '-',
+                                r.startDate || '-'
+                            ]);
+                        });
+                    } else {
+                        data.push([
+                            `${e.building}${wing} - Flat ${e.flatNo}`,
+                            `0/${e.capacity || 4} Beds`,
+                            'No Residents Assigned',
+                            '-',
+                            '-',
+                            '-'
+                        ]);
+                    }
+                });
+            } else if (section === 'faculty') {
+                fileName = "Faculty_Master_Directory";
+                columns = ["ITS Number", "Faculty Name", "Contact Number"];
+                data = facultyData.map(f => [
+                    f.its,
+                    f.name,
+                    f.contact
+                ]);
+            }
+
+            if (data.length === 0) {
+                alert("No records available to export!");
+                return;
+            }
+
+            if (format === 'excel') {
+                const ws = XLSX.utils.aoa_to_sheet([columns, ...data]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "ExportData");
+                XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape' });
+                doc.setFontSize(14);
+                doc.text(fileName.replace(/_/g, ' '), 14, 15);
+                doc.setFontSize(9);
+                doc.text(`Exported on: ${new Date().toLocaleDateString()} | Aljamea Marol Facilities Management`, 14, 21);
+                doc.autoTable({
+                    head: [columns],
+                    body: data,
+                    startY: 25,
+                    theme: 'grid',
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [6, 95, 70] }
+                });
+                doc.save(`${fileName}_${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+        };
+
+        window.toggleBachelorCapacityInput = function() {
+            const chk = document.getElementById('flatIsBachelor').checked;
+            document.getElementById('bachelorCapacityBox').classList.toggle('hidden', !chk);
+        };
+
+        window.openAddFlatModal = function() {
+            document.getElementById('flatId').value = '';
+            document.getElementById('flatForm').reset();
+            document.getElementById('flatModalTitle').innerText = 'Add New Estate Flat';
+            document.getElementById('modalAddFlat').classList.remove('hidden');
+        };
+
+        window.openEditFlat = function(id) {
+            const flat = estatesData.find(e => String(e.id) === String(id));
+            if(!flat) return;
+            document.getElementById('flatId').value = flat.id;
+            document.getElementById('flatBuilding').value = flat.building;
+            document.getElementById('flatWing').value = flat.wing || '';
+            document.getElementById('flatNo').value = flat.flatNo;
+            document.getElementById('flatType').value = flat.type;
+            document.getElementById('flatSqft').value = flat.sqft;
+            document.getElementById('flatOwner').value = flat.owner;
+            document.getElementById('flatElec').value = flat.elec;
+            document.getElementById('flatGas').value = flat.gas;
+            document.getElementById('flatIsBachelor').checked = flat.isBachelor;
+            document.getElementById('flatBedCapacity').value = flat.capacity || 4;
+            toggleBachelorCapacityInput();
+            document.getElementById('flatModalTitle').innerText = 'Edit Estate Flat';
+            document.getElementById('modalAddFlat').classList.remove('hidden');
+        };
+
+        window.saveFlatRecord = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('flatId').value;
+            const isBachelor = document.getElementById('flatIsBachelor').checked;
+            const flatObj = {
+                id: id ? String(id) : Date.now().toString(),
+                building: document.getElementById('flatBuilding').value,
+                wing: document.getElementById('flatWing').value,
+                flatNo: document.getElementById('flatNo').value,
+                type: document.getElementById('flatType').value,
+                sqft: parseInt(document.getElementById('flatSqft').value),
+                owner: document.getElementById('flatOwner').value,
+                elec: document.getElementById('flatElec').value,
+                gas: document.getElementById('flatGas').value,
+                isBachelor: isBachelor,
+                capacity: isBachelor ? parseInt(document.getElementById('flatBedCapacity').value) : 0,
+                archive: [],
+                residents: []
+            };
+
+            if(id) {
+                const idx = estatesData.findIndex(item => String(item.id) === String(id));
+                if(idx !== -1) estatesData[idx] = { ...estatesData[idx], ...flatObj };
+            } else {
+                estatesData.push(flatObj);
+            }
+            await saveCloudData();
+            closeModal('modalAddFlat');
+            renderEstateTable();
+            renderAllocationTable();
+            populateFlatMaintenanceDropdown();
+            populateIntegratedFlatDropdown();
+        };
+
+        window.deleteFlat = async function(id) {
+            if(confirm("Are you sure you want to delete this flat record?")) {
+                estatesData = estatesData.filter(e => String(e.id) !== String(id));
+                await saveCloudData();
+                renderEstateTable();
+                renderAllocationTable();
+                populateIntegratedFlatDropdown();
+            }
+        };
+
+        window.filterAllocFacultyInteractive = function() {
+            const inputVal = document.getElementById('allocFacultyInput').value.toLowerCase();
+            const dropdown = document.getElementById('allocFacultyDropdown');
+            dropdown.innerHTML = '';
+
+            const filtered = facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(inputVal));
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="p-2 text-xs text-gray-400 italic">No faculty found</div>';
+            } else {
+                filtered.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = "p-2 hover:bg-emerald-50 cursor-pointer text-xs flex justify-between items-center transition";
+                    item.innerHTML = `<span class="font-bold text-gray-800">${f.name}</span><span class="text-gray-500 font-mono">ITS: ${f.its}</span>`;
+                    item.onclick = () => selectAllocFaculty(f);
+                    dropdown.appendChild(item);
+                });
+            }
+            dropdown.classList.remove('hidden');
+        };
+
+        function selectAllocFaculty(fac) {
+            document.getElementById('allocFacultyInput').value = fac.name;
+            document.getElementById('allocSelectedFacId').value = fac.id;
+            document.getElementById('allocIts').value = fac.its;
+            document.getElementById('allocContact').value = fac.contact;
+            document.getElementById('allocFacultyDropdown').classList.add('hidden');
+        }
+
+        window.openAllocationModal = function(id) {
+            const flat = estatesData.find(e => String(e.id) === String(id));
+            if(!flat) return;
+
+            document.getElementById('allocFlatId').value = flat.id;
+            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
+            document.getElementById('allocModalTitle').innerText = `Allocation: ${flat.building}${wingBadge} ${flat.flatNo}`;
+            
+            document.getElementById('allocFacultyInput').value = flat.occupant || '';
+            document.getElementById('allocSelectedFacId').value = '';
+            document.getElementById('allocIts').value = flat.its || '';
+            document.getElementById('allocContact').value = flat.contact || '';
+            document.getElementById('allocStartDate').value = flat.startDate || '';
+
+            renderModalArchiveList(flat);
+            document.getElementById('modalAllocation').classList.remove('hidden');
+        };
+
+        window.markFlatAsVacant = async function() {
+            const flatId = document.getElementById('allocFlatId').value;
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if (!flat) return;
+
+            if (!flat.occupant || flat.occupant.trim() === '') {
+                alert("This flat is already vacant.");
+                return;
+            }
+
+            if (confirm(`Are you sure you want to mark this flat as vacant? ${flat.occupant} will be moved to the Past Allocation Archive.`)) {
+                if (!flat.archive) flat.archive = [];
+                flat.archive.push({
+                    occupant: flat.occupant,
+                    its: flat.its || '',
+                    contact: flat.contact || '',
+                    startDate: flat.startDate || '',
+                    endDate: new Date().toISOString().split('T')[0]
+                });
+
+                flat.occupant = '';
+                flat.its = '';
+                flat.contact = '';
+                flat.startDate = '';
+
+                await saveCloudData();
+                closeModal('modalAllocation');
+                renderAllocationTable();
+                renderVacantBills();
+                alert("Flat marked as vacant and occupant details moved to archive!");
+            }
+        };
+
+        function renderModalArchiveList(flat) {
+            const archList = document.getElementById('allocArchiveList');
+            archList.innerHTML = '';
+            if(flat.archive && flat.archive.length > 0) {
+                flat.archive.forEach((a, idx) => {
+                    const safeId = String(flat.id).replace(/'/g, "\\'");
+                    archList.innerHTML += `
+                        <div class="py-1 flex justify-between items-center">
+                            <div>
+                                <strong>${a.occupant}</strong> ${a.its ? `(ITS: ${a.its})` : ''}<br/>
+                                <span class="text-gray-500">${a.startDate || 'Start: -'} to ${a.endDate || 'End: -'}</span>
+                            </div>
+                            <button onclick="deleteArchiveEntry('${safeId}', ${idx})" class="text-red-500 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>`;
+                });
+            } else {
+                archList.innerHTML = '<span class="text-gray-400">No past allocation history recorded.</span>';
+            }
+        }
+
+        window.addManualPastHistory = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('allocFlatId').value;
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if(!flat) return;
+
+            const occupantName = document.getElementById('pastName').value;
+            if(!occupantName) return alert("Resident name is compulsory.");
+
+            if(!flat.archive) flat.archive = [];
+            flat.archive.push({
+                occupant: occupantName,
+                its: document.getElementById('pastIts').value || '',
+                startDate: document.getElementById('pastStartDate').value || '',
+                endDate: document.getElementById('pastEndDate').value || ''
+            });
+
+            await saveCloudData();
+            document.getElementById('manualPastForm').reset();
+            renderModalArchiveList(flat);
+            renderAllocationTable();
+            alert("Past allocation record added!");
+        };
+
+        window.deleteArchiveEntry = async function(flatId, index) {
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if(flat && flat.archive) {
+                flat.archive.splice(index, 1);
+                await saveCloudData();
+                renderModalArchiveList(flat);
+                renderAllocationTable();
+            }
+        };
+
+        window.saveAllocation = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('allocFlatId').value;
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if(!flat) return;
+
+            const facName = document.getElementById('allocFacultyInput').value;
+            const facIts = document.getElementById('allocIts').value;
+            const facContact = document.getElementById('allocContact').value;
+            const startDateVal = document.getElementById('allocStartDate').value;
+
+            if (!facName || facName.trim() === '') {
+                alert("Please select or enter a faculty member.");
+                return;
+            }
+
+            if(flat.occupant && flat.occupant.trim() !== '' && flat.occupant !== facName) {
+                if(!flat.archive) flat.archive = [];
+                flat.archive.push({
+                    occupant: flat.occupant,
+                    its: flat.its || '',
+                    contact: flat.contact || '',
+                    startDate: flat.startDate || '',
+                    endDate: new Date().toISOString().split('T')[0]
+                });
+            }
+
+            flat.occupant = facName;
+            flat.its = facIts;
+            flat.contact = facContact;
+            flat.startDate = startDateVal || new Date().toISOString().split('T')[0];
+
+            await saveCloudData();
+            closeModal('modalAllocation');
+            renderAllocationTable();
+            alert("Allocation updated successfully!");
+        };
+
+        window.renderBachelorGrid = function() {
+            const grid = document.getElementById('bachelorGrid');
+            grid.innerHTML = '';
+
+            const bachelorFlats = estatesData.filter(e => e.isBachelor);
+            if(bachelorFlats.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-gray-400 col-span-2 text-center py-8">No flats currently designated as Bachelor Flats.</p>';
+                return;
+            }
+
+            bachelorFlats.forEach(e => {
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+                const residents = e.residents || [];
+
+                let residentItems = '';
+                if(residents.length === 0) {
+                    residentItems = '<p class="text-xs text-gray-400 italic">No residents assigned yet.</p>';
+                } else {
+                    residents.forEach((r, rIdx) => {
+                        const safeId = String(e.id).replace(/'/g, "\\'");
+                        residentItems += `
+                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-xs border">
+                                <div>
+                                    <strong class="text-emerald-900">${r.name}</strong> <span class="text-gray-500">(ITS: ${r.its})</span>
+                                    <br/><span class="text-[10px] text-gray-400">Since: ${r.startDate || '-'} | ${r.contact || ''}</span>
+                                </div>
+                                <button onclick="removeBachelorResident('${safeId}', ${rIdx})" class="text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
+                            </div>
+                        `;
+                    });
+                }
+
+                const safeId = String(e.id).replace(/'/g, "\\'");
+
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h4 class="font-bold text-emerald-900">${e.building}${wingBadge} - Flat ${e.flatNo}</h4>
+                                <span class="text-xs text-gray-500">${e.type} (${e.sqft} SqFt)</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Capacity: ${residents.length}/${e.capacity || 4} Beds</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <h5 class="text-xs font-bold text-gray-700 uppercase flex justify-between items-center">
+                                <span>Current Residents:</span>
+                                <button onclick="openAddBachelorResidentModal('${safeId}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] px-2 py-1 rounded font-normal transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-user-plus"></i> <span>+ Add Resident</span>
+                                </button>
+                            </h5>
+                            <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                                ${residentItems}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        window.filterBachFacultyInteractive = function() {
+            const inputVal = document.getElementById('bachFacultyInput').value.toLowerCase();
+            const dropdown = document.getElementById('bachFacultyDropdown');
+            dropdown.innerHTML = '';
+
+            const filtered = facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(inputVal));
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="p-2 text-xs text-gray-400 italic">No faculty found</div>';
+            } else {
+                filtered.forEach(f => {
+                    const item = document.createElement('div');
+                    item.className = "p-2 hover:bg-emerald-50 cursor-pointer text-xs flex justify-between items-center transition";
+                    item.innerHTML = `<span class="font-bold text-gray-800">${f.name}</span><span class="text-gray-500 font-mono">ITS: ${f.its}</span>`;
+                    item.onclick = () => selectBachFaculty(f);
+                    dropdown.appendChild(item);
+                });
+            }
+            dropdown.classList.remove('hidden');
+        };
+
+        function selectBachFaculty(fac) {
+            document.getElementById('bachFacultyInput').value = fac.name;
+            document.getElementById('bachSelectedFacId').value = fac.id;
+            document.getElementById('bachIts').value = fac.its;
+            document.getElementById('bachContact').value = fac.contact;
+            document.getElementById('bachFacultyDropdown').classList.add('hidden');
+        }
+
+        window.openAddBachelorResidentModal = function(flatId) {
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if(!flat) return;
+
+            document.getElementById('bachFlatId').value = flat.id;
+            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
+            document.getElementById('bachModalTitle').innerText = `Add Resident: ${flat.building}${wingBadge} ${flat.flatNo}`;
+
+            document.getElementById('bachFacultyInput').value = '';
+            document.getElementById('bachSelectedFacId').value = '';
+            document.getElementById('bachIts').value = '';
+            document.getElementById('bachContact').value = '';
+            document.getElementById('bachStartDate').value = new Date().toISOString().split('T')[0];
+
+            document.getElementById('modalAddBachelorResident').classList.remove('hidden');
+        };
+
+        window.saveBachelorResident = async function(e) {
+            e.preventDefault();
+            const flatId = document.getElementById('bachFlatId').value;
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if(!flat) return;
+
+            const facName = document.getElementById('bachFacultyInput').value;
+            const facIts = document.getElementById('bachIts').value;
+            const facContact = document.getElementById('bachContact').value;
+
+            if(!facName) return alert("Please select or enter a resident name.");
+
+            if(!flat.residents) flat.residents = [];
+            flat.residents.push({
+                name: facName,
+                its: facIts,
+                contact: facContact,
+                startDate: document.getElementById('bachStartDate').value
+            });
+
+            await saveCloudData();
+            closeModal('modalAddBachelorResident');
+            renderBachelorGrid();
+            renderAllocationTable();
+            renderVacantBills();
+        };
+
+        window.removeBachelorResident = async function(flatId, resIndex) {
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if(flat && flat.residents) {
+                flat.residents.splice(resIndex, 1);
+                await saveCloudData();
+                renderBachelorGrid();
+                renderAllocationTable();
+                renderVacantBills();
+            }
+        };
+
+        window.renderVacantBills = function() {
+            const tbody = document.getElementById('vacantBillsTableBody');
+            tbody.innerHTML = '';
+            const month = document.getElementById('billMonthPicker').value;
+
+            const eligibleFlats = estatesData.filter(e => e.isBachelor || !e.occupant);
+
+            if(eligibleFlats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400 text-xs">No vacant or bachelor flats found for bill tracking.</td></tr>';
+                return;
+            }
+
+            eligibleFlats.forEach(e => {
+                const billKey = `${e.id}_${month}`;
+                const billData = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                const wingBadge = e.wing ? ` (${e.wing})` : '';
+
+                let categoryTag = '<span class="text-xs text-amber-700 font-semibold">Vacant Flat</span>';
+                if(e.isBachelor) {
+                    const residentCount = e.residents ? e.residents.length : 0;
+                    categoryTag = `<span class="text-xs text-amber-800 font-bold bg-amber-100 px-1.5 py-0.5 rounded">Bachelor Flat (${residentCount} Resident${residentCount === 1 ? '' : 's'})</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3"><strong class="text-gray-800">${e.building}${wingBadge} ${e.flatNo}</strong><br/>${categoryTag}</td>
+                    <td class="p-3 text-xs font-mono">Elec: ${e.elec || 'N/A'}<br/>Gas: ${e.gas || 'N/A'}</td>
+                    <td class="p-3">${billData.elecPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
+                    <td class="p-3">${billData.gasPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
+                        <button onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.toggleBillStatus = async function(billKey, field) {
+            if(!vacantBills[billKey]) vacantBills[billKey] = { elecPaid: false, gasPaid: false };
+            vacantBills[billKey][field] = !vacantBills[billKey][field];
+            await saveCloudData();
+            renderVacantBills();
+        };
+
+        function populateFlatMaintenanceDropdown() {
+            const select = document.getElementById('maintFlatSelect');
+            select.innerHTML = '';
+            estatesData.forEach(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                select.innerHTML += `<option value="${e.building}${wing} - ${e.flatNo}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
+            });
+        }
+
+        window.openAddMaintenanceModal = function() {
+            document.getElementById('maintForm').reset();
+            populateFlatMaintenanceDropdown();
+            document.getElementById('maintModalTitle').innerText = 'Add Refurbishment / Maintenance Log';
+            document.getElementById('maintForm').dataset.editId = '';
+            document.getElementById('modalAddMaintenance').classList.remove('hidden');
+        };
+
+        window.openEditMaintenanceLog = function(id) {
+            const log = maintLogs.find(m => String(m.id) === String(id));
+            if(!log) return;
+
+            populateFlatMaintenanceDropdown();
+            document.getElementById('maintForm').reset();
+            
+            document.getElementById('maintFlatSelect').value = log.flat;
+            document.getElementById('maintType').value = log.type || 'Refurbishment';
+            document.getElementById('maintDesc').value = log.desc || '';
+            document.getElementById('maintCost').value = log.cost || '';
+            document.getElementById('maintDate').value = log.date || '';
+
+            document.getElementById('maintModalTitle').innerText = 'Edit Maintenance Log';
+            document.getElementById('maintForm').dataset.editId = log.id;
+            
+            document.getElementById('modalAddMaintenance').classList.remove('hidden');
+        };
+
+        window.saveMaintenanceLog = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveMaint');
+            const editId = e.target.dataset.editId;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            const beforeFile = document.getElementById('maintBeforeInput').files[0];
+            const afterFile = document.getElementById('maintAfterInput').files[0];
+
+            let existingLog = editId ? maintLogs.find(m => String(m.id) === String(editId)) : null;
+
+            let beforeUrl = existingLog ? existingLog.beforeUrl : "";
+            let beforeDirect = existingLog ? existingLog.beforeDirect : "";
+            let beforeType = existingLog ? existingLog.beforeType : "";
+
+            let afterUrl = existingLog ? existingLog.afterUrl : "";
+            let afterDirect = existingLog ? existingLog.afterDirect : "";
+            let afterType = existingLog ? existingLog.afterType : "";
+
+            try {
+                if(beforeFile) {
+                    btn.innerText = "Uploading BEFORE Media...";
+                    const res = await uploadFileToDrive(beforeFile);
+                    beforeUrl = res.fileUrl;
+                    beforeDirect = res.directImgUrl;
+                    beforeType = beforeFile.type.startsWith('video') ? 'video' : (beforeFile.type.includes('pdf') ? 'pdf' : 'image');
+                }
+                if(afterFile) {
+                    btn.innerText = "Uploading AFTER Media...";
+                    const res = await uploadFileToDrive(afterFile);
+                    afterUrl = res.fileUrl;
+                    afterDirect = res.directImgUrl;
+                    afterType = afterFile.type.startsWith('video') ? 'video' : (afterFile.type.includes('pdf') ? 'pdf' : 'image');
+                }
+            } catch(err) {
+                alert("Upload failed: " + err);
+                btn.innerText = "Upload & Save Log";
+                btn.disabled = false;
+                return;
+            }
+
+            const logRecord = {
+                id: editId ? editId : Date.now().toString(),
+                flat: document.getElementById('maintFlatSelect').value,
+                type: document.getElementById('maintType').value,
+                desc: document.getElementById('maintDesc').value,
+                cost: document.getElementById('maintCost').value,
+                date: document.getElementById('maintDate').value,
+                beforeUrl, beforeDirect, beforeType,
+                afterUrl, afterDirect, afterType
+            };
+
+            if(editId) {
+                const idx = maintLogs.findIndex(m => String(m.id) === String(editId));
+                if(idx !== -1) maintLogs[idx] = logRecord;
+            } else {
+                maintLogs.push(logRecord);
+            }
+
+            await saveCloudData();
+            btn.innerText = "Upload & Save Log";
+            btn.disabled = false;
+            closeModal('modalAddMaintenance');
+            renderMaintenanceGrid();
+            renderAllocationTable();
+        };
+
+        window.renderMaintenanceGrid = function() {
+            const grid = document.getElementById('maintenanceGrid');
+            const rawSearch = (document.getElementById('maintSearch') ? document.getElementById('maintSearch').value : '').toLowerCase().trim();
+            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+            grid.innerHTML = '';
+
+            const filteredLogs = maintLogs.filter(m => {
+                const fullCorpus = `${m.flat} ${m.type || ''} ${m.desc} ${m.cost} ${m.date}`.toLowerCase();
+                return searchTokens.length === 0 || searchTokens.every(token => fullCorpus.includes(token));
+            });
+
+            filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if(filteredLogs.length === 0) {
+                grid.innerHTML = '<p class="text-gray-400 text-xs text-center py-6 col-span-2">No matching maintenance logs found.</p>';
+                return;
+            }
+
+            filteredLogs.forEach(m => {
+                function renderMedia(url, direct, type, label) {
+                    if(!url) return '';
+                    if(type === 'video') {
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
+                    } else if(type === 'pdf') {
+                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                    } else {
+                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
+                    }
+                }
+
+                const safeId = String(m.id).replace(/'/g, "\\'");
+
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-2">
+                        <div class="flex justify-between items-start border-b pb-2">
+                            <div>
+                                <h4 class="font-bold text-gray-800">${m.flat}</h4>
+                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
+                                <button onclick="openEditMaintenanceLog('${safeId}')" class="text-blue-600 hover:text-blue-800 text-sm ml-1" title="Edit Maintenance Log"><i class="fa-solid fa-pen-to-square"></i></button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600">${m.desc}</p>
+                        <p class="text-[10px] text-gray-400 font-semibold">Completed on: ${m.date}</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                            ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        window.renderFacultyTable = function() {
+            const tbody = document.getElementById('facultyTableBody');
+            const search = document.getElementById('facultySearch').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(search)).forEach(f => {
+                const safeId = String(f.id).replace(/'/g, "\\'");
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-emerald-800">${f.its}</td>
+                    <td class="p-3 font-medium text-gray-900">${f.name}</td>
+                    <td class="p-3 text-gray-600">${f.contact}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button onclick="openEditFaculty('${safeId}')" class="text-blue-600 hover:text-blue-800" title="Edit Faculty"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteFaculty('${safeId}')" class="text-red-600 hover:text-red-800" title="Delete Faculty"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.openAddFacultyModal = function() {
+            document.getElementById('facultyForm').reset();
+            document.getElementById('facultyModalTitle').innerText = 'Add Faculty Member';
+            document.getElementById('facultyForm').dataset.editId = '';
+            document.getElementById('modalFaculty').classList.remove('hidden');
+        };
+
+        window.openEditFaculty = function(id) {
+            const fac = facultyData.find(f => String(f.id) === String(id));
+            if(!fac) return;
+
+            document.getElementById('facultyIts').value = fac.its || '';
+            document.getElementById('facultyName').value = fac.name || '';
+            document.getElementById('facultyContact').value = fac.contact || '';
+            document.getElementById('facultyModalTitle').innerText = 'Edit Faculty Member';
+            document.getElementById('facultyForm').dataset.editId = fac.id;
+            
+            document.getElementById('modalFaculty').classList.remove('hidden');
+        };
+
+        window.saveFacultyRecord = async function(e) {
+            e.preventDefault();
+            const editId = e.target.dataset.editId;
+            const its = document.getElementById('facultyIts').value.trim();
+            const name = document.getElementById('facultyName').value.trim();
+            const contact = document.getElementById('facultyContact').value.trim();
+
+            if (editId) {
+                const idx = facultyData.findIndex(f => String(f.id) === String(editId));
+                if (idx !== -1) {
+                    const oldName = facultyData[idx].name;
+                    facultyData[idx] = { ...facultyData[idx], its, name, contact };
+
+                    estatesData.forEach(e => {
+                        if (e.occupant === oldName) {
+                            e.occupant = name;
+                            e.its = its;
+                            e.contact = contact;
+                        }
+                    });
+                }
+            } else {
+                facultyData.push({
+                    id: Date.now().toString(),
+                    its,
+                    name,
+                    contact
+                });
+            }
+
+            await saveCloudData();
+            closeModal('modalFaculty');
+            renderFacultyTable();
+            renderAllocationTable();
+        };
+
+        window.deleteFaculty = async function(id) {
+            facultyData = facultyData.filter(f => String(f.id) !== String(id));
+            await saveCloudData();
+            renderFacultyTable();
+        };
+
+        window.openAddSocietyModal = function() {
+            document.getElementById('societyForm').reset();
+            document.getElementById('modalAddSociety').classList.remove('hidden');
+        };
+
+        window.saveSocietyRecord = async function(e) {
+            e.preventDefault();
+            societiesData.push({
+                id: Date.now().toString(),
+                name: document.getElementById('socName').value,
+                flats: document.getElementById('socFlats').value,
+                cycle: document.getElementById('socCycle').value,
+                contactPerson: document.getElementById('socContactPerson').value,
+                billSubmittedBy: document.getElementById('socBillSubmittedBy').value
+            });
+
+            await saveCloudData();
+            closeModal('modalAddSociety');
+            renderSocieties();
+            populateSocietyDropdowns();
+            renderSocietyDocs();
+            alert("Society added successfully!");
+        };
+
+        window.deleteSociety = async function(id) {
+            const soc = societiesData.find(s => String(s.id) === String(id));
+            if(confirm(`Are you sure you want to delete "${soc ? soc.name : 'this society'}"?`)) {
+                societiesData = societiesData.filter(s => String(s.id) !== String(id));
+                await saveCloudData();
+                renderSocieties();
+                populateSocietyDropdowns();
+                renderSocietyDocs();
+            }
+        };
+
+        function getBuildingSocietyList() {
+            const socMap = new Map();
+            const excludedBuildings = ['faculty bldg', 'najmi bldg'];
+
+            estatesData.forEach(e => {
+                const bName = (e.building || '').trim();
+                if(!bName) return;
+                if(excludedBuildings.includes(bName.toLowerCase())) return;
+
+                if(!socMap.has(bName)) {
+                    socMap.set(bName, {
+                        name: bName,
+                        totalFlats: 0,
+                        count1Bhk: 0,
+                        count2Bhk: 0,
+                        isAuto: true
+                    });
+                }
+
+                const sObj = socMap.get(bName);
+                sObj.totalFlats++;
+                if(e.type === '1 BHK') sObj.count1Bhk++;
+                if(e.type === '2 BHK') sObj.count2Bhk++;
+            });
+
+            societiesData.forEach(s => {
+                const sName = s.name.trim();
+                if(excludedBuildings.includes(sName.toLowerCase())) return;
+
+                if(!socMap.has(sName)) {
+                    socMap.set(sName, {
+                        name: sName,
+                        totalFlats: parseInt(s.flats) || 0,
+                        count1Bhk: 0,
+                        count2Bhk: 0,
+                        isAuto: false,
+                        customData: s
+                    });
+                } else {
+                    const existing = socMap.get(sName);
+                    existing.customData = s;
+                }
+            });
+
+            return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
+        }
+
+      window.renderSocieties = function() {
+            const grid = document.getElementById('societyGrid');
+            if(!grid) return;
+            grid.innerHTML = '';
+
+            const list = getBuildingSocietyList();
+            const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
+
+            if(list.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-gray-400 col-span-3 text-center py-6">No societies found or created yet.</p>';
+                return;
+            }
+
+          list.forEach((s) => {
+                const custom = s.customData || {};
+                const cycle = custom.cycle || 'Quarterly';
+                const contactPerson = custom.contactPerson || 'Not Specified';
+                const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
+
+                const dataKey = `${s.name}_${selYear}`;
+                const record = societyBillsData[dataKey];
+                let socTotalAmount = 0;
+                if(record) {
+                    if(record.regular) {
+                        Object.values(record.regular).forEach(b => {
+                            socTotalAmount += (parseFloat(b.amount) || 0);
+                        });
+                    }
+                    if(record.other) {
+                        record.other.forEach(b => {
+                            socTotalAmount += (parseFloat(b.amount) || 0);
+                        });
+                    }
+                }
+
+                const bhkParts = [];
+                if (s.count1Bhk > 0) bhkParts.push(`1 BHK - ${s.count1Bhk}`);
+                if (s.count2Bhk > 0) bhkParts.push(`2 BHK - ${s.count2Bhk}`);
+                
+                const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
+                const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
+
+                const safeName = s.name.replace(/'/g, "\\'");
+
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start border-b pb-2">
+                                <div>
+                                    <h4 class="font-bold text-emerald-900 text-base">${s.name}</h4>
+                                    <span class="text-xs font-semibold text-emerald-700 block">${flatDisplay}</span>
+                                    <span class="text-xs font-bold text-red-600 block mt-0.5">Total Bills (${selYear}): ₹${socTotalAmount.toLocaleString('en-IN')}</span>
+                                </div>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">${cycle}</span>
+                            </div>
+
+                            <div class="text-xs space-y-1 text-gray-700">
+                                <p><strong>Contact Person:</strong> ${contactPerson}</p>
+                                <p><strong>Bill Responsible:</strong> ${billSubmittedBy}</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t space-y-2">
+                            <button onclick="openBillsSummaryByName('${safeName}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-calculator"></i>
+                                <span>Bills Summary</span>
+                            </button>
+                            
+                            <div class="flex justify-between items-center pt-1 text-xs">
+                                <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    <span>Edit Society</span>
+                                </button>
+                                <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            populateSocietyDropdowns();
+            renderSocietyOverviewMetric();
+        };
+
+   window.openBillsSummaryByName = function(socName) {
+    if (!socName) return;
+
+    // Find the building object directly by name instead of index
+    const list = getBuildingSocietyList();
+    const soc = list.find(s => s.name.trim() === socName.trim());
+
+    const custom = (soc && soc.customData) ? soc.customData : {};
+    const cycle = custom.cycle || 'Quarterly';
+
+    currentSummarySocName = socName.trim();
+    currentSummaryCycle = cycle;
+
+    const titleEl = document.getElementById('billsSummaryTitle');
+    const subtitleEl = document.getElementById('billsSummarySubtitle');
+    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
+    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
+
+    // Render table rows
+    renderBillsSummaryModalContent();
+
+    // Open modal
+    const modal = document.getElementById('modalBillsSummary');
+    if (modal) modal.classList.remove('hidden');
+};
+        
+        window.openEditSocietyByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (soc) openEditSocietyModal(soc.name);
+        };
+
+        window.deleteSocietyByIndex = function(index) {
+            const list = getBuildingSocietyList();
+            const soc = list[index];
+            if (soc) deleteSocietyRecord(soc.name);
+        };
+        
+        window.renderSocietyOverviewMetric = function() {
+            const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
+            let grandTotal = 0;
+
+            const list = getBuildingSocietyList();
+            list.forEach(s => {
+                const dataKey = `${s.name}_${selYear}`;
+                const record = societyBillsData[dataKey];
+                if(record) {
+                    if(record.regular) {
+                        Object.values(record.regular).forEach(b => {
+                            grandTotal += (parseFloat(b.amount) || 0);
+                        });
+                    }
+                    if(record.other) {
+                        record.other.forEach(b => {
+                            grandTotal += (parseFloat(b.amount) || 0);
+                        });
+                    }
+                }
+            });
+
+            const displayEl = document.getElementById('societyOverviewTotalAmount');
+            if(displayEl) displayEl.innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+        };
+
+        window.openEditSocietyModal = function(socName) {
+            const list = getBuildingSocietyList();
+            const soc = list.find(s => s.name === socName);
+
+            document.getElementById('editSocietyTargetName').value = socName;
+            document.getElementById('editSocNameDisplay').value = socName;
+
+            const custom = (soc && soc.customData) ? soc.customData : {};
+            document.getElementById('editSocCycle').value = custom.cycle || 'Quarterly';
+            document.getElementById('editSocContactPerson').value = custom.contactPerson || '';
+            document.getElementById('editSocBillSubmittedBy').value = custom.billSubmittedBy || '';
+
+            document.getElementById('modalEditSociety').classList.remove('hidden');
+        };
+
+        window.saveSocietyEditRecord = async function(e) {
+            e.preventDefault();
+            const socName = document.getElementById('editSocietyTargetName').value;
+            const cycle = document.getElementById('editSocCycle').value;
+            const contactPerson = document.getElementById('editSocContactPerson').value;
+            const billSubmittedBy = document.getElementById('editSocBillSubmittedBy').value;
+
+            const idx = societiesData.findIndex(s => s.name === socName);
+            if(idx !== -1) {
+                societiesData[idx] = { ...societiesData[idx], cycle, contactPerson, billSubmittedBy };
+            } else {
+                societiesData.push({
+                    id: Date.now().toString(),
+                    name: socName,
+                    flats: '0',
+                    cycle,
+                    contactPerson,
+                    billSubmittedBy
+                });
+            }
+
+            await saveCloudData();
+            closeModal('modalEditSociety');
+            renderSocieties();
+        };
+
+        window.deleteSocietyRecord = async function(socName) {
+            if(confirm(`Are you sure you want to delete "${socName}" society configurations?`)) {
+                societiesData = societiesData.filter(s => s.name !== socName);
+                await saveCloudData();
+                renderSocieties();
+            }
+        };
+
+       // 1. Declare state variables first
+let currentSummarySocName = '';
+let currentSummaryCycle = '';
+
+// 2. Updated function by name
+window.openBillsSummaryByName = function(socName) {
+    if (!socName) return;
+
+    const list = getBuildingSocietyList();
+    const soc = list.find(s => s.name.trim() === socName.trim());
+
+    const custom = (soc && soc.customData) ? soc.customData : {};
+    const cycle = custom.cycle || 'Quarterly';
+
+    currentSummarySocName = socName.trim();
+    currentSummaryCycle = cycle;
+
+    const titleEl = document.getElementById('billsSummaryTitle');
+    const subtitleEl = document.getElementById('billsSummarySubtitle');
+    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
+    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
+
+    renderBillsSummaryModalContent();
+
+    const modal = document.getElementById('modalBillsSummary');
+    if (modal) modal.classList.remove('hidden');
+};
+
+// 3. Keep openBillsSummaryModal as a safe alias
+window.openBillsSummaryModal = function(socName, cycle) {
+    openBillsSummaryByName(socName);
+};
+
+        let currentSummarySocName = '';
+        let currentSummaryCycle = '';
+
+        window.renderBillsSummaryModalContent = function() {
+            const selYear = document.getElementById('billsSummaryYearSelect').value;
+            const dataKey = `${currentSummarySocName}_${selYear}`;
+
+            if(!societyBillsData[dataKey]) {
+                societyBillsData[dataKey] = { regular: {}, other: [] };
+            }
+            const currentData = societyBillsData[dataKey];
+
+            const tbodyReg = document.getElementById('regularBillsTableBody');
+            tbodyReg.innerHTML = '';
+            let regularPeriods = [];
+
+            if(currentSummaryCycle === 'Yearly') {
+                regularPeriods = [{ key: 'Yearly', label: `Annual Bill (${selYear})` }];
+            } else if(currentSummaryCycle === 'Quarterly') {
+                regularPeriods = [
+                    { key: 'Q1', label: 'Q1 (Jan - Mar)' },
+                    { key: 'Q2', label: 'Q2 (Apr - Jun)' },
+                    { key: 'Q3', label: 'Q3 (Jul - Sep)' },
+                    { key: 'Q4', label: 'Q4 (Oct - Dec)' }
+                ];
+            } else {
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                regularPeriods = monthNames.map((m, idx) => ({ key: `M${idx+1}`, label: m }));
+            }
+
+            let regularSum = 0;
+
+            regularPeriods.forEach(p => {
+                const pData = currentData.regular[p.key] || { date: '', amount: 0, fileUrl: '' };
+                regularSum += (parseFloat(pData.amount) || 0);
+
+                const safeKey = p.key;
+
+                tbodyReg.innerHTML += `
+                    <tr class="hover:bg-gray-50 border-b">
+                        <td class="p-2.5 font-bold text-gray-800">${p.label}</td>
+                        <td class="p-2.5"><input type="date" value="${pData.date || ''}" onchange="updateRegularBillRow('${safeKey}', 'date', this.value)" class="p-1 border rounded text-xs bg-white"></td>
+                        <td class="p-2.5"><input type="number" placeholder="0" value="${pData.amount || ''}" onchange="updateRegularBillRow('${safeKey}', 'amount', this.value)" class="p-1 border rounded text-xs w-28 bg-white font-bold text-emerald-900"></td>
+                        <td class="p-2.5">
+                            ${pData.fileUrl 
+                                ? `<a href="${pData.fileUrl}" target="_blank" class="text-emerald-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
+                                : '<span class="text-gray-400 italic">No File</span>'}
+                            <input type="file" accept=".pdf,image/*" onchange="uploadRegularBillFile('${safeKey}', this)" class="block text-[10px] mt-1">
+                        </td>
+                        <td class="p-2.5 text-center">
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Auto-Saved</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('regularBillsTotalSum').innerText = `₹${regularSum.toLocaleString('en-IN')}`;
+
+            const tbodyOther = document.getElementById('otherBillsTableBody');
+            tbodyOther.innerHTML = '';
+            let otherSum = 0;
+
+            if(!currentData.other || currentData.other.length === 0) {
+                tbodyOther.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 italic">No additional or other bills recorded for this year.</td></tr>';
+            } else {
+                currentData.other.forEach((b, idx) => {
+                    otherSum += (parseFloat(b.amount) || 0);
+                    tbodyOther.innerHTML += `
+                        <tr class="hover:bg-gray-50 border-b">
+                            <td class="p-2.5">${b.date || '-'}</td>
+                            <td class="p-2.5 font-bold text-amber-900">₹${(parseFloat(b.amount) || 0).toLocaleString('en-IN')}</td>
+                            <td class="p-2.5 text-gray-800">${b.desc || '-'}</td>
+                            <td class="p-2.5">
+                                ${b.fileUrl 
+                                    ? `<a href="${b.fileUrl}" target="_blank" class="text-amber-800 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
+                                    : '<span class="text-gray-400 italic">None</span>'}
+                            </td>
+                            <td class="p-2.5 text-center space-x-2">
+                                <button onclick="editOtherBillRow(${idx})" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteOtherBillRow(${idx})" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            document.getElementById('otherBillsTotalSum').innerText = `₹${otherSum.toLocaleString('en-IN')}`;
+
+            const grandTotal = regularSum + otherSum;
+            document.getElementById('grandBillsTotalSum').innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+
+            renderSocietyOverviewMetric();
+        };
+
+        window.updateRegularBillRow = async function(periodKey, field, value) {
+            const selYear = document.getElementById('billsSummaryYearSelect').value;
+            const dataKey = `${currentSummarySocName}_${selYear}`;
+
+            if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
+            if(!societyBillsData[dataKey].regular[periodKey]) {
+                societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
+            }
+
+            societyBillsData[dataKey].regular[periodKey][field] = value;
+            await saveCloudData();
+            renderBillsSummaryModalContent();
+        };
+
+        window.uploadRegularBillFile = async function(periodKey, inputEl) {
+            const file = inputEl.files[0];
+            if(!file) return;
+
+            try {
+                const res = await uploadFileToDrive(file);
+                const selYear = document.getElementById('billsSummaryYearSelect').value;
+                const dataKey = `${currentSummarySocName}_${selYear}`;
+
+                if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
+                if(!societyBillsData[dataKey].regular[periodKey]) {
+                    societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
+                }
+
+                societyBillsData[dataKey].regular[periodKey].fileUrl = res.fileUrl;
+                await saveCloudData();
+                renderBillsSummaryModalContent();
+            } catch(err) {
+                alert("File upload failed: " + err);
+            }
+        };
+
+        window.openAddOtherBillRow = function() {
+            document.getElementById('otherBillEditIndex').value = '-1';
+            document.getElementById('otherBillDateInput').value = new Date().toISOString().split('T')[0];
+            document.getElementById('otherBillAmountInput').value = '';
+            document.getElementById('otherBillDescInput').value = '';
+            document.getElementById('otherBillFileInput').value = '';
+            document.getElementById('otherBillInputBox').classList.remove('hidden');
+        };
+
+        window.closeOtherBillInputBox = function() {
+            document.getElementById('otherBillInputBox').classList.add('hidden');
+        };
+
+        window.saveOtherBillRow = async function() {
+            const editIdx = parseInt(document.getElementById('otherBillEditIndex').value);
+            const date = document.getElementById('otherBillDateInput').value;
+            const amount = document.getElementById('otherBillAmountInput').value;
+            const desc = document.getElementById('otherBillDescInput').value;
+            const file = document.getElementById('otherBillFileInput').files[0];
+
+            if(!amount || !desc) {
+                alert("Please enter Bill Amount and Description.");
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveOtherBill');
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            const selYear = document.getElementById('billsSummaryYearSelect').value;
+            const dataKey = `${currentSummarySocName}_${selYear}`;
+
+            if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
+
+            let fileUrl = editIdx >= 0 && societyBillsData[dataKey].other[editIdx] ? societyBillsData[dataKey].other[editIdx].fileUrl : "";
+
+            if(file) {
+                try {
+                    const res = await uploadFileToDrive(file);
+                    fileUrl = res.fileUrl;
+                } catch(err) {
+                    alert("File upload failed: " + err);
+                    btn.innerText = "Save Other Bill";
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            const record = { id: Date.now().toString(), date, amount, desc, fileUrl };
+
+            if(editIdx >= 0) {
+                societyBillsData[dataKey].other[editIdx] = record;
+            } else {
+                societyBillsData[dataKey].other.push(record);
+            }
+
+            await saveCloudData();
+            btn.innerText = "Save Other Bill";
+            btn.disabled = false;
+            closeOtherBillInputBox();
+            renderBillsSummaryModalContent();
+        };
+
+        window.editOtherBillRow = function(index) {
+            const selYear = document.getElementById('billsSummaryYearSelect').value;
+            const dataKey = `${currentSummarySocName}_${selYear}`;
+            const record = societyBillsData[dataKey].other[index];
+            if(!record) return;
+
+            document.getElementById('otherBillEditIndex').value = index;
+            document.getElementById('otherBillDateInput').value = record.date || '';
+            document.getElementById('otherBillAmountInput').value = record.amount || '';
+            document.getElementById('otherBillDescInput').value = record.desc || '';
+            document.getElementById('otherBillFileInput').value = '';
+
+            document.getElementById('otherBillInputBox').classList.remove('hidden');
+        };
+
+        window.deleteOtherBillRow = async function(index) {
+            if(confirm("Delete this other bill record?")) {
+                const selYear = document.getElementById('billsSummaryYearSelect').value;
+                const dataKey = `${currentSummarySocName}_${selYear}`;
+                societyBillsData[dataKey].other.splice(index, 1);
+                await saveCloudData();
+                renderBillsSummaryModalContent();
+            }
+        };
+
+        window.populateSocietyDropdowns = function() {
+            const selDoc = document.getElementById('docFilterSociety');
+            const selUpload = document.getElementById('docSocietySelect');
+            selDoc.innerHTML = '<option value="">All Societies</option>';
+            selUpload.innerHTML = '';
+            
+            const sorted = [...societiesData].sort((a,b) => a.name.localeCompare(b.name));
+            sorted.forEach(s => {
+                selDoc.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+                selUpload.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+            });
+        };
+
+        window.renderSocietyDocs = function() {
+            const container = document.getElementById('societyDocsContainer');
+            const socFilter = document.getElementById('docFilterSociety').value;
+            const query = document.getElementById('docSearchQuery').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filtered = societyDocs.filter(d => {
+                const matchSoc = !socFilter || d.society === socFilter;
+                const matchQuery = `${d.title} ${d.notes}`.toLowerCase().includes(query);
+                return matchSoc && matchQuery;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="p-6 text-center text-gray-400 text-xs bg-gray-50 rounded border">No uploaded vault documents match your criteria.</div>';
+                return;
+            }
+
+            const grouped = {};
+            filtered.forEach(doc => {
+                if(!grouped[doc.society]) grouped[doc.society] = [];
+                grouped[doc.society].push(doc);
+            });
+
+            const sortedSocieties = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+
+            sortedSocieties.forEach(socName => {
+                const docsInSoc = grouped[socName].sort((a, b) => a.title.localeCompare(b.title));
+
+                const socBlock = document.createElement('div');
+                socBlock.className = "bg-gray-50 border rounded-lg overflow-hidden shadow-sm space-y-2";
+                
+                let rows = docsInSoc.map(d => `
+                    <tr class="border-b bg-white hover:bg-emerald-50/40 text-xs transition">
+                        <td class="p-3 font-bold text-gray-800">${d.title}</td>
+                        <td class="p-3 text-gray-500">${d.date || '-'}</td>
+                        <td class="p-3 text-gray-600">${d.notes || '-'}</td>
+                        <td class="p-3 text-center">
+                            <a href="${d.fileUrl}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded inline-flex items-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>Open File</span>
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+
+                socBlock.innerHTML = `
+                    <div class="bg-emerald-900 text-emerald-100 px-4 py-2.5 font-bold text-sm flex justify-between items-center">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-folder-closed text-emerald-400"></i>
+                            <span>${socName}</span>
+                        </span>
+                        <span class="bg-emerald-800 text-emerald-200 text-xs px-2 py-0.5 rounded-full font-semibold">${docsInSoc.length} file(s)</span>
+                    </div>
+                    <div class="overflow-x-auto p-2">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-100 border-b text-gray-600 uppercase text-[11px]">
+                                <tr>
+                                    <th class="p-2">Document Title</th>
+                                    <th class="p-2">Upload Date</th>
+                                    <th class="p-2">Notes / Context</th>
+                                    <th class="p-2 text-center">Drive Link</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+                container.appendChild(socBlock);
+            });
+        };
+
+        window.openUploadDocModal = function() {
+            document.getElementById('docUploadForm').reset();
+            document.getElementById('modalUploadDoc').classList.remove('hidden');
+        };
+
+        window.saveSocietyDoc = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnUploadDoc');
+            btn.innerText = "Uploading...";
+            btn.disabled = true;
+
+            const docFile = document.getElementById('docFileInput').files[0];
+            let fileUrl = "";
+
+            if(docFile) {
+                try {
+                    const uploadRes = await uploadFileToDrive(docFile);
+                    fileUrl = uploadRes.fileUrl;
+                } catch(err) {
+                    alert("Upload failed: " + err);
+                    btn.innerText = "Upload File";
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            societyDocs.push({
+                id: Date.now().toString(),
+                society: document.getElementById('docSocietySelect').value,
+                title: document.getElementById('docTitle').value,
+                notes: document.getElementById('docNotes').value,
+                fileUrl: fileUrl,
+                date: new Date().toISOString().split('T')[0]
+            });
+
+            await saveCloudData();
+            btn.innerText = "Upload File";
+            btn.disabled = false;
+            closeModal('modalUploadDoc');
+            renderSocietyDocs();
+        };
+
+        function populateIntegratedFlatDropdown() {
+            const select = document.getElementById('integratedFlatSelect');
+            const search = (document.getElementById('integratedSearch') ? document.getElementById('integratedSearch').value : '').toLowerCase();
+            select.innerHTML = '<option value="">-- Choose Building & Flat Number --</option>';
+
+            estatesData.filter(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                return `${e.building}${wing} ${e.flatNo}`.toLowerCase().includes(search);
+            }).forEach(e => {
+                const wing = e.wing ? ` (${e.wing})` : '';
+                select.innerHTML += `<option value="${e.id}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
+            });
+        }
+
+        window.filterIntegratedDropdown = function() {
+            populateIntegratedFlatDropdown();
+        };
+
+        window.renderIntegratedView = function() {
+            const flatId = document.getElementById('integratedFlatSelect').value;
+            const container = document.getElementById('integratedContentDisplay');
+
+            if(!flatId) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if(!flat) return;
+
+            const wingBadge = flat.wing ? ` (${flat.wing})` : '';
+            const flatKey = `${flat.building}${wingBadge} - ${flat.flatNo}`;
+
+            document.getElementById('intBuildingWing').innerText = `${flat.building}${wingBadge}`;
+            document.getElementById('intFlatNo').innerText = flat.flatNo;
+            document.getElementById('intTypeSqft').innerText = `${flat.type} (${flat.sqft} SqFt)`;
+            document.getElementById('intOwner').innerText = flat.owner;
+            document.getElementById('intElec').innerText = flat.elec || '-';
+            document.getElementById('intGas').innerText = flat.gas || '-';
+            document.getElementById('intCategoryBadge').innerText = flat.isBachelor ? `Bachelor (${flat.capacity} Beds)` : 'Regular';
+            document.getElementById('intCategoryBadge').className = flat.isBachelor ? 'text-xs px-2.5 py-1 rounded-full font-bold bg-amber-100 text-amber-900' : 'text-xs px-2.5 py-1 rounded-full font-bold bg-blue-100 text-blue-900';
+
+            const isFlatOccupied = flat.isBachelor ? (flat.residents && flat.residents.length > 0) : !!flat.occupant;
+
+            document.getElementById('intStatusBadge').className = isFlatOccupied ? 'bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold' : 'bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-bold';
+            document.getElementById('intStatusBadge').innerText = isFlatOccupied ? 'Allocated' : 'Vacant';
+            
+            if(flat.isBachelor) {
+                document.getElementById('intOccupantName').innerText = (flat.residents && flat.residents.length > 0) ? flat.residents.map(r => r.name).join(', ') : '-';
+                document.getElementById('intIts').innerText = `${flat.residents ? flat.residents.length : 0}/${flat.capacity || 4} Beds Assigned`;
+                document.getElementById('intContact').innerText = '-';
+            } else {
+                document.getElementById('intOccupantName').innerText = flat.occupant || '-';
+                document.getElementById('intIts').innerText = flat.its || '-';
+                document.getElementById('intContact').innerText = flat.contact || '-';
+            }
+
+            document.getElementById('intAllocSince').innerText = flat.startDate || '-';
+            document.getElementById('intTenure').innerText = isFlatOccupied ? calculateElapsed(flat.startDate) : '-';
+
+            const flatMaintLogs = maintLogs.filter(m => m.flat.trim() === flatKey.trim()).sort((a,b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('intMaintCount').innerText = `${flatMaintLogs.length} Log(s)`;
+            
+            if(flatMaintLogs.length > 0) {
+                const latest = flatMaintLogs[0];
+                document.getElementById('intLastMaintType').innerText = latest.type || 'Refurbishment';
+                document.getElementById('intLastMaintTime').innerText = `${calculateElapsed(latest.date)} ago (${latest.date})`;
+            } else {
+                document.getElementById('intLastMaintType').innerText = 'None Logged';
+                document.getElementById('intLastMaintTime').innerText = '-';
+            }
+
+            const isTrackedInBills = flat.isBachelor || !flat.occupant;
+            const billsContainer = document.getElementById('intBillsContainer');
+
+            if(isTrackedInBills) {
+                const currentMonth = document.getElementById('billMonthPicker').value || new Date().toISOString().slice(0, 7);
+                const billKey = `${flat.id}_${currentMonth}`;
+                const bill = vacantBills[billKey] || { elecPaid: false, gasPaid: false };
+                
+                document.getElementById('intElecBill').innerHTML = bill.elecPaid 
+                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
+                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+                document.getElementById('intGasBill').innerHTML = bill.gasPaid 
+                    ? `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Paid</span>` 
+                    : `<span class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark"></i> Unpaid / Missing</span>`;
+                
+                billsContainer.classList.remove('hidden');
+            } else {
+                billsContainer.classList.add('hidden');
+            }
+
+            const logsGrid = document.getElementById('intMaintLogsContainer');
+            logsGrid.innerHTML = '';
+            if(flatMaintLogs.length === 0) {
+                logsGrid.innerHTML = '<p class="text-sm text-gray-400 col-span-2">No refurbishment or maintenance logs on record for this flat.</p>';
+            } else {
+                flatMaintLogs.forEach(m => {
+                    function renderMedia(url, direct, type, label) {
+                        if(!url) return '';
+                        if(type === 'video') return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-40 object-cover rounded border"></video></div>`;
+                        if(type === 'pdf') return `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                        return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-40 object-cover rounded border"></div>`;
+                    }
+
+                    logsGrid.innerHTML += `
+                        <div class="bg-gray-50 p-4 rounded-lg border space-y-2 text-sm">
+                            <div class="flex justify-between items-center border-b pb-2">
+                                <span class="font-bold text-amber-800 text-base">${m.type || 'Refurbishment'}</span>
+                                <span class="font-bold text-emerald-800 text-base">₹${m.cost || '0'}</span>
+                            </div>
+                            <p class="text-gray-800">${m.desc}</p>
+                            <p class="text-xs text-gray-500">Date: ${m.date}</p>
+                            <div class="grid grid-cols-2 gap-3">
+                                ${renderMedia(m.beforeUrl, m.beforeDirect, m.beforeType, 'BEFORE')}
+                                ${renderMedia(m.afterUrl, m.afterDirect, m.afterType, 'AFTER')}
+                            </div>
+                        </div>`;
+                });
+            }
+
+            const archBody = document.getElementById('intArchiveTableBody');
+            archBody.innerHTML = '';
+            if(!flat.archive || flat.archive.length === 0) {
+                archBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 text-sm">No past allocation history recorded for this flat.</td></tr>';
+            } else {
+                flat.archive.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b hover:bg-gray-50";
+                    tr.innerHTML = `
+                        <td class="p-3 font-semibold text-gray-800">${a.occupant}</td>
+                        <td class="p-3 font-mono">${a.its || '-'}</td>
+                        <td class="p-3">${a.contact || '-'}</td>
+                        <td class="p-3">${a.startDate || '-'}</td>
+                        <td class="p-3 text-gray-600">${a.endDate || 'Present'}</td>
+                    `;
+                    archBody.appendChild(tr);
+                });
+            }
+
+            container.classList.remove('hidden');
+        };
+
+        window.openImportModal = function(target) {
+            document.getElementById('importTypeTarget').value = target;
+            document.getElementById('modalImport').classList.remove('hidden');
+        };
+
+        window.processExcelImport = function() {
+            const fileInput = document.getElementById('excelFileInput');
+            const target = document.getElementById('importTypeTarget').value;
+            if(!fileInput.files[0]) return alert("Please select a file!");
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { raw: false, dateNF: 'yyyy-mm-dd' });
+
+                if(target === 'estates') {
+                    jsonData.forEach(row => {
+                        const getVal = (keys) => {
+                            for(let k of Object.keys(row)) {
+                                if(keys.some(key => k.trim().toLowerCase() === key.toLowerCase())) {
+                                    return row[k];
+                                }
+                            }
+                            return '';
+                        };
+
+                        let rawBuilding = getVal(['Building & Wing', 'Building', 'Building Name', 'Estate']);
+                        let buildingName = 'Unassigned';
+                        let wingName = '';
+
+                        if(rawBuilding) {
+                            if(rawBuilding.includes('-')) {
+                                const parts = rawBuilding.split('-');
+                                buildingName = parts[0].trim();
+                                wingName = parts.slice(1).join('-').trim();
+                            } else {
+                                buildingName = rawBuilding.trim();
+                            }
+                        }
+                        if(!wingName) {
+                            wingName = getVal(['Wing', 'Wing Name']);
+                        }
+
+                        const flatNo = getVal(['Flat No', 'Flat Number', 'Flat']) || '00';
+
+                        const rawTypeSize = getVal(['Type & Size', 'Type', 'Flat Type']);
+                        let flatType = '2 BHK';
+                        let sqftSize = 800;
+
+                        if(rawTypeSize) {
+                            if(rawTypeSize.toLowerCase().includes('1 bhk')) flatType = '1 BHK';
+                            else if(rawTypeSize.toLowerCase().includes('2 bhk')) flatType = '2 BHK';
+                            else if(rawTypeSize.toLowerCase().includes('3 bhk')) flatType = '3 BHK';
+                            else if(rawTypeSize.toLowerCase().includes('studio')) flatType = 'Studio';
+
+                            const sqftMatch = rawTypeSize.match(/(\d+)\s*(sqft|sq ft)/i);
+                            if(sqftMatch) sqftSize = parseInt(sqftMatch[1]);
+                        }
+                        const explicitSqft = getVal(['SqFt', 'Size', 'Sq Ft']);
+                        if(explicitSqft) sqftSize = parseInt(explicitSqft) || sqftSize;
+
+                        const categoryStr = getVal(['Category', 'Flat Category']);
+                        const isBachelor = categoryStr.toLowerCase().includes('bachelor');
+
+                        const occupantName = getVal(['Current Occupant', 'Occupant', 'Faculty Name', 'Resident']).toString().trim();
+                        let allocDate = getVal(['Allocated Since', 'Allocation Date', 'Start Date']).toString().trim();
+
+                        if(allocDate && !isNaN(Date.parse(allocDate))) {
+                            allocDate = new Date(allocDate).toISOString().split('T')[0];
+                        }
+
+                        let matchedIts = '';
+                        let matchedContact = '';
+
+                        if(occupantName) {
+                            const foundFac = facultyData.find(f => f.name.toLowerCase().trim() === occupantName.toLowerCase());
+                            if(foundFac) {
+                                matchedIts = foundFac.its;
+                                matchedContact = foundFac.contact;
+                            }
+                        }
+
+                        estatesData.push({
+                            id: Date.now().toString() + Math.random().toString().slice(2,5),
+                            building: buildingName,
+                            wing: wingName,
+                            flatNo: flatNo.toString().trim(),
+                            type: flatType,
+                            sqft: sqftSize,
+                            owner: getVal(['Owner', 'Registered Owner']) || 'Dawat-e-Hadiyah',
+                            elec: getVal(['Electricity CA Number', 'Electricity CA', 'Elec CA']) || '',
+                            gas: getVal(['Gas CA Number', 'Gas CA']) || '',
+                            isBachelor: isBachelor,
+                            capacity: isBachelor ? 4 : 0,
+                            occupant: occupantName,
+                            its: matchedIts,
+                            contact: matchedContact,
+                            startDate: allocDate,
+                            archive: [],
+                            residents: []
+                        });
+                    });
+
+                    renderEstateTable();
+                    renderAllocationTable();
+                    populateIntegratedFlatDropdown();
+                } else if(target === 'faculty') {
+                    jsonData.forEach(row => {
+                        facultyData.push({
+                            id: Date.now().toString() + Math.random().toString().slice(2,5),
+                            its: row['ITS'] || row['ITS Number'] || '00000000',
+                            name: row['Name'] || row['Faculty Name'] || 'Faculty Member',
+                            contact: row['Contact'] || row['Mobile'] || '-'
+                        });
+                    });
+                    renderFacultyTable();
+                }
+
+                await saveCloudData();
+                closeModal('modalImport');
+                alert("Import completed successfully!");
+            };
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        };
+
+        window.renderUsersList = function() {
+            const tbody = document.getElementById('userListTableBody');
+            tbody.innerHTML = '';
+            usersList.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50 text-xs";
+                tr.innerHTML = `<td class="p-3 font-semibold text-gray-800">${u.email}</td><td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span></td><td class="p-3 text-gray-600">${u.permissions.map(p => `Sub ${p}`).join(', ')}</td><td class="p-3 text-center">${u.role !== 'Admin' ? `<button onclick="removeUser('${u.email}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button>` : 'Owner'}</td>`;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.handleInviteUser = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('inviteEmail').value;
+            const role = document.getElementById('inviteRole').value;
+            const perms = [];
+            for(let i=1; i<=7; i++) {
+                if(document.getElementById(`perm-${i}`)?.checked) perms.push(i);
+            }
+            usersList.push({ email, role, permissions: perms });
+            await saveCloudData();
+            renderUsersList();
+            document.getElementById('inviteUserForm').reset();
+            alert(`User invitation created for ${email}`);
+        };
+
+        window.removeUser = async function(email) {
+            usersList = usersList.filter(u => u.email !== email);
+            await saveCloudData();
+            renderUsersList();
+        };
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        };
+    </script>
+</body>
+</html>

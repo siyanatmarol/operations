@@ -2670,22 +2670,43 @@
             renderSocietyOverviewMetric();
         };
 
-       window.openBillsSummaryByIndex = function(index) {
+     window.openBillsSummaryByIndex = function(index) {
     const list = getBuildingSocietyList();
     const soc = list[index];
-    if (!soc) return;
+
+    if (!soc || !soc.name) {
+        console.error("Auto-generated society record not found at index:", index);
+        return;
+    }
+
     const custom = soc.customData || {};
+    // Default auto-pulled buildings to 'Quarterly' if no custom cycle is set
     const cycle = custom.cycle || 'Quarterly';
-    
-    // Ensure modal gets clean parameters
-    currentSummarySocName = soc.name;
+
+    currentSummarySocName = soc.name.trim();
     currentSummaryCycle = cycle;
 
-    document.getElementById('billsSummaryTitle').innerText = `${soc.name} Maintenance Bills Summary`;
-    document.getElementById('billsSummarySubtitle').innerText = `Frequency: ${cycle} System`;
+    // Safely populate modal text headers
+    const titleEl = document.getElementById('billsSummaryTitle');
+    const subtitleEl = document.getElementById('billsSummarySubtitle');
+    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
+    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
 
+    // Ensure societyBillsData object exists for this building & year
+    const yearSelect = document.getElementById('billsSummaryYearSelect');
+    const selYear = yearSelect ? yearSelect.value : '2026';
+    const dataKey = `${currentSummarySocName}_${selYear}`;
+
+    if (!societyBillsData[dataKey]) {
+        societyBillsData[dataKey] = { regular: {}, other: [] };
+    }
+
+    // Render inner content table
     renderBillsSummaryModalContent();
-    document.getElementById('modalBillsSummary').classList.remove('hidden');
+
+    // Show modal
+    const modal = document.getElementById('modalBillsSummary');
+    if (modal) modal.classList.remove('hidden');
 };
 
         window.openEditSocietyByIndex = function(index) {

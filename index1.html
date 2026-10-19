@@ -2818,9 +2818,6 @@ window.openBillsSummaryModal = function(socName, cycle) {
     openBillsSummaryByName(socName);
 };
 
-        let currentSummarySocName = '';
-        let currentSummaryCycle = '';
-
         window.renderBillsSummaryModalContent = function() {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
             const dataKey = `${currentSummarySocName}_${selYear}`;

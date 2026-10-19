@@ -2769,38 +2769,6 @@
         let currentSummarySocName = '';
         let currentSummaryCycle = '';
 
-        window.openBillsSummaryByIndex = function(index) {
-            const list = getBuildingSocietyList();
-            const soc = list[index];
-            if (!soc) return;
-            const custom = soc.customData || {};
-            const cycle = custom.cycle || 'Quarterly';
-            openBillsSummaryModal(soc.name, cycle);
-        };
-
-        window.openEditSocietyByIndex = function(index) {
-            const list = getBuildingSocietyList();
-            const soc = list[index];
-            if (soc) openEditSocietyModal(soc.name);
-        };
-
-        window.deleteSocietyByIndex = function(index) {
-            const list = getBuildingSocietyList();
-            const soc = list[index];
-            if (soc) deleteSocietyRecord(soc.name);
-        };
-
-        window.openBillsSummaryModal = function(socName, cycle) {
-            currentSummarySocName = socName;
-            currentSummaryCycle = cycle;
-
-            document.getElementById('billsSummaryTitle').innerText = `${socName} Maintenance Bills Summary`;
-            document.getElementById('billsSummarySubtitle').innerText = `Frequency: ${cycle} System`;
-
-            renderBillsSummaryModalContent();
-            document.getElementById('modalBillsSummary').classList.remove('hidden');
-        };
-        
         window.renderBillsSummaryModalContent = function() {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
             const dataKey = `${currentSummarySocName}_${selYear}`;

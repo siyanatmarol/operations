@@ -1181,8 +1181,85 @@
         ];
         let societyDocs = [];
         let maintLogs = [];
-        let vacantBills = {};
+       let vacantBills = {};
         let societyBillsData = {};
+        let currentSummarySocName = '';
+        let currentSummaryCycle = '';
+
+        function getSocietyDataKey(socName, year) {
+            const trimmedName = String(socName || '').trim();
+            const cleanName = trimmedName.replace(/[.$#[\]/]/g, '_');
+            const rawKey = `${trimmedName}_${year}`;
+            const safeKey = `${cleanName}_${year}`;
+            if (societyBillsData && typeof societyBillsData === 'object' && societyBillsData[rawKey] && rawKey !== safeKey) {
+                societyBillsData[safeKey] = societyBillsData[rawKey];
+                delete societyBillsData[rawKey];
+            }
+            return safeKey;
+        }
+
+        function normalizeSocietyBillsData(rawSocBills) {
+            const normalized = {};
+            if (!rawSocBills || typeof rawSocBills !== 'object') return normalized;
+            Object.keys(rawSocBills).forEach(key => {
+                const cleanKey = key.trim().replace(/\s+_(\d{4})$/, '_$1').replace(/[.$#[\]/]/g, '_');
+                const entry = rawSocBills[key] || {};
+                const regObj = {};
+                if (entry.regular && typeof entry.regular === 'object' && !Array.isArray(entry.regular)) {
+                    Object.keys(entry.regular).forEach(pKey => {
+                        const r = entry.regular[pKey];
+                        if (r && typeof r === 'object') {
+                            regObj[pKey] = {
+                                date: r.date || '',
+                                amount: r.amount || 0,
+                                fileUrl: r.fileUrl || ''
+                            };
+                        }
+                    });
+                }
+                let otherArr = [];
+                const rawOther = Array.isArray(entry.other)
+                    ? entry.other
+                    : (entry.other && typeof entry.other === 'object' ? Object.values(entry.other) : []);
+                rawOther.forEach(item => {
+                    if (item && typeof item === 'object') {
+                        otherArr.push({
+                            id: item.id ? String(item.id) : Date.now().toString() + Math.random().toString().slice(2, 5),
+                            date: item.date || '',
+                            amount: item.amount || '0',
+                            desc: item.desc || '',
+                            fileUrl: item.fileUrl || ''
+                        });
+                    }
+                });
+                normalized[cleanKey] = {
+                    regular: regObj,
+                    other: otherArr
+                };
+            });
+            return normalized;
+        }
+
+        function ensureSocietyBillRecord(socName, year) {
+            if (!societyBillsData || typeof societyBillsData !== 'object') {
+                societyBillsData = {};
+            }
+            const dataKey = getSocietyDataKey(socName, year);
+            if (!societyBillsData[dataKey] || typeof societyBillsData[dataKey] !== 'object') {
+                societyBillsData[dataKey] = { regular: {}, other: [] };
+            }
+            if (!societyBillsData[dataKey].regular || typeof societyBillsData[dataKey].regular !== 'object' || Array.isArray(societyBillsData[dataKey].regular)) {
+                societyBillsData[dataKey].regular = {};
+            }
+            if (!Array.isArray(societyBillsData[dataKey].other)) {
+                if (societyBillsData[dataKey].other && typeof societyBillsData[dataKey].other === 'object') {
+                    societyBillsData[dataKey].other = Object.values(societyBillsData[dataKey].other).filter(Boolean);
+                } else {
+                    societyBillsData[dataKey].other = [];
+                }
+            }
+            return { dataKey, record: societyBillsData[dataKey] };
+        }
         
         let superAdmins = [
             'murtaza.kheraluwala@jameasaifiyah.edu',
@@ -1564,7 +1641,7 @@
                     societyDocs = data.docs || [];
                     maintLogs = data.maint || [];
                     vacantBills = data.bills || {};
-                    societyBillsData = data.socBills || {};
+                    societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     usersList = data.users || usersList;
                 } else {
                     estatesData = [
@@ -2586,7 +2663,7 @@
             return Array.from(socMap.values()).sort((a,b) => a.name.localeCompare(b.name));
         }
 
-      window.renderSocieties = function() {
+window.renderSocieties = function() {
             const grid = document.getElementById('societyGrid');
             if(!grid) return;
             grid.innerHTML = '';
@@ -2599,26 +2676,27 @@
                 return;
             }
 
-          list.forEach((s) => {
+            list.forEach((s) => {
                 const custom = s.customData || {};
                 const cycle = custom.cycle || 'Quarterly';
                 const contactPerson = custom.contactPerson || 'Not Specified';
                 const billSubmittedBy = custom.billSubmittedBy || 'Not Specified';
 
-                const dataKey = `${s.name}_${selYear}`;
+                const dataKey = getSocietyDataKey(s.name, selYear);
                 const record = societyBillsData[dataKey];
                 let socTotalAmount = 0;
                 if(record) {
-                    if(record.regular) {
+                    if(record.regular && typeof record.regular === 'object') {
                         Object.values(record.regular).forEach(b => {
-                            socTotalAmount += (parseFloat(b.amount) || 0);
+                            if (b) socTotalAmount += (parseFloat(b.amount) || 0);
                         });
                     }
-                    if(record.other) {
-                        record.other.forEach(b => {
-                            socTotalAmount += (parseFloat(b.amount) || 0);
-                        });
-                    }
+                    const otherList = Array.isArray(record.other)
+                        ? record.other
+                        : (record.other && typeof record.other === 'object' ? Object.values(record.other) : []);
+                    otherList.forEach(b => {
+                        if (b) socTotalAmount += (parseFloat(b.amount) || 0);
+                    });
                 }
 
                 const bhkParts = [];
@@ -2628,7 +2706,7 @@
                 const bhkSuffix = bhkParts.length > 0 ? ` (${bhkParts.join('; ')})` : '';
                 const flatDisplay = `${s.totalFlats} Flat${s.totalFlats === 1 ? '' : 's'}${bhkSuffix}`;
 
-                const safeName = s.name.replace(/'/g, "\\'");
+                const encodedName = encodeURIComponent(s.name).replace(/'/g, "%27");
 
                 grid.innerHTML += `
                     <div class="bg-white p-4 rounded-lg shadow border space-y-3 flex flex-col justify-between">
@@ -2649,17 +2727,17 @@
                         </div>
 
                         <div class="pt-3 border-t space-y-2">
-                            <button onclick="openBillsSummaryByName('${safeName}')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
+                            <button onclick="openBillsSummaryByName(decodeURIComponent('${encodedName}'))" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded text-xs transition flex items-center justify-center space-x-1 shadow-sm">
                                 <i class="fa-solid fa-calculator"></i>
                                 <span>Bills Summary</span>
                             </button>
                             
                             <div class="flex justify-between items-center pt-1 text-xs">
-                                <button onclick="openEditSocietyModal('${safeName}')" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
+                                <button onclick="openEditSocietyModal(decodeURIComponent('${encodedName}'))" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                     <span>Edit Society</span>
                                 </button>
-                                <button onclick="deleteSocietyRecord('${safeName}')" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                                <button onclick="deleteSocietyRecord(decodeURIComponent('${encodedName}'))" class="text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
                                     <i class="fa-solid fa-trash-can"></i>
                                     <span>Delete</span>
                                 </button>
@@ -2672,32 +2750,6 @@
             renderSocietyOverviewMetric();
         };
 
-   window.openBillsSummaryByName = function(socName) {
-    if (!socName) return;
-
-    // Find the building object directly by name instead of index
-    const list = getBuildingSocietyList();
-    const soc = list.find(s => s.name.trim() === socName.trim());
-
-    const custom = (soc && soc.customData) ? soc.customData : {};
-    const cycle = custom.cycle || 'Quarterly';
-
-    currentSummarySocName = socName.trim();
-    currentSummaryCycle = cycle;
-
-    const titleEl = document.getElementById('billsSummaryTitle');
-    const subtitleEl = document.getElementById('billsSummarySubtitle');
-    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
-    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
-
-    // Render table rows
-    renderBillsSummaryModalContent();
-
-    // Open modal
-    const modal = document.getElementById('modalBillsSummary');
-    if (modal) modal.classList.remove('hidden');
-};
-        
         window.openEditSocietyByIndex = function(index) {
             const list = getBuildingSocietyList();
             const soc = list[index];
@@ -2716,19 +2768,20 @@
 
             const list = getBuildingSocietyList();
             list.forEach(s => {
-                const dataKey = `${s.name}_${selYear}`;
+                const dataKey = getSocietyDataKey(s.name, selYear);
                 const record = societyBillsData[dataKey];
                 if(record) {
-                    if(record.regular) {
+                    if(record.regular && typeof record.regular === 'object') {
                         Object.values(record.regular).forEach(b => {
-                            grandTotal += (parseFloat(b.amount) || 0);
+                            if (b) grandTotal += (parseFloat(b.amount) || 0);
                         });
                     }
-                    if(record.other) {
-                        record.other.forEach(b => {
-                            grandTotal += (parseFloat(b.amount) || 0);
-                        });
-                    }
+                    const otherList = Array.isArray(record.other)
+                        ? record.other
+                        : (record.other && typeof record.other === 'object' ? Object.values(record.other) : []);
+                    otherList.forEach(b => {
+                        if (b) grandTotal += (parseFloat(b.amount) || 0);
+                    });
                 }
             });
 
@@ -2738,7 +2791,7 @@
 
         window.openEditSocietyModal = function(socName) {
             const list = getBuildingSocietyList();
-            const soc = list.find(s => s.name === socName);
+            const soc = list.find(s => s.name.trim() === String(socName || '').trim());
 
             document.getElementById('editSocietyTargetName').value = socName;
             document.getElementById('editSocNameDisplay').value = socName;
@@ -2758,7 +2811,7 @@
             const contactPerson = document.getElementById('editSocContactPerson').value;
             const billSubmittedBy = document.getElementById('editSocBillSubmittedBy').value;
 
-            const idx = societiesData.findIndex(s => s.name === socName);
+            const idx = societiesData.findIndex(s => s.name.trim() === socName.trim());
             if(idx !== -1) {
                 societiesData[idx] = { ...societiesData[idx], cycle, contactPerson, billSubmittedBy };
             } else {
@@ -2779,53 +2832,43 @@
 
         window.deleteSocietyRecord = async function(socName) {
             if(confirm(`Are you sure you want to delete "${socName}" society configurations?`)) {
-                societiesData = societiesData.filter(s => s.name !== socName);
+                societiesData = societiesData.filter(s => s.name.trim() !== String(socName || '').trim());
                 await saveCloudData();
                 renderSocieties();
             }
         };
 
-       // 1. Declare state variables first
-let currentSummarySocName = '';
-let currentSummaryCycle = '';
+        window.openBillsSummaryByName = function(socName) {
+            if (!socName) return;
 
-// 2. Updated function by name
-window.openBillsSummaryByName = function(socName) {
-    if (!socName) return;
+            const list = getBuildingSocietyList();
+            const soc = list.find(s => s.name.trim() === String(socName).trim());
 
-    const list = getBuildingSocietyList();
-    const soc = list.find(s => s.name.trim() === socName.trim());
+            const custom = (soc && soc.customData) ? soc.customData : {};
+            const cycle = custom.cycle || 'Quarterly';
 
-    const custom = (soc && soc.customData) ? soc.customData : {};
-    const cycle = custom.cycle || 'Quarterly';
+            currentSummarySocName = String(socName).trim();
+            currentSummaryCycle = cycle;
 
-    currentSummarySocName = socName.trim();
-    currentSummaryCycle = cycle;
+            const titleEl = document.getElementById('billsSummaryTitle');
+            const subtitleEl = document.getElementById('billsSummarySubtitle');
+            if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
+            if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
 
-    const titleEl = document.getElementById('billsSummaryTitle');
-    const subtitleEl = document.getElementById('billsSummarySubtitle');
-    if (titleEl) titleEl.innerText = `${currentSummarySocName} Maintenance Bills Summary`;
-    if (subtitleEl) subtitleEl.innerText = `Frequency: ${currentSummaryCycle} System`;
+            closeOtherBillInputBox();
+            renderBillsSummaryModalContent();
 
-    renderBillsSummaryModalContent();
+            const modal = document.getElementById('modalBillsSummary');
+            if (modal) modal.classList.remove('hidden');
+        };
 
-    const modal = document.getElementById('modalBillsSummary');
-    if (modal) modal.classList.remove('hidden');
-};
-
-// 3. Keep openBillsSummaryModal as a safe alias
-window.openBillsSummaryModal = function(socName, cycle) {
-    openBillsSummaryByName(socName);
-};
+        window.openBillsSummaryModal = function(socName, cycle) {
+            openBillsSummaryByName(socName);
+        };
 
         window.renderBillsSummaryModalContent = function() {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
-
-            if(!societyBillsData[dataKey]) {
-                societyBillsData[dataKey] = { regular: {}, other: [] };
-            }
-            const currentData = societyBillsData[dataKey];
+            const { record: currentData } = ensureSocietyBillRecord(currentSummarySocName, selYear);
 
             const tbodyReg = document.getElementById('regularBillsTableBody');
             tbodyReg.innerHTML = '';
@@ -2848,7 +2891,7 @@ window.openBillsSummaryModal = function(socName, cycle) {
             let regularSum = 0;
 
             regularPeriods.forEach(p => {
-                const pData = currentData.regular[p.key] || { date: '', amount: 0, fileUrl: '' };
+                const pData = (currentData.regular && currentData.regular[p.key]) ? currentData.regular[p.key] : { date: '', amount: 0, fileUrl: '' };
                 regularSum += (parseFloat(pData.amount) || 0);
 
                 const safeKey = p.key;
@@ -2881,6 +2924,7 @@ window.openBillsSummaryModal = function(socName, cycle) {
                 tbodyOther.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400 italic">No additional or other bills recorded for this year.</td></tr>';
             } else {
                 currentData.other.forEach((b, idx) => {
+                    if (!b) return;
                     otherSum += (parseFloat(b.amount) || 0);
                     tbodyOther.innerHTML += `
                         <tr class="hover:bg-gray-50 border-b">
@@ -2911,41 +2955,48 @@ window.openBillsSummaryModal = function(socName, cycle) {
 
         window.updateRegularBillRow = async function(periodKey, field, value) {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
+            const { record } = ensureSocietyBillRecord(currentSummarySocName, selYear);
 
-            if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
-            if(!societyBillsData[dataKey].regular[periodKey]) {
-                societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
+            if(!record.regular[periodKey] || typeof record.regular[periodKey] !== 'object') {
+                record.regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
             }
 
-            societyBillsData[dataKey].regular[periodKey][field] = value;
+            record.regular[periodKey][field] = value;
             await saveCloudData();
             renderBillsSummaryModalContent();
+            renderSocieties();
         };
 
         window.uploadRegularBillFile = async function(periodKey, inputEl) {
             const file = inputEl.files[0];
             if(!file) return;
 
+            const targetSocName = currentSummarySocName;
+            const selYear = document.getElementById('billsSummaryYearSelect').value;
+
             try {
                 const res = await uploadFileToDrive(file);
-                const selYear = document.getElementById('billsSummaryYearSelect').value;
-                const dataKey = `${currentSummarySocName}_${selYear}`;
+                const { record } = ensureSocietyBillRecord(targetSocName, selYear);
 
-                if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
-                if(!societyBillsData[dataKey].regular[periodKey]) {
-                    societyBillsData[dataKey].regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
+                if(!record.regular[periodKey] || typeof record.regular[periodKey] !== 'object') {
+                    record.regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
                 }
 
-                societyBillsData[dataKey].regular[periodKey].fileUrl = res.fileUrl;
+                record.regular[periodKey].fileUrl = (res && (res.fileUrl || res.url || res.directImgUrl)) || '';
                 await saveCloudData();
                 renderBillsSummaryModalContent();
+                renderSocieties();
             } catch(err) {
                 alert("File upload failed: " + err);
             }
         };
 
         window.openAddOtherBillRow = function() {
+            const btn = document.getElementById('btnSaveOtherBill');
+            if (btn) {
+                btn.innerText = "Save Other Bill";
+                btn.disabled = false;
+            }
             document.getElementById('otherBillEditIndex').value = '-1';
             document.getElementById('otherBillDateInput').value = new Date().toISOString().split('T')[0];
             document.getElementById('otherBillAmountInput').value = '';
@@ -2955,11 +3006,27 @@ window.openBillsSummaryModal = function(socName, cycle) {
         };
 
         window.closeOtherBillInputBox = function() {
-            document.getElementById('otherBillInputBox').classList.add('hidden');
+            const btn = document.getElementById('btnSaveOtherBill');
+            if (btn) {
+                btn.innerText = "Save Other Bill";
+                btn.disabled = false;
+            }
+            const editIdxEl = document.getElementById('otherBillEditIndex');
+            if (editIdxEl) editIdxEl.value = '-1';
+            const dateEl = document.getElementById('otherBillDateInput');
+            if (dateEl) dateEl.value = '';
+            const amtEl = document.getElementById('otherBillAmountInput');
+            if (amtEl) amtEl.value = '';
+            const descEl = document.getElementById('otherBillDescInput');
+            if (descEl) descEl.value = '';
+            const fileEl = document.getElementById('otherBillFileInput');
+            if (fileEl) fileEl.value = '';
+            const boxEl = document.getElementById('otherBillInputBox');
+            if (boxEl) boxEl.classList.add('hidden');
         };
 
         window.saveOtherBillRow = async function() {
-            const editIdx = parseInt(document.getElementById('otherBillEditIndex').value);
+            const editIdx = parseInt(document.getElementById('otherBillEditIndex').value, 10);
             const date = document.getElementById('otherBillDateInput').value;
             const amount = document.getElementById('otherBillAmountInput').value;
             const desc = document.getElementById('otherBillDescInput').value;
@@ -2974,45 +3041,70 @@ window.openBillsSummaryModal = function(socName, cycle) {
             btn.innerText = "Processing...";
             btn.disabled = true;
 
+            const targetSocName = currentSummarySocName;
             const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
 
-            if(!societyBillsData[dataKey]) societyBillsData[dataKey] = { regular: {}, other: [] };
+            try {
+                const { record: currentData } = ensureSocietyBillRecord(targetSocName, selYear);
 
-            let fileUrl = editIdx >= 0 && societyBillsData[dataKey].other[editIdx] ? societyBillsData[dataKey].other[editIdx].fileUrl : "";
+                let fileUrl = (editIdx >= 0 && currentData.other[editIdx] && currentData.other[editIdx].fileUrl)
+                    ? currentData.other[editIdx].fileUrl
+                    : "";
 
-            if(file) {
-                try {
-                    const res = await uploadFileToDrive(file);
-                    fileUrl = res.fileUrl;
-                } catch(err) {
-                    alert("File upload failed: " + err);
+                if(file) {
+                    try {
+                        const res = await uploadFileToDrive(file);
+                        fileUrl = (res && (res.fileUrl || res.url || res.directImgUrl)) || "";
+                    } catch(err) {
+                        alert("File upload failed: " + err);
+                        return;
+                    }
+                }
+
+                const existingId = (editIdx >= 0 && currentData.other[editIdx] && currentData.other[editIdx].id)
+                    ? currentData.other[editIdx].id
+                    : Date.now().toString();
+
+                const billEntry = {
+                    id: existingId,
+                    date: date || "",
+                    amount: amount || "0",
+                    desc: desc || "",
+                    fileUrl: fileUrl || ""
+                };
+
+                if(editIdx >= 0 && editIdx < currentData.other.length) {
+                    currentData.other[editIdx] = billEntry;
+                } else {
+                    currentData.other.push(billEntry);
+                }
+
+                await saveCloudData();
+                closeOtherBillInputBox();
+                renderBillsSummaryModalContent();
+                renderSocieties();
+            } catch(err) {
+                console.error("Error saving other bill:", err);
+                alert("Error saving bill: " + (err.message || err));
+            } finally {
+                if (btn) {
                     btn.innerText = "Save Other Bill";
                     btn.disabled = false;
-                    return;
                 }
             }
-
-            const record = { id: Date.now().toString(), date, amount, desc, fileUrl };
-
-            if(editIdx >= 0) {
-                societyBillsData[dataKey].other[editIdx] = record;
-            } else {
-                societyBillsData[dataKey].other.push(record);
-            }
-
-            await saveCloudData();
-            btn.innerText = "Save Other Bill";
-            btn.disabled = false;
-            closeOtherBillInputBox();
-            renderBillsSummaryModalContent();
         };
 
         window.editOtherBillRow = function(index) {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const dataKey = `${currentSummarySocName}_${selYear}`;
-            const record = societyBillsData[dataKey].other[index];
+            const { record: currentData } = ensureSocietyBillRecord(currentSummarySocName, selYear);
+            const record = currentData.other[index];
             if(!record) return;
+
+            const btn = document.getElementById('btnSaveOtherBill');
+            if (btn) {
+                btn.innerText = "Save Other Bill";
+                btn.disabled = false;
+            }
 
             document.getElementById('otherBillEditIndex').value = index;
             document.getElementById('otherBillDateInput').value = record.date || '';
@@ -3026,10 +3118,11 @@ window.openBillsSummaryModal = function(socName, cycle) {
         window.deleteOtherBillRow = async function(index) {
             if(confirm("Delete this other bill record?")) {
                 const selYear = document.getElementById('billsSummaryYearSelect').value;
-                const dataKey = `${currentSummarySocName}_${selYear}`;
-                societyBillsData[dataKey].other.splice(index, 1);
+                const { record: currentData } = ensureSocietyBillRecord(currentSummarySocName, selYear);
+                currentData.other.splice(index, 1);
                 await saveCloudData();
                 renderBillsSummaryModalContent();
+                renderSocieties();
             }
         };
 

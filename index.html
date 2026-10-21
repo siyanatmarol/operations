@@ -344,15 +344,26 @@
                 </div>
             </div>
 
-            <!-- SUB-HEADER 6: SOCIETY MAINTENANCE -->
-            <div id="sec-society" class="hidden space-y-6">
-                <!-- Overview Metric Card for Society Maintenance -->
-                <div class="bg-white p-5 rounded-lg shadow border border-l-4 border-l-emerald-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Total Societies Expense Overview</span>
-                        <span id="societyOverviewTotalAmount" class="text-3xl font-extrabold text-emerald-900 mt-1 block">₹0</span>
-                        <p class="text-xs text-gray-500 mt-0.5">Aggregated regular maintenance & additional society bills for selected year.</p>
-                    </div>
+          <!-- SUB-HEADER 6: SOCIETY MAINTENANCE -->
+<div id="sec-society" class="hidden space-y-6">
+    <!-- Overview Metric Card for Society Maintenance -->
+    <div class="bg-white p-5 rounded-lg shadow border border-l-4 border-l-emerald-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Total Societies Expense Overview</span>
+            <span id="societyOverviewTotalAmount" class="text-3xl font-extrabold text-emerald-900 mt-1 block">₹0</span>
+            
+            <!-- NEW BREAKDOWN LINES -->
+            <div class="mt-2 space-y-0.5 text-xs">
+                <p class="font-semibold text-emerald-800">
+                    Maintenance Bills: <span id="societyOverviewRegularAmount" class="font-bold">₹0</span>
+                </p>
+                <p class="font-semibold text-amber-800">
+                    Other Bills: <span id="societyOverviewOtherAmount" class="font-bold">₹0</span>
+                </p>
+            </div>
+
+            <p class="text-xs text-gray-500 mt-1.5">Aggregated regular maintenance & additional society bills for selected year.</p>
+        </div>
                     <div class="flex items-center space-x-2 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
                         <label class="text-xs font-bold text-emerald-900 uppercase">Filter Year:</label>
                         <select id="societyOverviewYearSelect" onchange="renderSocietyOverviewMetric()" class="p-1.5 border rounded text-xs font-bold bg-white text-emerald-950">
@@ -2762,33 +2773,42 @@ window.renderSocieties = function() {
             if (soc) deleteSocietyRecord(soc.name);
         };
         
-        window.renderSocietyOverviewMetric = function() {
-            const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
-            let grandTotal = 0;
+      window.renderSocietyOverviewMetric = function() {
+    const selYear = document.getElementById('societyOverviewYearSelect')?.value || '2026';
+    let regularTotal = 0;
+    let otherTotal = 0;
 
-            const list = getBuildingSocietyList();
-            list.forEach(s => {
-                const dataKey = getSocietyDataKey(s.name, selYear);
-                const record = societyBillsData[dataKey];
-                if(record) {
-                    if(record.regular && typeof record.regular === 'object') {
-                        Object.values(record.regular).forEach(b => {
-                            if (b) grandTotal += (parseFloat(b.amount) || 0);
-                        });
-                    }
-                    const otherList = Array.isArray(record.other)
-                        ? record.other
-                        : (record.other && typeof record.other === 'object' ? Object.values(record.other) : []);
-                    otherList.forEach(b => {
-                        if (b) grandTotal += (parseFloat(b.amount) || 0);
-                    });
-                }
+    const list = getBuildingSocietyList();
+    list.forEach(s => {
+        const dataKey = getSocietyDataKey(s.name, selYear);
+        const record = societyBillsData[dataKey];
+        if(record) {
+            if(record.regular && typeof record.regular === 'object') {
+                Object.values(record.regular).forEach(b => {
+                    if (b) regularTotal += (parseFloat(b.amount) || 0);
+                });
+            }
+            const otherList = Array.isArray(record.other)
+                ? record.other
+                : (record.other && typeof record.other === 'object' ? Object.values(record.other) : []);
+            otherList.forEach(b => {
+                if (b) otherTotal += (parseFloat(b.amount) || 0);
             });
+        }
+    });
 
-            const displayEl = document.getElementById('societyOverviewTotalAmount');
-            if(displayEl) displayEl.innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
-        };
+    const grandTotal = regularTotal + otherTotal;
 
+    const displayEl = document.getElementById('societyOverviewTotalAmount');
+    if(displayEl) displayEl.innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+
+    const regEl = document.getElementById('societyOverviewRegularAmount');
+    if(regEl) regEl.innerText = `₹${regularTotal.toLocaleString('en-IN')}`;
+
+    const otherEl = document.getElementById('societyOverviewOtherAmount');
+    if(otherEl) otherEl.innerText = `₹${otherTotal.toLocaleString('en-IN')}`;
+};
+        
         window.openEditSocietyModal = function(socName) {
             const list = getBuildingSocietyList();
             const soc = list.find(s => s.name.trim() === String(socName || '').trim());

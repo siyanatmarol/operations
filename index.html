@@ -3139,7 +3139,7 @@ window.renderSocieties = function() {
             });
         };
 
-        window.renderSocietyDocs = function() {
+      window.renderSocietyDocs = function() {
             const container = document.getElementById('societyDocsContainer');
             const socFilter = document.getElementById('docFilterSociety').value;
             const query = document.getElementById('docSearchQuery').value.toLowerCase();
@@ -3168,15 +3168,15 @@ window.renderSocieties = function() {
                 const docsInSoc = grouped[socName].sort((a, b) => a.title.localeCompare(b.title));
 
                 const socBlock = document.createElement('div');
-                socBlock.className = "bg-gray-50 border rounded-lg overflow-hidden shadow-sm space-y-2";
+                socBlock.className = "bg-white border rounded-lg overflow-hidden shadow-sm";
                 
                 let rows = docsInSoc.map(d => `
-                    <tr class="border-b bg-white hover:bg-emerald-50/40 text-xs transition">
-                        <td class="p-3 font-bold text-gray-800">${d.title}</td>
-                        <td class="p-3 text-gray-500">${d.date || '-'}</td>
-                        <td class="p-3 text-gray-600">${d.notes || '-'}</td>
-                        <td class="p-3 text-center">
-                            <a href="${d.fileUrl}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded inline-flex items-center space-x-1 shadow-sm">
+                    <tr class="border-b last:border-b-0 bg-white hover:bg-emerald-50/40 text-xs transition">
+                        <td class="px-4 py-3 font-bold text-gray-800 align-middle break-words">${d.title}</td>
+                        <td class="px-4 py-3 text-gray-500 font-medium whitespace-nowrap align-middle">${d.date || '-'}</td>
+                        <td class="px-4 py-3 text-gray-600 align-middle break-words whitespace-normal leading-relaxed">${d.notes || '-'}</td>
+                        <td class="px-4 py-3 text-center whitespace-nowrap align-middle">
+                            <a href="${d.fileUrl}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded inline-flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap">
                                 <i class="fa-solid fa-file-pdf"></i>
                                 <span>Open File</span>
                             </a>
@@ -3192,17 +3192,23 @@ window.renderSocieties = function() {
                         </span>
                         <span class="bg-emerald-800 text-emerald-200 text-xs px-2 py-0.5 rounded-full font-semibold">${docsInSoc.length} file(s)</span>
                     </div>
-                    <div class="overflow-x-auto p-2">
-                        <table class="w-full text-left border-collapse">
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-fixed text-left border-collapse min-w-[640px]">
+                            <colgroup>
+                                <col class="w-[26%]">
+                                <col class="w-[14%]">
+                                <col class="w-[44%]">
+                                <col class="w-[16%]">
+                            </colgroup>
                             <thead class="bg-gray-100 border-b text-gray-600 uppercase text-[11px]">
                                 <tr>
-                                    <th class="p-2">Document Title</th>
-                                    <th class="p-2">Upload Date</th>
-                                    <th class="p-2">Notes / Context</th>
-                                    <th class="p-2 text-center">Drive Link</th>
+                                    <th class="px-4 py-2.5 font-bold">Document Title</th>
+                                    <th class="px-4 py-2.5 font-bold whitespace-nowrap">Upload Date</th>
+                                    <th class="px-4 py-2.5 font-bold">Notes / Context</th>
+                                    <th class="px-4 py-2.5 font-bold text-center whitespace-nowrap">Drive Link</th>
                                 </tr>
                             </thead>
-                            <tbody>${rows}</tbody>
+                            <tbody class="divide-y">${rows}</tbody>
                         </table>
                     </div>
                 `;

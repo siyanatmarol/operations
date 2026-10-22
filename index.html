@@ -133,6 +133,10 @@
                     <i class="fa-solid fa-layer-group"></i>
                     <span>7. Integrated View</span>
                 </button>
+                <button onclick="switchSubHeader('asset-details')" id="sub-asset-details" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>8. Asset Details</span>
+                </button>
             </div>
 
             <!-- SUB-HEADER 1: ESTATE DETAILS -->
@@ -493,6 +497,45 @@
                         <div id="intMaintLogsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                     </div>
 
+                    <!-- Dedicated Card Section in Module 7: Asset Details -->
+                    <div class="bg-white p-6 rounded-xl shadow-md border space-y-4 border-l-8 border-l-teal-600">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                                    <i class="fa-solid fa-boxes-stacked text-teal-700 mr-2"></i>
+                                    <span>Asset Details</span>
+                                </h3>
+                                <p class="text-xs text-gray-500 mt-0.5">Summary & quick-reference inventory of appliances and fixtures assigned to this flat.</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span id="intAssetsCountBadge" class="bg-teal-100 text-teal-900 text-xs font-extrabold px-3 py-1 rounded-full">0 Assets Assigned</span>
+                                <button type="button" onclick="openAddAssetFromIntegrated()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>Add Asset</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="intAssetsSummaryPills" class="flex flex-wrap gap-2"></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-100 text-gray-800 uppercase font-bold text-sm">
+                                    <tr>
+                                        <th class="p-3">Asset Name</th>
+                                        <th class="p-3">Location</th>
+                                        <th class="p-3">Brand Name</th>
+                                        <th class="p-3">Type</th>
+                                        <th class="p-3">Model Number</th>
+                                        <th class="p-3">Capacity / Size</th>
+                                        <th class="p-3">Purchase Date</th>
+                                        <th class="p-3">Warranty</th>
+                                        <th class="p-3 text-center">Bill PDF</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="intAssetsTableBody" class="divide-y text-base"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <div class="bg-white p-6 rounded-xl shadow-md border space-y-4">
                         <h3 class="text-xl font-bold text-gray-900 border-b pb-3">
                             <i class="fa-solid fa-box-archive text-amber-700 mr-2"></i>Past Occupants & Allocation Archive
@@ -512,6 +555,87 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- SUB-HEADER 8: ASSET DETAILS -->
+            <div id="sec-asset-details" class="hidden space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Asset Details & Flat Inventory</h2>
+                        <p class="text-xs text-gray-500">Manage appliances, room locations, brands, models, warranties, and purchase bills across all estate flats.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center w-full sm:w-auto justify-end">
+                        <button type="button" onclick="openExportAssetsModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded text-sm font-medium transition flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-export"></i>
+                            <span>Export Details</span>
+                        </button>
+                        <button type="button" onclick="openAddAssetModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded text-sm font-medium transition flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add Asset</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Overview Metrics for Asset Details -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="bg-emerald-800 text-white p-4 rounded-lg shadow border border-emerald-700 flex justify-between items-center">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider font-semibold opacity-90 block">Total Registered Assets</span>
+                            <span id="cardTotalAssetsCount" class="text-3xl font-extrabold mt-1 block">0</span>
+                        </div>
+                        <div class="bg-emerald-700/80 p-3 rounded-full text-xl">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow border flex justify-between items-center">
+                        <div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase block">Flats Equipped with Assets</span>
+                            <span id="cardFlatsWithAssetsCount" class="text-2xl font-bold text-emerald-800 mt-1 block">0</span>
+                        </div>
+                        <div class="bg-emerald-100 text-emerald-800 p-3 rounded-full text-lg">
+                            <i class="fa-solid fa-building-circle-check"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow border flex justify-between items-center">
+                        <div>
+                            <span class="text-xs text-gray-500 font-semibold uppercase block">Bills Uploaded (Drive)</span>
+                            <span id="cardAssetsWithBillsCount" class="text-2xl font-bold text-amber-700 mt-1 block">0</span>
+                        </div>
+                        <div class="bg-amber-100 text-amber-800 p-3 rounded-full text-lg">
+                            <i class="fa-solid fa-file-invoice"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search & Expand/Collapse Controls -->
+                <div class="bg-white p-4 rounded-lg shadow border flex flex-col sm:flex-row gap-3 items-center justify-between">
+                    <div class="w-full sm:w-2/3 relative">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                        <input type="text" id="assetMainTableSearch" oninput="renderAssetDetailsTable()" placeholder="Search by Building, Wing, Flat No, Status, or Asset Name / Brand / Location..." class="w-full pl-8 pr-3 py-2 border rounded text-sm">
+                    </div>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <button type="button" onclick="expandAllAssetDrawers(true)" class="px-3 py-1.5 border rounded text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">
+                            <i class="fa-solid fa-angles-down mr-1"></i>Expand All
+                        </button>
+                        <button type="button" onclick="expandAllAssetDrawers(false)" class="px-3 py-1.5 border rounded text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">
+                            <i class="fa-solid fa-angles-up mr-1"></i>Collapse All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main 3-Column Table with Accordion Drawers -->
+                <div class="bg-white rounded-lg shadow border overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                            <tr>
+                                <th class="p-3.5 w-2/5">Flat Details</th>
+                                <th class="p-3.5 w-1/3">Status</th>
+                                <th class="p-3.5 w-1/4 text-right">Total Assets</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assetDetailsTableBody" class="divide-y"></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -601,6 +725,7 @@
                             <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-5" checked> <span>5. Vacant Bills</span></label>
                             <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-6" checked> <span>6. Society Tracking</span></label>
                             <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-7" checked> <span>7. Integrated View</span></label>
+                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-8" checked> <span>8. Asset Details</span></label>
                         </div>
                     </div>
 
@@ -1158,6 +1283,233 @@
         </div>
     </div>
 
+    <!-- Modal: Add / Edit Asset (Sub-Header 8) -->
+    <div id="modalAddAsset" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800" id="assetModalTitle">Add Asset</h3>
+                    <p class="text-xs text-gray-500">Register an appliance or fixture under an estate flat (`estate_assets`).</p>
+                </div>
+                <button type="button" onclick="closeModal('modalAddAsset')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+
+            <form id="assetForm" onsubmit="saveAssetRecord(event)" class="space-y-3.5">
+                <input type="hidden" id="editAssetId" value="">
+                <input type="hidden" id="assetSelectedFlatId" value="">
+
+                <!-- 1. Select Flat (Compulsory, Searchable/Dynamic Filter Dropdown) -->
+                <div class="relative" id="assetFlatSelectContainer">
+                    <label class="text-xs font-semibold text-gray-700 block mb-1">1. Select Flat <span class="text-red-600">*</span></label>
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="assetFlatSearchInput"
+                            onfocus="filterAssetFlatDropdown()"
+                            oninput="handleAssetFlatSearchInput()"
+                            placeholder="Type to search Building, Wing, or Flat No..."
+                            autocomplete="off"
+                            required
+                            class="w-full p-2.5 pr-9 border rounded-lg text-sm bg-white font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-600"
+                        >
+                        <button type="button" onclick="toggleAssetFlatDropdownList()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+                    <div id="assetFlatDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-52 overflow-y-auto z-50 divide-y"></div>
+                    <p id="assetFlatValidationMsg" class="text-[11px] text-red-600 font-semibold mt-1 hidden">Please select a valid flat from the dropdown list.</p>
+                </div>
+
+                <!-- 2. Asset Name & 3. Location (Compulsory Dropdowns) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">2. Asset Name <span class="text-red-600">*</span></label>
+                        <select id="assetNameInput" required class="w-full p-2.5 border rounded-lg text-sm bg-white">
+                            <option value="">-- Select Asset Name --</option>
+                            <option value="AC">AC</option>
+                            <option value="TV">TV</option>
+                            <option value="Washing Machine">Washing Machine</option>
+                            <option value="Refrigerator">Refrigerator</option>
+                            <option value="Geyser">Geyser</option>
+                            <option value="Water Purifier">Water Purifier</option>
+                            <option value="Gas Stove">Gas Stove</option>
+                            <option value="Microwave">Microwave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">3. Location <span class="text-red-600">*</span></label>
+                        <select id="assetLocationInput" required class="w-full p-2.5 border rounded-lg text-sm bg-white">
+                            <option value="">-- Select Location --</option>
+                            <option value="Living Room">Living Room</option>
+                            <option value="Master Bedroom">Master Bedroom</option>
+                            <option value="Children's Bedroom">Children's Bedroom</option>
+                            <option value="Master Bedroom Bathroom">Master Bedroom Bathroom</option>
+                            <option value="Child Bedroom Bathroom">Child Bedroom Bathroom</option>
+                            <option value="Kitchen">Kitchen</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 4. Brand Name (Compulsory) & 5. Type (Optional) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">4. Brand Name <span class="text-red-600">*</span></label>
+                        <input type="text" id="assetBrandInput" required placeholder="e.g. Daikin, LG, Samsung, Bosch" class="w-full p-2.5 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">5. Type <span class="text-gray-400 font-normal">(Optional)</span></label>
+                        <input type="text" id="assetTypeInput" placeholder="e.g. Split Inverter, Front Load, Double Door" class="w-full p-2.5 border rounded-lg text-sm">
+                    </div>
+                </div>
+
+                <!-- 6. Model Number (Optional) & 7. Capacity / Size (Optional) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">6. Model Number <span class="text-gray-400 font-normal">(Optional)</span></label>
+                        <input type="text" id="assetModelInput" placeholder="e.g. FTKF50TV16U / GL-I292RPZX" class="w-full p-2.5 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">7. Capacity / Size <span class="text-gray-400 font-normal">(Optional)</span></label>
+                        <input type="text" id="assetCapacityInput" placeholder="e.g. 1.5 Ton, 43 Inch, 260L, 15L" class="w-full p-2.5 border rounded-lg text-sm">
+                    </div>
+                </div>
+
+                <!-- 8. Purchase Date (Optional) & 9. Warranty (Text or Date Optional) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">8. Purchase Date <span class="text-gray-400 font-normal">(Optional)</span></label>
+                        <input type="date" id="assetPurchaseDateInput" class="w-full p-2.5 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700 block mb-1">9. Warranty <span class="text-gray-400 font-normal">(Optional - Text or Expiry Date)</span></label>
+                        <div class="flex space-x-1.5">
+                            <input type="text" id="assetWarrantyInput" placeholder="e.g. 2 Years or 2028-06-30" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input type="date" id="assetWarrantyDatePicker" onchange="syncWarrantyDateToInput(this.value)" title="Pick warranty expiry date" class="w-10 p-1.5 border rounded-lg text-xs bg-gray-50 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10. Bill PDF (File input uploaded via fm.marol Google Drive helper) -->
+                <div class="bg-emerald-50 p-3.5 rounded-lg border border-emerald-200 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-emerald-900 block">
+                            <i class="fa-solid fa-file-pdf text-emerald-700 mr-1"></i>10. Bill PDF / Receipt <span class="text-emerald-700 font-normal">(Optional - Saves to fm.marol Drive)</span>
+                        </label>
+                        <span id="assetExistingBillNotice" class="hidden text-xs"></span>
+                    </div>
+                    <input type="file" id="assetBillFileInput" accept=".pdf,image/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddAsset')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" id="btnSaveAssetRecord" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Save Asset</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Export Asset Details (Sub-Header 8) -->
+    <div id="modalExportAssets" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-export text-amber-600"></i>
+                        <span>Export Asset Details</span>
+                    </h3>
+                    <p class="text-xs text-gray-500">Select specific flats or all flats to export assigned asset records.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalExportAssets')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Flat Selection Controls -->
+            <div class="space-y-2.5 flex-grow overflow-hidden flex flex-col">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">1. Select Flats to Export</label>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                    <input
+                        type="text"
+                        id="exportAssetFlatSearch"
+                        oninput="filterExportAssetFlatsList()"
+                        placeholder="Filter flats by building, wing, flat number, or status..."
+                        class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm"
+                    >
+                </div>
+
+                <!-- Global Select All Header -->
+                <div class="flex justify-between items-center bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+                    <label class="flex items-center space-x-2 text-xs font-bold text-emerald-950 cursor-pointer">
+                        <input type="checkbox" id="exportAssetSelectAll" onchange="toggleExportAssetSelectAll(this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                        <span>Select All Flats</span>
+                    </label>
+                    <span id="exportSelectedFlatsCount" class="text-xs font-bold text-emerald-800 bg-white px-2.5 py-0.5 rounded-full border border-emerald-200">0 Selected</span>
+                </div>
+
+                <!-- Itemized Flat Checkboxes List -->
+                <div id="exportAssetFlatList" class="border rounded-lg divide-y overflow-y-auto max-h-60 bg-gray-50/50"></div>
+            </div>
+
+            <!-- Export Format Selection -->
+            <div class="space-y-2 pt-2 border-t">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">2. Select Export Type</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center space-x-2.5 p-3 border rounded-lg cursor-pointer hover:bg-emerald-50 transition bg-white">
+                        <input type="radio" name="exportAssetFormat" id="exportAssetFormatExcel" value="excel" checked class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-sm font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-excel text-emerald-700 text-base"></i>
+                            <span>Excel (.xlsx)</span>
+                        </span>
+                    </label>
+                    <label class="flex items-center space-x-2.5 p-3 border rounded-lg cursor-pointer hover:bg-red-50 transition bg-white">
+                        <input type="radio" name="exportAssetFormat" id="exportAssetFormatPdf" value="pdf" class="text-red-600 focus:ring-red-500">
+                        <span class="text-sm font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-pdf text-red-600 text-base"></i>
+                            <span>PDF Document</span>
+                        </span>
+                    </label>
+                </div>
+                <p id="exportAssetErrorMsg" class="text-xs text-red-600 font-semibold hidden"></p>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-3 border-t">
+                <button type="button" onclick="closeModal('modalExportAssets')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="button" onclick="executeAssetDetailsExport()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Generate Export</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Delete Asset Confirmation -->
+    <div id="modalDeleteAssetConfirm" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center space-x-3 text-red-600">
+                <div class="bg-red-100 p-3 rounded-full">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Delete Asset Record?</h3>
+                    <p class="text-xs text-gray-500" id="deleteAssetConfirmSubtext">This action will permanently remove the asset from this flat.</p>
+                </div>
+            </div>
+            <input type="hidden" id="deleteAssetTargetId" value="">
+            <div class="flex justify-end space-x-2 pt-3 border-t">
+                <button type="button" onclick="closeModal('modalDeleteAssetConfirm')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="button" onclick="confirmDeleteAssetRecord()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold transition">Delete Asset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Non-blocking Toast Notification for Asset Operations -->
+    <div id="assetToastBanner" class="fixed bottom-5 right-5 z-50 hidden bg-emerald-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-700 flex items-center space-x-2.5 text-sm font-semibold">
+        <i id="assetToastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="assetToastText">Operation completed</span>
+    </div>
+
     <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
@@ -1181,7 +1533,7 @@
 
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
         let currentUser = null;
-        let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7];
+        let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
         let isUserAdmin = false;
 
         let estatesData = [];
@@ -1192,8 +1544,11 @@
         ];
         let societyDocs = [];
         let maintLogs = [];
-       let vacantBills = {};
+        let vacantBills = {};
         let societyBillsData = {};
+        let estateAssetsData = [];
+        let expandedAssetFlats = new Set();
+        let selectedExportFlatIds = new Set();
         let currentSummarySocName = '';
         let currentSummaryCycle = '';
 
@@ -1278,8 +1633,8 @@
         ];
 
         let usersList = [
-            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] },
-            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7] }
+            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7,8] },
+            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7,8] }
         ];
 
         window.handleGoogleSignIn = async function() {
@@ -1591,6 +1946,9 @@
             if (!e.target.closest('#bachFacultyInput') && !e.target.closest('#bachFacultyDropdown')) {
                 document.getElementById('bachFacultyDropdown')?.classList.add('hidden');
             }
+            if (!e.target.closest('#assetFlatSelectContainer')) {
+                document.getElementById('assetFlatDropdown')?.classList.add('hidden');
+            }
 
             const btn = e.target.closest('.btn-manage-allocation');
             if (btn) {
@@ -1627,10 +1985,14 @@
                 document.getElementById('currentUserRole').innerText = isUserAdmin ? 'Administrator' : 'Standard User';
                 
                 if (isUserAdmin) {
-                    currentUserPermissions = [1, 2, 3, 4, 5, 6, 7];
+                    currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
                     document.getElementById('mod-admin-access').classList.remove('hidden');
                 } else {
-                    currentUserPermissions = dbUser ? (dbUser.permissions || []) : [];
+                    const rawPerms = dbUser ? (dbUser.permissions || []) : [];
+                    if (rawPerms.length >= 7 && !rawPerms.includes(8)) {
+                        rawPerms.push(8);
+                    }
+                    currentUserPermissions = rawPerms;
                     document.getElementById('mod-admin-access').classList.add('hidden');
                 }
 
@@ -1640,6 +2002,30 @@
                 loginOverlay.classList.remove('hidden');
             }
         });
+
+        function normalizeEstateAssetsList(rawAssets) {
+            if (!rawAssets) return [];
+            const arr = Array.isArray(rawAssets)
+                ? rawAssets
+                : (typeof rawAssets === 'object' ? Object.values(rawAssets) : []);
+            return arr.filter(Boolean).map(item => ({
+                id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                flatId: String(item.flatId || ''),
+                flatLabel: item.flatLabel || '',
+                assetName: item.assetName || '',
+                location: item.location || '',
+                brand: item.brand || '',
+                type: item.type || '',
+                modelNumber: item.modelNumber || '',
+                capacity: item.capacity || '',
+                purchaseDate: item.purchaseDate || '',
+                warranty: item.warranty || '',
+                billUrl: item.billUrl || '',
+                billDirectUrl: item.billDirectUrl || '',
+                billFileId: item.billFileId || '',
+                updatedAt: item.updatedAt || ''
+            }));
+        }
 
         async function loadCloudData() {
             try {
@@ -1654,10 +2040,17 @@
                     vacantBills = data.bills || {};
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     usersList = data.users || usersList;
+                    if (data.estate_assets) {
+                        estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
+                    } else {
+                        const assetsSnap = await get(child(dbRef(db), 'estate_assets'));
+                        estateAssetsData = assetsSnap.exists() ? normalizeEstateAssetsList(assetsSnap.val()) : [];
+                    }
                 } else {
                     estatesData = [
                         { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [], residents: [] }
                     ];
+                    estateAssetsData = [];
                     await saveCloudData();
                 }
             } catch (err) {
@@ -1675,8 +2068,10 @@
                     maint: maintLogs,
                     bills: vacantBills,
                     socBills: societyBillsData,
-                    users: usersList
+                    users: usersList,
+                    estate_assets: estateAssetsData
                 });
+                await set(dbRef(db, 'estate_assets'), estateAssetsData);
             } catch (err) {
                 console.error("Error saving to cloud:", err);
             }
@@ -1690,12 +2085,13 @@
                 4: 'bachelor',
                 5: 'vacant-bills',
                 6: 'society',
-                7: 'integrated'
+                7: 'integrated',
+                8: 'asset-details'
             };
 
             let firstAllowedSec = null;
 
-            for (let i = 1; i <= 7; i++) {
+            for (let i = 1; i <= 8; i++) {
                 const btn = document.getElementById(`sub-${secMapping[i]}`);
                 const isAllowed = currentUserPermissions.includes(i);
                 if (btn) {
@@ -1711,7 +2107,7 @@
             if (firstAllowedSec) {
                 switchSubHeader(firstAllowedSec);
             } else {
-                ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
+                ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated', 'asset-details'].forEach(s => {
                     document.getElementById('sec-' + s).classList.add('hidden');
                 });
             }
@@ -1729,6 +2125,7 @@
             populateSocietyDropdowns();
             populateFlatMaintenanceDropdown();
             populateIntegratedFlatDropdown();
+            renderAssetDetailsTable();
             
             const today = new Date().toISOString().slice(0, 7);
             document.getElementById('billMonthPicker').value = today;
@@ -1758,7 +2155,8 @@
                 'bachelor': 4,
                 'vacant-bills': 5,
                 'society': 6,
-                'integrated': 7
+                'integrated': 7,
+                'asset-details': 8
             };
 
             const permNum = secMappingInv[secName];
@@ -1767,7 +2165,7 @@
                 return;
             }
 
-            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated'].forEach(s => {
+            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated', 'asset-details'].forEach(s => {
                 document.getElementById('sec-' + s).classList.add('hidden');
                 const subBtn = document.getElementById('sub-' + s);
                 if (subBtn) {
@@ -1786,7 +2184,15 @@
             if(secName === 'bachelor') renderBachelorGrid();
             if(secName === 'maintenance') renderMaintenanceGrid();
             if(secName === 'vacant-bills') renderVacantBills();
-            if(secName === 'integrated') populateIntegratedFlatDropdown();
+            if(secName === 'integrated') {
+                const currentSel = document.getElementById('integratedFlatSelect')?.value;
+                populateIntegratedFlatDropdown();
+                if (currentSel) {
+                    document.getElementById('integratedFlatSelect').value = currentSel;
+                    renderIntegratedView();
+                }
+            }
+            if(secName === 'asset-details') renderAssetDetailsTable();
         };
 
         window.exportData = function(section, format) {
@@ -1973,15 +2379,19 @@
             renderAllocationTable();
             populateFlatMaintenanceDropdown();
             populateIntegratedFlatDropdown();
+            renderAssetDetailsTable();
         };
 
         window.deleteFlat = async function(id) {
             if(confirm("Are you sure you want to delete this flat record?")) {
                 estatesData = estatesData.filter(e => String(e.id) !== String(id));
                 await saveCloudData();
+                estateAssetsData = estateAssetsData.filter(a => String(a.flatId) !== String(id));
+                await saveCloudData();
                 renderEstateTable();
                 renderAllocationTable();
                 populateIntegratedFlatDropdown();
+                renderAssetDetailsTable();
             }
         };
 
@@ -2061,6 +2471,7 @@
                 closeModal('modalAllocation');
                 renderAllocationTable();
                 renderVacantBills();
+                renderAssetDetailsTable();
                 alert("Flat marked as vacant and occupant details moved to archive!");
             }
         };
@@ -2154,6 +2565,7 @@
             await saveCloudData();
             closeModal('modalAllocation');
             renderAllocationTable();
+            renderAssetDetailsTable();
             alert("Allocation updated successfully!");
         };
 
@@ -2290,6 +2702,7 @@
             renderBachelorGrid();
             renderAllocationTable();
             renderVacantBills();
+            renderAssetDetailsTable();
         };
 
         window.removeBachelorResident = async function(flatId, resIndex) {
@@ -3399,6 +3812,64 @@ window.renderSocieties = function() {
                 });
             }
 
+            // Populate Module 7: Asset Details Card & Quick-Reference Table
+            const flatAssets = getAssetsForFlat(flat);
+            const assetsBadge = document.getElementById('intAssetsCountBadge');
+            if (assetsBadge) {
+                assetsBadge.innerText = `${flatAssets.length} Asset${flatAssets.length === 1 ? '' : 's'} Assigned`;
+            }
+
+            const pillsContainer = document.getElementById('intAssetsSummaryPills');
+            if (pillsContainer) {
+                pillsContainer.innerHTML = '';
+                if (flatAssets.length > 0) {
+                    const countsByType = {};
+                    flatAssets.forEach(a => {
+                        const key = a.assetName || 'Other';
+                        countsByType[key] = (countsByType[key] || 0) + 1;
+                    });
+                    Object.keys(countsByType).forEach(k => {
+                        pillsContainer.innerHTML += `
+                            <span class="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold px-3 py-1 rounded-full flex items-center space-x-1.5">
+                                <i class="${getAssetIconClass(k)} text-emerald-700"></i>
+                                <span>${k}: ${countsByType[k]}</span>
+                            </span>
+                        `;
+                    });
+                }
+            }
+
+            const intAssetsTbody = document.getElementById('intAssetsTableBody');
+            if (intAssetsTbody) {
+                intAssetsTbody.innerHTML = '';
+                if (flatAssets.length === 0) {
+                    intAssetsTbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-400 text-sm">No assets registered for this flat yet.</td></tr>';
+                } else {
+                    flatAssets.forEach(a => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b hover:bg-gray-50";
+                        tr.innerHTML = `
+                            <td class="p-3 font-bold text-gray-900">
+                                <i class="${getAssetIconClass(a.assetName)} text-emerald-700 mr-1.5"></i>${a.assetName || '-'}
+                            </td>
+                            <td class="p-3 text-gray-800">${a.location || '-'}</td>
+                            <td class="p-3 font-semibold text-emerald-900">${a.brand || '-'}</td>
+                            <td class="p-3 text-gray-700">${a.type || '-'}</td>
+                            <td class="p-3 font-mono text-sm text-gray-700">${a.modelNumber || '-'}</td>
+                            <td class="p-3 text-gray-700">${a.capacity || '-'}</td>
+                            <td class="p-3 text-gray-700 whitespace-nowrap">${a.purchaseDate || '-'}</td>
+                            <td class="p-3 text-gray-700">${a.warranty || '-'}</td>
+                            <td class="p-3 text-center whitespace-nowrap">
+                                ${a.billUrl
+                                    ? `<a href="${a.billUrl}" target="_blank" rel="noopener noreferrer" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded text-xs inline-flex items-center space-x-1 transition"><i class="fa-solid fa-file-pdf text-red-600"></i><span>View Bill</span></a>`
+                                    : '<span class="text-gray-400 text-xs italic">No Bill</span>'}
+                            </td>
+                        `;
+                        intAssetsTbody.appendChild(tr);
+                    });
+                }
+            }
+
             const archBody = document.getElementById('intArchiveTableBody');
             archBody.innerHTML = '';
             if(!flat.archive || flat.archive.length === 0) {
@@ -3564,7 +4035,7 @@ window.renderSocieties = function() {
             const email = document.getElementById('inviteEmail').value;
             const role = document.getElementById('inviteRole').value;
             const perms = [];
-            for(let i=1; i<=7; i++) {
+            for(let i=1; i<=8; i++) {
                 if(document.getElementById(`perm-${i}`)?.checked) perms.push(i);
             }
             usersList.push({ email, role, permissions: perms });
@@ -3572,6 +4043,813 @@ window.renderSocieties = function() {
             renderUsersList();
             document.getElementById('inviteUserForm').reset();
             alert(`User invitation created for ${email}`);
+        };
+
+        // =========================================================================
+        // SUB-HEADER 8: ASSET DETAILS & INVENTORY FUNCTIONS
+        // =========================================================================
+
+        let assetToastTimer = null;
+        function showAssetToast(message, isError = false) {
+            const banner = document.getElementById('assetToastBanner');
+            const textEl = document.getElementById('assetToastText');
+            const iconEl = document.getElementById('assetToastIcon');
+            if (!banner || !textEl || !iconEl) return;
+
+            textEl.innerText = message;
+            if (isError) {
+                banner.className = "fixed bottom-5 right-5 z-50 bg-red-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-red-700 flex items-center space-x-2.5 text-sm font-semibold";
+                iconEl.className = "fa-solid fa-circle-exclamation text-red-300";
+            } else {
+                banner.className = "fixed bottom-5 right-5 z-50 bg-emerald-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-700 flex items-center space-x-2.5 text-sm font-semibold";
+                iconEl.className = "fa-solid fa-circle-check text-emerald-400";
+            }
+            banner.classList.remove('hidden');
+            if (assetToastTimer) clearTimeout(assetToastTimer);
+            assetToastTimer = setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 3500);
+        }
+
+        function formatFlatDisplayLabel(flat) {
+            if (!flat) return '';
+            const wingPart = flat.wing ? ` (${flat.wing})` : '';
+            return `${flat.building}${wingPart} - Flat ${flat.flatNo}`;
+        }
+
+        function getFlatAllocationStatusInfo(flat) {
+            if (!flat) return { text: 'Vacant', isOccupied: false, isBachelor: false };
+            const isBachelor = !!flat.isBachelor;
+            const isOccupied = isBachelor
+                ? (Array.isArray(flat.residents) && flat.residents.length > 0)
+                : !!(flat.occupant && String(flat.occupant).trim() !== '');
+
+            if (isBachelor) {
+                return {
+                    text: isOccupied ? 'Bachelor Flat - Allocated' : 'Bachelor Flat - Vacant',
+                    isOccupied,
+                    isBachelor: true
+                };
+            }
+            return {
+                text: isOccupied ? 'Allocated' : 'Vacant',
+                isOccupied,
+                isBachelor: false
+            };
+        }
+
+        function getAssetsForFlat(flat) {
+            if (!flat) return [];
+            const targetId = String(flat.id);
+            const targetLabel = formatFlatDisplayLabel(flat).toLowerCase();
+            const wingPart = flat.wing ? ` (${flat.wing})` : '';
+            const altLabel = `${flat.building}${wingPart} - ${flat.flatNo}`.toLowerCase();
+
+            return estateAssetsData.filter(a => {
+                if (a.flatId && String(a.flatId) === targetId) return true;
+                if (a.flatLabel) {
+                    const lbl = String(a.flatLabel).trim().toLowerCase();
+                    if (lbl === targetLabel || lbl === altLabel) return true;
+                }
+                return false;
+            });
+        }
+
+        function getSortedEstatesList() {
+            return [...estatesData].sort((a, b) => {
+                const bComp = (a.building || '').localeCompare(b.building || '', undefined, { sensitivity: 'base' });
+                if (bComp !== 0) return bComp;
+                const wComp = (a.wing || '').localeCompare(b.wing || '', undefined, { sensitivity: 'base' });
+                if (wComp !== 0) return wComp;
+                return String(a.flatNo || '').localeCompare(String(b.flatNo || ''), undefined, { numeric: true, sensitivity: 'base' });
+            });
+        }
+
+        function getAssetIconClass(assetName) {
+            const map = {
+                'AC': 'fa-solid fa-snowflake',
+                'TV': 'fa-solid fa-tv',
+                'Washing Machine': 'fa-solid fa-soap',
+                'Refrigerator': 'fa-solid fa-temperature-low',
+                'Geyser': 'fa-solid fa-fire-flame-simple',
+                'Water Purifier': 'fa-solid fa-faucet-drip',
+                'Gas Stove': 'fa-solid fa-fire-burner',
+                'Microwave': 'fa-solid fa-Wave-square'
+            };
+            if (assetName === 'Microwave') return 'fa-solid fa-utensils';
+            return map[assetName] || 'fa-solid fa-cube';
+        }
+
+        function updateAssetOverviewCards() {
+            const totalAssets = estateAssetsData.length;
+            const flatIdsWithAssets = new Set();
+            let billsCount = 0;
+
+            estatesData.forEach(flat => {
+                const assets = getAssetsForFlat(flat);
+                if (assets.length > 0) flatIdsWithAssets.add(String(flat.id));
+            });
+
+            estateAssetsData.forEach(a => {
+                if (a.billUrl && String(a.billUrl).trim() !== '') billsCount++;
+            });
+
+            const totalEl = document.getElementById('cardTotalAssetsCount');
+            const flatsEl = document.getElementById('cardFlatsWithAssetsCount');
+            const billsEl = document.getElementById('cardAssetsWithBillsCount');
+
+            if (totalEl) totalEl.innerText = totalAssets;
+            if (flatsEl) flatsEl.innerText = `${flatIdsWithAssets.size} / ${estatesData.length}`;
+            if (billsEl) billsEl.innerText = billsCount;
+        }
+
+        window.renderAssetDetailsTable = function() {
+            updateAssetOverviewCards();
+            const tbody = document.getElementById('assetDetailsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const rawSearch = (document.getElementById('assetMainTableSearch')?.value || '').toLowerCase().trim();
+            const searchTokens = rawSearch.split(/\s+/).filter(Boolean);
+
+            const sortedFlats = getSortedEstatesList();
+
+            const filteredFlats = sortedFlats.filter(flat => {
+                if (searchTokens.length === 0) return true;
+                const statusInfo = getFlatAllocationStatusInfo(flat);
+                const flatAssets = getAssetsForFlat(flat);
+                const assetsSearchStr = flatAssets.map(a => `${a.assetName} ${a.location} ${a.brand} ${a.type} ${a.modelNumber} ${a.capacity}`).join(' ');
+                const wingStr = flat.wing || '';
+                const corpus = `${flat.building} ${wingStr} ${flat.flatNo} ${flat.type || ''} ${flat.owner || ''} ${statusInfo.text} ${assetsSearchStr}`.toLowerCase();
+                return searchTokens.every(tok => corpus.includes(tok));
+            });
+
+            if (filteredFlats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-400 text-sm">No matching flats found in Estate Details.</td></tr>';
+                return;
+            }
+
+            filteredFlats.forEach(flat => {
+                const flatIdStr = String(flat.id);
+                const safeFlatId = flatIdStr.replace(/'/g, "\\'");
+                const wingBadge = flat.wing ? `<span class="ml-1.5 text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-semibold">${flat.wing}</span>` : '';
+                const statusInfo = getFlatAllocationStatusInfo(flat);
+                const flatAssets = getAssetsForFlat(flat);
+                const isExpanded = expandedAssetFlats.has(flatIdStr);
+
+                let statusBadgeHtml = '';
+                if (statusInfo.isBachelor) {
+                    const badgeColors = statusInfo.isOccupied
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        : 'bg-amber-100 text-amber-900 border border-amber-300';
+                    const resCount = Array.isArray(flat.residents) ? flat.residents.length : 0;
+                    statusBadgeHtml = `
+                        <span class="${badgeColors} text-xs px-2.5 py-1 rounded-full font-bold inline-block">${statusInfo.text}</span>
+                        <span class="block text-[11px] text-gray-500 mt-1">${resCount}/${flat.capacity || 4} Beds Occupied</span>
+                    `;
+                } else {
+                    const badgeColors = statusInfo.isOccupied
+                        ? 'bg-green-100 text-green-800 border border-green-300'
+                        : 'bg-amber-100 text-amber-800 border border-amber-300';
+                    const occupantSub = statusInfo.isOccupied && flat.occupant
+                        ? `<span class="block text-[11px] text-gray-600 mt-1 font-medium"><i class="fa-solid fa-user text-[10px] mr-1 text-emerald-700"></i>${flat.occupant}</span>`
+                        : '';
+                    statusBadgeHtml = `
+                        <span class="${badgeColors} text-xs px-2.5 py-1 rounded-full font-bold inline-block">${statusInfo.text}</span>
+                        ${occupantSub}
+                    `;
+                }
+
+                // Main Flat Row
+                const mainTr = document.createElement('tr');
+                mainTr.className = "hover:bg-gray-50 transition border-b";
+                mainTr.innerHTML = `
+                    <td class="p-3.5 align-middle">
+                        <div class="font-bold text-gray-900 text-sm flex items-center flex-wrap">
+                            <span>${flat.building}</span>
+                            ${wingBadge}
+                            <span class="mx-1.5 text-gray-400">&bull;</span>
+                            <span class="text-emerald-800">Flat ${flat.flatNo}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-0.5">
+                            ${flat.type || '2 BHK'} (${flat.sqft || '-'} SqFt) &bull; Owner: ${flat.owner || '-'}
+                        </div>
+                    </td>
+                    <td class="p-3.5 align-middle">
+                        ${statusBadgeHtml}
+                    </td>
+                    <td class="p-3.5 align-middle text-right">
+                        <div class="inline-flex items-center space-x-2.5">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-extrabold ${flatAssets.length > 0 ? 'bg-emerald-100 text-emerald-900' : 'bg-gray-100 text-gray-600'}">
+                                ${flatAssets.length} ${flatAssets.length === 1 ? 'Asset' : 'Assets'}
+                            </span>
+                            <button
+                                type="button"
+                                onclick="toggleAssetDrawer('${safeFlatId}')"
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1.5 shadow-sm ${isExpanded ? 'bg-emerald-800 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}"
+                            >
+                                <span>Details</span>
+                                <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-[10px]"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(mainTr);
+
+                // Accordion / Expandable Drawer Row
+                const drawerTr = document.createElement('tr');
+                drawerTr.id = `asset-drawer-${flatIdStr}`;
+                drawerTr.className = isExpanded ? "bg-emerald-50/40 border-b" : "hidden bg-emerald-50/40 border-b";
+
+                let nestedAssetsHtml = '';
+                if (flatAssets.length === 0) {
+                    nestedAssetsHtml = `
+                        <div class="p-6 text-center bg-white rounded-lg border border-dashed border-gray-300 text-gray-500 text-xs space-y-2">
+                            <i class="fa-solid fa-box-open text-2xl text-gray-400 block"></i>
+                            <p>No assets registered under <strong>${formatFlatDisplayLabel(flat)}</strong> yet.</p>
+                            <button type="button" onclick="openAddAssetModal('${safeFlatId}')" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-bold inline-flex items-center space-x-1">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>Add First Asset</span>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    const assetRows = flatAssets.map(asset => {
+                        const safeAssetId = String(asset.id).replace(/'/g, "\\'");
+                        const billHtml = asset.billUrl
+                            ? `<a href="${asset.billUrl}" target="_blank" rel="noopener noreferrer" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded text-xs inline-flex items-center space-x-1 transition"><i class="fa-solid fa-file-pdf text-red-600"></i><span>View Bill</span></a>`
+                            : `<span class="text-gray-400 italic text-xs">No Bill</span>`;
+
+                        return `
+                            <tr class="hover:bg-emerald-50/30 border-b last:border-b-0 text-xs">
+                                <td class="p-2.5 font-bold text-gray-900 whitespace-nowrap">
+                                    <i class="${getAssetIconClass(asset.assetName)} text-emerald-700 mr-1.5"></i>${asset.assetName || '-'}
+                                </td>
+                                <td class="p-2.5 text-gray-800 font-medium">${asset.location || '-'}</td>
+                                <td class="p-2.5 font-semibold text-emerald-900">${asset.brand || '-'}</td>
+                                <td class="p-2.5 text-gray-700">${asset.type || '-'}</td>
+                                <td class="p-2.5 font-mono text-gray-700">${asset.modelNumber || '-'}</td>
+                                <td class="p-2.5 text-gray-700">${asset.capacity || '-'}</td>
+                                <td class="p-2.5 text-gray-700 whitespace-nowrap">${asset.purchaseDate || '-'}</td>
+                                <td class="p-2.5 text-gray-700">${asset.warranty || '-'}</td>
+                                <td class="p-2.5 text-center whitespace-nowrap">${billHtml}</td>
+                                <td class="p-2.5 text-center whitespace-nowrap space-x-2">
+                                    <button type="button" onclick="openEditAssetModal('${safeAssetId}')" class="text-blue-600 hover:text-blue-800 font-bold px-1.5 py-0.5 rounded hover:bg-blue-50" title="Edit Asset">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" onclick="deleteAssetRecord('${safeAssetId}')" class="text-red-600 hover:text-red-800 font-bold px-1.5 py-0.5 rounded hover:bg-red-50" title="Delete Asset">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    nestedAssetsHtml = `
+                        <div class="bg-white rounded-lg border shadow-sm overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-emerald-900 text-white uppercase text-[11px]">
+                                    <tr>
+                                        <th class="p-2.5">Asset Name</th>
+                                        <th class="p-2.5">Location</th>
+                                        <th class="p-2.5">Brand</th>
+                                        <th class="p-2.5">Type</th>
+                                        <th class="p-2.5">Model No.</th>
+                                        <th class="p-2.5">Capacity / Size</th>
+                                        <th class="p-2.5">Purchase Date</th>
+                                        <th class="p-2.5">Warranty</th>
+                                        <th class="p-2.5 text-center">Bill PDF</th>
+                                        <th class="p-2.5 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y">${assetRows}</tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+
+                drawerTr.innerHTML = `
+                    <td colspan="3" class="p-4">
+                        <div class="space-y-3">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="bg-emerald-800 text-white text-xs font-bold px-2.5 py-1 rounded">
+                                        <i class="fa-solid fa-list-check mr-1"></i>Assigned Assets Breakdown
+                                    </span>
+                                    <span class="text-xs font-bold text-gray-700">${formatFlatDisplayLabel(flat)}</span>
+                                </div>
+                                <button type="button" onclick="openAddAssetModal('${safeFlatId}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1 shadow-sm">
+                                    <i class="fa-solid fa-plus"></i>
+                                    <span>Add Asset to ${flat.flatNo}</span>
+                                </button>
+                            </div>
+                            ${nestedAssetsHtml}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(drawerTr);
+            });
+        };
+
+        window.toggleAssetDrawer = function(flatId) {
+            const key = String(flatId);
+            if (expandedAssetFlats.has(key)) {
+                expandedAssetFlats.delete(key);
+            } else {
+                expandedAssetFlats.add(key);
+            }
+            renderAssetDetailsTable();
+        };
+
+        window.expandAllAssetDrawers = function(expand) {
+            if (expand) {
+                estatesData.forEach(e => expandedAssetFlats.add(String(e.id)));
+            } else {
+                expandedAssetFlats.clear();
+            }
+            renderAssetDetailsTable();
+        };
+
+        // Searchable Flat Dropdown inside Add / Edit Asset Modal
+        window.handleAssetFlatSearchInput = function() {
+            document.getElementById('assetSelectedFlatId').value = '';
+            document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
+            filterAssetFlatDropdown();
+        };
+
+        window.toggleAssetFlatDropdownList = function() {
+            const dd = document.getElementById('assetFlatDropdown');
+            if (!dd) return;
+            if (dd.classList.contains('hidden')) {
+                filterAssetFlatDropdown();
+            } else {
+                dd.classList.add('hidden');
+            }
+        };
+
+        window.filterAssetFlatDropdown = function() {
+            const inputEl = document.getElementById('assetFlatSearchInput');
+            const dropdown = document.getElementById('assetFlatDropdown');
+            if (!inputEl || !dropdown) return;
+
+            const rawQuery = inputEl.value.toLowerCase().trim();
+            const tokens = rawQuery.split(/\s+/).filter(Boolean);
+            dropdown.innerHTML = '';
+
+            const sortedFlats = getSortedEstatesList();
+            const matching = sortedFlats.filter(flat => {
+                if (tokens.length === 0) return true;
+                const label = formatFlatDisplayLabel(flat).toLowerCase();
+                const corpus = `${label} ${flat.type || ''} ${flat.owner || ''}`.toLowerCase();
+                return tokens.every(t => corpus.includes(t));
+            });
+
+            if (matching.length === 0) {
+                dropdown.innerHTML = '<div class="p-3 text-xs text-gray-400 italic">No matching flats found in Estate Details</div>';
+            } else {
+                matching.forEach(flat => {
+                    const statusInfo = getFlatAllocationStatusInfo(flat);
+                    const item = document.createElement('div');
+                    item.className = "p-2.5 hover:bg-emerald-50 cursor-pointer text-xs flex justify-between items-center transition";
+                    const safeId = String(flat.id).replace(/'/g, "\\'");
+                    item.onclick = () => selectAssetFlatOption(safeId);
+                    item.innerHTML = `
+                        <div>
+                            <span class="font-bold text-gray-900">${formatFlatDisplayLabel(flat)}</span>
+                            <span class="text-gray-500 ml-1">(${flat.type || '2 BHK'})</span>
+                        </div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusInfo.isOccupied ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${statusInfo.text}</span>
+                    `;
+                    dropdown.appendChild(item);
+                });
+            }
+            dropdown.classList.remove('hidden');
+        };
+
+        window.selectAssetFlatOption = function(flatId) {
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if (!flat) return;
+            document.getElementById('assetSelectedFlatId').value = String(flat.id);
+            document.getElementById('assetFlatSearchInput').value = formatFlatDisplayLabel(flat);
+            document.getElementById('assetFlatDropdown')?.classList.add('hidden');
+            document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
+        };
+
+        window.syncWarrantyDateToInput = function(dateVal) {
+            if (dateVal) {
+                document.getElementById('assetWarrantyInput').value = dateVal;
+            }
+        };
+
+        window.openAddAssetModal = function(preselectedFlatId = '') {
+            const form = document.getElementById('assetForm');
+            if (form) form.reset();
+
+            document.getElementById('editAssetId').value = '';
+            document.getElementById('assetModalTitle').innerText = 'Add Asset';
+            document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
+
+            const existingBillEl = document.getElementById('assetExistingBillNotice');
+            if (existingBillEl) {
+                existingBillEl.innerHTML = '';
+                existingBillEl.classList.add('hidden');
+            }
+
+            if (preselectedFlatId) {
+                const flat = estatesData.find(e => String(e.id) === String(preselectedFlatId));
+                if (flat) {
+                    document.getElementById('assetSelectedFlatId').value = String(flat.id);
+                    document.getElementById('assetFlatSearchInput').value = formatFlatDisplayLabel(flat);
+                }
+            } else {
+                document.getElementById('assetSelectedFlatId').value = '';
+                document.getElementById('assetFlatSearchInput').value = '';
+            }
+
+            const btn = document.getElementById('btnSaveAssetRecord');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Save Asset</span>';
+            }
+
+            document.getElementById('modalAddAsset').classList.remove('hidden');
+        };
+
+        window.openAddAssetFromIntegrated = function() {
+            const flatId = document.getElementById('integratedFlatSelect')?.value || '';
+            openAddAssetModal(flatId);
+        };
+
+        window.openEditAssetModal = function(assetId) {
+            const asset = estateAssetsData.find(a => String(a.id) === String(assetId));
+            if (!asset) return;
+
+            const form = document.getElementById('assetForm');
+            if (form) form.reset();
+
+            document.getElementById('editAssetId').value = String(asset.id);
+            document.getElementById('assetModalTitle').innerText = 'Edit Asset Details';
+            document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
+
+            const flat = estatesData.find(e => String(e.id) === String(asset.flatId));
+            document.getElementById('assetSelectedFlatId').value = flat ? String(flat.id) : String(asset.flatId || '');
+            document.getElementById('assetFlatSearchInput').value = flat ? formatFlatDisplayLabel(flat) : (asset.flatLabel || '');
+
+            document.getElementById('assetNameInput').value = asset.assetName || '';
+            document.getElementById('assetLocationInput').value = asset.location || '';
+            document.getElementById('assetBrandInput').value = asset.brand || '';
+            document.getElementById('assetTypeInput').value = asset.type || '';
+            document.getElementById('assetModelInput').value = asset.modelNumber || '';
+            document.getElementById('assetCapacityInput').value = asset.capacity || '';
+            document.getElementById('assetPurchaseDateInput').value = asset.purchaseDate || '';
+            document.getElementById('assetWarrantyInput').value = asset.warranty || '';
+
+            const existingBillEl = document.getElementById('assetExistingBillNotice');
+            if (existingBillEl) {
+                if (asset.billUrl) {
+                    existingBillEl.innerHTML = `<a href="${asset.billUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>Current Bill Attached (View)</a>`;
+                    existingBillEl.classList.remove('hidden');
+                } else {
+                    existingBillEl.innerHTML = '';
+                    existingBillEl.classList.add('hidden');
+                }
+            }
+
+            const btn = document.getElementById('btnSaveAssetRecord');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Update Asset</span>';
+            }
+
+            document.getElementById('modalAddAsset').classList.remove('hidden');
+        };
+
+        window.saveAssetRecord = async function(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editAssetId').value.trim();
+            let selectedFlatId = document.getElementById('assetSelectedFlatId').value.trim();
+            const flatSearchText = document.getElementById('assetFlatSearchInput').value.trim();
+
+            // Resolve flat if user typed exact flat label without clicking option
+            let flatObj = estatesData.find(f => String(f.id) === String(selectedFlatId));
+            if (!flatObj && flatSearchText) {
+                flatObj = estatesData.find(f => formatFlatDisplayLabel(f).toLowerCase() === flatSearchText.toLowerCase());
+                if (flatObj) selectedFlatId = String(flatObj.id);
+            }
+
+            if (!flatObj) {
+                document.getElementById('assetFlatValidationMsg')?.classList.remove('hidden');
+                return;
+            }
+
+            const assetName = document.getElementById('assetNameInput').value;
+            const location = document.getElementById('assetLocationInput').value;
+            const brand = document.getElementById('assetBrandInput').value.trim();
+            const type = document.getElementById('assetTypeInput').value.trim();
+            const modelNumber = document.getElementById('assetModelInput').value.trim();
+            const capacity = document.getElementById('assetCapacityInput').value.trim();
+            const purchaseDate = document.getElementById('assetPurchaseDateInput').value;
+            const warranty = document.getElementById('assetWarrantyInput').value.trim();
+            const billFile = document.getElementById('assetBillFileInput').files[0];
+
+            const existingRecord = editId ? estateAssetsData.find(a => String(a.id) === String(editId)) : null;
+            let billUrl = existingRecord ? (existingRecord.billUrl || '') : '';
+            let billDirectUrl = existingRecord ? (existingRecord.billDirectUrl || '') : '';
+            let billFileId = existingRecord ? (existingRecord.billFileId || '') : '';
+
+            const btn = document.getElementById('btnSaveAssetRecord');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            }
+
+            if (billFile) {
+                try {
+                    if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading Bill to Drive...</span>';
+                    const uploadRes = await uploadFileToDrive(billFile);
+                    billUrl = (uploadRes && (uploadRes.fileUrl || uploadRes.url || uploadRes.directImgUrl)) || '';
+                    billDirectUrl = (uploadRes && uploadRes.directImgUrl) || '';
+                    billFileId = (uploadRes && (uploadRes.fileId || uploadRes.id)) || '';
+                } catch (err) {
+                    showAssetToast("Bill upload failed: " + err, true);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>Save Asset</span>';
+                    }
+                    return;
+                }
+            }
+
+            const record = {
+                id: editId ? String(editId) : Date.now().toString() + Math.random().toString().slice(2, 5),
+                flatId: String(flatObj.id),
+                flatLabel: formatFlatDisplayLabel(flatObj),
+                assetName,
+                location,
+                brand,
+                type,
+                modelNumber,
+                capacity,
+                purchaseDate,
+                warranty,
+                billUrl,
+                billDirectUrl,
+                billFileId,
+                updatedAt: new Date().toISOString().split('T')[0]
+            };
+
+            if (editId) {
+                const idx = estateAssetsData.findIndex(a => String(a.id) === String(editId));
+                if (idx !== -1) estateAssetsData[idx] = record;
+            } else {
+                estateAssetsData.push(record);
+            }
+
+            // Expand the flat drawer so the user immediately sees the saved asset
+            expandedAssetFlats.add(String(flatObj.id));
+
+            await saveCloudData();
+            closeModal('modalAddAsset');
+            renderAssetDetailsTable();
+            if (document.getElementById('integratedFlatSelect')?.value) {
+                renderIntegratedView();
+            }
+            showAssetToast(editId ? "Asset updated in estate_assets" : "Asset added to estate_assets");
+        };
+
+        window.deleteAssetRecord = function(assetId) {
+            const asset = estateAssetsData.find(a => String(a.id) === String(assetId));
+            if (!asset) return;
+            document.getElementById('deleteAssetTargetId').value = String(asset.id);
+            const subEl = document.getElementById('deleteAssetConfirmSubtext');
+            if (subEl) {
+                subEl.innerText = `Remove ${asset.assetName} (${asset.brand || 'No Brand'} - ${asset.location}) from ${asset.flatLabel || 'this flat'}?`;
+            }
+            document.getElementById('modalDeleteAssetConfirm').classList.remove('hidden');
+        };
+
+        window.confirmDeleteAssetRecord = async function() {
+            const targetId = document.getElementById('deleteAssetTargetId').value;
+            if (!targetId) return;
+            estateAssetsData = estateAssetsData.filter(a => String(a.id) !== String(targetId));
+            await saveCloudData();
+            closeModal('modalDeleteAssetConfirm');
+            renderAssetDetailsTable();
+            if (document.getElementById('integratedFlatSelect')?.value) {
+                renderIntegratedView();
+            }
+            showAssetToast("Asset deleted from estate_assets");
+        };
+
+        // =========================================================================
+        // EXPORT ASSET DETAILS MODAL & LOGIC (EXCEL .XLSX & PDF)
+        // =========================================================================
+
+        window.openExportAssetsModal = function() {
+            document.getElementById('exportAssetFlatSearch').value = '';
+            document.getElementById('exportAssetErrorMsg')?.classList.add('hidden');
+            selectedExportFlatIds.clear();
+            estatesData.forEach(f => selectedExportFlatIds.add(String(f.id)));
+            const selectAllEl = document.getElementById('exportAssetSelectAll');
+            if (selectAllEl) selectAllEl.checked = estatesData.length > 0;
+            filterExportAssetFlatsList();
+            document.getElementById('modalExportAssets').classList.remove('hidden');
+        };
+
+        function updateExportSelectedCounter() {
+            const countEl = document.getElementById('exportSelectedFlatsCount');
+            if (countEl) {
+                countEl.innerText = `${selectedExportFlatIds.size} of ${estatesData.length} Selected`;
+            }
+            const selectAllEl = document.getElementById('exportAssetSelectAll');
+            if (selectAllEl) {
+                selectAllEl.checked = estatesData.length > 0 && selectedExportFlatIds.size === estatesData.length;
+            }
+        }
+
+        window.filterExportAssetFlatsList = function() {
+            const listContainer = document.getElementById('exportAssetFlatList');
+            if (!listContainer) return;
+            const query = (document.getElementById('exportAssetFlatSearch')?.value || '').toLowerCase().trim();
+            const tokens = query.split(/\s+/).filter(Boolean);
+
+            listContainer.innerHTML = '';
+            const sortedFlats = getSortedEstatesList();
+
+            const filtered = sortedFlats.filter(flat => {
+                if (tokens.length === 0) return true;
+                const statusInfo = getFlatAllocationStatusInfo(flat);
+                const corpus = `${formatFlatDisplayLabel(flat)} ${statusInfo.text} ${flat.owner || ''}`.toLowerCase();
+                return tokens.every(t => corpus.includes(t));
+            });
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '<div class="p-4 text-center text-xs text-gray-400 italic">No flats match your filter.</div>';
+                updateExportSelectedCounter();
+                return;
+            }
+
+            filtered.forEach(flat => {
+                const flatIdStr = String(flat.id);
+                const safeId = flatIdStr.replace(/'/g, "\\'");
+                const isChecked = selectedExportFlatIds.has(flatIdStr);
+                const assetsCount = getAssetsForFlat(flat).length;
+                const statusInfo = getFlatAllocationStatusInfo(flat);
+
+                const row = document.createElement('label');
+                row.className = "flex items-center justify-between p-2.5 hover:bg-emerald-50/60 cursor-pointer transition bg-white";
+                row.innerHTML = `
+                    <div class="flex items-center space-x-2.5">
+                        <input
+                            type="checkbox"
+                            ${isChecked ? 'checked' : ''}
+                            onchange="toggleExportFlatCheckbox('${safeId}', this.checked)"
+                            class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                        >
+                        <div>
+                            <span class="text-xs font-bold text-gray-900 block">${formatFlatDisplayLabel(flat)}</span>
+                            <span class="text-[11px] text-gray-500">${statusInfo.text}</span>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${assetsCount > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'}">
+                        ${assetsCount} ${assetsCount === 1 ? 'Asset' : 'Assets'}
+                    </span>
+                `;
+                listContainer.appendChild(row);
+            });
+
+            updateExportSelectedCounter();
+        };
+
+        window.toggleExportFlatCheckbox = function(flatId, isChecked) {
+            const key = String(flatId);
+            if (isChecked) {
+                selectedExportFlatIds.add(key);
+            } else {
+                selectedExportFlatIds.delete(key);
+            }
+            document.getElementById('exportAssetErrorMsg')?.classList.add('hidden');
+            updateExportSelectedCounter();
+        };
+
+        window.toggleExportAssetSelectAll = function(isChecked) {
+            const query = (document.getElementById('exportAssetFlatSearch')?.value || '').toLowerCase().trim();
+            const tokens = query.split(/\s+/).filter(Boolean);
+            const targetFlats = getSortedEstatesList().filter(flat => {
+                if (tokens.length === 0) return true;
+                const statusInfo = getFlatAllocationStatusInfo(flat);
+                const corpus = `${formatFlatDisplayLabel(flat)} ${statusInfo.text} ${flat.owner || ''}`.toLowerCase();
+                return tokens.every(t => corpus.includes(t));
+            });
+
+            targetFlats.forEach(flat => {
+                if (isChecked) {
+                    selectedExportFlatIds.add(String(flat.id));
+                } else {
+                    selectedExportFlatIds.delete(String(flat.id));
+                }
+            });
+            document.getElementById('exportAssetErrorMsg')?.classList.add('hidden');
+            filterExportAssetFlatsList();
+        };
+
+        window.executeAssetDetailsExport = function() {
+            const errEl = document.getElementById('exportAssetErrorMsg');
+            if (errEl) errEl.classList.add('hidden');
+
+            if (selectedExportFlatIds.size === 0) {
+                if (errEl) {
+                    errEl.innerText = "Please select at least one flat to export.";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const formatRadio = document.querySelector('input[name="exportAssetFormat"]:checked');
+            const format = formatRadio ? formatRadio.value : 'excel';
+
+            const sortedSelectedFlats = getSortedEstatesList().filter(f => selectedExportFlatIds.has(String(f.id)));
+            const columns = [
+                "Flat Details",
+                "Status",
+                "Asset Name",
+                "Location",
+                "Brand Name",
+                "Type",
+                "Model Number",
+                "Capacity / Size",
+                "Purchase Date",
+                "Warranty",
+                "Bill PDF Link"
+            ];
+
+            const rows = [];
+            sortedSelectedFlats.forEach(flat => {
+                const flatLabel = formatFlatDisplayLabel(flat);
+                const statusText = getFlatAllocationStatusInfo(flat).text;
+                const flatAssets = getAssetsForFlat(flat);
+
+                if (flatAssets.length === 0) {
+                    rows.push([
+                        flatLabel,
+                        statusText,
+                        "No Assets Registered",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-"
+                    ]);
+                } else {
+                    flatAssets.forEach(a => {
+                        rows.push([
+                            flatLabel,
+                            statusText,
+                            a.assetName || "-",
+                            a.location || "-",
+                            a.brand || "-",
+                            a.type || "-",
+                            a.modelNumber || "-",
+                            a.capacity || "-",
+                            a.purchaseDate || "-",
+                            a.warranty || "-",
+                            a.billUrl || "-"
+                        ]);
+                    });
+                }
+            });
+
+            const dateStamp = new Date().toISOString().slice(0, 10);
+            const fileName = `Dawat_Estates_Asset_Details_${dateStamp}`;
+
+            if (format === 'excel') {
+                const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Asset Details");
+                XLSX.writeFile(wb, `${fileName}.xlsx`);
+            } else {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape' });
+                doc.setFontSize(14);
+                doc.text("Dawat Estates - Asset Details Report", 14, 15);
+                doc.setFontSize(9);
+                doc.text(`Exported on: ${new Date().toLocaleDateString()} | Selected Flats: ${sortedSelectedFlats.length} | Aljamea Marol Facilities Management`, 14, 21);
+                doc.autoTable({
+                    head: [columns],
+                    body: rows,
+                    startY: 25,
+                    theme: 'grid',
+                    styles: { fontSize: 7.5, cellPadding: 2 },
+                    headStyles: { fillColor: [6, 95, 70] }
+                });
+                doc.save(`${fileName}.pdf`);
+            }
+
+            closeModal('modalExportAssets');
+            showAssetToast(`Exported ${rows.length} row(s) as ${format.toUpperCase()}`);
         };
 
         window.removeUser = async function(email) {

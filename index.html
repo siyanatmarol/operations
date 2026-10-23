@@ -1296,6 +1296,7 @@
 
             <form id="assetForm" onsubmit="saveAssetRecord(event)" class="space-y-3.5">
                 <input type="hidden" id="editAssetId" value="">
+                <input type="hidden" id="cloneSourceAssetId" value="">
                 <input type="hidden" id="assetSelectedFlatId" value="">
 
                 <!-- 1. Select Flat (Compulsory, Searchable/Dynamic Filter Dropdown) -->
@@ -1305,7 +1306,7 @@
                         <input
                             type="text"
                             id="assetFlatSearchInput"
-                            onfocus="filterAssetFlatDropdown()"
+                            onfocus="this.select(); filterAssetFlatDropdown()"
                             oninput="handleAssetFlatSearchInput()"
                             placeholder="Type to search Building, Wing, or Flat No..."
                             autocomplete="off"
@@ -4293,7 +4294,10 @@ window.renderSocieties = function() {
                                 <td class="p-2.5 text-gray-700 whitespace-nowrap">${asset.purchaseDate || '-'}</td>
                                 <td class="p-2.5 text-gray-700">${asset.warranty || '-'}</td>
                                 <td class="p-2.5 text-center whitespace-nowrap">${billHtml}</td>
-                                <td class="p-2.5 text-center whitespace-nowrap space-x-2">
+                                <td class="p-2.5 text-center whitespace-nowrap space-x-1.5">
+                                    <button type="button" onclick="openCloneAssetModal('${safeAssetId}')" class="text-emerald-600 hover:text-emerald-800 font-bold px-1.5 py-0.5 rounded hover:bg-emerald-50" title="Clone Asset">
+                                        <i class="fa-solid fa-clone"></i>
+                                    </button>
                                     <button type="button" onclick="openEditAssetModal('${safeAssetId}')" class="text-blue-600 hover:text-blue-800 font-bold px-1.5 py-0.5 rounded hover:bg-blue-50" title="Edit Asset">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
@@ -4392,8 +4396,11 @@ window.renderSocieties = function() {
             const dropdown = document.getElementById('assetFlatDropdown');
             if (!inputEl || !dropdown) return;
 
+            const selectedFlatId = document.getElementById('assetSelectedFlatId')?.value || '';
+            const selectedFlatObj = selectedFlatId ? estatesData.find(f => String(f.id) === String(selectedFlatId)) : null;
             const rawQuery = inputEl.value.toLowerCase().trim();
-            const tokens = rawQuery.split(/\s+/).filter(Boolean);
+            const isUnchangedSelection = selectedFlatObj && formatFlatDisplayLabel(selectedFlatObj).toLowerCase() === rawQuery;
+            const tokens = isUnchangedSelection ? [] : rawQuery.split(/\s+/).filter(Boolean);
             dropdown.innerHTML = '';
 
             const sortedFlats = getSortedEstatesList();
@@ -4446,6 +4453,7 @@ window.renderSocieties = function() {
             if (form) form.reset();
 
             document.getElementById('editAssetId').value = '';
+            if (document.getElementById('cloneSourceAssetId')) document.getElementById('cloneSourceAssetId').value = '';
             document.getElementById('assetModalTitle').innerText = 'Add Asset';
             document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
 
@@ -4488,6 +4496,7 @@ window.renderSocieties = function() {
             if (form) form.reset();
 
             document.getElementById('editAssetId').value = String(asset.id);
+            if (document.getElementById('cloneSourceAssetId')) document.getElementById('cloneSourceAssetId').value = '';
             document.getElementById('assetModalTitle').innerText = 'Edit Asset Details';
             document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
 
@@ -4524,6 +4533,54 @@ window.renderSocieties = function() {
             document.getElementById('modalAddAsset').classList.remove('hidden');
         };
 
+        window.openCloneAssetModal = function(assetId) {
+            const asset = estateAssetsData.find(a => String(a.id) === String(assetId));
+            if (!asset) return;
+
+            const form = document.getElementById('assetForm');
+            if (form) form.reset();
+
+            // Leave editAssetId empty so saving creates a new cloned asset record
+            document.getElementById('editAssetId').value = '';
+            if (document.getElementById('cloneSourceAssetId')) {
+                document.getElementById('cloneSourceAssetId').value = String(asset.id);
+            }
+            document.getElementById('assetModalTitle').innerText = 'Clone Asset';
+            document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
+
+            const flat = estatesData.find(e => String(e.id) === String(asset.flatId));
+            document.getElementById('assetSelectedFlatId').value = flat ? String(flat.id) : String(asset.flatId || '');
+            document.getElementById('assetFlatSearchInput').value = flat ? formatFlatDisplayLabel(flat) : (asset.flatLabel || '');
+
+            document.getElementById('assetNameInput').value = asset.assetName || '';
+            document.getElementById('assetLocationInput').value = asset.location || '';
+            document.getElementById('assetBrandInput').value = asset.brand || '';
+            document.getElementById('assetTypeInput').value = asset.type || '';
+            document.getElementById('assetModelInput').value = asset.modelNumber || '';
+            document.getElementById('assetCapacityInput').value = asset.capacity || '';
+            document.getElementById('assetPurchaseDateInput').value = asset.purchaseDate || '';
+            document.getElementById('assetWarrantyInput').value = asset.warranty || '';
+
+            const existingBillEl = document.getElementById('assetExistingBillNotice');
+            if (existingBillEl) {
+                if (asset.billUrl) {
+                    existingBillEl.innerHTML = `<a href="${asset.billUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>Cloned Bill Attached (View)</a>`;
+                    existingBillEl.classList.remove('hidden');
+                } else {
+                    existingBillEl.innerHTML = '';
+                    existingBillEl.classList.add('hidden');
+                }
+            }
+
+            const btn = document.getElementById('btnSaveAssetRecord');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-clone"></i><span>Save Cloned Asset</span>';
+            }
+
+            document.getElementById('modalAddAsset').classList.remove('hidden');
+        };
+
         window.saveAssetRecord = async function(e) {
             e.preventDefault();
             const editId = document.getElementById('editAssetId').value.trim();
@@ -4552,7 +4609,10 @@ window.renderSocieties = function() {
             const warranty = document.getElementById('assetWarrantyInput').value.trim();
             const billFile = document.getElementById('assetBillFileInput').files[0];
 
-            const existingRecord = editId ? estateAssetsData.find(a => String(a.id) === String(editId)) : null;
+            const cloneSourceId = document.getElementById('cloneSourceAssetId') ? document.getElementById('cloneSourceAssetId').value.trim() : '';
+            const existingRecord = editId
+                ? estateAssetsData.find(a => String(a.id) === String(editId))
+                : (cloneSourceId ? estateAssetsData.find(a => String(a.id) === String(cloneSourceId)) : null);
             let billUrl = existingRecord ? (existingRecord.billUrl || '') : '';
             let billDirectUrl = existingRecord ? (existingRecord.billDirectUrl || '') : '';
             let billFileId = existingRecord ? (existingRecord.billFileId || '') : '';
@@ -4611,10 +4671,13 @@ window.renderSocieties = function() {
             await saveCloudData();
             closeModal('modalAddAsset');
             renderAssetDetailsTable();
+            if (document.getElementById('cloneSourceAssetId')) {
+                document.getElementById('cloneSourceAssetId').value = '';
+            }
             if (document.getElementById('integratedFlatSelect')?.value) {
                 renderIntegratedView();
             }
-            showAssetToast(editId ? "Asset updated in estate_assets" : "Asset added to estate_assets");
+            showAssetToast(editId ? "Asset updated in estate_assets" : (cloneSourceId ? "Asset cloned and saved to estate_assets" : "Asset added to estate_assets"));
         };
 
         window.deleteAssetRecord = function(assetId) {

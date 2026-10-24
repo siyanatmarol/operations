@@ -692,20 +692,22 @@
             </div>
 
             <!-- Summary Metric Pills -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-emerald-800 text-white p-4 rounded-lg shadow border border-emerald-700 flex justify-between items-center">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                <button type="button" id="cardBtnClassroomsAll" onclick="setClassroomAllocationFilter('all')" class="bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition hover:opacity-95">
                     <div>
                         <span class="text-xs uppercase tracking-wider font-semibold opacity-90 block">Total Classrooms</span>
                         <span id="cardTotalClassroomsCount" class="text-3xl font-extrabold mt-1 block">0</span>
+                        <span class="text-[10px] text-emerald-200 font-medium mt-1 block">Click to view all</span>
                     </div>
                     <div class="bg-emerald-700/80 p-3 rounded-full text-xl">
                         <i class="fa-solid fa-school"></i>
                     </div>
-                </div>
+                </button>
                 <div class="bg-white p-4 rounded-lg shadow border border-l-4 border-l-blue-600 flex justify-between items-center">
                     <div>
                         <span class="text-xs text-gray-500 font-semibold uppercase block">Male Classes</span>
                         <span id="cardMaleClassroomsCount" class="text-2xl font-bold text-blue-900 mt-1 block">0</span>
+                        <span class="text-[10px] text-gray-400 font-medium mt-1 block">Total Male Rooms</span>
                     </div>
                     <div class="bg-blue-100 text-blue-800 p-3 rounded-full text-lg">
                         <i class="fa-solid fa-person"></i>
@@ -715,11 +717,42 @@
                     <div>
                         <span class="text-xs text-gray-500 font-semibold uppercase block">Female Classes</span>
                         <span id="cardFemaleClassroomsCount" class="text-2xl font-bold text-pink-900 mt-1 block">0</span>
+                        <span class="text-[10px] text-gray-400 font-medium mt-1 block">Total Female Rooms</span>
                     </div>
                     <div class="bg-pink-100 text-pink-800 p-3 rounded-full text-lg">
                         <i class="fa-solid fa-person-dress"></i>
                     </div>
                 </div>
+                <button type="button" id="cardBtnClassroomsAllocated" onclick="setClassroomAllocationFilter('allocated')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-teal-600 flex flex-col justify-between text-left transition hover:border-teal-500">
+                    <div class="flex justify-between items-start w-full">
+                        <div>
+                            <span class="text-xs text-gray-600 font-bold uppercase block leading-tight">Allocated as Standard Class</span>
+                            <span id="cardAllocatedStdClassroomsCount" class="text-2xl font-extrabold text-teal-800 mt-1 block">0</span>
+                        </div>
+                        <div class="bg-teal-100 text-teal-800 p-2.5 rounded-full text-base">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 mt-2 pt-1.5 border-t border-gray-100 w-full text-[11px] font-bold">
+                        <span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200"><i class="fa-solid fa-person mr-1"></i>Male: <span id="cardAllocatedStdMaleCount">0</span></span>
+                        <span class="bg-pink-50 text-pink-800 px-2 py-0.5 rounded border border-pink-200"><i class="fa-solid fa-person-dress mr-1"></i>Female: <span id="cardAllocatedStdFemaleCount">0</span></span>
+                    </div>
+                </button>
+                <button type="button" id="cardBtnClassroomsVacant" onclick="setClassroomAllocationFilter('vacant')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-amber-500 flex flex-col justify-between text-left transition hover:border-amber-500">
+                    <div class="flex justify-between items-start w-full">
+                        <div>
+                            <span class="text-xs text-gray-600 font-bold uppercase block leading-tight">Vacant for Events</span>
+                            <span id="cardVacantEventClassroomsCount" class="text-2xl font-extrabold text-amber-800 mt-1 block">0</span>
+                        </div>
+                        <div class="bg-amber-100 text-amber-800 p-2.5 rounded-full text-base">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 mt-2 pt-1.5 border-t border-gray-100 w-full text-[11px] font-bold">
+                        <span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200"><i class="fa-solid fa-person mr-1"></i>Male: <span id="cardVacantEventMaleCount">0</span></span>
+                        <span class="bg-pink-50 text-pink-800 px-2 py-0.5 rounded border border-pink-200"><i class="fa-solid fa-person-dress mr-1"></i>Female: <span id="cardVacantEventFemaleCount">0</span></span>
+                    </div>
+                </button>
             </div>
 
             <!-- Bifurcated Tables: Male Classes & Female Classes -->
@@ -737,7 +770,7 @@
                         <table class="w-full text-left text-xs sm:text-sm table-auto">
                             <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
                                 <tr>
-                                    <th class="py-2.5 px-2.5 w-20 text-center leading-tight">Class<br>No.</th>
+                                    <th class="py-2.5 px-2.5 w-24 text-center leading-tight">Class<br>No.</th>
                                     <th class="py-2.5 px-2.5 w-32">Location</th>
                                     <th class="py-2.5 px-2.5">Darajah / Event</th>
                                     <th class="py-2.5 px-2 w-24 text-center leading-tight">Student<br>Count</th>
@@ -763,7 +796,7 @@
                         <table class="w-full text-left text-xs sm:text-sm table-auto">
                             <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
                                 <tr>
-                                    <th class="py-2.5 px-2.5 w-20 text-center leading-tight">Class<br>No.</th>
+                                    <th class="py-2.5 px-2.5 w-24 text-center leading-tight">Class<br>No.</th>
                                     <th class="py-2.5 px-2.5 w-32">Location</th>
                                     <th class="py-2.5 px-2.5">Darajah / Event</th>
                                     <th class="py-2.5 px-2 w-24 text-center leading-tight">Student<br>Count</th>
@@ -2499,6 +2532,7 @@
                     classroomNumber: String(item.classroomNumber || item.number || ''),
                     location: String(item.location || ''),
                     type: item.type === 'Female' ? 'Female' : 'Male',
+                    isAllocated: !!item.isAllocated,
                     studentCount: (item.studentCount !== undefined && item.studentCount !== null && item.studentCount !== '') ? Number(item.studentCount) : null,
                     extraChair: (item.extraChair !== undefined && item.extraChair !== null && item.extraChair !== '') ? Number(item.extraChair) : null,
                     allocations,
@@ -5327,6 +5361,7 @@ window.renderSocieties = function() {
                     classroomNumber,
                     location,
                     type,
+                    isAllocated: false,
                     studentCount: null,
                     extraChair: null,
                     allocations: [],
@@ -5616,6 +5651,53 @@ window.renderSocieties = function() {
             showAssetToast(`Saved schedule for "${standardEventName}" in Classroom ${room.classroomNumber}`);
         };
 
+        let selectedClassroomCardFilter = 'all'; // 'all' | 'allocated' | 'vacant'
+
+        window.setClassroomAllocationFilter = function(filter) {
+            if (selectedClassroomCardFilter === filter && filter !== 'all') {
+                selectedClassroomCardFilter = 'all';
+            } else {
+                selectedClassroomCardFilter = filter;
+            }
+
+            const btnAll = document.getElementById('cardBtnClassroomsAll');
+            const btnAlloc = document.getElementById('cardBtnClassroomsAllocated');
+            const btnVacant = document.getElementById('cardBtnClassroomsVacant');
+
+            if (btnAll) {
+                btnAll.className = selectedClassroomCardFilter === 'all'
+                    ? "bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition hover:opacity-95"
+                    : "bg-emerald-800/90 text-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:opacity-95";
+            }
+            if (btnAlloc) {
+                btnAlloc.className = selectedClassroomCardFilter === 'allocated'
+                    ? "bg-teal-50/70 p-4 rounded-lg shadow-md border-2 border-teal-600 ring-2 ring-teal-500/40 border-l-4 border-l-teal-600 flex flex-col justify-between text-left transition"
+                    : "bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-teal-600 flex flex-col justify-between text-left transition hover:border-teal-500";
+            }
+            if (btnVacant) {
+                btnVacant.className = selectedClassroomCardFilter === 'vacant'
+                    ? "bg-amber-50/70 p-4 rounded-lg shadow-md border-2 border-amber-500 ring-2 ring-amber-500/40 border-l-4 border-l-amber-500 flex flex-col justify-between text-left transition"
+                    : "bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-amber-500 flex flex-col justify-between text-left transition hover:border-amber-500";
+            }
+
+            renderClassroomsTables();
+        };
+
+        window.toggleClassroomStandardAllocated = async function(classroomId, isChecked) {
+            if (!isUserAdmin) {
+                showAssetToast("Admin Privileges Required: Only Administrators can change Allocated status.", true);
+                renderClassroomsTables();
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+            room.isAllocated = !!isChecked;
+            room.updatedAt = new Date().toISOString().split('T')[0];
+            await saveClassroomsToCloud();
+            renderClassroomsTables();
+            showAssetToast(`Classroom ${room.classroomNumber} marked as ${room.isAllocated ? 'Allocated (Standard Class)' : 'Vacant for Events'}`);
+        };
+
         window.renderClassroomsTables = function() {
             const maleTbody = document.getElementById('maleClassroomsTableBody');
             const femaleTbody = document.getElementById('femaleClassroomsTableBody');
@@ -5638,22 +5720,44 @@ window.renderSocieties = function() {
                 String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' })
             );
 
+            // Compute overview metric counts (including Male & Female bifurcation for Allocated & Vacant)
+            const allMaleRooms = classroomsData.filter(r => r.type !== 'Female');
+            const allFemaleRooms = classroomsData.filter(r => r.type === 'Female');
+
+            const allocatedMaleCount = allMaleRooms.filter(r => !!r.isAllocated).length;
+            const allocatedFemaleCount = allFemaleRooms.filter(r => !!r.isAllocated).length;
+            const allocatedTotalCount = allocatedMaleCount + allocatedFemaleCount;
+
+            const vacantMaleCount = allMaleRooms.filter(r => !r.isAllocated).length;
+            const vacantFemaleCount = allFemaleRooms.filter(r => !r.isAllocated).length;
+            const vacantTotalCount = vacantMaleCount + vacantFemaleCount;
+
+            if (document.getElementById('cardTotalClassroomsCount')) document.getElementById('cardTotalClassroomsCount').innerText = classroomsData.length;
+            if (document.getElementById('cardMaleClassroomsCount')) document.getElementById('cardMaleClassroomsCount').innerText = allMaleRooms.length;
+            if (document.getElementById('cardFemaleClassroomsCount')) document.getElementById('cardFemaleClassroomsCount').innerText = allFemaleRooms.length;
+
+            if (document.getElementById('cardAllocatedStdClassroomsCount')) document.getElementById('cardAllocatedStdClassroomsCount').innerText = allocatedTotalCount;
+            if (document.getElementById('cardAllocatedStdMaleCount')) document.getElementById('cardAllocatedStdMaleCount').innerText = allocatedMaleCount;
+            if (document.getElementById('cardAllocatedStdFemaleCount')) document.getElementById('cardAllocatedStdFemaleCount').innerText = allocatedFemaleCount;
+
+            if (document.getElementById('cardVacantEventClassroomsCount')) document.getElementById('cardVacantEventClassroomsCount').innerText = vacantTotalCount;
+            if (document.getElementById('cardVacantEventMaleCount')) document.getElementById('cardVacantEventMaleCount').innerText = vacantMaleCount;
+            if (document.getElementById('cardVacantEventFemaleCount')) document.getElementById('cardVacantEventFemaleCount').innerText = vacantFemaleCount;
+
             const filteredRooms = sortedRooms.filter(room => {
+                if (selectedClassroomCardFilter === 'allocated' && !room.isAllocated) return false;
+                if (selectedClassroomCardFilter === 'vacant' && !!room.isAllocated) return false;
+
                 if (tokens.length === 0) return true;
                 const allocText = (room.allocations || []).map(a => `${a.standardEventName} ${formatAllocationScheduleSummary(a.slots)}`).join(' ');
-                const corpus = `${room.classroomNumber} ${room.location} ${room.type} ${room.studentCount ?? ''} ${room.extraChair ?? ''} ${allocText}`.toLowerCase();
+                const statusLabel = room.isAllocated ? 'allocated standard class' : 'vacant for events';
+                const corpus = `${room.classroomNumber} ${room.location} ${room.type} ${statusLabel} ${room.studentCount ?? ''} ${room.extraChair ?? ''} ${allocText}`.toLowerCase();
                 return tokens.every(t => corpus.includes(t));
             });
 
             const maleRooms = filteredRooms.filter(r => r.type !== 'Female');
             const femaleRooms = filteredRooms.filter(r => r.type === 'Female');
 
-            // Update counts
-            const totalMale = classroomsData.filter(r => r.type !== 'Female').length;
-            const totalFemale = classroomsData.filter(r => r.type === 'Female').length;
-            if (document.getElementById('cardTotalClassroomsCount')) document.getElementById('cardTotalClassroomsCount').innerText = classroomsData.length;
-            if (document.getElementById('cardMaleClassroomsCount')) document.getElementById('cardMaleClassroomsCount').innerText = totalMale;
-            if (document.getElementById('cardFemaleClassroomsCount')) document.getElementById('cardFemaleClassroomsCount').innerText = totalFemale;
             if (document.getElementById('maleClassesBadgeCount')) document.getElementById('maleClassesBadgeCount').innerText = `${maleRooms.length} Room${maleRooms.length === 1 ? '' : 's'}`;
             if (document.getElementById('femaleClassesBadgeCount')) document.getElementById('femaleClassesBadgeCount').innerText = `${femaleRooms.length} Room${femaleRooms.length === 1 ? '' : 's'}`;
 
@@ -5741,10 +5845,20 @@ window.renderSocieties = function() {
                     </div>`
                     : '';
 
+                const adminAllocatedCheckboxHtml = isUserAdmin
+                    ? `<label class="inline-flex items-center space-x-1 text-[10px] font-semibold ${room.isAllocated ? 'text-teal-900 bg-teal-50 border-teal-300' : 'text-gray-600 bg-gray-50 border-gray-200'} border px-1.5 py-0.5 rounded cursor-pointer hover:bg-teal-50 transition select-none mt-1" title="Mark as Allocated Standard Class">
+                        <input type="checkbox" ${room.isAllocated ? 'checked' : ''} onchange="toggleClassroomStandardAllocated('${safeRoomId}', this.checked)" class="h-3 w-3 rounded text-teal-600 focus:ring-teal-500 cursor-pointer">
+                        <span>Allocated</span>
+                    </label>`
+                    : '';
+
                 return `
                     <tr class="hover:bg-gray-50 border-b align-top">
-                        <td class="py-2.5 px-2 w-20 text-center font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'} whitespace-nowrap">
-                            ${room.classroomNumber}
+                        <td class="py-2.5 px-2 w-24 text-center whitespace-nowrap">
+                            <div class="flex flex-col items-center justify-center">
+                                <span class="font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'}">${room.classroomNumber}</span>
+                                ${adminAllocatedCheckboxHtml}
+                            </div>
                         </td>
                         <td class="py-2.5 px-2.5 text-gray-700 font-medium text-xs leading-snug">
                             ${room.location}

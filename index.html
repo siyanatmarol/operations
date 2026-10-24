@@ -26,6 +26,18 @@
         .integrated-boost input, .integrated-boost select { font-size: 1.05rem !important; }
         .integrated-boost table { font-size: 1.0rem !important; }
         .integrated-boost p, .integrated-boost span { font-size: 1.05rem !important; }
+        body.view-only-mode .crud-action-btn,
+        body.view-only-mode [data-crud="true"] {
+            display: none !important;
+        }
+        body.view-only-mode .crud-input {
+            pointer-events: none !important;
+            background-color: #f3f4f6 !important;
+            opacity: 0.75 !important;
+        }
+        .timetable-grid th, .timetable-grid td {
+            border: 1px solid #d1d5db;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col text-sm">
@@ -67,7 +79,10 @@
             <div class="flex items-center space-x-4">
                 <div class="text-right">
                     <span id="currentUserEmail" class="block text-sm font-medium text-emerald-100">User</span>
-                    <span id="currentUserRole" class="text-xs bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">User</span>
+                    <div class="flex items-center justify-end space-x-1.5 mt-0.5">
+                        <span id="currentUserRole" class="text-xs bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded-full font-semibold">User</span>
+                        <span id="currentUserAccessBadge" class="text-[11px] bg-teal-800 text-teal-100 px-2 py-0.5 rounded-full font-semibold border border-teal-600">Editing Rights</span>
+                    </div>
                 </div>
                 <button onclick="handleSignOut()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1">
                     <i class="fa-solid fa-right-from-bracket"></i>
@@ -81,6 +96,10 @@
                 <button onclick="switchModule('dawat-estates')" id="mod-dawat-estates" class="px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 active-tab">
                     <i class="fa-solid fa-city text-emerald-400"></i>
                     <span>Dawat Estates</span>
+                </button>
+                <button onclick="switchModule('classroom-allocation')" id="mod-classroom-allocation" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Classroom Allocation</span>
                 </button>
                 <button onclick="switchModule('inventory')" id="mod-inventory" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-key"></i>
@@ -100,6 +119,14 @@
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-grow">
+        <!-- View Only Mode Notice Banner -->
+        <div id="viewOnlyNoticeBanner" class="hidden mb-4 bg-amber-50 border border-amber-300 text-amber-900 px-4 py-2.5 rounded-lg flex items-center justify-between text-xs font-semibold shadow-sm">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-eye text-amber-600 text-sm"></i>
+                <span>You are viewing this portal with <strong>View Only</strong> rights. Adding, editing, and deleting records are disabled.</span>
+            </div>
+            <span class="bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold uppercase text-[10px]">Read-Only Access</span>
+        </div>
 
         <!-- MODULE: DAWAT ESTATES -->
         <div id="module-dawat-estates" class="space-y-6">
@@ -641,6 +668,116 @@
 
         </div>
 
+        <!-- MODULE: CLASSROOM ALLOCATION -->
+        <div id="module-classroom-allocation" class="hidden space-y-6">
+            <!-- Header & Primary Action -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-chalkboard-user text-emerald-700"></i>
+                        <span>Classroom Allocation</span>
+                    </h2>
+                    <p class="text-xs text-gray-500">Manage Male & Female classrooms, locations, and weekly Darajah / Event period schedules.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                    <div class="relative flex-grow sm:flex-grow-0 sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                        <input type="text" id="classroomSearchInput" oninput="renderClassroomsTables()" placeholder="Search Classroom, Location, Darajah..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm">
+                    </div>
+                    <button type="button" id="btnAddClassroomHeader" onclick="openAddClassroomModal()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Add Classroom</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Metric Pills -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-emerald-800 text-white p-4 rounded-lg shadow border border-emerald-700 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs uppercase tracking-wider font-semibold opacity-90 block">Total Classrooms</span>
+                        <span id="cardTotalClassroomsCount" class="text-3xl font-extrabold mt-1 block">0</span>
+                    </div>
+                    <div class="bg-emerald-700/80 p-3 rounded-full text-xl">
+                        <i class="fa-solid fa-school"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border border-l-4 border-l-blue-600 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs text-gray-500 font-semibold uppercase block">Male Classes</span>
+                        <span id="cardMaleClassroomsCount" class="text-2xl font-bold text-blue-900 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-blue-100 text-blue-800 p-3 rounded-full text-lg">
+                        <i class="fa-solid fa-person"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border border-l-4 border-l-pink-600 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs text-gray-500 font-semibold uppercase block">Female Classes</span>
+                        <span id="cardFemaleClassroomsCount" class="text-2xl font-bold text-pink-900 mt-1 block">0</span>
+                    </div>
+                    <div class="bg-pink-100 text-pink-800 p-3 rounded-full text-lg">
+                        <i class="fa-solid fa-person-dress"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bifurcated Tables: Male Classes & Female Classes -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <!-- Male Classes Table -->
+                <div class="bg-white rounded-lg shadow border overflow-hidden">
+                    <div class="bg-blue-900 text-white px-4 py-3 flex justify-between items-center">
+                        <h3 class="font-bold text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-person text-blue-300"></i>
+                            <span>Male Classes</span>
+                        </h3>
+                        <span id="maleClassesBadgeCount" class="bg-blue-800 text-blue-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3 whitespace-nowrap">Classroom Number</th>
+                                    <th class="p-3">Location</th>
+                                    <th class="p-3">Darajah / Event</th>
+                                    <th class="p-3 text-center whitespace-nowrap">Student Count</th>
+                                    <th class="p-3 text-center whitespace-nowrap">Extra Chair</th>
+                                    <th class="p-3 text-center whitespace-nowrap">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maleClassroomsTableBody" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Female Classes Table -->
+                <div class="bg-white rounded-lg shadow border overflow-hidden">
+                    <div class="bg-pink-900 text-white px-4 py-3 flex justify-between items-center">
+                        <h3 class="font-bold text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-person-dress text-pink-300"></i>
+                            <span>Female Classes</span>
+                        </h3>
+                        <span id="femaleClassesBadgeCount" class="bg-pink-800 text-pink-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3 whitespace-nowrap">Classroom Number</th>
+                                    <th class="p-3">Location</th>
+                                    <th class="p-3">Darajah / Event</th>
+                                    <th class="p-3 text-center whitespace-nowrap">Student Count</th>
+                                    <th class="p-3 text-center whitespace-nowrap">Extra Chair</th>
+                                    <th class="p-3 text-center whitespace-nowrap">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="femaleClassroomsTableBody" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- MODULE: KEYS INVENTORY -->
         <div id="module-inventory" class="hidden space-y-4">
             <div class="bg-white p-6 rounded-lg shadow border text-center py-12">
@@ -691,63 +828,172 @@
 
         <!-- MODULE: ADMIN ACCESS & INVITATIONS -->
         <div id="module-admin-access" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow border space-y-4">
-                <div class="border-b pb-4">
-                    <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
-                        <i class="fa-solid fa-user-shield text-emerald-700"></i>
-                        <span>User Access Control & Invited Permissions</span>
-                    </h2>
+            <div class="bg-white p-6 rounded-lg shadow border space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-user-shield text-emerald-700"></i>
+                            <span>User Access Control & Invited Permissions</span>
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Configure granular module permissions, Dawat Estates sub-modules, and View Only vs Editing Rights.</p>
+                    </div>
                 </div>
 
-                <form id="inviteUserForm" onsubmit="handleInviteUser(event)" class="bg-gray-50 p-4 rounded-lg border space-y-3">
-                    <h3 class="text-sm font-bold text-gray-700 uppercase">Invite New Team Member</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div class="sm:col-span-2">
-                            <label class="text-xs font-semibold text-gray-600 block mb-1">User Email Address</label>
-                            <input type="email" id="inviteEmail" required placeholder="e.g. staff@gmail.com" class="w-full p-2 border rounded text-sm">
+                <form id="inviteUserForm" onsubmit="handleInviteUser(event)" class="bg-gray-50 p-5 rounded-lg border space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h3 class="text-sm font-bold text-gray-700 uppercase" id="inviteFormHeading">Invite / Configure Team Member</h3>
+                        <button type="button" id="cancelEditUserBtn" onclick="resetInviteUserForm()" class="hidden text-xs text-red-600 hover:underline font-semibold">Cancel Edit</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">User Email Address *</label>
+                            <input type="email" id="inviteEmail" required placeholder="e.g. staff@gmail.com" class="w-full p-2 border rounded text-sm bg-white">
                         </div>
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">System Role</label>
-                            <select id="inviteRole" class="w-full p-2 border rounded text-sm">
+                            <select id="inviteRole" class="w-full p-2 border rounded text-sm bg-white">
                                 <option value="User">Standard User</option>
                                 <option value="Admin">Administrator</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Allowed Sub-Header Permissions:</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-1" checked> <span>1. Estate Details</span></label>
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-2" checked> <span>2. Allocation</span></label>
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-3" checked> <span>3. Maintenance</span></label>
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-4" checked> <span>4. Bachelor Flats</span></label>
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-5" checked> <span>5. Vacant Bills</span></label>
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-6" checked> <span>6. Society Tracking</span></label>
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-7" checked> <span>7. Integrated View</span></label>
-                            <label class="flex items-center space-x-2 bg-white p-2 border rounded"><input type="checkbox" id="perm-8" checked> <span>8. Asset Details</span></label>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Access Level Rights (Permissions)</label>
+                            <div class="grid grid-cols-2 gap-2 bg-white p-1.5 border rounded text-xs">
+                                <label class="flex items-center space-x-1.5 cursor-pointer px-2 py-1 rounded hover:bg-emerald-50">
+                                    <input type="radio" name="inviteAccessLevel" id="accessLevelEditing" value="Editing Rights" checked class="text-emerald-600 focus:ring-emerald-500">
+                                    <span class="font-semibold text-emerald-900"><i class="fa-solid fa-pen-to-square mr-1"></i>Editing Rights</span>
+                                </label>
+                                <label class="flex items-center space-x-1.5 cursor-pointer px-2 py-1 rounded hover:bg-amber-50">
+                                    <input type="radio" name="inviteAccessLevel" id="accessLevelViewOnly" value="View Only" class="text-amber-600 focus:ring-amber-500">
+                                    <span class="font-semibold text-amber-900"><i class="fa-solid fa-eye mr-1"></i>View Only</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded text-sm font-medium transition">
-                        <i class="fa-solid fa-paper-plane mr-1"></i> Save Invitation to Cloud
-                    </button>
+                    <!-- Allowed Module Permissions -->
+                    <div class="space-y-3 pt-1">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">Allowed Module Permissions:</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                            <label class="flex items-center space-x-2 bg-white p-3 border-2 border-emerald-200 rounded-lg cursor-pointer hover:bg-emerald-50/40 transition shadow-sm">
+                                <input type="checkbox" id="mod-perm-dawat-estates" value="dawat-estates" checked onchange="toggleNestedDawatEstatesPerms()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                <span class="font-bold text-gray-800"><i class="fa-solid fa-city text-emerald-600 mr-1.5"></i>Dawat Estates</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-3 border-2 border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/40 transition shadow-sm">
+                                <input type="checkbox" id="mod-perm-classroom-allocation" value="classroom-allocation" checked onchange="toggleNestedClassroomPerms()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                <span class="font-bold text-gray-800"><i class="fa-solid fa-chalkboard-user text-emerald-600 mr-1.5"></i>Classroom Allocation</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-sm">
+                                <input type="checkbox" id="mod-perm-inventory" value="inventory" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                <span class="font-bold text-gray-800"><i class="fa-solid fa-key text-emerald-600 mr-1.5"></i>Keys Inventory</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-sm">
+                                <input type="checkbox" id="mod-perm-faculty-dir" value="faculty-dir" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                <span class="font-bold text-gray-800"><i class="fa-solid fa-id-card text-emerald-600 mr-1.5"></i>Faculty Directory</span>
+                            </label>
+                        </div>
+
+                        <!-- Nested Permissions for Dawat Estates -->
+                        <div id="nestedDawatEstatesPermsBox" class="bg-emerald-50/70 p-4 rounded-lg border border-emerald-200 space-y-2.5 ml-0 sm:ml-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-emerald-950 flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-sitemap text-emerald-700"></i>
+                                    <span>Dawat Estates Sub-Module Permissions (Nested):</span>
+                                </label>
+                                <div class="space-x-2 text-[11px]">
+                                    <button type="button" onclick="setAllDawatSubPerms(true)" class="text-emerald-800 font-bold hover:underline">Select All</button>
+                                    <span class="text-gray-300">|</span>
+                                    <button type="button" onclick="setAllDawatSubPerms(false)" class="text-gray-600 font-semibold hover:underline">Clear All</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-1" checked class="rounded text-emerald-600"> <span>1. Estate Details</span></label>
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-2" checked class="rounded text-emerald-600"> <span>2. Allocation</span></label>
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-3" checked class="rounded text-emerald-600"> <span>3. Maintenance</span></label>
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-4" checked class="rounded text-emerald-600"> <span>4. Bachelor Flats</span></label>
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-5" checked class="rounded text-emerald-600"> <span>5. Vacant Bills</span></label>
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-6" checked class="rounded text-emerald-600"> <span>6. Society Tracking</span></label>
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-7" checked class="rounded text-emerald-600"> <span>7. Integrated View</span></label>
+                                <label class="flex items-center space-x-2 bg-white p-2 border rounded cursor-pointer hover:bg-emerald-50"><input type="checkbox" id="perm-8" checked class="rounded text-emerald-600"> <span>8. Asset Details</span></label>
+                            </div>
+                        </div>
+
+                        <!-- Nested Permissions for Classroom Allocation (Column-Level Access) -->
+                        <div id="nestedClassroomPermsBox" class="bg-blue-50/70 p-4 rounded-lg border border-blue-200 space-y-2.5 ml-0 sm:ml-4">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                                <label class="text-xs font-bold text-blue-950 flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-chalkboard-user text-blue-700"></i>
+                                    <span>Classroom Allocation Column Permissions (Unchecked columns remain View Only):</span>
+                                </label>
+                                <div class="space-x-2 text-[11px]">
+                                    <button type="button" onclick="setAllClassroomSubPerms(true)" class="text-blue-800 font-bold hover:underline">Select All</button>
+                                    <span class="text-gray-300">|</span>
+                                    <button type="button" onclick="setAllClassroomSubPerms(false)" class="text-gray-600 font-semibold hover:underline">Clear All</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                                <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                                    <input type="checkbox" id="cls-perm-darajah-event" value="darajah-event" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                    <span class="font-semibold text-gray-800"><i class="fa-solid fa-calendar-plus text-emerald-600 mr-1"></i>Add Darajah / Event</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                                    <input type="checkbox" id="cls-perm-student-count" value="student-count" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                    <span class="font-semibold text-gray-800"><i class="fa-solid fa-users text-blue-600 mr-1"></i>Student Count</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                                    <input type="checkbox" id="cls-perm-extra-chair" value="extra-chair" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                    <span class="font-semibold text-gray-800"><i class="fa-solid fa-chair text-amber-600 mr-1"></i>Extra Chair</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" id="saveUserInviteBtn" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition shadow-sm">
+                            <i class="fa-solid fa-paper-plane mr-1"></i> Save Invitation to Cloud
+                        </button>
+                    </div>
                 </form>
 
                 <div>
                     <h3 class="text-sm font-bold text-gray-700 uppercase mb-2">Authorized System Users</h3>
-                    <div class="overflow-x-auto border rounded">
+                    <div class="overflow-x-auto border rounded-lg">
                         <table class="w-full text-left text-sm">
                             <thead class="bg-gray-100 text-gray-600 text-xs uppercase">
                                 <tr>
                                     <th class="p-3">Email</th>
-                                    <th class="p-3">Role</th>
-                                    <th class="p-3">Allowed Sub-headers</th>
+                                    <th class="p-3">Role & Access Level</th>
+                                    <th class="p-3">Allowed Modules</th>
+                                    <th class="p-3">Module Sub-Permissions (Estates & Classroom Columns)</th>
                                     <th class="p-3 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="userListTableBody" class="divide-y"></tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Data Backup & Restore (JSON Export/Import) -->
+                <div class="bg-emerald-950 text-white p-5 rounded-xl shadow border border-emerald-800 space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h3 class="text-base font-bold text-emerald-300 flex items-center space-x-2">
+                                <i class="fa-solid fa-database"></i>
+                                <span>Data Backup & Restore (JSON Export / Import)</span>
+                            </h3>
+                            <p class="text-xs text-emerald-100/80 mt-1">Export all portal collections (Classrooms, Keys, Faculty, Dawat Estates, Assets, Bills, & Admin Settings) into a single JSON backup file, or restore from an existing backup.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button type="button" onclick="downloadWebpageDataJson()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition flex items-center space-x-2 shadow">
+                                <i class="fa-solid fa-download"></i>
+                                <span>Download Webpage Data (.json)</span>
+                            </button>
+                            <label class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2.5 rounded-lg text-xs transition flex items-center space-x-2 shadow cursor-pointer">
+                                <i class="fa-solid fa-upload"></i>
+                                <span>Upload Webpage Data (.json)</span>
+                                <input type="file" id="uploadJsonFileInput" accept=".json,application/json" onchange="uploadWebpageDataJson(event)" class="hidden">
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1513,6 +1759,154 @@
         <span id="assetToastText">Operation completed</span>
     </div>
 
+    <!-- Modal: Add / Edit Classroom -->
+    <div id="modalAddClassroom" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800" id="classroomModalTitle">Add Classroom</h3>
+                    <p class="text-xs text-gray-500">Register a Male or Female classroom for schedule allocation.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalAddClassroom')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+            <form id="classroomForm" onsubmit="saveClassroomRecord(event)" class="space-y-3.5">
+                <input type="hidden" id="editClassroomId" value="">
+                <div>
+                    <label class="text-xs font-semibold text-gray-700 block mb-1">Classroom Number <span class="text-red-600">*</span></label>
+                    <input type="text" id="classroomNumberInput" required placeholder="e.g. CR-101, Room 12, Hall A" class="w-full p-2.5 border rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-700 block mb-1">Location <span class="text-red-600">*</span></label>
+                    <input type="text" id="classroomLocationInput" required placeholder="e.g. Ground Floor - East Wing, Academic Block 1" class="w-full p-2.5 border rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-700 block mb-1">Type <span class="text-red-600">*</span></label>
+                    <select id="classroomTypeInput" required class="w-full p-2.5 border rounded-lg text-sm bg-white">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddClassroom')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition shadow-sm">Save Classroom</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Edit Student Count or Extra Chair -->
+    <div id="modalClassroomMetric" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800" id="classroomMetricModalTitle">Update Classroom Count</h3>
+                    <p class="text-xs text-gray-500" id="classroomMetricModalSubtitle">Classroom Details</p>
+                </div>
+                <button type="button" onclick="closeModal('modalClassroomMetric')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+            <form id="classroomMetricForm" onsubmit="saveClassroomMetricValue(event)" class="space-y-4">
+                <input type="hidden" id="metricClassroomId" value="">
+                <input type="hidden" id="metricFieldType" value="">
+                <div>
+                    <label class="text-xs font-bold text-gray-700 uppercase block mb-1" id="classroomMetricInputLabel">Value *</label>
+                    <input
+                        type="number"
+                        id="classroomMetricValueInput"
+                        min="0"
+                        required
+                        placeholder="Enter number (e.g. 35)"
+                        class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-base font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    >
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t">
+                    <button type="button" onclick="closeModal('modalClassroomMetric')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition shadow-sm">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Std / Event Schedule Timetable Popup -->
+    <div id="modalClassroomSchedule" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full p-5 sm:p-6 space-y-4 max-h-[94vh] flex flex-col">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-check text-emerald-700"></i>
+                        <span id="scheduleModalTitle">Allocate Standard / Event Schedule</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5" id="scheduleModalSubtitle">Select the weekly period slots for this classroom.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalClassroomSchedule')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold self-end sm:self-auto">&times;</button>
+            </div>
+
+            <form id="classroomScheduleForm" onsubmit="saveClassroomScheduleAllocation(event)" class="space-y-4 flex-grow overflow-y-auto pr-1">
+                <input type="hidden" id="scheduleClassroomId" value="">
+                <input type="hidden" id="scheduleEditAllocId" value="">
+
+                <!-- Top Input Bar: Standard / Event Name + Select All Checkbox -->
+                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4">
+                    <div class="flex-grow">
+                        <label class="text-xs font-bold text-emerald-950 uppercase tracking-wider block mb-1">Standard / Event Name <span class="text-red-600">*</span></label>
+                        <input
+                            type="text"
+                            id="scheduleEventNameInput"
+                            required
+                            placeholder="e.g. Darajah 1 (Al-Ula), Darajah 5, Hifzul Quran, Seminar..."
+                            class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        >
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <label class="flex items-center space-x-2.5 bg-white px-4 py-2.5 rounded-lg border-2 border-emerald-600 cursor-pointer hover:bg-emerald-50 transition select-none shadow-sm">
+                            <input
+                                type="checkbox"
+                                id="scheduleSelectAllCheckbox"
+                                onchange="toggleAllScheduleSlots(this.checked)"
+                                class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500"
+                            >
+                            <span class="text-sm font-bold text-emerald-950">Select All</span>
+                        </label>
+                        <span id="scheduleSelectedCountBadge" class="bg-emerald-800 text-white text-xs font-bold px-3 py-2.5 rounded-lg whitespace-nowrap">0 Slots Selected</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Weekly Timetable Grid (Matching Attached Screenshot) -->
+                <div class="space-y-1.5">
+                    <div class="flex flex-wrap justify-between items-center text-xs text-gray-600">
+                        <span class="font-semibold"><i class="fa-solid fa-table-cells mr-1 text-emerald-700"></i>Weekly Timetable Grid (Check periods below or click Day / Period headers to toggle row/column)</span>
+                        <span class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">Note: Saturday (يوم السبت) has distinct timings for (PT) and Period 8; Periods 9–11 are 00:00 - 00:00.</span>
+                    </div>
+                    <div class="overflow-x-auto border-2 border-gray-800 rounded-lg shadow-sm">
+                        <table class="w-full text-center text-xs border-collapse timetable-grid min-w-[960px]">
+                            <thead id="timetableGridHead"></thead>
+                            <tbody id="timetableGridBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Existing Allocations List on this Classroom -->
+                <div id="existingClassroomAllocationsSection" class="bg-gray-50 p-3.5 rounded-lg border space-y-2">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Current Allocations in this Classroom</h4>
+                        <button type="button" id="cancelEditScheduleAllocBtn" onclick="resetScheduleModalFormForNew()" class="hidden text-xs text-blue-600 hover:underline font-bold">+ New Allocation</button>
+                    </div>
+                    <div id="existingClassroomAllocationsList" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                </div>
+
+                <div class="flex justify-between items-center pt-3 border-t">
+                    <p id="scheduleValidationError" class="text-xs text-red-600 font-bold hidden">Please select at least one day/period slot.</p>
+                    <div class="flex space-x-2 ml-auto">
+                        <button type="button" onclick="closeModal('modalClassroomSchedule')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
+                        <button type="submit" id="btnSaveClassroomSchedule" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span id="btnSaveClassroomScheduleText">Save Schedule Allocation</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
@@ -1537,9 +1931,14 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
         let currentUser = null;
         let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
+        let currentUserModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
+        let currentUserClassroomPerms = ['darajah-event', 'student-count', 'extra-chair'];
+        let currentUserAccessLevel = 'Editing Rights'; // 'Editing Rights' | 'View Only'
         let isUserAdmin = false;
 
         let estatesData = [];
+        let classroomsData = [];
+        let keysInventoryData = [];
         let facultyData = [];
         let societiesData = [
             { id: '1', name: 'Saifee Complex Society', flats: '12 Flats (2 BHK)', cycle: 'Quarterly', contactPerson: 'Shk Shabbir Bhai (+91 9820055443)', billSubmittedBy: 'Mulla Mustafa (+91 9876543210)' },
@@ -1635,10 +2034,31 @@
             'fm.marol@jameasaifiyah.edu'
         ];
 
+        const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
+        const ALL_CLASSROOM_COL_PERMS = ['darajah-event', 'student-count', 'extra-chair'];
+
         let usersList = [
-            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7,8] },
-            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', permissions: [1,2,3,4,5,6,7,8] }
+            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] },
+            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
         ];
+
+        function isCurrentUserViewOnly() {
+            return !isUserAdmin && currentUserAccessLevel === 'View Only';
+        }
+
+        function canEditClassroomColumn(colKey) {
+            if (isUserAdmin) return true;
+            if (isCurrentUserViewOnly()) return false;
+            return Array.isArray(currentUserClassroomPerms) && currentUserClassroomPerms.includes(colKey);
+        }
+
+        function guardEditingRights() {
+            if (isCurrentUserViewOnly()) {
+                showAssetToast("View Only Access: Editing rights are required to perform this action.", true);
+                return false;
+            }
+            return true;
+        }
 
         window.handleGoogleSignIn = async function() {
             const errEl = document.getElementById('loginErrorMsg');
@@ -1790,8 +2210,9 @@
                             : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Regular</span>`}
                     </td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditFlat('${e.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteFlat('${e.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                        <button data-crud="true" onclick="openEditFlat('${e.id}')" class="crud-action-btn text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button data-crud="true" onclick="deleteFlat('${e.id}')" class="crud-action-btn text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1901,7 +2322,8 @@
                     <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
                     <td class="p-3 text-xs">${lastMaintStr}</td>
                     <td class="p-3 text-center">
-                        <button data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                        <button data-crud="true" data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="crud-action-btn btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1989,14 +2411,29 @@
                 
                 if (isUserAdmin) {
                     currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
+                    currentUserModules = [...ALL_PORTAL_MODULES];
+                    currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
+                    currentUserAccessLevel = 'Editing Rights';
                     document.getElementById('mod-admin-access').classList.remove('hidden');
                 } else {
-                    const rawPerms = dbUser ? (dbUser.permissions || []) : [];
-                    if (rawPerms.length >= 7 && !rawPerms.includes(8)) {
-                        rawPerms.push(8);
-                    }
+                    const rawPerms = dbUser ? (Array.isArray(dbUser.permissions) ? [...dbUser.permissions] : []) : [];
                     currentUserPermissions = rawPerms;
+                    currentUserModules = (dbUser && Array.isArray(dbUser.allowedModules) && dbUser.allowedModules.length > 0)
+                        ? [...dbUser.allowedModules]
+                        : [...ALL_PORTAL_MODULES];
+                    currentUserClassroomPerms = (dbUser && Array.isArray(dbUser.classroomPermissions))
+                        ? [...dbUser.classroomPermissions]
+                        : [...ALL_CLASSROOM_COL_PERMS];
+                    currentUserAccessLevel = (dbUser && dbUser.accessLevel) ? dbUser.accessLevel : 'Editing Rights';
                     document.getElementById('mod-admin-access').classList.add('hidden');
+                }
+
+                const accessBadge = document.getElementById('currentUserAccessBadge');
+                if (accessBadge) {
+                    accessBadge.innerText = isUserAdmin ? 'Editing Rights' : currentUserAccessLevel;
+                    accessBadge.className = isCurrentUserViewOnly()
+                        ? 'text-[11px] bg-amber-600 text-white px-2 py-0.5 rounded-full font-semibold border border-amber-400'
+                        : 'text-[11px] bg-teal-800 text-teal-100 px-2 py-0.5 rounded-full font-semibold border border-teal-600';
                 }
 
                 loginOverlay.classList.add('hidden');
@@ -2030,6 +2467,66 @@
             }));
         }
 
+        function normalizeClassroomsList(rawClassrooms) {
+            if (!rawClassrooms) return [];
+            const arr = Array.isArray(rawClassrooms)
+                ? rawClassrooms
+                : (typeof rawClassrooms === 'object' ? Object.values(rawClassrooms) : []);
+            return arr.filter(Boolean).map(item => {
+                let allocations = [];
+                if (Array.isArray(item.allocations)) {
+                    allocations = item.allocations.filter(Boolean);
+                } else if (item.allocations && typeof item.allocations === 'object') {
+                    allocations = Object.values(item.allocations).filter(Boolean);
+                }
+                allocations = allocations.map(a => ({
+                    id: String(a.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                    standardEventName: a.standardEventName || a.name || '',
+                    slots: Array.isArray(a.slots) ? a.slots : (a.slots && typeof a.slots === 'object' ? Object.values(a.slots) : []),
+                    updatedAt: a.updatedAt || ''
+                }));
+                return {
+                    id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                    classroomNumber: String(item.classroomNumber || item.number || ''),
+                    location: String(item.location || ''),
+                    type: item.type === 'Female' ? 'Female' : 'Male',
+                    studentCount: (item.studentCount !== undefined && item.studentCount !== null && item.studentCount !== '') ? Number(item.studentCount) : null,
+                    extraChair: (item.extraChair !== undefined && item.extraChair !== null && item.extraChair !== '') ? Number(item.extraChair) : null,
+                    allocations,
+                    updatedAt: item.updatedAt || ''
+                };
+            });
+        }
+
+        function normalizeUsersList(rawUsers) {
+            if (!rawUsers) return usersList;
+            const arr = Array.isArray(rawUsers)
+                ? rawUsers
+                : (typeof rawUsers === 'object' ? Object.values(rawUsers) : []);
+            return arr.filter(Boolean).map(u => {
+                const rawPerms = Array.isArray(u.permissions)
+                    ? u.permissions.map(Number)
+                    : (u.permissions && typeof u.permissions === 'object' ? Object.values(u.permissions).map(Number) : [1,2,3,4,5,6,7,8]);
+                const rawMods = Array.isArray(u.allowedModules)
+                    ? u.allowedModules
+                    : (u.allowedModules && typeof u.allowedModules === 'object' ? Object.values(u.allowedModules) : [...ALL_PORTAL_MODULES]);
+                let rawClsPerms = [...ALL_CLASSROOM_COL_PERMS];
+                if (u.classroomPermissions !== undefined) {
+                    rawClsPerms = Array.isArray(u.classroomPermissions)
+                        ? u.classroomPermissions
+                        : (u.classroomPermissions && typeof u.classroomPermissions === 'object' ? Object.values(u.classroomPermissions) : []);
+                }
+                return {
+                    email: String(u.email || '').trim(),
+                    role: u.role === 'Admin' ? 'Admin' : 'User',
+                    accessLevel: u.accessLevel === 'View Only' ? 'View Only' : 'Editing Rights',
+                    allowedModules: rawMods,
+                    permissions: rawPerms,
+                    classroomPermissions: rawClsPerms
+                };
+            });
+        }
+
         async function loadCloudData() {
             try {
                 const snapshot = await get(child(dbRef(db), 'portalData'));
@@ -2042,7 +2539,14 @@
                     maintLogs = data.maint || [];
                     vacantBills = data.bills || {};
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
-                    usersList = data.users || usersList;
+                    usersList = normalizeUsersList(data.users || usersList);
+                    keysInventoryData = data.keys || [];
+                    if (data.classrooms) {
+                        classroomsData = normalizeClassroomsList(data.classrooms);
+                    } else {
+                        const clsSnap = await get(child(dbRef(db), 'classrooms'));
+                        classroomsData = clsSnap.exists() ? normalizeClassroomsList(clsSnap.val()) : [];
+                    }
                     if (data.estate_assets) {
                         estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
                     } else {
@@ -2053,6 +2557,7 @@
                     estatesData = [
                         { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [], residents: [] }
                     ];
+                    classroomsData = [];
                     estateAssetsData = [];
                     await saveCloudData();
                 }
@@ -2061,10 +2566,35 @@
             }
         }
 
+        // Firestore / Firebase Cloud Database Read/Write Helpers for Classroom Allocation & Permissions
+        window.saveClassroomsToCloud = async function() {
+            try {
+                await set(dbRef(db, 'classrooms'), classroomsData);
+                await saveCloudData();
+            } catch (err) {
+                console.error("Error saving classrooms to cloud:", err);
+            }
+        };
+
+        window.loadClassroomsFromCloud = async function() {
+            try {
+                const snap = await get(child(dbRef(db), 'classrooms'));
+                if (snap.exists()) {
+                    classroomsData = normalizeClassroomsList(snap.val());
+                }
+                return classroomsData;
+            } catch (err) {
+                console.error("Error reading classrooms from cloud:", err);
+                return classroomsData;
+            }
+        };
+
         window.saveCloudData = async function() {
             try {
                 await set(dbRef(db, 'portalData'), {
                     estates: estatesData,
+                    classrooms: classroomsData,
+                    keys: keysInventoryData,
                     faculty: facultyData,
                     societies: societiesData,
                     docs: societyDocs,
@@ -2075,12 +2605,60 @@
                     estate_assets: estateAssetsData
                 });
                 await set(dbRef(db, 'estate_assets'), estateAssetsData);
+                await set(dbRef(db, 'classrooms'), classroomsData);
             } catch (err) {
                 console.error("Error saving to cloud:", err);
             }
         }
 
-        function applySubHeaderPermissions() {
+        function applyAccessLevelEnforcement() {
+            const viewOnly = isCurrentUserViewOnly();
+            document.body.classList.toggle('view-only-mode', viewOnly);
+            const banner = document.getElementById('viewOnlyNoticeBanner');
+            if (banner) banner.classList.toggle('hidden', !viewOnly);
+
+            // "+ Add Classroom" button is strictly available ONLY to Admin
+            const addClassroomBtn = document.getElementById('btnAddClassroomHeader');
+            if (addClassroomBtn) {
+                addClassroomBtn.classList.toggle('hidden', !isUserAdmin);
+            }
+
+            // Tag static CRUD buttons and inputs inside main modules so View Only hides/disables them cleanly
+            const crudButtonsSelectors = [
+                'button[onclick*="openAddFlatModal"]',
+                'button[onclick*="openImportModal"]',
+                'button[onclick*="openAddMaintenanceModal"]',
+                'button[onclick*="openAddSocietyModal"]',
+                'button[onclick*="openUploadDocModal"]',
+                'button[onclick*="openAddAssetFromIntegrated"]',
+                'button[onclick*="openAddAssetModal"]',
+                'button[onclick*="openAddFacultyModal"]',
+                'button[onclick*="openAddOtherBillRow"]'
+            ];
+            crudButtonsSelectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => {
+                    el.classList.add('crud-action-btn');
+                });
+            });
+        }
+
+        function applyModuleAndSubHeaderPermissions() {
+            const modOrder = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
+            let firstAllowedMod = null;
+
+            modOrder.forEach(modKey => {
+                const modBtn = document.getElementById('mod-' + modKey);
+                const allowed = isUserAdmin || currentUserModules.includes(modKey);
+                if (modBtn) {
+                    if (allowed) {
+                        modBtn.classList.remove('hidden');
+                        if (!firstAllowedMod) firstAllowedMod = modKey;
+                    } else {
+                        modBtn.classList.add('hidden');
+                    }
+                }
+            });
+
             const secMapping = {
                 1: 'estate-details',
                 2: 'allocation',
@@ -2096,7 +2674,7 @@
 
             for (let i = 1; i <= 8; i++) {
                 const btn = document.getElementById(`sub-${secMapping[i]}`);
-                const isAllowed = currentUserPermissions.includes(i);
+                const isAllowed = isUserAdmin || currentUserPermissions.includes(i);
                 if (btn) {
                     if (isAllowed) {
                         btn.classList.remove('hidden');
@@ -2114,12 +2692,18 @@
                     document.getElementById('sec-' + s).classList.add('hidden');
                 });
             }
+
+            if (firstAllowedMod) {
+                switchModule(firstAllowedMod);
+            }
         }
 
         function initAppUI() {
-            applySubHeaderPermissions();
+            applyAccessLevelEnforcement();
+            buildTimetableGridTemplate();
             renderEstateTable();
             renderAllocationTable();
+            renderClassroomsTables();
             renderFacultyTable();
             renderSocieties();
             renderSocietyDocs();
@@ -2133,21 +2717,30 @@
             const today = new Date().toISOString().slice(0, 7);
             document.getElementById('billMonthPicker').value = today;
             renderVacantBills();
+            applyModuleAndSubHeaderPermissions();
         }
 
         window.switchModule = function(modName) {
-            ['dawat-estates', 'inventory', 'faculty-dir', 'admin-access'].forEach(m => {
-                document.getElementById('module-' + m).classList.add('hidden');
-                document.getElementById('mod-' + m).classList.remove('active-tab');
-            });
-
             if (modName === 'admin-access' && !isUserAdmin) {
-                alert("Access Denied: Admin privileges required.");
-                modName = 'dawat-estates';
+                showAssetToast("Access Denied: Admin privileges required.", true);
+                return;
+            }
+            if (modName !== 'admin-access' && !isUserAdmin && !currentUserModules.includes(modName)) {
+                showAssetToast("Access Denied: You do not have permission to view this module.", true);
+                return;
             }
 
-            document.getElementById('module-' + modName).classList.remove('hidden');
-            document.getElementById('mod-' + modName).classList.add('active-tab');
+            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'admin-access'].forEach(m => {
+                document.getElementById('module-' + m)?.classList.add('hidden');
+                document.getElementById('mod-' + m)?.classList.remove('active-tab');
+            });
+
+            document.getElementById('module-' + modName)?.classList.remove('hidden');
+            document.getElementById('mod-' + modName)?.classList.add('active-tab');
+
+            if (modName === 'classroom-allocation') {
+                renderClassroomsTables();
+            }
         };
 
         window.switchSubHeader = function(secName) {
@@ -2598,7 +3191,7 @@
                                     <strong class="text-emerald-900">${r.name}</strong> <span class="text-gray-500">(ITS: ${r.its})</span>
                                     <br/><span class="text-[10px] text-gray-400">Since: ${r.startDate || '-'} | ${r.contact || ''}</span>
                                 </div>
-                                <button onclick="removeBachelorResident('${safeId}', ${rIdx})" class="text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
+                                <button data-crud="true" onclick="removeBachelorResident('${safeId}', ${rIdx})" class="crud-action-btn text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
                             </div>
                         `;
                     });
@@ -2621,7 +3214,7 @@
                         <div class="space-y-1.5">
                             <h5 class="text-xs font-bold text-gray-700 uppercase flex justify-between items-center">
                                 <span>Current Residents:</span>
-                                <button onclick="openAddBachelorResidentModal('${safeId}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] px-2 py-1 rounded font-normal transition flex items-center space-x-1">
+                                <button data-crud="true" onclick="openAddBachelorResidentModal('${safeId}')" class="crud-action-btn bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] px-2 py-1 rounded font-normal transition flex items-center space-x-1">
                                     <i class="fa-solid fa-user-plus"></i> <span>+ Add Resident</span>
                                 </button>
                             </h5>
@@ -2750,8 +3343,9 @@
                     <td class="p-3">${billData.elecPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
                     <td class="p-3">${billData.gasPaid ? `<span class="text-emerald-700 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Paid</span>` : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">Missing</span>`}</td>
                     <td class="p-3 text-center space-x-1">
-                        <button onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
-                        <button onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
+                        <button data-crud="true" onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="crud-action-btn text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
+                        <button data-crud="true" onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="crud-action-btn text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
+                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2910,7 +3504,7 @@
                             </div>
                             <div class="flex items-center space-x-2">
                                 <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
-                                <button onclick="openEditMaintenanceLog('${safeId}')" class="text-blue-600 hover:text-blue-800 text-sm ml-1" title="Edit Maintenance Log"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button data-crud="true" onclick="openEditMaintenanceLog('${safeId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 text-sm ml-1" title="Edit Maintenance Log"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
                         <p class="text-xs text-gray-600">${m.desc}</p>
@@ -2938,8 +3532,9 @@
                     <td class="p-3 font-medium text-gray-900">${f.name}</td>
                     <td class="p-3 text-gray-600">${f.contact}</td>
                     <td class="p-3 text-center space-x-2">
-                        <button onclick="openEditFaculty('${safeId}')" class="text-blue-600 hover:text-blue-800" title="Edit Faculty"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteFaculty('${safeId}')" class="text-red-600 hover:text-red-800" title="Delete Faculty"><i class="fa-solid fa-trash"></i></button>
+                        <button data-crud="true" onclick="openEditFaculty('${safeId}')" class="crud-action-btn text-blue-600 hover:text-blue-800" title="Edit Faculty"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button data-crud="true" onclick="deleteFaculty('${safeId}')" class="crud-action-btn text-red-600 hover:text-red-800" title="Delete Faculty"><i class="fa-solid fa-trash"></i></button>
+                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -3159,7 +3754,7 @@ window.renderSocieties = function() {
                                 <span>Bills Summary</span>
                             </button>
                             
-                            <div class="flex justify-between items-center pt-1 text-xs">
+                            <div data-crud="true" class="crud-action-btn flex justify-between items-center pt-1 text-xs">
                                 <button onclick="openEditSocietyModal(decodeURIComponent('${encodedName}'))" class="text-blue-600 hover:text-blue-800 font-bold flex items-center space-x-1">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                     <span>Edit Society</span>
@@ -3335,13 +3930,13 @@ window.renderSocieties = function() {
                 tbodyReg.innerHTML += `
                     <tr class="hover:bg-gray-50 border-b">
                         <td class="p-2.5 font-bold text-gray-800">${p.label}</td>
-                        <td class="p-2.5"><input type="date" value="${pData.date || ''}" onchange="updateRegularBillRow('${safeKey}', 'date', this.value)" class="p-1 border rounded text-xs bg-white"></td>
-                        <td class="p-2.5"><input type="number" placeholder="0" value="${pData.amount || ''}" onchange="updateRegularBillRow('${safeKey}', 'amount', this.value)" class="p-1 border rounded text-xs w-28 bg-white font-bold text-emerald-900"></td>
+                        <td class="p-2.5"><input type="date" value="${pData.date || ''}" onchange="updateRegularBillRow('${safeKey}', 'date', this.value)" class="crud-input p-1 border rounded text-xs bg-white"></td>
+                        <td class="p-2.5"><input type="number" placeholder="0" value="${pData.amount || ''}" onchange="updateRegularBillRow('${safeKey}', 'amount', this.value)" class="crud-input p-1 border rounded text-xs w-28 bg-white font-bold text-emerald-900"></td>
                         <td class="p-2.5">
                             ${pData.fileUrl 
                                 ? `<a href="${pData.fileUrl}" target="_blank" class="text-emerald-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
                                 : '<span class="text-gray-400 italic">No File</span>'}
-                            <input type="file" accept=".pdf,image/*" onchange="uploadRegularBillFile('${safeKey}', this)" class="block text-[10px] mt-1">
+                            <input data-crud="true" type="file" accept=".pdf,image/*" onchange="uploadRegularBillFile('${safeKey}', this)" class="crud-action-btn block text-[10px] mt-1">
                         </td>
                         <td class="p-2.5 text-center">
                             <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Auto-Saved</span>
@@ -3373,8 +3968,8 @@ window.renderSocieties = function() {
                                     : '<span class="text-gray-400 italic">None</span>'}
                             </td>
                             <td class="p-2.5 text-center space-x-2">
-                                <button onclick="editOtherBillRow(${idx})" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button onclick="deleteOtherBillRow(${idx})" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                                <button data-crud="true" onclick="editOtherBillRow(${idx})" class="crud-action-btn text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button data-crud="true" onclick="deleteOtherBillRow(${idx})" class="crud-action-btn text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
@@ -4022,30 +4617,946 @@ window.renderSocieties = function() {
             reader.readAsArrayBuffer(fileInput.files[0]);
         };
 
+        // =========================================================================
+        // REQUIREMENT 2: ENHANCED ADMIN ACCESS PANEL & PERMISSIONS
+        // =========================================================================
+
+        const MODULE_LABELS_MAP = {
+            'dawat-estates': 'Dawat Estates',
+            'classroom-allocation': 'Classroom Allocation',
+            'inventory': 'Keys Inventory',
+            'faculty-dir': 'Faculty Directory'
+        };
+
+        const CLASSROOM_COL_LABELS_MAP = {
+            'darajah-event': 'Add Darajah / Event',
+            'student-count': 'Student Count',
+            'extra-chair': 'Extra Chair'
+        };
+
+        window.toggleNestedDawatEstatesPerms = function() {
+            const dawatChecked = document.getElementById('mod-perm-dawat-estates')?.checked;
+            const nestedBox = document.getElementById('nestedDawatEstatesPermsBox');
+            if (nestedBox) {
+                nestedBox.classList.toggle('hidden', !dawatChecked);
+            }
+        };
+
+        window.toggleNestedClassroomPerms = function() {
+            const clsChecked = document.getElementById('mod-perm-classroom-allocation')?.checked;
+            const nestedBox = document.getElementById('nestedClassroomPermsBox');
+            if (nestedBox) {
+                nestedBox.classList.toggle('hidden', !clsChecked);
+            }
+        };
+
+        window.setAllDawatSubPerms = function(checked) {
+            for (let i = 1; i <= 8; i++) {
+                const chk = document.getElementById(`perm-${i}`);
+                if (chk) chk.checked = checked;
+            }
+        };
+
+        window.setAllClassroomSubPerms = function(checked) {
+            ['darajah-event', 'student-count', 'extra-chair'].forEach(k => {
+                const chk = document.getElementById(`cls-perm-${k}`);
+                if (chk) chk.checked = checked;
+            });
+        };
+
+        window.resetInviteUserForm = function() {
+            const form = document.getElementById('inviteUserForm');
+            if (form) form.reset();
+            document.getElementById('inviteEmail').readOnly = false;
+            document.getElementById('inviteEmail').classList.remove('bg-gray-100');
+            document.getElementById('inviteFormHeading').innerText = 'Invite / Configure Team Member';
+            document.getElementById('cancelEditUserBtn')?.classList.add('hidden');
+            document.getElementById('mod-perm-dawat-estates').checked = true;
+            document.getElementById('mod-perm-classroom-allocation').checked = true;
+            document.getElementById('mod-perm-inventory').checked = true;
+            document.getElementById('mod-perm-faculty-dir').checked = true;
+            document.getElementById('accessLevelEditing').checked = true;
+            setAllDawatSubPerms(true);
+            setAllClassroomSubPerms(true);
+            toggleNestedDawatEstatesPerms();
+            toggleNestedClassroomPerms();
+        };
+
+        window.editUserPermissions = function(email) {
+            const u = usersList.find(item => item.email.trim().toLowerCase() === String(email).trim().toLowerCase());
+            if (!u) return;
+
+            document.getElementById('inviteEmail').value = u.email;
+            document.getElementById('inviteRole').value = u.role || 'User';
+
+            const isViewOnly = u.accessLevel === 'View Only';
+            document.getElementById('accessLevelViewOnly').checked = isViewOnly;
+            document.getElementById('accessLevelEditing').checked = !isViewOnly;
+
+            const mods = Array.isArray(u.allowedModules) ? u.allowedModules : [...ALL_PORTAL_MODULES];
+            document.getElementById('mod-perm-dawat-estates').checked = mods.includes('dawat-estates');
+            document.getElementById('mod-perm-classroom-allocation').checked = mods.includes('classroom-allocation');
+            document.getElementById('mod-perm-inventory').checked = mods.includes('inventory');
+            document.getElementById('mod-perm-faculty-dir').checked = mods.includes('faculty-dir');
+
+            const perms = Array.isArray(u.permissions) ? u.permissions : [];
+            for (let i = 1; i <= 8; i++) {
+                const chk = document.getElementById(`perm-${i}`);
+                if (chk) chk.checked = perms.includes(i);
+            }
+
+            const clsPerms = Array.isArray(u.classroomPermissions) ? u.classroomPermissions : [...ALL_CLASSROOM_COL_PERMS];
+            ['darajah-event', 'student-count', 'extra-chair'].forEach(k => {
+                const chk = document.getElementById(`cls-perm-${k}`);
+                if (chk) chk.checked = clsPerms.includes(k);
+            });
+
+            toggleNestedDawatEstatesPerms();
+            toggleNestedClassroomPerms();
+            document.getElementById('inviteFormHeading').innerText = `Editing User: ${u.email}`;
+            document.getElementById('cancelEditUserBtn')?.classList.remove('hidden');
+            document.getElementById('inviteUserForm')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
         window.renderUsersList = function() {
             const tbody = document.getElementById('userListTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
             usersList.forEach(u => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50 text-xs";
-                tr.innerHTML = `<td class="p-3 font-semibold text-gray-800">${u.email}</td><td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span></td><td class="p-3 text-gray-600">${u.permissions.map(p => `Sub ${p}`).join(', ')}</td><td class="p-3 text-center">${u.role !== 'Admin' ? `<button onclick="removeUser('${u.email}')" class="text-red-600"><i class="fa-solid fa-trash"></i></button>` : 'Owner'}</td>`;
+                const mods = Array.isArray(u.allowedModules) && u.allowedModules.length > 0
+                    ? u.allowedModules
+                    : [...ALL_PORTAL_MODULES];
+                const modBadges = mods.map(m => `<span class="inline-block bg-gray-100 border text-gray-800 font-semibold px-2 py-0.5 rounded mr-1 mb-1">${MODULE_LABELS_MAP[m] || m}</span>`).join('');
+
+                const accessLevel = u.accessLevel || 'Editing Rights';
+                const accessBadge = accessLevel === 'View Only'
+                    ? `<span class="bg-amber-100 text-amber-800 border border-amber-300 font-bold px-2 py-0.5 rounded-full ml-1"><i class="fa-solid fa-eye mr-1"></i>View Only</span>`
+                    : `<span class="bg-teal-100 text-teal-800 border border-teal-300 font-bold px-2 py-0.5 rounded-full ml-1"><i class="fa-solid fa-pen-to-square mr-1"></i>Editing Rights</span>`;
+
+                const dawatSubText = mods.includes('dawat-estates')
+                    ? ((u.permissions && u.permissions.length > 0) ? `<div><strong class="text-emerald-900">Estates:</strong> ${u.permissions.map(p => `Sub ${p}`).join(', ')}</div>` : '<div><strong class="text-emerald-900">Estates:</strong> None</div>')
+                    : '';
+
+                const clsPerms = Array.isArray(u.classroomPermissions) ? u.classroomPermissions : [...ALL_CLASSROOM_COL_PERMS];
+                const clsSubText = mods.includes('classroom-allocation')
+                    ? `<div class="mt-0.5"><strong class="text-blue-900">Classroom Cols:</strong> ${clsPerms.length > 0 ? clsPerms.map(c => CLASSROOM_COL_LABELS_MAP[c] || c).join(', ') : 'View Only (All Columns)'}</div>`
+                    : '';
+
+                const combinedSubHtml = (dawatSubText || clsSubText) ? `${dawatSubText}${clsSubText}` : '<span class="text-gray-400 italic">None</span>';
+
+                const safeEmail = String(u.email).replace(/'/g, "\'");
+                const isSuperOwner = superAdmins.map(e => e.toLowerCase()).includes(u.email.trim().toLowerCase());
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-gray-800">${u.email}</td>
+                    <td class="p-3 whitespace-nowrap">
+                        <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span>
+                        ${accessBadge}
+                    </td>
+                    <td class="p-3">${modBadges}</td>
+                    <td class="p-3 text-gray-600">${combinedSubHtml}</td>
+                    <td class="p-3 text-center whitespace-nowrap space-x-2">
+                        <button type="button" onclick="editUserPermissions('${safeEmail}')" class="text-blue-600 hover:text-blue-800 font-bold" title="Edit User Permissions"><i class="fa-solid fa-pen-to-square"></i></button>
+                        ${!isSuperOwner ? `<button type="button" onclick="removeUser('${safeEmail}')" class="text-red-600 hover:text-red-800 font-bold" title="Remove User"><i class="fa-solid fa-trash"></i></button>` : '<span class="text-gray-400 font-semibold">Owner</span>'}
+                    </td>
+                `;
                 tbody.appendChild(tr);
             });
         };
 
         window.handleInviteUser = async function(e) {
             e.preventDefault();
-            const email = document.getElementById('inviteEmail').value;
+            const email = document.getElementById('inviteEmail').value.trim();
             const role = document.getElementById('inviteRole').value;
-            const perms = [];
-            for(let i=1; i<=8; i++) {
-                if(document.getElementById(`perm-${i}`)?.checked) perms.push(i);
+            const accessRadio = document.querySelector('input[name="inviteAccessLevel"]:checked');
+            const accessLevel = accessRadio ? accessRadio.value : 'Editing Rights';
+
+            const allowedModules = [];
+            if (document.getElementById('mod-perm-dawat-estates')?.checked) allowedModules.push('dawat-estates');
+            if (document.getElementById('mod-perm-classroom-allocation')?.checked) allowedModules.push('classroom-allocation');
+            if (document.getElementById('mod-perm-inventory')?.checked) allowedModules.push('inventory');
+            if (document.getElementById('mod-perm-faculty-dir')?.checked) allowedModules.push('faculty-dir');
+
+            if (allowedModules.length === 0) {
+                showAssetToast("Please select at least one allowed module for the user.", true);
+                return;
             }
-            usersList.push({ email, role, permissions: perms });
+
+            const perms = [];
+            if (allowedModules.includes('dawat-estates')) {
+                for (let i = 1; i <= 8; i++) {
+                    if (document.getElementById(`perm-${i}`)?.checked) perms.push(i);
+                }
+            }
+
+            const classroomPermissions = [];
+            if (allowedModules.includes('classroom-allocation')) {
+                ['darajah-event', 'student-count', 'extra-chair'].forEach(k => {
+                    if (document.getElementById(`cls-perm-${k}`)?.checked) classroomPermissions.push(k);
+                });
+            }
+
+            const existingIdx = usersList.findIndex(u => u.email.trim().toLowerCase() === email.toLowerCase());
+            const userObj = {
+                email,
+                role,
+                accessLevel,
+                allowedModules,
+                permissions: perms,
+                classroomPermissions
+            };
+
+            if (existingIdx !== -1) {
+                usersList[existingIdx] = userObj;
+            } else {
+                usersList.push(userObj);
+            }
+
+            // If the admin updated their own or currently signed-in user's permissions, refresh live state
+            if (currentUser && currentUser.email.trim().toLowerCase() === email.toLowerCase() && !isUserAdmin) {
+                currentUserClassroomPerms = [...classroomPermissions];
+            }
+
             await saveCloudData();
             renderUsersList();
-            document.getElementById('inviteUserForm').reset();
-            alert(`User invitation created for ${email}`);
+            renderClassroomsTables();
+            resetInviteUserForm();
+            showAssetToast(`Saved permissions for ${email}`);
+        };
+
+        // =========================================================================
+        // REQUIREMENT 1: "CLASSROOM ALLOCATION" MODULE & TIMETABLE SCHEDULE
+        // =========================================================================
+
+        // Extracted from the attached timetable screenshot:
+        // Columns from Right to Left in Arabic layout (or PT to Period 11 (O)):
+        // Standard Days (Monday - Friday):
+        // (PT): 06:00 - 07:00
+        // Period 2: 08:50 - 09:25
+        // Period 3: 09:25 - 10:00
+        // Period 4: 10:00 - 10:35
+        // Period 5: 10:55 - 11:30
+        // Period 6: 11:30 - 12:05
+        // Period 7: 12:05 - 12:40
+        // Period 8: 14:00 - 14:35
+        // Period 9: 14:35 - 15:10
+        // Period 10: 15:10 - 15:45
+        // Period 11 (O): 15:45 - 16:20
+        //
+        // Saturday (يوم السبت) row timings:
+        // (PT): 08:15 - 08:50
+        // Period 2: 08:50 - 09:25
+        // Period 3: 09:25 - 10:00
+        // Period 4: 10:00 - 10:35
+        // Period 5: 10:55 - 11:30
+        // Period 6: 11:30 - 12:05
+        // Period 7: 12:05 - 12:40
+        // Period 8: 12:40 - 13:15
+        // Period 9: 00:00 - 00:00
+        // Period 10: 00:00 - 00:00
+        // Period 11 (O): 00:00 - 00:00
+
+        const TIMETABLE_COLUMNS = [
+            { key: 'P11', label: 'Period 11 (O)', shortLabel: 'P11 (O)', stdTime: '15:45 - 16:20', satTime: '00:00 - 00:00' },
+            { key: 'P10', label: 'Period 10',     shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00' },
+            { key: 'P9',  label: 'Period 9',      shortLabel: 'P9',      stdTime: '14:35 - 15:10', satTime: '00:00 - 00:00' },
+            { key: 'P8',  label: 'Period 8',      shortLabel: 'P8',      stdTime: '14:00 - 14:35', satTime: '12:40 - 13:15' },
+            { key: 'P7',  label: 'Period 7',      shortLabel: 'P7',      stdTime: '12:05 - 12:40', satTime: '12:05 - 12:40' },
+            { key: 'P6',  label: 'Period 6',      shortLabel: 'P6',      stdTime: '11:30 - 12:05', satTime: '11:30 - 12:05' },
+            { key: 'P5',  label: 'Period 5',      shortLabel: 'P5',      stdTime: '10:55 - 11:30', satTime: '10:55 - 11:30' },
+            { key: 'P4',  label: 'Period 4',      shortLabel: 'P4',      stdTime: '10:00 - 10:35', satTime: '10:00 - 10:35' },
+            { key: 'P3',  label: 'Period 3',      shortLabel: 'P3',      stdTime: '09:25 - 10:00', satTime: '09:25 - 10:00' },
+            { key: 'P2',  label: 'Period 2',      shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25' },
+            { key: 'PT',  label: '(PT)',          shortLabel: '(PT)',    stdTime: '06:00 - 07:00', satTime: '08:15 - 08:50' }
+        ];
+
+        const TIMETABLE_DAYS = [
+            { key: 'Mon', arLabel: 'يوم الاثنين', enLabel: 'Monday',    isSaturday: false },
+            { key: 'Tue', arLabel: 'يوم الثلاثاء', enLabel: 'Tuesday',   isSaturday: false },
+            { key: 'Wed', arLabel: 'يوم الاربعاء', enLabel: 'Wednesday', isSaturday: false },
+            { key: 'Thu', arLabel: 'يوم الخميس',  enLabel: 'Thursday',  isSaturday: false },
+            { key: 'Fri', arLabel: 'يوم الجمعة',  enLabel: 'Friday',    isSaturday: false },
+            { key: 'Sat', arLabel: 'يوم السبت',   enLabel: 'Saturday',  isSaturday: true }
+        ];
+
+        function buildTimetableGridTemplate() {
+            const thead = document.getElementById('timetableGridHead');
+            const tbody = document.getElementById('timetableGridBody');
+            if (!thead || !tbody) return;
+
+            // Header Row 1: Period Names + Day column on right (matching screenshot layout exactly)
+            let headRow1 = '<tr class="bg-gray-100 text-gray-900 font-bold">';
+            TIMETABLE_COLUMNS.forEach(col => {
+                headRow1 += `
+                    <th class="p-2 cursor-pointer hover:bg-emerald-100 transition select-none" onclick="toggleColumnScheduleSlots('${col.key}')" title="Click to toggle all ${col.label}">
+                        <div class="text-xs">${col.label}</div>
+                    </th>
+                `;
+            });
+            headRow1 += '<th class="p-2 bg-emerald-900 text-white w-32">Day</th></tr>';
+
+            // Header Row 2: Standard Timings (Mon - Fri) + Time label on right
+            let headRow2 = '<tr class="bg-gray-50 text-gray-700 font-semibold text-[11px]">';
+            TIMETABLE_COLUMNS.forEach(col => {
+                headRow2 += `<th class="py-1.5 px-1 font-mono">${col.stdTime}</th>`;
+            });
+            headRow2 += '<th class="py-1.5 px-2 bg-emerald-800 text-emerald-100 font-bold">Time</th></tr>';
+
+            thead.innerHTML = headRow1 + headRow2;
+
+            // Body Rows: Monday to Friday, then Saturday timing header row, then Saturday row (matching screenshot)
+            let bodyHtml = '';
+            TIMETABLE_DAYS.forEach(day => {
+                if (day.isSaturday) {
+                    // Insert the special Saturday Time header row right above يوم السبت just like the screenshot
+                    bodyHtml += '<tr class="bg-amber-50/90 text-gray-800 font-semibold text-[11px] border-t-2 border-gray-800">';
+                    TIMETABLE_COLUMNS.forEach(col => {
+                        bodyHtml += `<td class="py-1 px-1 font-mono ${col.satTime === '00:00 - 00:00' ? 'text-gray-400' : 'text-amber-900 font-bold'}">${col.satTime}</td>`;
+                    });
+                    bodyHtml += '<td class="py-1 px-2 bg-amber-100 text-amber-950 font-bold">Time</td></tr>';
+                }
+
+                bodyHtml += `<tr class="hover:bg-emerald-50/30 transition">`;
+                TIMETABLE_COLUMNS.forEach(col => {
+                    const slotId = `${day.key}_${col.key}`;
+                    const timeStr = day.isSaturday ? col.satTime : col.stdTime;
+                    bodyHtml += `
+                        <td class="p-2 align-middle">
+                            <label class="flex flex-col items-center justify-center cursor-pointer py-1 rounded hover:bg-emerald-100/60 transition">
+                                <input
+                                    type="checkbox"
+                                    name="timetableSlotCheckbox"
+                                    value="${slotId}"
+                                    data-day="${day.key}"
+                                    data-period="${col.key}"
+                                    onchange="updateScheduleSelectAllState()"
+                                    class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                >
+                                <span class="text-[10px] text-gray-400 mt-1 font-mono">${col.shortLabel}</span>
+                            </label>
+                        </td>
+                    `;
+                });
+                bodyHtml += `
+                    <td class="p-2.5 bg-gray-50 font-bold text-gray-900 cursor-pointer hover:bg-emerald-100 transition select-none" onclick="toggleDayScheduleSlots('${day.key}')" title="Click to toggle all periods on ${day.enLabel}">
+                        <div class="text-base leading-tight" dir="rtl">${day.arLabel}</div>
+                        <div class="text-[10px] text-gray-500 font-normal mt-0.5">${day.enLabel}</div>
+                    </td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = bodyHtml;
+        }
+
+        window.toggleAllScheduleSlots = function(checked) {
+            document.querySelectorAll('input[name="timetableSlotCheckbox"]').forEach(cb => {
+                cb.checked = checked;
+            });
+            updateScheduleSelectAllState();
+        };
+
+        window.toggleDayScheduleSlots = function(dayKey) {
+            const dayBoxes = Array.from(document.querySelectorAll(`input[name="timetableSlotCheckbox"][data-day="${dayKey}"]`));
+            const allChecked = dayBoxes.every(cb => cb.checked);
+            dayBoxes.forEach(cb => { cb.checked = !allChecked; });
+            updateScheduleSelectAllState();
+        };
+
+        window.toggleColumnScheduleSlots = function(periodKey) {
+            const colBoxes = Array.from(document.querySelectorAll(`input[name="timetableSlotCheckbox"][data-period="${periodKey}"]`));
+            const allChecked = colBoxes.every(cb => cb.checked);
+            colBoxes.forEach(cb => { cb.checked = !allChecked; });
+            updateScheduleSelectAllState();
+        };
+
+        window.updateScheduleSelectAllState = function() {
+            const allBoxes = Array.from(document.querySelectorAll('input[name="timetableSlotCheckbox"]'));
+            const checkedBoxes = allBoxes.filter(cb => cb.checked);
+            const selectAllEl = document.getElementById('scheduleSelectAllCheckbox');
+            if (selectAllEl) {
+                selectAllEl.checked = allBoxes.length > 0 && checkedBoxes.length === allBoxes.length;
+            }
+            const countBadge = document.getElementById('scheduleSelectedCountBadge');
+            if (countBadge) {
+                countBadge.innerText = `${checkedBoxes.length} Slot${checkedBoxes.length === 1 ? '' : 's'} Selected`;
+            }
+            if (checkedBoxes.length > 0) {
+                document.getElementById('scheduleValidationError')?.classList.add('hidden');
+            }
+        };
+
+        function formatAllocationScheduleSummary(slots) {
+            if (!Array.isArray(slots) || slots.length === 0) return 'No slots selected';
+            const totalPossible = TIMETABLE_DAYS.length * TIMETABLE_COLUMNS.length;
+            if (slots.length === totalPossible) {
+                return 'All Days (Mon–Sat) • All Periods (PT – Period 11)';
+            }
+
+            // Group selected periods by day in chronological order (PT -> Period 11)
+            const chronologicalCols = [...TIMETABLE_COLUMNS].reverse();
+            const daySummaries = [];
+
+            TIMETABLE_DAYS.forEach(day => {
+                const pickedCols = chronologicalCols.filter(col => slots.includes(`${day.key}_${col.key}`));
+                if (pickedCols.length === TIMETABLE_COLUMNS.length) {
+                    daySummaries.push(`${day.enLabel} (${day.arLabel}): All Periods`);
+                } else if (pickedCols.length > 0) {
+                    const pList = pickedCols.map(col => {
+                        const t = day.isSaturday ? col.satTime : col.stdTime;
+                        return `${col.shortLabel} [${t}]`;
+                    }).join(', ');
+                    daySummaries.push(`${day.enLabel} (${day.arLabel}): ${pList}`);
+                }
+            });
+
+            return daySummaries.join(' | ');
+        }
+
+        window.openAddClassroomModal = function() {
+            if (!isUserAdmin) {
+                showAssetToast("Admin Privileges Required: Only Administrators can add classrooms.", true);
+                return;
+            }
+            const form = document.getElementById('classroomForm');
+            if (form) form.reset();
+            document.getElementById('editClassroomId').value = '';
+            document.getElementById('classroomModalTitle').innerText = 'Add Classroom';
+            document.getElementById('modalAddClassroom').classList.remove('hidden');
+        };
+
+        window.openEditClassroomModal = function(classroomId) {
+            if (!isUserAdmin) {
+                showAssetToast("Admin Privileges Required: Only Administrators can edit classroom details.", true);
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+            document.getElementById('editClassroomId').value = String(room.id);
+            document.getElementById('classroomNumberInput').value = room.classroomNumber || '';
+            document.getElementById('classroomLocationInput').value = room.location || '';
+            document.getElementById('classroomTypeInput').value = room.type === 'Female' ? 'Female' : 'Male';
+            document.getElementById('classroomModalTitle').innerText = 'Edit Classroom';
+            document.getElementById('modalAddClassroom').classList.remove('hidden');
+        };
+
+        window.saveClassroomRecord = async function(e) {
+            e.preventDefault();
+            if (!isUserAdmin) {
+                showAssetToast("Admin Privileges Required: Only Administrators can save classrooms.", true);
+                return;
+            }
+
+            const editId = document.getElementById('editClassroomId').value.trim();
+            const classroomNumber = document.getElementById('classroomNumberInput').value.trim();
+            const location = document.getElementById('classroomLocationInput').value.trim();
+            const type = document.getElementById('classroomTypeInput').value === 'Female' ? 'Female' : 'Male';
+
+            if (!classroomNumber || !location) return;
+
+            if (editId) {
+                const idx = classroomsData.findIndex(c => String(c.id) === String(editId));
+                if (idx !== -1) {
+                    classroomsData[idx] = {
+                        ...classroomsData[idx],
+                        classroomNumber,
+                        location,
+                        type,
+                        updatedAt: new Date().toISOString().split('T')[0]
+                    };
+                }
+            } else {
+                classroomsData.push({
+                    id: Date.now().toString() + Math.random().toString().slice(2, 5),
+                    classroomNumber,
+                    location,
+                    type,
+                    studentCount: null,
+                    extraChair: null,
+                    allocations: [],
+                    updatedAt: new Date().toISOString().split('T')[0]
+                });
+            }
+
+            await saveClassroomsToCloud();
+            closeModal('modalAddClassroom');
+            renderClassroomsTables();
+            showAssetToast(editId ? "Classroom updated" : "Classroom added");
+        };
+
+        window.deleteClassroomRecord = async function(classroomId) {
+            if (!isUserAdmin) {
+                showAssetToast("Admin Privileges Required: Only Administrators can delete classrooms.", true);
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+            classroomsData = classroomsData.filter(c => String(c.id) !== String(classroomId));
+            await saveClassroomsToCloud();
+            renderClassroomsTables();
+            showAssetToast(`Deleted Classroom ${room.classroomNumber} (${room.type})`);
+        };
+
+        // Modal & Save Logic for Student Count and Extra Chair Columns
+        window.openClassroomMetricModal = function(classroomId, fieldType) {
+            const colPermKey = fieldType === 'studentCount' ? 'student-count' : 'extra-chair';
+            if (!canEditClassroomColumn(colPermKey)) {
+                showAssetToast("View Only: You do not have permission to edit this column.", true);
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+
+            document.getElementById('metricClassroomId').value = String(room.id);
+            document.getElementById('metricFieldType').value = fieldType;
+
+            const isStudentCount = fieldType === 'studentCount';
+            const currentVal = isStudentCount ? room.studentCount : room.extraChair;
+            const hasVal = currentVal !== undefined && currentVal !== null && currentVal !== '';
+
+            document.getElementById('classroomMetricModalTitle').innerText = isStudentCount
+                ? `${hasVal ? 'Edit' : 'Add'} Student Count`
+                : `${hasVal ? 'Edit' : 'Add'} Extra Chair`;
+            document.getElementById('classroomMetricModalSubtitle').innerText = `Classroom ${room.classroomNumber} (${room.type}) • ${room.location}`;
+            document.getElementById('classroomMetricInputLabel').innerText = isStudentCount ? 'Student Count *' : 'Extra Chair Count *';
+            document.getElementById('classroomMetricValueInput').value = hasVal ? currentVal : '';
+
+            document.getElementById('modalClassroomMetric').classList.remove('hidden');
+            setTimeout(() => document.getElementById('classroomMetricValueInput')?.focus(), 50);
+        };
+
+        window.saveClassroomMetricValue = async function(e) {
+            e.preventDefault();
+            const classroomId = document.getElementById('metricClassroomId').value;
+            const fieldType = document.getElementById('metricFieldType').value;
+            const colPermKey = fieldType === 'studentCount' ? 'student-count' : 'extra-chair';
+
+            if (!canEditClassroomColumn(colPermKey)) {
+                showAssetToast("View Only: You do not have permission to edit this column.", true);
+                return;
+            }
+
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+
+            const rawVal = document.getElementById('classroomMetricValueInput').value;
+            const numVal = rawVal !== '' ? Math.max(0, parseInt(rawVal, 10) || 0) : null;
+
+            if (fieldType === 'studentCount') {
+                room.studentCount = numVal;
+            } else if (fieldType === 'extraChair') {
+                room.extraChair = numVal;
+            }
+            room.updatedAt = new Date().toISOString().split('T')[0];
+
+            await saveClassroomsToCloud();
+            closeModal('modalClassroomMetric');
+            renderClassroomsTables();
+            showAssetToast(`Updated ${fieldType === 'studentCount' ? 'Student Count' : 'Extra Chair'} for Classroom ${room.classroomNumber}`);
+        };
+
+        window.openClassroomScheduleModal = function(classroomId, allocId = '') {
+            if (!canEditClassroomColumn('darajah-event')) {
+                showAssetToast("View Only: You do not have permission to add or edit Darajah / Event schedules.", true);
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+
+            buildTimetableGridTemplate();
+            document.getElementById('scheduleClassroomId').value = String(room.id);
+            document.getElementById('scheduleModalTitle').innerText = `Schedule Allocation — Classroom ${room.classroomNumber} (${room.type})`;
+            document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • Select days and periods for the Standard / Event.`;
+
+            resetScheduleModalFormForNew();
+
+            if (allocId) {
+                editScheduleAllocationInModal(room.id, allocId);
+            }
+
+            renderExistingClassroomAllocationsInModal(room);
+            document.getElementById('modalClassroomSchedule').classList.remove('hidden');
+        };
+
+        window.resetScheduleModalFormForNew = function() {
+            document.getElementById('scheduleEditAllocId').value = '';
+            document.getElementById('scheduleEventNameInput').value = '';
+            document.getElementById('btnSaveClassroomScheduleText').innerText = 'Save Schedule Allocation';
+            document.getElementById('cancelEditScheduleAllocBtn')?.classList.add('hidden');
+            document.getElementById('scheduleValidationError')?.classList.add('hidden');
+            toggleAllScheduleSlots(false);
+        };
+
+        window.editScheduleAllocationInModal = function(classroomId, allocId) {
+            if (!canEditClassroomColumn('darajah-event')) return;
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room || !Array.isArray(room.allocations)) return;
+            const alloc = room.allocations.find(a => String(a.id) === String(allocId));
+            if (!alloc) return;
+
+            document.getElementById('scheduleEditAllocId').value = String(alloc.id);
+            document.getElementById('scheduleEventNameInput').value = alloc.standardEventName || '';
+            document.getElementById('btnSaveClassroomScheduleText').innerText = 'Update Schedule Allocation';
+            document.getElementById('cancelEditScheduleAllocBtn')?.classList.remove('hidden');
+
+            const slotSet = new Set(Array.isArray(alloc.slots) ? alloc.slots : []);
+            document.querySelectorAll('input[name="timetableSlotCheckbox"]').forEach(cb => {
+                cb.checked = slotSet.has(cb.value);
+            });
+            updateScheduleSelectAllState();
+        };
+
+        window.deleteClassroomScheduleAllocation = async function(classroomId, allocId) {
+            if (!canEditClassroomColumn('darajah-event')) {
+                showAssetToast("View Only: You do not have permission to modify Darajah / Event schedules.", true);
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room || !Array.isArray(room.allocations)) return;
+            room.allocations = room.allocations.filter(a => String(a.id) !== String(allocId));
+            await saveClassroomsToCloud();
+            renderExistingClassroomAllocationsInModal(room);
+            renderClassroomsTables();
+            showAssetToast("Removed Darajah / Event allocation");
+        };
+
+        function renderExistingClassroomAllocationsInModal(room) {
+            const listEl = document.getElementById('existingClassroomAllocationsList');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+
+            const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+            if (allocations.length === 0) {
+                listEl.innerHTML = '<p class="text-xs text-gray-400 italic">No Darajah / Event allocations saved for this classroom yet.</p>';
+                return;
+            }
+
+            const safeRoomId = String(room.id).replace(/'/g, "\'");
+            allocations.forEach(alloc => {
+                const safeAllocId = String(alloc.id).replace(/'/g, "\'");
+                const summary = formatAllocationScheduleSummary(alloc.slots);
+                const item = document.createElement('div');
+                item.className = "bg-white p-2.5 rounded border flex justify-between items-start gap-2 text-xs";
+                item.innerHTML = `
+                    <div>
+                        <span class="font-bold text-emerald-900 block">${alloc.standardEventName}</span>
+                        <span class="text-[11px] text-gray-600 block mt-0.5">${summary}</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 whitespace-nowrap">
+                        <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50 font-bold" title="Edit Allocation">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-600 hover:text-red-800 px-1.5 py-0.5 rounded hover:bg-red-50 font-bold" title="Delete Allocation">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        window.saveClassroomScheduleAllocation = async function(e) {
+            e.preventDefault();
+            if (!canEditClassroomColumn('darajah-event')) {
+                showAssetToast("View Only: You do not have permission to save Darajah / Event schedules.", true);
+                return;
+            }
+
+            const classroomId = document.getElementById('scheduleClassroomId').value;
+            const editAllocId = document.getElementById('scheduleEditAllocId').value.trim();
+            const standardEventName = document.getElementById('scheduleEventNameInput').value.trim();
+
+            const selectedSlots = Array.from(document.querySelectorAll('input[name="timetableSlotCheckbox"]:checked')).map(cb => cb.value);
+
+            if (selectedSlots.length === 0) {
+                document.getElementById('scheduleValidationError')?.classList.remove('hidden');
+                return;
+            }
+
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+            if (!Array.isArray(room.allocations)) room.allocations = [];
+
+            const allocRecord = {
+                id: editAllocId ? String(editAllocId) : Date.now().toString() + Math.random().toString().slice(2, 5),
+                standardEventName,
+                slots: selectedSlots,
+                updatedAt: new Date().toISOString().split('T')[0]
+            };
+
+            if (editAllocId) {
+                const idx = room.allocations.findIndex(a => String(a.id) === String(editAllocId));
+                if (idx !== -1) {
+                    room.allocations[idx] = allocRecord;
+                } else {
+                    room.allocations.push(allocRecord);
+                }
+            } else {
+                room.allocations.push(allocRecord);
+            }
+
+            await saveClassroomsToCloud();
+            renderExistingClassroomAllocationsInModal(room);
+            renderClassroomsTables();
+            resetScheduleModalFormForNew();
+            closeModal('modalClassroomSchedule');
+            showAssetToast(`Saved schedule for "${standardEventName}" in Classroom ${room.classroomNumber}`);
+        };
+
+        window.renderClassroomsTables = function() {
+            const maleTbody = document.getElementById('maleClassroomsTableBody');
+            const femaleTbody = document.getElementById('femaleClassroomsTableBody');
+            if (!maleTbody || !femaleTbody) return;
+
+            // Ensure "+ Add Classroom" header button is strictly shown only to Admin
+            const addClassroomBtn = document.getElementById('btnAddClassroomHeader');
+            if (addClassroomBtn) {
+                addClassroomBtn.classList.toggle('hidden', !isUserAdmin);
+            }
+
+            const canEditDarajah = canEditClassroomColumn('darajah-event');
+            const canEditStudentCount = canEditClassroomColumn('student-count');
+            const canEditExtraChair = canEditClassroomColumn('extra-chair');
+
+            const query = (document.getElementById('classroomSearchInput')?.value || '').toLowerCase().trim();
+            const tokens = query.split(/\s+/).filter(Boolean);
+
+            const sortedRooms = [...classroomsData].sort((a, b) =>
+                String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' })
+            );
+
+            const filteredRooms = sortedRooms.filter(room => {
+                if (tokens.length === 0) return true;
+                const allocText = (room.allocations || []).map(a => `${a.standardEventName} ${formatAllocationScheduleSummary(a.slots)}`).join(' ');
+                const corpus = `${room.classroomNumber} ${room.location} ${room.type} ${room.studentCount ?? ''} ${room.extraChair ?? ''} ${allocText}`.toLowerCase();
+                return tokens.every(t => corpus.includes(t));
+            });
+
+            const maleRooms = filteredRooms.filter(r => r.type !== 'Female');
+            const femaleRooms = filteredRooms.filter(r => r.type === 'Female');
+
+            // Update counts
+            const totalMale = classroomsData.filter(r => r.type !== 'Female').length;
+            const totalFemale = classroomsData.filter(r => r.type === 'Female').length;
+            if (document.getElementById('cardTotalClassroomsCount')) document.getElementById('cardTotalClassroomsCount').innerText = classroomsData.length;
+            if (document.getElementById('cardMaleClassroomsCount')) document.getElementById('cardMaleClassroomsCount').innerText = totalMale;
+            if (document.getElementById('cardFemaleClassroomsCount')) document.getElementById('cardFemaleClassroomsCount').innerText = totalFemale;
+            if (document.getElementById('maleClassesBadgeCount')) document.getElementById('maleClassesBadgeCount').innerText = `${maleRooms.length} Room${maleRooms.length === 1 ? '' : 's'}`;
+            if (document.getElementById('femaleClassesBadgeCount')) document.getElementById('femaleClassesBadgeCount').innerText = `${femaleRooms.length} Room${femaleRooms.length === 1 ? '' : 's'}`;
+
+            function buildClassroomRowHtml(room, accentColor) {
+                const safeRoomId = String(room.id).replace(/'/g, "\'");
+                const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+
+                let darajahHtml = '';
+                if (allocations.length === 0) {
+                    darajahHtml = '<span class="text-xs text-gray-400 italic">Unallocated</span>';
+                } else {
+                    darajahHtml = `<div class="space-y-2">` + allocations.map(alloc => {
+                        const safeAllocId = String(alloc.id).replace(/'/g, "\'");
+                        const scheduleSummary = formatAllocationScheduleSummary(alloc.slots);
+                        const editDeleteBtns = canEditDarajah ? `
+                            <div class="flex items-center space-x-1">
+                                <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-1" title="Edit Schedule">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-500 hover:text-red-700 px-1" title="Remove Allocation">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        ` : '';
+                        return `
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs">
+                                <div class="flex justify-between items-start gap-2">
+                                    <span class="font-bold text-emerald-900 text-sm">${alloc.standardEventName}</span>
+                                    ${editDeleteBtns}
+                                </div>
+                                <div class="text-[11px] text-gray-600 mt-1 leading-relaxed">${scheduleSummary}</div>
+                            </div>
+                        `;
+                    }).join('') + `</div>`;
+                }
+
+                // Student Count Column Cell
+                const hasStudentCount = room.studentCount !== undefined && room.studentCount !== null && room.studentCount !== '';
+                const studentCountDisplay = hasStudentCount
+                    ? `<span class="font-extrabold text-blue-900 text-sm bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">${room.studentCount}</span>`
+                    : `<span class="text-xs text-gray-400 italic">-</span>`;
+                const studentCountBtn = canEditStudentCount
+                    ? `<button type="button" onclick="openClassroomMetricModal('${safeRoomId}', 'studentCount')" class="mt-1 inline-flex items-center space-x-1 text-[11px] font-bold px-2 py-1 rounded ${hasStudentCount ? 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'} transition">
+                        <i class="fa-solid ${hasStudentCount ? 'fa-pen-to-square' : 'fa-plus'} text-[10px]"></i>
+                        <span>${hasStudentCount ? 'Edit' : 'Add'}</span>
+                    </button>`
+                    : `<span class="block text-[10px] text-gray-400 italic mt-0.5">View Only</span>`;
+
+                // Extra Chair Column Cell
+                const hasExtraChair = room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '';
+                const extraChairDisplay = hasExtraChair
+                    ? `<span class="font-extrabold text-amber-900 text-sm bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">${room.extraChair}</span>`
+                    : `<span class="text-xs text-gray-400 italic">-</span>`;
+                const extraChairBtn = canEditExtraChair
+                    ? `<button type="button" onclick="openClassroomMetricModal('${safeRoomId}', 'extraChair')" class="mt-1 inline-flex items-center space-x-1 text-[11px] font-bold px-2 py-1 rounded ${hasExtraChair ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'} transition">
+                        <i class="fa-solid ${hasExtraChair ? 'fa-pen-to-square' : 'fa-plus'} text-[10px]"></i>
+                        <span>${hasExtraChair ? 'Edit' : 'Add'}</span>
+                    </button>`
+                    : `<span class="block text-[10px] text-gray-400 italic mt-0.5">View Only</span>`;
+
+                // Action Column Cell (Add Std / Event button governed by darajah-event permission; Classroom Edit/Delete strictly Admin only)
+                const addStdEventBtnHtml = canEditDarajah
+                    ? `<button
+                        type="button"
+                        onclick="openClassroomScheduleModal('${safeRoomId}')"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm"
+                    >
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <span>Add Std / Event</span>
+                    </button>`
+                    : `<span class="text-[11px] text-gray-400 italic">View Only</span>`;
+
+                const adminRoomControlsHtml = isUserAdmin
+                    ? `<div class="flex items-center space-x-1">
+                        <button type="button" onclick="openEditClassroomModal('${safeRoomId}')" class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Edit Classroom">
+                            <i class="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
+                        <button type="button" onclick="deleteClassroomRecord('${safeRoomId}')" class="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50" title="Delete Classroom">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>`
+                    : '';
+
+                return `
+                    <tr class="hover:bg-gray-50 border-b align-top">
+                        <td class="p-3 font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'} whitespace-nowrap">
+                            ${room.classroomNumber}
+                        </td>
+                        <td class="p-3 text-gray-700 font-medium">
+                            ${room.location}
+                        </td>
+                        <td class="p-3">
+                            ${darajahHtml}
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <div class="flex flex-col items-center justify-center">
+                                ${studentCountDisplay}
+                                ${studentCountBtn}
+                            </div>
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <div class="flex flex-col items-center justify-center">
+                                ${extraChairDisplay}
+                                ${extraChairBtn}
+                            </div>
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <div class="flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                                ${addStdEventBtnHtml}
+                                ${adminRoomControlsHtml}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            if (maleRooms.length === 0) {
+                maleTbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-400 text-xs italic">No Male classrooms registered yet.</td></tr>';
+            } else {
+                maleTbody.innerHTML = maleRooms.map(r => buildClassroomRowHtml(r, 'blue')).join('');
+            }
+
+            if (femaleRooms.length === 0) {
+                femaleTbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-400 text-xs italic">No Female classrooms registered yet.</td></tr>';
+            } else {
+                femaleTbody.innerHTML = femaleRooms.map(r => buildClassroomRowHtml(r, 'pink')).join('');
+            }
+        };
+
+        // =========================================================================
+        // REQUIREMENT 3: DATA BACKUP & RESTORE (JSON EXPORT / IMPORT)
+        // =========================================================================
+
+        window.downloadWebpageDataJson = function() {
+            const backupPayload = {
+                version: "2.0",
+                exportedAt: new Date().toISOString(),
+                portal: "Aljamea-tus-Saifiyah Facilities Management Dept (Marol)",
+                collections: {
+                    estates: estatesData,
+                    classrooms: classroomsData,
+                    keys: keysInventoryData,
+                    faculty: facultyData,
+                    societies: societiesData,
+                    docs: societyDocs,
+                    maint: maintLogs,
+                    bills: vacantBills,
+                    socBills: societyBillsData,
+                    users: usersList,
+                    estate_assets: estateAssetsData
+                }
+            };
+
+            const jsonStr = JSON.stringify(backupPayload, null, 2);
+            const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStamp = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `Siyanat_Marol_Portal_Backup_${dateStamp}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showAssetToast("Downloaded complete webpage backup (.json)");
+        };
+
+        window.uploadWebpageDataJson = function(event) {
+            const fileInput = event.target;
+            const file = fileInput?.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (!parsed || typeof parsed !== 'object') {
+                        throw new Error("Invalid JSON root object.");
+                    }
+
+                    // Support both wrapped `{ collections: { ... } }` and direct `portalData` JSON structures
+                    const src = (parsed.collections && typeof parsed.collections === 'object') ? parsed.collections : parsed;
+
+                    const hasValidKeys = ['estates', 'classrooms', 'faculty', 'societies', 'users', 'estate_assets', 'maint', 'bills', 'socBills', 'docs', 'keys']
+                        .some(k => Object.prototype.hasOwnProperty.call(src, k));
+
+                    if (!hasValidKeys) {
+                        throw new Error("Uploaded JSON does not match expected Siyanat Portal collections schema.");
+                    }
+
+                    showAssetToast("Restoring webpage data from JSON backup...");
+
+                    if (Array.isArray(src.estates)) estatesData = src.estates;
+                    if (src.classrooms !== undefined) classroomsData = normalizeClassroomsList(src.classrooms);
+                    if (Array.isArray(src.keys)) keysInventoryData = src.keys;
+                    if (Array.isArray(src.faculty)) facultyData = src.faculty;
+                    if (Array.isArray(src.societies)) societiesData = src.societies;
+                    if (Array.isArray(src.docs)) societyDocs = src.docs;
+                    if (Array.isArray(src.maint)) maintLogs = src.maint;
+                    if (src.bills && typeof src.bills === 'object') vacantBills = src.bills;
+                    if (src.socBills && typeof src.socBills === 'object') societyBillsData = normalizeSocietyBillsData(src.socBills);
+                    if (src.users !== undefined) usersList = normalizeUsersList(src.users);
+                    if (src.estate_assets !== undefined) estateAssetsData = normalizeEstateAssetsList(src.estate_assets);
+
+                    await saveCloudData();
+                    initAppUI();
+                    showAssetToast("Webpage data restored and synced to Cloud!");
+                } catch (err) {
+                    console.error("JSON Restore Error:", err);
+                    showAssetToast("Failed to restore JSON backup: " + (err.message || err), true);
+                } finally {
+                    fileInput.value = '';
+                }
+            };
+            reader.readAsText(file);
         };
 
         // =========================================================================
@@ -4270,7 +5781,7 @@ window.renderSocieties = function() {
                         <div class="p-6 text-center bg-white rounded-lg border border-dashed border-gray-300 text-gray-500 text-xs space-y-2">
                             <i class="fa-solid fa-box-open text-2xl text-gray-400 block"></i>
                             <p>No assets registered under <strong>${formatFlatDisplayLabel(flat)}</strong> yet.</p>
-                            <button type="button" onclick="openAddAssetModal('${safeFlatId}')" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-bold inline-flex items-center space-x-1">
+                            <button data-crud="true" type="button" onclick="openAddAssetModal('${safeFlatId}')" class="crud-action-btn mt-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-bold inline-flex items-center space-x-1">
                                 <i class="fa-solid fa-plus"></i>
                                 <span>Add First Asset</span>
                             </button>
@@ -4297,15 +5808,16 @@ window.renderSocieties = function() {
                                 <td class="p-2.5 text-gray-700">${asset.warranty || '-'}</td>
                                 <td class="p-2.5 text-center whitespace-nowrap">${billHtml}</td>
                                 <td class="p-2.5 text-center whitespace-nowrap space-x-1.5">
-                                    <button type="button" onclick="openCloneAssetModal('${safeAssetId}')" class="text-emerald-600 hover:text-emerald-800 font-bold px-1.5 py-0.5 rounded hover:bg-emerald-50" title="Clone Asset">
+                                    <button data-crud="true" type="button" onclick="openCloneAssetModal('${safeAssetId}')" class="crud-action-btn text-emerald-600 hover:text-emerald-800 font-bold px-1.5 py-0.5 rounded hover:bg-emerald-50" title="Clone Asset">
                                         <i class="fa-solid fa-clone"></i>
                                     </button>
-                                    <button type="button" onclick="openEditAssetModal('${safeAssetId}')" class="text-blue-600 hover:text-blue-800 font-bold px-1.5 py-0.5 rounded hover:bg-blue-50" title="Edit Asset">
+                                    <button data-crud="true" type="button" onclick="openEditAssetModal('${safeAssetId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 font-bold px-1.5 py-0.5 rounded hover:bg-blue-50" title="Edit Asset">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
-                                    <button type="button" onclick="deleteAssetRecord('${safeAssetId}')" class="text-red-600 hover:text-red-800 font-bold px-1.5 py-0.5 rounded hover:bg-red-50" title="Delete Asset">
+                                    <button data-crud="true" type="button" onclick="deleteAssetRecord('${safeAssetId}')" class="crud-action-btn text-red-600 hover:text-red-800 font-bold px-1.5 py-0.5 rounded hover:bg-red-50" title="Delete Asset">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
+                                    ${isCurrentUserViewOnly() ? '<span class="text-[11px] text-gray-400 italic">View Only</span>' : ''}
                                 </td>
                             </tr>
                         `;
@@ -4344,7 +5856,7 @@ window.renderSocieties = function() {
                                     </span>
                                     <span class="text-xs font-bold text-gray-700">${formatFlatDisplayLabel(flat)}</span>
                                 </div>
-                                <button type="button" onclick="openAddAssetModal('${safeFlatId}')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1 shadow-sm">
+                                <button data-crud="true" type="button" onclick="openAddAssetModal('${safeFlatId}')" class="crud-action-btn bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1 shadow-sm">
                                     <i class="fa-solid fa-plus"></i>
                                     <span>Add Asset to ${flat.flatNo}</span>
                                 </button>

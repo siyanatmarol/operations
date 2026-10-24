@@ -67,7 +67,7 @@
 
     <!-- Header -->
     <header class="bg-emerald-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+        <div class="max-w-[96%] 2xl:max-w-[1800px] mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
             <div class="flex items-center space-x-3 mb-3 md:mb-0">
                 <i class="fa-solid font-bold fa-building-user text-3xl text-emerald-400"></i>
                 <div>
@@ -92,7 +92,7 @@
         </div>
 
         <div class="bg-emerald-950 border-t border-emerald-800">
-            <div class="max-w-7xl mx-auto px-4 flex space-x-2 overflow-x-auto">
+            <div class="max-w-[96%] 2xl:max-w-[1800px] mx-auto px-4 flex space-x-2 overflow-x-auto">
                 <button onclick="switchModule('dawat-estates')" id="mod-dawat-estates" class="px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 active-tab">
                     <i class="fa-solid fa-city text-emerald-400"></i>
                     <span>Dawat Estates</span>
@@ -118,7 +118,7 @@
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-grow">
+    <main class="max-w-[96%] 2xl:max-w-[1800px] mx-auto w-full px-4 py-6 flex-grow">
         <!-- View Only Mode Notice Banner -->
         <div id="viewOnlyNoticeBanner" class="hidden mb-4 bg-amber-50 border border-amber-300 text-amber-900 px-4 py-2.5 rounded-lg flex items-center justify-between text-xs font-semibold shadow-sm">
             <div class="flex items-center space-x-2">
@@ -723,7 +723,7 @@
             </div>
 
             <!-- Bifurcated Tables: Male Classes & Female Classes -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:gap-5 items-start">
                 <!-- Male Classes Table -->
                 <div class="bg-white rounded-lg shadow border overflow-hidden">
                     <div class="bg-blue-900 text-white px-4 py-3 flex justify-between items-center">
@@ -734,15 +734,15 @@
                         <span id="maleClassesBadgeCount" class="bg-blue-800 text-blue-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                        <table class="w-full text-left text-xs sm:text-sm table-auto">
+                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
                                 <tr>
-                                    <th class="p-3 whitespace-nowrap">Classroom Number</th>
-                                    <th class="p-3">Location</th>
-                                    <th class="p-3">Darajah / Event</th>
-                                    <th class="p-3 text-center whitespace-nowrap">Student Count</th>
-                                    <th class="p-3 text-center whitespace-nowrap">Extra Chair</th>
-                                    <th class="p-3 text-center whitespace-nowrap">Action</th>
+                                    <th class="py-2.5 px-2.5 w-20 text-center leading-tight">Class<br>No.</th>
+                                    <th class="py-2.5 px-2.5 w-32">Location</th>
+                                    <th class="py-2.5 px-2.5">Darajah / Event</th>
+                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Student<br>Count</th>
+                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Extra<br>Chair</th>
+                                    <th class="py-2.5 px-2.5 w-32 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="maleClassroomsTableBody" class="divide-y"></tbody>
@@ -760,15 +760,15 @@
                         <span id="femaleClassesBadgeCount" class="bg-pink-800 text-pink-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
+                        <table class="w-full text-left text-xs sm:text-sm table-auto">
+                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
                                 <tr>
-                                    <th class="p-3 whitespace-nowrap">Classroom Number</th>
-                                    <th class="p-3">Location</th>
-                                    <th class="p-3">Darajah / Event</th>
-                                    <th class="p-3 text-center whitespace-nowrap">Student Count</th>
-                                    <th class="p-3 text-center whitespace-nowrap">Extra Chair</th>
-                                    <th class="p-3 text-center whitespace-nowrap">Action</th>
+                                    <th class="py-2.5 px-2.5 w-20 text-center leading-tight">Class<br>No.</th>
+                                    <th class="py-2.5 px-2.5 w-32">Location</th>
+                                    <th class="py-2.5 px-2.5">Darajah / Event</th>
+                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Student<br>Count</th>
+                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Extra<br>Chair</th>
+                                    <th class="py-2.5 px-2.5 w-32 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="femaleClassroomsTableBody" class="divide-y"></tbody>
@@ -1874,7 +1874,7 @@
                 <div class="space-y-1.5">
                     <div class="flex flex-wrap justify-between items-center text-xs text-gray-600">
                         <span class="font-semibold"><i class="fa-solid fa-table-cells mr-1 text-emerald-700"></i>Weekly Timetable Grid (Check periods below or click Day / Period headers to toggle row/column)</span>
-                        <span class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">Note: Saturday (يوم السبت) has distinct timings for (PT) and Period 8; Periods 9–11 are 00:00 - 00:00.</span>
+                        <span class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">Note: Saturday (يوم السبت) includes Period 1 (08:15 - 08:50) and Period 8 (12:40 - 13:15); Periods 9–11 are 00:00 - 00:00.</span>
                     </div>
                     <div class="overflow-x-auto border-2 border-gray-800 rounded-lg shadow-sm">
                         <table class="w-full text-center text-xs border-collapse timetable-grid min-w-[960px]">
@@ -4858,18 +4858,19 @@ window.renderSocieties = function() {
         // Period 10: 00:00 - 00:00
         // Period 11 (O): 00:00 - 00:00
 
+        // PT (06:00 - 07:00) removed from Mon-Fri; Saturday keeps its 08:15 - 08:50 first period!
         const TIMETABLE_COLUMNS = [
-            { key: 'P11', label: 'Period 11 (O)', shortLabel: 'P11 (O)', stdTime: '15:45 - 16:20', satTime: '00:00 - 00:00' },
-            { key: 'P10', label: 'Period 10',     shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00' },
-            { key: 'P9',  label: 'Period 9',      shortLabel: 'P9',      stdTime: '14:35 - 15:10', satTime: '00:00 - 00:00' },
-            { key: 'P8',  label: 'Period 8',      shortLabel: 'P8',      stdTime: '14:00 - 14:35', satTime: '12:40 - 13:15' },
-            { key: 'P7',  label: 'Period 7',      shortLabel: 'P7',      stdTime: '12:05 - 12:40', satTime: '12:05 - 12:40' },
-            { key: 'P6',  label: 'Period 6',      shortLabel: 'P6',      stdTime: '11:30 - 12:05', satTime: '11:30 - 12:05' },
-            { key: 'P5',  label: 'Period 5',      shortLabel: 'P5',      stdTime: '10:55 - 11:30', satTime: '10:55 - 11:30' },
-            { key: 'P4',  label: 'Period 4',      shortLabel: 'P4',      stdTime: '10:00 - 10:35', satTime: '10:00 - 10:35' },
-            { key: 'P3',  label: 'Period 3',      shortLabel: 'P3',      stdTime: '09:25 - 10:00', satTime: '09:25 - 10:00' },
-            { key: 'P2',  label: 'Period 2',      shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25' },
-            { key: 'PT',  label: '(PT)',          shortLabel: '(PT)',    stdTime: '06:00 - 07:00', satTime: '08:15 - 08:50' }
+            { key: 'P11', label: 'Period 11 (O)', shortLabel: 'P11 (O)', stdTime: '15:45 - 16:20', satTime: '00:00 - 00:00', saturdayOnly: false },
+            { key: 'P10', label: 'Period 10',     shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00', saturdayOnly: false },
+            { key: 'P9',  label: 'Period 9',      shortLabel: 'P9',      stdTime: '14:35 - 15:10', satTime: '00:00 - 00:00', saturdayOnly: false },
+            { key: 'P8',  label: 'Period 8',      shortLabel: 'P8',      stdTime: '14:00 - 14:35', satTime: '12:40 - 13:15', saturdayOnly: false },
+            { key: 'P7',  label: 'Period 7',      shortLabel: 'P7',      stdTime: '12:05 - 12:40', satTime: '12:05 - 12:40', saturdayOnly: false },
+            { key: 'P6',  label: 'Period 6',      shortLabel: 'P6',      stdTime: '11:30 - 12:05', satTime: '11:30 - 12:05', saturdayOnly: false },
+            { key: 'P5',  label: 'Period 5',      shortLabel: 'P5',      stdTime: '10:55 - 11:30', satTime: '10:55 - 11:30', saturdayOnly: false },
+            { key: 'P4',  label: 'Period 4',      shortLabel: 'P4',      stdTime: '10:00 - 10:35', satTime: '10:00 - 10:35', saturdayOnly: false },
+            { key: 'P3',  label: 'Period 3',      shortLabel: 'P3',      stdTime: '09:25 - 10:00', satTime: '09:25 - 10:00', saturdayOnly: false },
+            { key: 'P2',  label: 'Period 2',      shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25', saturdayOnly: false },
+            { key: 'P1',  label: 'Period 1',      shortLabel: 'P1',      stdTime: '-',             satTime: '08:15 - 08:50', saturdayOnly: true }
         ];
 
         const TIMETABLE_DAYS = [
@@ -4886,12 +4887,13 @@ window.renderSocieties = function() {
             const tbody = document.getElementById('timetableGridBody');
             if (!thead || !tbody) return;
 
-            // Header Row 1: Period Names + Day column on right (matching screenshot layout exactly)
+            // Header Row 1: Period Names + Day column on right
             let headRow1 = '<tr class="bg-gray-100 text-gray-900 font-bold">';
             TIMETABLE_COLUMNS.forEach(col => {
                 headRow1 += `
-                    <th class="p-2 cursor-pointer hover:bg-emerald-100 transition select-none" onclick="toggleColumnScheduleSlots('${col.key}')" title="Click to toggle all ${col.label}">
+                    <th class="p-2 cursor-pointer hover:bg-emerald-100 transition select-none" onclick="toggleColumnScheduleSlots('${col.key}')" title="Click to toggle ${col.label}">
                         <div class="text-xs">${col.label}</div>
+                        ${col.saturdayOnly ? '<div class="text-[9px] text-amber-800 font-semibold">(Sat Only)</div>' : ''}
                     </th>
                 `;
             });
@@ -4900,17 +4902,17 @@ window.renderSocieties = function() {
             // Header Row 2: Standard Timings (Mon - Fri) + Time label on right
             let headRow2 = '<tr class="bg-gray-50 text-gray-700 font-semibold text-[11px]">';
             TIMETABLE_COLUMNS.forEach(col => {
-                headRow2 += `<th class="py-1.5 px-1 font-mono">${col.stdTime}</th>`;
+                headRow2 += `<th class="py-1.5 px-1 font-mono ${col.saturdayOnly ? 'text-gray-300 bg-gray-100/60' : ''}">${col.stdTime}</th>`;
             });
             headRow2 += '<th class="py-1.5 px-2 bg-emerald-800 text-emerald-100 font-bold">Time</th></tr>';
 
             thead.innerHTML = headRow1 + headRow2;
 
-            // Body Rows: Monday to Friday, then Saturday timing header row, then Saturday row (matching screenshot)
+            // Body Rows: Monday to Friday, then Saturday timing header row, then Saturday row
             let bodyHtml = '';
             TIMETABLE_DAYS.forEach(day => {
                 if (day.isSaturday) {
-                    // Insert the special Saturday Time header row right above يوم السبت just like the screenshot
+                    // Insert the special Saturday Time header row right above يوم السبت
                     bodyHtml += '<tr class="bg-amber-50/90 text-gray-800 font-semibold text-[11px] border-t-2 border-gray-800">';
                     TIMETABLE_COLUMNS.forEach(col => {
                         bodyHtml += `<td class="py-1 px-1 font-mono ${col.satTime === '00:00 - 00:00' ? 'text-gray-400' : 'text-amber-900 font-bold'}">${col.satTime}</td>`;
@@ -4920,24 +4922,31 @@ window.renderSocieties = function() {
 
                 bodyHtml += `<tr class="hover:bg-emerald-50/30 transition">`;
                 TIMETABLE_COLUMNS.forEach(col => {
-                    const slotId = `${day.key}_${col.key}`;
-                    const timeStr = day.isSaturday ? col.satTime : col.stdTime;
-                    bodyHtml += `
-                        <td class="p-2 align-middle">
-                            <label class="flex flex-col items-center justify-center cursor-pointer py-1 rounded hover:bg-emerald-100/60 transition">
-                                <input
-                                    type="checkbox"
-                                    name="timetableSlotCheckbox"
-                                    value="${slotId}"
-                                    data-day="${day.key}"
-                                    data-period="${col.key}"
-                                    onchange="updateScheduleSelectAllState()"
-                                    class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                                >
-                                <span class="text-[10px] text-gray-400 mt-1 font-mono">${col.shortLabel}</span>
-                            </label>
-                        </td>
-                    `;
+                    if (col.saturdayOnly && !day.isSaturday) {
+                        bodyHtml += `
+                            <td class="p-2 align-middle bg-gray-100/70 text-gray-300 select-none" title="Not applicable Monday–Friday">
+                                <span class="text-xs font-mono">&mdash;</span>
+                            </td>
+                        `;
+                    } else {
+                        const slotId = `${day.key}_${col.key}`;
+                        bodyHtml += `
+                            <td class="p-2 align-middle">
+                                <label class="flex flex-col items-center justify-center cursor-pointer py-1 rounded hover:bg-emerald-100/60 transition">
+                                    <input
+                                        type="checkbox"
+                                        name="timetableSlotCheckbox"
+                                        value="${slotId}"
+                                        data-day="${day.key}"
+                                        data-period="${col.key}"
+                                        onchange="updateScheduleSelectAllState()"
+                                        class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                    >
+                                    <span class="text-[10px] text-gray-400 mt-1 font-mono">${col.shortLabel}</span>
+                                </label>
+                            </td>
+                        `;
+                    }
                 });
                 bodyHtml += `
                     <td class="p-2.5 bg-gray-50 font-bold text-gray-900 cursor-pointer hover:bg-emerald-100 transition select-none" onclick="toggleDayScheduleSlots('${day.key}')" title="Click to toggle all periods on ${day.enLabel}">
@@ -4989,18 +4998,23 @@ window.renderSocieties = function() {
 
         function formatAllocationScheduleSummary(slots) {
             if (!Array.isArray(slots) || slots.length === 0) return 'No slots selected';
-            const totalPossible = TIMETABLE_DAYS.length * TIMETABLE_COLUMNS.length;
-            if (slots.length === totalPossible) {
-                return 'All Days (Mon–Sat) • All Periods (PT – Period 11)';
+            const normalizedSlots = slots.map(s => s === 'Sat_PT' ? 'Sat_P1' : s).filter(s => !s.endsWith('_PT'));
+            if (normalizedSlots.length === 0) return 'No slots selected';
+
+            // Total active checkboxes across Mon-Fri (10 periods each = 50) + Sat (11 periods) = 61
+            const totalPossible = 61;
+            if (normalizedSlots.length >= totalPossible) {
+                return 'All Days (Mon–Sat) • All Periods';
             }
 
-            // Group selected periods by day in chronological order (PT -> Period 11)
+            // Group selected periods by day in chronological order (P1/P2 -> Period 11)
             const chronologicalCols = [...TIMETABLE_COLUMNS].reverse();
             const daySummaries = [];
 
             TIMETABLE_DAYS.forEach(day => {
-                const pickedCols = chronologicalCols.filter(col => slots.includes(`${day.key}_${col.key}`));
-                if (pickedCols.length === TIMETABLE_COLUMNS.length) {
+                const availableColsForDay = chronologicalCols.filter(col => !col.saturdayOnly || day.isSaturday);
+                const pickedCols = availableColsForDay.filter(col => normalizedSlots.includes(`${day.key}_${col.key}`));
+                if (pickedCols.length === availableColsForDay.length && availableColsForDay.length > 0) {
                     daySummaries.push(`${day.enLabel} (${day.arLabel}): All Periods`);
                 } else if (pickedCols.length > 0) {
                     const pList = pickedCols.map(col => {
@@ -5200,7 +5214,7 @@ window.renderSocieties = function() {
             document.getElementById('btnSaveClassroomScheduleText').innerText = 'Update Schedule Allocation';
             document.getElementById('cancelEditScheduleAllocBtn')?.classList.remove('hidden');
 
-            const slotSet = new Set(Array.isArray(alloc.slots) ? alloc.slots : []);
+            const slotSet = new Set((Array.isArray(alloc.slots) ? alloc.slots : []).map(s => s === 'Sat_PT' ? 'Sat_P1' : s));
             document.querySelectorAll('input[name="timetableSlotCheckbox"]').forEach(cb => {
                 cb.checked = slotSet.has(cb.value);
             });
@@ -5427,29 +5441,29 @@ window.renderSocieties = function() {
 
                 return `
                     <tr class="hover:bg-gray-50 border-b align-top">
-                        <td class="p-3 font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'} whitespace-nowrap">
+                        <td class="py-2.5 px-2 w-20 text-center font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'} whitespace-nowrap">
                             ${room.classroomNumber}
                         </td>
-                        <td class="p-3 text-gray-700 font-medium">
+                        <td class="py-2.5 px-2.5 text-gray-700 font-medium text-xs leading-snug">
                             ${room.location}
                         </td>
-                        <td class="p-3">
+                        <td class="py-2.5 px-2.5">
                             ${darajahHtml}
                         </td>
-                        <td class="p-3 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 ${studentCountDisplay}
                                 ${studentCountBtn}
                             </div>
                         </td>
-                        <td class="p-3 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 ${extraChairDisplay}
                                 ${extraChairBtn}
                             </div>
                         </td>
-                        <td class="p-3 text-center whitespace-nowrap">
-                            <div class="flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                        <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
+                            <div class="flex flex-col items-center justify-center gap-1">
                                 ${addStdEventBtnHtml}
                                 ${adminRoomControlsHtml}
                             </div>

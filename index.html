@@ -1845,7 +1845,7 @@
                 <input type="hidden" id="scheduleEditAllocId" value="">
 
                 <!-- Top Input Bar: Standard / Event Name + Select All Checkbox -->
-                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4">
+                <div id="scheduleModalFormTopBar" class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4">
                     <div class="flex-grow">
                         <label class="text-xs font-bold text-emerald-950 uppercase tracking-wider block mb-1">Standard / Event Name <span class="text-red-600">*</span></label>
                         <input
@@ -1872,9 +1872,9 @@
 
                 <!-- Interactive Weekly Timetable Grid (Matching Attached Screenshot) -->
                 <div class="space-y-1.5">
-                    <div class="flex flex-wrap justify-between items-center text-xs text-gray-600">
-                        <span class="font-semibold"><i class="fa-solid fa-table-cells mr-1 text-emerald-700"></i>Weekly Timetable Grid (Check periods below or click Day / Period headers to toggle row/column)</span>
-                        <span class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">Note: Saturday (يوم السبت) includes Period 1 (08:15 - 08:50) and Period 8 (12:40 - 13:15); Periods 9–11 are 00:00 - 00:00.</span>
+                    <div class="flex flex-wrap justify-between items-center text-xs text-gray-600 gap-2">
+                        <span class="font-semibold"><i class="fa-solid fa-table-cells mr-1 text-emerald-700"></i>Weekly Timetable Grid — Connected across all events in this classroom (Booked slots are locked with event name)</span>
+                        <span class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium">Select All picks: Mon–Thu (P4–P10), Fri (P3–P10), Sat (P1–P8). Extra 1 & Extra 2 support custom timings per day.</span>
                     </div>
                     <div class="overflow-x-auto border-2 border-gray-800 rounded-lg shadow-sm">
                         <table class="w-full text-center text-xs border-collapse timetable-grid min-w-[960px]">
@@ -2479,12 +2479,21 @@
                 } else if (item.allocations && typeof item.allocations === 'object') {
                     allocations = Object.values(item.allocations).filter(Boolean);
                 }
-                allocations = allocations.map(a => ({
-                    id: String(a.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
-                    standardEventName: a.standardEventName || a.name || '',
-                    slots: Array.isArray(a.slots) ? a.slots : (a.slots && typeof a.slots === 'object' ? Object.values(a.slots) : []),
-                    updatedAt: a.updatedAt || ''
-                }));
+                allocations = allocations.map(a => {
+                    const rawSlots = Array.isArray(a.slots) ? a.slots : (a.slots && typeof a.slots === 'object' ? Object.values(a.slots) : []);
+                    const migratedSlots = rawSlots.map(s => {
+                        if (s === 'Sat_PT') return 'Sat_P1';
+                        if (typeof s === 'string' && s.endsWith('_P11')) return s.replace(/_P11$/, '_EX1');
+                        return s;
+                    });
+                    return {
+                        id: String(a.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                        standardEventName: a.standardEventName || a.name || '',
+                        slots: migratedSlots,
+                        customTimings: (a.customTimings && typeof a.customTimings === 'object') ? { ...a.customTimings } : {},
+                        updatedAt: a.updatedAt || ''
+                    };
+                });
                 return {
                     id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
                     classroomNumber: String(item.classroomNumber || item.number || ''),
@@ -4858,19 +4867,22 @@ window.renderSocieties = function() {
         // Period 10: 00:00 - 00:00
         // Period 11 (O): 00:00 - 00:00
 
-        // PT (06:00 - 07:00) removed from Mon-Fri; Saturday keeps its 08:15 - 08:50 first period!
+        // Timetable columns (Right-to-Left layout):
+        // Period 11 renamed to Extra 1 (EX1), and Extra 2 (EX2) added after it on the far left.
+        // Both Extra 1 and Extra 2 have no fixed time in the header; each day cell provides a dynamic "+ Add Time" / "Edit Time" option.
         const TIMETABLE_COLUMNS = [
-            { key: 'P11', label: 'Period 11 (O)', shortLabel: 'P11 (O)', stdTime: '15:45 - 16:20', satTime: '00:00 - 00:00', saturdayOnly: false },
-            { key: 'P10', label: 'Period 10',     shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00', saturdayOnly: false },
-            { key: 'P9',  label: 'Period 9',      shortLabel: 'P9',      stdTime: '14:35 - 15:10', satTime: '00:00 - 00:00', saturdayOnly: false },
-            { key: 'P8',  label: 'Period 8',      shortLabel: 'P8',      stdTime: '14:00 - 14:35', satTime: '12:40 - 13:15', saturdayOnly: false },
-            { key: 'P7',  label: 'Period 7',      shortLabel: 'P7',      stdTime: '12:05 - 12:40', satTime: '12:05 - 12:40', saturdayOnly: false },
-            { key: 'P6',  label: 'Period 6',      shortLabel: 'P6',      stdTime: '11:30 - 12:05', satTime: '11:30 - 12:05', saturdayOnly: false },
-            { key: 'P5',  label: 'Period 5',      shortLabel: 'P5',      stdTime: '10:55 - 11:30', satTime: '10:55 - 11:30', saturdayOnly: false },
-            { key: 'P4',  label: 'Period 4',      shortLabel: 'P4',      stdTime: '10:00 - 10:35', satTime: '10:00 - 10:35', saturdayOnly: false },
-            { key: 'P3',  label: 'Period 3',      shortLabel: 'P3',      stdTime: '09:25 - 10:00', satTime: '09:25 - 10:00', saturdayOnly: false },
-            { key: 'P2',  label: 'Period 2',      shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25', saturdayOnly: false },
-            { key: 'P1',  label: 'Period 1',      shortLabel: 'P1',      stdTime: '-',             satTime: '08:15 - 08:50', saturdayOnly: true }
+            { key: 'EX2', label: 'Extra 2',   shortLabel: 'Extra 2', stdTime: '',              satTime: '',              saturdayOnly: false, isExtra: true },
+            { key: 'EX1', label: 'Extra 1',   shortLabel: 'Extra 1', stdTime: '',              satTime: '',              saturdayOnly: false, isExtra: true },
+            { key: 'P10', label: 'Period 10', shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00', saturdayOnly: false, isExtra: false },
+            { key: 'P9',  label: 'Period 9',  shortLabel: 'P9',      stdTime: '14:35 - 15:10', satTime: '00:00 - 00:00', saturdayOnly: false, isExtra: false },
+            { key: 'P8',  label: 'Period 8',  shortLabel: 'P8',      stdTime: '14:00 - 14:35', satTime: '12:40 - 13:15', saturdayOnly: false, isExtra: false },
+            { key: 'P7',  label: 'Period 7',  shortLabel: 'P7',      stdTime: '12:05 - 12:40', satTime: '12:05 - 12:40', saturdayOnly: false, isExtra: false },
+            { key: 'P6',  label: 'Period 6',  shortLabel: 'P6',      stdTime: '11:30 - 12:05', satTime: '11:30 - 12:05', saturdayOnly: false, isExtra: false },
+            { key: 'P5',  label: 'Period 5',  shortLabel: 'P5',      stdTime: '10:55 - 11:30', satTime: '10:55 - 11:30', saturdayOnly: false, isExtra: false },
+            { key: 'P4',  label: 'Period 4',  shortLabel: 'P4',      stdTime: '10:00 - 10:35', satTime: '10:00 - 10:35', saturdayOnly: false, isExtra: false },
+            { key: 'P3',  label: 'Period 3',  shortLabel: 'P3',      stdTime: '09:25 - 10:00', satTime: '09:25 - 10:00', saturdayOnly: false, isExtra: false },
+            { key: 'P2',  label: 'Period 2',  shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25', saturdayOnly: false, isExtra: false },
+            { key: 'P1',  label: 'Period 1',  shortLabel: 'P1',      stdTime: '-',             satTime: '08:15 - 08:50', saturdayOnly: true,  isExtra: false }
         ];
 
         const TIMETABLE_DAYS = [
@@ -4882,27 +4894,79 @@ window.renderSocieties = function() {
             { key: 'Sat', arLabel: 'يوم السبت',   enLabel: 'Saturday',  isSaturday: true }
         ];
 
-        function buildTimetableGridTemplate() {
+        // "Select All" target slots per Requirement 4:
+        // - Period 4 to Period 10 on Monday to Thursday
+        // - Period 3 to Period 10 on Friday
+        // - Period 1 to Period 8 on Saturday
+        function getSelectAllTargetSlotIds() {
+            const targets = [];
+            ['Mon', 'Tue', 'Wed', 'Thu'].forEach(dayKey => {
+                ['P4', 'P5', 'P6', 'P7', 'P8', 'P9', 'P10'].forEach(pKey => {
+                    targets.push(`${dayKey}_${pKey}`);
+                });
+            });
+            ['P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9', 'P10'].forEach(pKey => {
+                targets.push(`Fri_${pKey}`);
+            });
+            ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'].forEach(pKey => {
+                targets.push(`Sat_${pKey}`);
+            });
+            return targets;
+        }
+
+        // Dynamic timings state for Extra 1 & Extra 2 in the currently open timetable modal
+        let currentModalCustomTimings = {};
+        let currentModalReadOnly = false;
+
+        function getBookedSlotsMapForClassroom(room, excludeAllocId = '') {
+            const bookedMap = {};
+            if (!room || !Array.isArray(room.allocations)) return bookedMap;
+            room.allocations.forEach(alloc => {
+                if (!alloc || String(alloc.id) === String(excludeAllocId)) return;
+                const slots = Array.isArray(alloc.slots) ? alloc.slots : [];
+                const timings = (alloc.customTimings && typeof alloc.customTimings === 'object') ? alloc.customTimings : {};
+                slots.forEach(rawSlot => {
+                    let s = rawSlot === 'Sat_PT' ? 'Sat_P1' : rawSlot;
+                    if (typeof s === 'string' && s.endsWith('_P11')) s = s.replace(/_P11$/, '_EX1');
+                    bookedMap[s] = {
+                        allocId: alloc.id,
+                        eventName: alloc.standardEventName || 'Allocated',
+                        customTime: timings[s] || ''
+                    };
+                });
+            });
+            return bookedMap;
+        }
+
+        function buildTimetableGridTemplate(room = null, currentAllocId = '', isReadOnly = false) {
             const thead = document.getElementById('timetableGridHead');
             const tbody = document.getElementById('timetableGridBody');
             if (!thead || !tbody) return;
+
+            currentModalReadOnly = isReadOnly;
+            const bookedMap = getBookedSlotsMapForClassroom(room, currentAllocId);
 
             // Header Row 1: Period Names + Day column on right
             let headRow1 = '<tr class="bg-gray-100 text-gray-900 font-bold">';
             TIMETABLE_COLUMNS.forEach(col => {
                 headRow1 += `
-                    <th class="p-2 cursor-pointer hover:bg-emerald-100 transition select-none" onclick="toggleColumnScheduleSlots('${col.key}')" title="Click to toggle ${col.label}">
+                    <th class="p-2 ${isReadOnly ? '' : 'cursor-pointer hover:bg-emerald-100'} transition select-none" ${isReadOnly ? '' : `onclick="toggleColumnScheduleSlots('${col.key}')"`} title="${isReadOnly ? col.label : `Click to toggle ${col.label}`}">
                         <div class="text-xs">${col.label}</div>
                         ${col.saturdayOnly ? '<div class="text-[9px] text-amber-800 font-semibold">(Sat Only)</div>' : ''}
+                        ${col.isExtra ? '<div class="text-[9px] text-teal-700 font-semibold">(Custom Time)</div>' : ''}
                     </th>
                 `;
             });
             headRow1 += '<th class="p-2 bg-emerald-900 text-white w-32">Day</th></tr>';
 
-            // Header Row 2: Standard Timings (Mon - Fri) + Time label on right
+            // Header Row 2: Standard Timings (Mon - Fri) + Time label on right (Extra 1 & Extra 2 have no fixed header time)
             let headRow2 = '<tr class="bg-gray-50 text-gray-700 font-semibold text-[11px]">';
             TIMETABLE_COLUMNS.forEach(col => {
-                headRow2 += `<th class="py-1.5 px-1 font-mono ${col.saturdayOnly ? 'text-gray-300 bg-gray-100/60' : ''}">${col.stdTime}</th>`;
+                if (col.isExtra) {
+                    headRow2 += `<th class="py-1.5 px-1 text-[10px] text-teal-800 bg-teal-50/50 font-semibold">Dynamic Time</th>`;
+                } else {
+                    headRow2 += `<th class="py-1.5 px-1 font-mono ${col.saturdayOnly ? 'text-gray-300 bg-gray-100/60' : ''}">${col.stdTime}</th>`;
+                }
             });
             headRow2 += '<th class="py-1.5 px-2 bg-emerald-800 text-emerald-100 font-bold">Time</th></tr>';
 
@@ -4912,44 +4976,105 @@ window.renderSocieties = function() {
             let bodyHtml = '';
             TIMETABLE_DAYS.forEach(day => {
                 if (day.isSaturday) {
-                    // Insert the special Saturday Time header row right above يوم السبت
+                    // Special Saturday Time header row right above يوم السبت
                     bodyHtml += '<tr class="bg-amber-50/90 text-gray-800 font-semibold text-[11px] border-t-2 border-gray-800">';
                     TIMETABLE_COLUMNS.forEach(col => {
-                        bodyHtml += `<td class="py-1 px-1 font-mono ${col.satTime === '00:00 - 00:00' ? 'text-gray-400' : 'text-amber-900 font-bold'}">${col.satTime}</td>`;
+                        if (col.isExtra) {
+                            bodyHtml += `<td class="py-1 px-1 text-[10px] text-teal-800 bg-amber-50/60 font-semibold">Dynamic Time</td>`;
+                        } else {
+                            bodyHtml += `<td class="py-1 px-1 font-mono ${col.satTime === '00:00 - 00:00' ? 'text-gray-400' : 'text-amber-900 font-bold'}">${col.satTime}</td>`;
+                        }
                     });
                     bodyHtml += '<td class="py-1 px-2 bg-amber-100 text-amber-950 font-bold">Time</td></tr>';
                 }
 
                 bodyHtml += `<tr class="hover:bg-emerald-50/30 transition">`;
                 TIMETABLE_COLUMNS.forEach(col => {
+                    const slotId = `${day.key}_${col.key}`;
+
                     if (col.saturdayOnly && !day.isSaturday) {
                         bodyHtml += `
                             <td class="p-2 align-middle bg-gray-100/70 text-gray-300 select-none" title="Not applicable Monday–Friday">
                                 <span class="text-xs font-mono">&mdash;</span>
                             </td>
                         `;
-                    } else {
-                        const slotId = `${day.key}_${col.key}`;
+                        return;
+                    }
+
+                    const bookedInfo = bookedMap[slotId];
+                    if (bookedInfo) {
+                        // Slot is already booked by an earlier event in this classroom -> render blocked cell with event name
+                        const customTimeBadge = (col.isExtra && bookedInfo.customTime)
+                            ? `<span class="block text-[9px] font-mono text-red-700 bg-white/80 px-1 rounded mt-0.5 border border-red-200">${bookedInfo.customTime}</span>`
+                            : '';
                         bodyHtml += `
-                            <td class="p-2 align-middle">
-                                <label class="flex flex-col items-center justify-center cursor-pointer py-1 rounded hover:bg-emerald-100/60 transition">
+                            <td class="p-1.5 align-middle bg-red-50/90 border border-red-200 select-none" title="Booked by ${bookedInfo.eventName}">
+                                <div class="flex flex-col items-center justify-center py-1 px-1 rounded text-center">
+                                    <span class="text-[10px] font-extrabold text-red-900 bg-red-100 border border-red-300 px-1.5 py-0.5 rounded leading-tight break-words max-w-[95px]">
+                                        <i class="fa-solid fa-lock text-[9px] mr-0.5 text-red-700"></i>${bookedInfo.eventName}
+                                    </span>
+                                    ${customTimeBadge}
+                                    <span class="text-[9px] text-red-500 mt-0.5 font-mono">${col.shortLabel}</span>
+                                </div>
+                            </td>
+                        `;
+                        return;
+                    }
+
+                    // Check if this is Extra 2 (EX2) and Extra 1 (EX1) on the same day is not yet booked by an earlier event and not currently checked
+                    let extraControlsHtml = '';
+                    if (col.isExtra) {
+                        const existingTime = currentModalCustomTimings[slotId] || '';
+                        extraControlsHtml = `
+                            <div class="mt-1 w-full flex flex-col items-center" id="extra-time-wrap-${slotId}">
+                                <button
+                                    type="button"
+                                    id="extra-time-btn-${slotId}"
+                                    onclick="toggleExtraTimeEditor('${slotId}')"
+                                    class="${isReadOnly ? 'pointer-events-none opacity-75' : ''} text-[10px] font-bold px-1.5 py-0.5 rounded border transition ${existingTime ? 'bg-teal-50 text-teal-900 border-teal-300 hover:bg-teal-100' : 'bg-gray-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50'}"
+                                >
+                                    <i class="fa-regular fa-clock mr-0.5"></i><span id="extra-time-label-${slotId}">${existingTime ? existingTime : '+ Add Time'}</span>
+                                </button>
+                                <div id="extra-time-editor-${slotId}" class="hidden mt-1 w-24">
+                                    <input
+                                        type="text"
+                                        id="extra-time-input-${slotId}"
+                                        value="${existingTime}"
+                                        placeholder="e.g. 16:00-16:45"
+                                        oninput="handleExtraTimeInput('${slotId}', this.value)"
+                                        onblur="closeExtraTimeEditor('${slotId}')"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault(); closeExtraTimeEditor('${slotId}');}"
+                                        class="w-full p-1 text-[10px] font-mono border border-teal-500 rounded text-center bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                                    >
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    bodyHtml += `
+                        <td class="p-1.5 align-middle" id="cell-${slotId}">
+                            <div class="flex flex-col items-center justify-center py-1 rounded hover:bg-emerald-50/70 transition">
+                                <label class="flex flex-col items-center justify-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}">
                                     <input
                                         type="checkbox"
                                         name="timetableSlotCheckbox"
+                                        id="cb-${slotId}"
                                         value="${slotId}"
                                         data-day="${day.key}"
                                         data-period="${col.key}"
-                                        onchange="updateScheduleSelectAllState()"
-                                        class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                                        ${isReadOnly ? 'disabled' : ''}
+                                        onchange="handleTimetableSlotChange('${day.key}', '${col.key}', this)"
+                                        class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}"
                                     >
-                                    <span class="text-[10px] text-gray-400 mt-1 font-mono">${col.shortLabel}</span>
+                                    <span class="text-[10px] text-gray-400 mt-1 font-mono" id="slot-sub-${slotId}">${col.shortLabel}</span>
                                 </label>
-                            </td>
-                        `;
-                    }
+                                ${extraControlsHtml}
+                            </div>
+                        </td>
+                    `;
                 });
                 bodyHtml += `
-                    <td class="p-2.5 bg-gray-50 font-bold text-gray-900 cursor-pointer hover:bg-emerald-100 transition select-none" onclick="toggleDayScheduleSlots('${day.key}')" title="Click to toggle all periods on ${day.enLabel}">
+                    <td class="p-2.5 bg-gray-50 font-bold text-gray-900 ${isReadOnly ? '' : 'cursor-pointer hover:bg-emerald-100'} transition select-none" ${isReadOnly ? '' : `onclick="toggleDayScheduleSlots('${day.key}')"`} title="${isReadOnly ? day.enLabel : `Click to toggle periods on ${day.enLabel}`}">
                         <div class="text-base leading-tight" dir="rtl">${day.arLabel}</div>
                         <div class="text-[10px] text-gray-500 font-normal mt-0.5">${day.enLabel}</div>
                     </td>
@@ -4957,35 +5082,150 @@ window.renderSocieties = function() {
             });
 
             tbody.innerHTML = bodyHtml;
+            enforceExtra1BeforeExtra2Rules(room, currentAllocId);
         }
 
-        window.toggleAllScheduleSlots = function(checked) {
-            document.querySelectorAll('input[name="timetableSlotCheckbox"]').forEach(cb => {
-                cb.checked = checked;
+        // Enforce Rule 3: Once Extra 1 is selected for an earlier event (or checked on that day), Extra 2 can be selected;
+        // if Extra 1 is NOT booked by an earlier event and NOT checked on that day, Extra 2 stays disabled until Extra 1 is selected.
+        function enforceExtra1BeforeExtra2Rules(room = null, currentAllocId = '') {
+            if (!room) {
+                const roomId = document.getElementById('scheduleClassroomId')?.value;
+                room = classroomsData.find(c => String(c.id) === String(roomId));
+                currentAllocId = document.getElementById('scheduleEditAllocId')?.value || '';
+            }
+            const bookedMap = getBookedSlotsMapForClassroom(room, currentAllocId);
+
+            TIMETABLE_DAYS.forEach(day => {
+                const ex1Slot = `${day.key}_EX1`;
+                const ex2Slot = `${day.key}_EX2`;
+                const ex2Cb = document.getElementById(`cb-${ex2Slot}`);
+                if (!ex2Cb) return; // EX2 itself is already booked by an earlier event
+
+                const ex1BookedByEarlier = !!bookedMap[ex1Slot];
+                const ex1Cb = document.getElementById(`cb-${ex1Slot}`);
+                const ex1CheckedNow = ex1Cb ? ex1Cb.checked : false;
+                const canUseEx2 = ex1BookedByEarlier || ex1CheckedNow;
+
+                const subEl = document.getElementById(`slot-sub-${ex2Slot}`);
+                const timeBtn = document.getElementById(`extra-time-btn-${ex2Slot}`);
+
+                if (currentModalReadOnly) {
+                    ex2Cb.disabled = true;
+                    return;
+                }
+
+                if (!canUseEx2) {
+                    ex2Cb.checked = false;
+                    ex2Cb.disabled = true;
+                    ex2Cb.title = "Select Extra 1 first on this day";
+                    if (subEl) subEl.innerText = "Pick Extra 1 1st";
+                    if (timeBtn) timeBtn.classList.add('opacity-50');
+                } else {
+                    ex2Cb.disabled = false;
+                    ex2Cb.title = "";
+                    if (subEl) subEl.innerText = "Extra 2";
+                    if (timeBtn) timeBtn.classList.remove('opacity-50');
+                }
             });
+        }
+
+        window.handleTimetableSlotChange = function(dayKey, periodKey, cbEl) {
+            if (periodKey === 'EX1') {
+                enforceExtra1BeforeExtra2Rules();
+            }
+            updateScheduleSelectAllState();
+        };
+
+        window.toggleExtraTimeEditor = function(slotId) {
+            if (currentModalReadOnly) return;
+            const editor = document.getElementById(`extra-time-editor-${slotId}`);
+            const input = document.getElementById(`extra-time-input-${slotId}`);
+            if (!editor || !input) return;
+            editor.classList.toggle('hidden');
+            if (!editor.classList.contains('hidden')) {
+                input.focus();
+                input.select();
+            }
+        };
+
+        window.handleExtraTimeInput = function(slotId, val) {
+            const cleanVal = String(val || '').trim();
+            if (cleanVal) {
+                currentModalCustomTimings[slotId] = cleanVal;
+            } else {
+                delete currentModalCustomTimings[slotId];
+            }
+            const lbl = document.getElementById(`extra-time-label-${slotId}`);
+            const btn = document.getElementById(`extra-time-btn-${slotId}`);
+            if (lbl) lbl.innerText = cleanVal ? cleanVal : '+ Add Time';
+            if (btn) {
+                btn.className = `text-[10px] font-bold px-1.5 py-0.5 rounded border transition ${cleanVal ? 'bg-teal-50 text-teal-900 border-teal-300 hover:bg-teal-100' : 'bg-gray-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50'}`;
+            }
+            // Automatically check the Extra slot checkbox when user enters a time (if enabled)
+            if (cleanVal) {
+                const cb = document.getElementById(`cb-${slotId}`);
+                if (cb && !cb.disabled && !cb.checked) {
+                    cb.checked = true;
+                    enforceExtra1BeforeExtra2Rules();
+                    updateScheduleSelectAllState();
+                }
+            }
+        };
+
+        window.closeExtraTimeEditor = function(slotId) {
+            const editor = document.getElementById(`extra-time-editor-${slotId}`);
+            if (editor) editor.classList.add('hidden');
+        };
+
+        // Requirement 4: "Select All" only selects:
+        // - Period 4 to Period 10 on Monday to Thursday
+        // - Period 3 to Period 10 on Friday
+        // - Period 1 to Period 8 on Saturday
+        // Rest periods (such as Period 2 on Mon-Fri, Period 3 on Mon-Thu, Periods 9-10 on Sat, Extra 1, Extra 2) are selected manually.
+        window.toggleAllScheduleSlots = function(checked) {
+            if (currentModalReadOnly) return;
+            const targetSet = new Set(getSelectAllTargetSlotIds());
+            document.querySelectorAll('input[name="timetableSlotCheckbox"]').forEach(cb => {
+                if (cb.disabled) return;
+                if (targetSet.has(cb.value)) {
+                    cb.checked = checked;
+                } else if (!checked) {
+                    cb.checked = false;
+                }
+            });
+            enforceExtra1BeforeExtra2Rules();
             updateScheduleSelectAllState();
         };
 
         window.toggleDayScheduleSlots = function(dayKey) {
-            const dayBoxes = Array.from(document.querySelectorAll(`input[name="timetableSlotCheckbox"][data-day="${dayKey}"]`));
+            if (currentModalReadOnly) return;
+            const dayBoxes = Array.from(document.querySelectorAll(`input[name="timetableSlotCheckbox"][data-day="${dayKey}"]`)).filter(cb => !cb.disabled);
+            if (dayBoxes.length === 0) return;
             const allChecked = dayBoxes.every(cb => cb.checked);
             dayBoxes.forEach(cb => { cb.checked = !allChecked; });
+            enforceExtra1BeforeExtra2Rules();
             updateScheduleSelectAllState();
         };
 
         window.toggleColumnScheduleSlots = function(periodKey) {
-            const colBoxes = Array.from(document.querySelectorAll(`input[name="timetableSlotCheckbox"][data-period="${periodKey}"]`));
+            if (currentModalReadOnly) return;
+            const colBoxes = Array.from(document.querySelectorAll(`input[name="timetableSlotCheckbox"][data-period="${periodKey}"]`)).filter(cb => !cb.disabled);
+            if (colBoxes.length === 0) return;
             const allChecked = colBoxes.every(cb => cb.checked);
             colBoxes.forEach(cb => { cb.checked = !allChecked; });
+            enforceExtra1BeforeExtra2Rules();
             updateScheduleSelectAllState();
         };
 
         window.updateScheduleSelectAllState = function() {
             const allBoxes = Array.from(document.querySelectorAll('input[name="timetableSlotCheckbox"]'));
             const checkedBoxes = allBoxes.filter(cb => cb.checked);
+            const targetSet = new Set(getSelectAllTargetSlotIds());
+            const availableTargetBoxes = allBoxes.filter(cb => !cb.disabled && targetSet.has(cb.value));
+
             const selectAllEl = document.getElementById('scheduleSelectAllCheckbox');
             if (selectAllEl) {
-                selectAllEl.checked = allBoxes.length > 0 && checkedBoxes.length === allBoxes.length;
+                selectAllEl.checked = availableTargetBoxes.length > 0 && availableTargetBoxes.every(cb => cb.checked);
             }
             const countBadge = document.getElementById('scheduleSelectedCountBadge');
             if (countBadge) {
@@ -4996,28 +5236,29 @@ window.renderSocieties = function() {
             }
         };
 
-        function formatAllocationScheduleSummary(slots) {
+        function formatAllocationScheduleSummary(slots, customTimings = {}) {
             if (!Array.isArray(slots) || slots.length === 0) return 'No slots selected';
-            const normalizedSlots = slots.map(s => s === 'Sat_PT' ? 'Sat_P1' : s).filter(s => !s.endsWith('_PT'));
+            const normalizedSlots = slots.map(s => {
+                if (s === 'Sat_PT') return 'Sat_P1';
+                if (typeof s === 'string' && s.endsWith('_P11')) return s.replace(/_P11$/, '_EX1');
+                return s;
+            }).filter(s => !s.endsWith('_PT'));
             if (normalizedSlots.length === 0) return 'No slots selected';
 
-            // Total active checkboxes across Mon-Fri (10 periods each = 50) + Sat (11 periods) = 61
-            const totalPossible = 61;
-            if (normalizedSlots.length >= totalPossible) {
-                return 'All Days (Mon–Sat) • All Periods';
-            }
-
-            // Group selected periods by day in chronological order (P1/P2 -> Period 11)
+            // Group selected periods by day in chronological order (P1/P2 -> P10 -> Extra 1 -> Extra 2)
             const chronologicalCols = [...TIMETABLE_COLUMNS].reverse();
             const daySummaries = [];
 
             TIMETABLE_DAYS.forEach(day => {
                 const availableColsForDay = chronologicalCols.filter(col => !col.saturdayOnly || day.isSaturday);
                 const pickedCols = availableColsForDay.filter(col => normalizedSlots.includes(`${day.key}_${col.key}`));
-                if (pickedCols.length === availableColsForDay.length && availableColsForDay.length > 0) {
-                    daySummaries.push(`${day.enLabel} (${day.arLabel}): All Periods`);
-                } else if (pickedCols.length > 0) {
+                if (pickedCols.length > 0) {
                     const pList = pickedCols.map(col => {
+                        const slotKey = `${day.key}_${col.key}`;
+                        if (col.isExtra) {
+                            const customT = (customTimings && customTimings[slotKey]) ? customTimings[slotKey] : 'Custom Time';
+                            return `${col.shortLabel} [${customT}]`;
+                        }
                         const t = day.isSaturday ? col.satTime : col.stdTime;
                         return `${col.shortLabel} [${t}]`;
                     }).join(', ');
@@ -5170,23 +5411,31 @@ window.renderSocieties = function() {
             showAssetToast(`Updated ${fieldType === 'studentCount' ? 'Student Count' : 'Extra Chair'} for Classroom ${room.classroomNumber}`);
         };
 
+        // Clicking a Darajah / Event name on the main page opens its full timetable (even for View Only users in read-only mode)
         window.openClassroomScheduleModal = function(classroomId, allocId = '') {
-            if (!canEditClassroomColumn('darajah-event')) {
-                showAssetToast("View Only: You do not have permission to add or edit Darajah / Event schedules.", true);
+            const canEdit = canEditClassroomColumn('darajah-event');
+            if (!canEdit && !allocId) {
+                showAssetToast("View Only: You do not have permission to add Darajah / Event schedules.", true);
                 return;
             }
             const room = classroomsData.find(c => String(c.id) === String(classroomId));
             if (!room) return;
 
-            buildTimetableGridTemplate();
             document.getElementById('scheduleClassroomId').value = String(room.id);
-            document.getElementById('scheduleModalTitle').innerText = `Schedule Allocation — Classroom ${room.classroomNumber} (${room.type})`;
-            document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • Select days and periods for the Standard / Event.`;
+            document.getElementById('scheduleModalTitle').innerText = `Schedule Timetable — Classroom ${room.classroomNumber} (${room.type})`;
+            document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • Connected Classroom Timetable`;
 
-            resetScheduleModalFormForNew();
+            const nameInput = document.getElementById('scheduleEventNameInput');
+            const selectAllCb = document.getElementById('scheduleSelectAllCheckbox');
+            const saveBtn = document.getElementById('btnSaveClassroomSchedule');
+            if (nameInput) nameInput.readOnly = !canEdit;
+            if (selectAllCb) selectAllCb.disabled = !canEdit;
+            if (saveBtn) saveBtn.classList.toggle('hidden', !canEdit);
 
             if (allocId) {
-                editScheduleAllocationInModal(room.id, allocId);
+                editScheduleAllocationInModal(room.id, allocId, !canEdit);
+            } else {
+                resetScheduleModalFormForNew();
             }
 
             renderExistingClassroomAllocationsInModal(room);
@@ -5194,30 +5443,49 @@ window.renderSocieties = function() {
         };
 
         window.resetScheduleModalFormForNew = function() {
+            const roomId = document.getElementById('scheduleClassroomId').value;
+            const room = classroomsData.find(c => String(c.id) === String(roomId));
             document.getElementById('scheduleEditAllocId').value = '';
             document.getElementById('scheduleEventNameInput').value = '';
             document.getElementById('btnSaveClassroomScheduleText').innerText = 'Save Schedule Allocation';
             document.getElementById('cancelEditScheduleAllocBtn')?.classList.add('hidden');
             document.getElementById('scheduleValidationError')?.classList.add('hidden');
-            toggleAllScheduleSlots(false);
+            currentModalCustomTimings = {};
+            buildTimetableGridTemplate(room, '', !canEditClassroomColumn('darajah-event'));
+            updateScheduleSelectAllState();
         };
 
-        window.editScheduleAllocationInModal = function(classroomId, allocId) {
-            if (!canEditClassroomColumn('darajah-event')) return;
+        window.editScheduleAllocationInModal = function(classroomId, allocId, forceReadOnly = false) {
             const room = classroomsData.find(c => String(c.id) === String(classroomId));
             if (!room || !Array.isArray(room.allocations)) return;
             const alloc = room.allocations.find(a => String(a.id) === String(allocId));
             if (!alloc) return;
 
+            const isReadOnly = forceReadOnly || !canEditClassroomColumn('darajah-event');
             document.getElementById('scheduleEditAllocId').value = String(alloc.id);
             document.getElementById('scheduleEventNameInput').value = alloc.standardEventName || '';
             document.getElementById('btnSaveClassroomScheduleText').innerText = 'Update Schedule Allocation';
-            document.getElementById('cancelEditScheduleAllocBtn')?.classList.remove('hidden');
+            if (!isReadOnly) {
+                document.getElementById('cancelEditScheduleAllocBtn')?.classList.remove('hidden');
+            } else {
+                document.getElementById('cancelEditScheduleAllocBtn')?.classList.add('hidden');
+            }
 
-            const slotSet = new Set((Array.isArray(alloc.slots) ? alloc.slots : []).map(s => s === 'Sat_PT' ? 'Sat_P1' : s));
+            currentModalCustomTimings = (alloc.customTimings && typeof alloc.customTimings === 'object')
+                ? { ...alloc.customTimings }
+                : {};
+
+            buildTimetableGridTemplate(room, alloc.id, isReadOnly);
+
+            const slotSet = new Set((Array.isArray(alloc.slots) ? alloc.slots : []).map(s => {
+                if (s === 'Sat_PT') return 'Sat_P1';
+                if (typeof s === 'string' && s.endsWith('_P11')) return s.replace(/_P11$/, '_EX1');
+                return s;
+            }));
             document.querySelectorAll('input[name="timetableSlotCheckbox"]').forEach(cb => {
                 cb.checked = slotSet.has(cb.value);
             });
+            enforceExtra1BeforeExtra2Rules(room, alloc.id);
             updateScheduleSelectAllState();
         };
 
@@ -5230,6 +5498,13 @@ window.renderSocieties = function() {
             if (!room || !Array.isArray(room.allocations)) return;
             room.allocations = room.allocations.filter(a => String(a.id) !== String(allocId));
             await saveClassroomsToCloud();
+
+            const currentEditAllocId = document.getElementById('scheduleEditAllocId')?.value || '';
+            if (String(currentEditAllocId) === String(allocId)) {
+                resetScheduleModalFormForNew();
+            } else {
+                buildTimetableGridTemplate(room, currentEditAllocId, false);
+            }
             renderExistingClassroomAllocationsInModal(room);
             renderClassroomsTables();
             showAssetToast("Removed Darajah / Event allocation");
@@ -5240,6 +5515,7 @@ window.renderSocieties = function() {
             if (!listEl) return;
             listEl.innerHTML = '';
 
+            const canEdit = canEditClassroomColumn('darajah-event');
             const allocations = Array.isArray(room.allocations) ? room.allocations : [];
             if (allocations.length === 0) {
                 listEl.innerHTML = '<p class="text-xs text-gray-400 italic">No Darajah / Event allocations saved for this classroom yet.</p>';
@@ -5249,14 +5525,18 @@ window.renderSocieties = function() {
             const safeRoomId = String(room.id).replace(/'/g, "\'");
             allocations.forEach(alloc => {
                 const safeAllocId = String(alloc.id).replace(/'/g, "\'");
-                const summary = formatAllocationScheduleSummary(alloc.slots);
+                const summary = formatAllocationScheduleSummary(alloc.slots, alloc.customTimings);
                 const item = document.createElement('div');
                 item.className = "bg-white p-2.5 rounded border flex justify-between items-start gap-2 text-xs";
                 item.innerHTML = `
                     <div>
-                        <span class="font-bold text-emerald-900 block">${alloc.standardEventName}</span>
+                        <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="font-bold text-emerald-900 hover:underline text-left flex items-center space-x-1">
+                            <i class="fa-solid fa-calendar-days text-emerald-600 text-[11px]"></i>
+                            <span>${alloc.standardEventName}</span>
+                        </button>
                         <span class="text-[11px] text-gray-600 block mt-0.5">${summary}</span>
                     </div>
+                    ${canEdit ? `
                     <div class="flex items-center space-x-1.5 whitespace-nowrap">
                         <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50 font-bold" title="Edit Allocation">
                             <i class="fa-solid fa-pen-to-square"></i>
@@ -5265,6 +5545,7 @@ window.renderSocieties = function() {
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
+                    ` : ''}
                 `;
                 listEl.appendChild(item);
             });
@@ -5292,10 +5573,27 @@ window.renderSocieties = function() {
             if (!room) return;
             if (!Array.isArray(room.allocations)) room.allocations = [];
 
+            // Double-check no conflict with other allocations in the same classroom
+            const bookedMap = getBookedSlotsMapForClassroom(room, editAllocId);
+            const conflictSlot = selectedSlots.find(s => !!bookedMap[s]);
+            if (conflictSlot) {
+                showAssetToast(`Slot ${conflictSlot} is already allocated to "${bookedMap[conflictSlot].eventName}".`, true);
+                return;
+            }
+
+            // Retain custom timings for Extra 1 / Extra 2 slots
+            const savedCustomTimings = {};
+            selectedSlots.forEach(s => {
+                if ((s.endsWith('_EX1') || s.endsWith('_EX2')) && currentModalCustomTimings[s]) {
+                    savedCustomTimings[s] = currentModalCustomTimings[s];
+                }
+            });
+
             const allocRecord = {
                 id: editAllocId ? String(editAllocId) : Date.now().toString() + Math.random().toString().slice(2, 5),
                 standardEventName,
                 slots: selectedSlots,
+                customTimings: savedCustomTimings,
                 updatedAt: new Date().toISOString().split('T')[0]
             };
 
@@ -5367,26 +5665,30 @@ window.renderSocieties = function() {
                 if (allocations.length === 0) {
                     darajahHtml = '<span class="text-xs text-gray-400 italic">Unallocated</span>';
                 } else {
-                    darajahHtml = `<div class="space-y-2">` + allocations.map(alloc => {
+                    darajahHtml = `<div class="flex flex-wrap gap-1.5">` + allocations.map(alloc => {
                         const safeAllocId = String(alloc.id).replace(/'/g, "\'");
-                        const scheduleSummary = formatAllocationScheduleSummary(alloc.slots);
                         const editDeleteBtns = canEditDarajah ? `
-                            <div class="flex items-center space-x-1">
-                                <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-1" title="Edit Schedule">
-                                    <i class="fa-solid fa-pen-to-square"></i>
+                            <div class="flex items-center space-x-1 pl-1.5 border-l border-emerald-200">
+                                <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-0.5" title="Edit Timetable">
+                                    <i class="fa-solid fa-pen-to-square text-[11px]"></i>
                                 </button>
-                                <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-500 hover:text-red-700 px-1" title="Remove Allocation">
-                                    <i class="fa-solid fa-xmark"></i>
+                                <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-500 hover:text-red-700 px-0.5" title="Remove Allocation">
+                                    <i class="fa-solid fa-xmark text-xs"></i>
                                 </button>
                             </div>
                         ` : '';
                         return `
-                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs">
-                                <div class="flex justify-between items-start gap-2">
-                                    <span class="font-bold text-emerald-900 text-sm">${alloc.standardEventName}</span>
-                                    ${editDeleteBtns}
-                                </div>
-                                <div class="text-[11px] text-gray-600 mt-1 leading-relaxed">${scheduleSummary}</div>
+                            <div class="inline-flex items-center justify-between gap-2 bg-emerald-50/80 hover:bg-emerald-100/80 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-xs transition shadow-sm">
+                                <button
+                                    type="button"
+                                    onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')"
+                                    class="font-bold text-emerald-950 hover:text-emerald-700 hover:underline text-left flex items-center space-x-1.5"
+                                    title="Click to view full timetable for ${alloc.standardEventName}"
+                                >
+                                    <i class="fa-solid fa-table-cells text-emerald-600 text-[11px]"></i>
+                                    <span>${alloc.standardEventName}</span>
+                                </button>
+                                ${editDeleteBtns}
                             </div>
                         `;
                     }).join('') + `</div>`;

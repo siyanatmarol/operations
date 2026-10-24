@@ -684,6 +684,10 @@
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
                         <input type="text" id="classroomSearchInput" oninput="renderClassroomsTables()" placeholder="Search Classroom, Location, Darajah..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm">
                     </div>
+                    <button type="button" id="btnExportClassroomsHeader" onclick="exportClassroomsToExcel()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Download Classroom Allocation & Darajah/Event Details (.xlsx)">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>Export Excel</span>
+                    </button>
                     <button type="button" id="btnAddClassroomHeader" onclick="openAddClassroomModal()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-plus"></i>
                         <span>+ Add Classroom</span>
@@ -691,38 +695,26 @@
                 </div>
             </div>
 
-            <!-- Summary Metric Pills -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-                <button type="button" id="cardBtnClassroomsAll" onclick="setClassroomAllocationFilter('all')" class="bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition hover:opacity-95">
-                    <div>
-                        <span class="text-xs uppercase tracking-wider font-semibold opacity-90 block">Total Classrooms</span>
-                        <span id="cardTotalClassroomsCount" class="text-3xl font-extrabold mt-1 block">0</span>
-                        <span class="text-[10px] text-emerald-200 font-medium mt-1 block">Click to view all</span>
+            <!-- Summary Metric Pills (4 Overview Cards) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+                <!-- 1. Total Classrooms (with Male & Female Bifurcation) -->
+                <button type="button" id="cardBtnClassroomsAll" onclick="setClassroomAllocationFilter('all')" class="bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-95">
+                    <div class="flex justify-between items-start w-full">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider font-semibold opacity-90 block">Total Classrooms</span>
+                            <span id="cardTotalClassroomsCount" class="text-3xl font-extrabold mt-1 block">0</span>
+                        </div>
+                        <div class="bg-emerald-700/80 p-2.5 rounded-full text-lg">
+                            <i class="fa-solid fa-school"></i>
+                        </div>
                     </div>
-                    <div class="bg-emerald-700/80 p-3 rounded-full text-xl">
-                        <i class="fa-solid fa-school"></i>
+                    <div class="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-emerald-700/80 w-full text-[11px] font-bold">
+                        <span class="bg-emerald-900/90 text-blue-200 px-2 py-0.5 rounded border border-emerald-600"><i class="fa-solid fa-person mr-1"></i>Male: <span id="cardMaleClassroomsCount">0</span></span>
+                        <span class="bg-emerald-900/90 text-pink-200 px-2 py-0.5 rounded border border-emerald-600"><i class="fa-solid fa-person-dress mr-1"></i>Female: <span id="cardFemaleClassroomsCount">0</span></span>
                     </div>
                 </button>
-                <div class="bg-white p-4 rounded-lg shadow border border-l-4 border-l-blue-600 flex justify-between items-center">
-                    <div>
-                        <span class="text-xs text-gray-500 font-semibold uppercase block">Male Classes</span>
-                        <span id="cardMaleClassroomsCount" class="text-2xl font-bold text-blue-900 mt-1 block">0</span>
-                        <span class="text-[10px] text-gray-400 font-medium mt-1 block">Total Male Rooms</span>
-                    </div>
-                    <div class="bg-blue-100 text-blue-800 p-3 rounded-full text-lg">
-                        <i class="fa-solid fa-person"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow border border-l-4 border-l-pink-600 flex justify-between items-center">
-                    <div>
-                        <span class="text-xs text-gray-500 font-semibold uppercase block">Female Classes</span>
-                        <span id="cardFemaleClassroomsCount" class="text-2xl font-bold text-pink-900 mt-1 block">0</span>
-                        <span class="text-[10px] text-gray-400 font-medium mt-1 block">Total Female Rooms</span>
-                    </div>
-                    <div class="bg-pink-100 text-pink-800 p-3 rounded-full text-lg">
-                        <i class="fa-solid fa-person-dress"></i>
-                    </div>
-                </div>
+
+                <!-- 2. Allocated as Standard Class (with Male & Female Bifurcation) -->
                 <button type="button" id="cardBtnClassroomsAllocated" onclick="setClassroomAllocationFilter('allocated')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-teal-600 flex flex-col justify-between text-left transition hover:border-teal-500">
                     <div class="flex justify-between items-start w-full">
                         <div>
@@ -733,11 +725,13 @@
                             <i class="fa-solid fa-circle-check"></i>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2 mt-2 pt-1.5 border-t border-gray-100 w-full text-[11px] font-bold">
+                    <div class="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-gray-100 w-full text-[11px] font-bold">
                         <span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200"><i class="fa-solid fa-person mr-1"></i>Male: <span id="cardAllocatedStdMaleCount">0</span></span>
                         <span class="bg-pink-50 text-pink-800 px-2 py-0.5 rounded border border-pink-200"><i class="fa-solid fa-person-dress mr-1"></i>Female: <span id="cardAllocatedStdFemaleCount">0</span></span>
                     </div>
                 </button>
+
+                <!-- 3. Vacant for Events (with Male & Female + Currently in Raihaan Bifurcation) -->
                 <button type="button" id="cardBtnClassroomsVacant" onclick="setClassroomAllocationFilter('vacant')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-amber-500 flex flex-col justify-between text-left transition hover:border-amber-500">
                     <div class="flex justify-between items-start w-full">
                         <div>
@@ -748,11 +742,43 @@
                             <i class="fa-solid fa-calendar-day"></i>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2 mt-2 pt-1.5 border-t border-gray-100 w-full text-[11px] font-bold">
-                        <span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200"><i class="fa-solid fa-person mr-1"></i>Male: <span id="cardVacantEventMaleCount">0</span></span>
-                        <span class="bg-pink-50 text-pink-800 px-2 py-0.5 rounded border border-pink-200"><i class="fa-solid fa-person-dress mr-1"></i>Female: <span id="cardVacantEventFemaleCount">0</span></span>
+                    <div class="mt-2 pt-1.5 border-t border-gray-100 w-full space-y-1.5 text-[11px] font-bold">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200"><i class="fa-solid fa-person mr-1"></i>Male: <span id="cardVacantEventMaleCount">0</span></span>
+                            <span class="bg-pink-50 text-pink-800 px-2 py-0.5 rounded border border-pink-200"><i class="fa-solid fa-person-dress mr-1"></i>Female: <span id="cardVacantEventFemaleCount">0</span></span>
+                        </div>
+                        <div class="flex items-center justify-between bg-purple-50 text-purple-900 px-2 py-0.5 rounded border border-purple-200">
+                            <span><i class="fa-solid fa-plane-departure mr-1 text-purple-700"></i>Currently in Raihaan:</span>
+                            <span id="cardVacantRaihaanCount" class="font-extrabold">0</span>
+                        </div>
                     </div>
                 </button>
+
+                <!-- 4. Currently in Raihaan Card -->
+                <div id="cardBtnClassroomsRaihaan" onclick="setClassroomAllocationFilter('raihaan')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-purple-600 flex flex-col justify-between text-left transition hover:border-purple-500 cursor-pointer">
+                    <div class="flex justify-between items-start gap-2 w-full">
+                        <div>
+                            <span class="text-xs text-purple-900 font-bold uppercase block leading-tight flex items-center space-x-1">
+                                <i class="fa-solid fa-route text-purple-600"></i>
+                                <span>Currently in Raihaan</span>
+                            </span>
+                            <span id="cardRaihaanActiveCountBadge" class="inline-block mt-1 text-[11px] bg-purple-100 text-purple-900 font-extrabold px-2 py-0.5 rounded-full">0 Active Classes</span>
+                        </div>
+                        <div class="flex flex-col items-end space-y-1 shrink-0" onclick="event.stopPropagation()">
+                            <button type="button" onclick="openAddRaihaanModal()" class="crud-action-btn bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-sm transition flex items-center space-x-1 whitespace-nowrap">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                <span>Add Details</span>
+                            </button>
+                            <button type="button" onclick="openRaihaanArchiveModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 text-[11px] font-bold px-2.5 py-1 rounded transition flex items-center space-x-1 whitespace-nowrap">
+                                <i class="fa-solid fa-box-archive text-[10px] text-purple-700"></i>
+                                <span>Archive</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="cardRaihaanSummaryContent" class="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-700 space-y-1.5 max-h-28 overflow-y-auto">
+                        <p class="text-[11px] text-gray-400 italic">No classes currently in Raihaan.</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Bifurcated Tables: Male Classes & Female Classes -->
@@ -1940,6 +1966,89 @@
         </div>
     </div>
 
+    <!-- Modal: Add Currently in Raihaan Details (5 Rows + From/To Date) -->
+    <div id="modalAddRaihaan" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[92vh] flex flex-col">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-route text-purple-700"></i>
+                        <span>Add Raihaan Details</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Select up to 5 Darajah / Event names going to Raihaan. Classrooms will automatically show as Vacant for the specified dates.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalAddRaihaan')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+
+            <form id="raihaanDetailsForm" onsubmit="saveRaihaanDetails(event)" class="space-y-4 flex-grow overflow-y-auto pr-1">
+                <div class="space-y-2.5">
+                    <div class="grid grid-cols-12 gap-2 text-[11px] font-bold text-gray-600 uppercase px-1">
+                        <div class="col-span-1 text-center">#</div>
+                        <div class="col-span-7">Darajah Name (Search & Select)</div>
+                        <div class="col-span-4">Classroom Number (Auto)</div>
+                    </div>
+                    <div id="raihaanRowsContainer" class="space-y-2"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-purple-50/70 p-4 rounded-xl border border-purple-200">
+                    <div>
+                        <label class="text-xs font-bold text-purple-950 uppercase block mb-1">From Date <span class="text-red-600">*</span></label>
+                        <input type="date" id="raihaanFromDateInput" required class="w-full p-2.5 border border-purple-300 rounded-lg text-sm bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-purple-600">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-purple-950 uppercase block mb-1">To Date <span class="text-red-600">*</span></label>
+                        <input type="date" id="raihaanToDateInput" required class="w-full p-2.5 border border-purple-300 rounded-lg text-sm bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-purple-600">
+                    </div>
+                </div>
+
+                <p id="raihaanValidationError" class="text-xs text-red-600 font-bold hidden"></p>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalAddRaihaan')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Details</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Raihaan Archive -->
+    <div id="modalRaihaanArchive" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-6 space-y-4 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-box-archive text-purple-700"></i>
+                        <span>Raihaan Details Archive</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Complete log of active, upcoming, and past Raihaan schedules. (Delete option is restricted to Administrators).</p>
+                </div>
+                <button type="button" onclick="closeModal('modalRaihaanArchive')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="flex-grow overflow-y-auto border rounded-lg">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
+                        <tr>
+                            <th class="p-3">Darajah & Classroom(s)</th>
+                            <th class="p-3 whitespace-nowrap">From Date</th>
+                            <th class="p-3 whitespace-nowrap">To Date</th>
+                            <th class="p-3 whitespace-nowrap">Status</th>
+                            <th class="p-3 text-center whitespace-nowrap">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="raihaanArchiveTableBody" class="divide-y"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t">
+                <button type="button" onclick="closeModal('modalRaihaanArchive')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
@@ -1971,6 +2080,7 @@
 
         let estatesData = [];
         let classroomsData = [];
+        let raihaanData = [];
         let keysInventoryData = [];
         let facultyData = [];
         let societiesData = [
@@ -2407,6 +2517,9 @@
             if (!e.target.closest('#assetFlatSelectContainer')) {
                 document.getElementById('assetFlatDropdown')?.classList.add('hidden');
             }
+            if (!e.target.closest('.raihaan-row-dropdown-wrap')) {
+                document.querySelectorAll('.raihaan-row-dropdown-list').forEach(el => el.classList.add('hidden'));
+            }
 
             const btn = e.target.closest('.btn-manage-allocation');
             if (btn) {
@@ -2524,6 +2637,7 @@
                         standardEventName: a.standardEventName || a.name || '',
                         slots: migratedSlots,
                         customTimings: (a.customTimings && typeof a.customTimings === 'object') ? { ...a.customTimings } : {},
+                        raihaanTemporarySlots: (a.raihaanTemporarySlots && typeof a.raihaanTemporarySlots === 'object') ? { ...a.raihaanTemporarySlots } : {},
                         updatedAt: a.updatedAt || ''
                     };
                 });
@@ -2539,6 +2653,33 @@
                     updatedAt: item.updatedAt || ''
                 };
             });
+        }
+
+        function normalizeRaihaanList(rawRaihaan) {
+            if (!rawRaihaan) return [];
+            const arr = Array.isArray(rawRaihaan)
+                ? rawRaihaan
+                : (typeof rawRaihaan === 'object' ? Object.values(rawRaihaan) : []);
+            return arr.filter(Boolean).map(item => {
+                let entries = [];
+                if (Array.isArray(item.entries)) {
+                    entries = item.entries.filter(Boolean);
+                } else if (item.entries && typeof item.entries === 'object') {
+                    entries = Object.values(item.entries).filter(Boolean);
+                }
+                return {
+                    id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                    entries: entries.map(e => ({
+                        darajahName: String(e.darajahName || ''),
+                        classroomId: String(e.classroomId || ''),
+                        classroomNumber: String(e.classroomNumber || ''),
+                        allocId: String(e.allocId || '')
+                    })).filter(e => e.darajahName),
+                    fromDate: String(item.fromDate || ''),
+                    toDate: String(item.toDate || ''),
+                    createdAt: String(item.createdAt || '')
+                };
+            }).filter(r => r.entries.length > 0 && r.fromDate && r.toDate);
         }
 
         function normalizeUsersList(rawUsers) {
@@ -2590,6 +2731,12 @@
                         const clsSnap = await get(child(dbRef(db), 'classrooms'));
                         classroomsData = clsSnap.exists() ? normalizeClassroomsList(clsSnap.val()) : [];
                     }
+                    if (data.raihaan) {
+                        raihaanData = normalizeRaihaanList(data.raihaan);
+                    } else {
+                        const raiSnap = await get(child(dbRef(db), 'raihaan'));
+                        raihaanData = raiSnap.exists() ? normalizeRaihaanList(raiSnap.val()) : [];
+                    }
                     if (data.estate_assets) {
                         estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
                     } else {
@@ -2637,6 +2784,7 @@
                 await set(dbRef(db, 'portalData'), {
                     estates: estatesData,
                     classrooms: classroomsData,
+                    raihaan: raihaanData,
                     keys: keysInventoryData,
                     faculty: facultyData,
                     societies: societiesData,
@@ -2649,6 +2797,7 @@
                 });
                 await set(dbRef(db, 'estate_assets'), estateAssetsData);
                 await set(dbRef(db, 'classrooms'), classroomsData);
+                await set(dbRef(db, 'raihaan'), raihaanData);
             } catch (err) {
                 console.error("Error saving to cloud:", err);
             }
@@ -2660,10 +2809,14 @@
             const banner = document.getElementById('viewOnlyNoticeBanner');
             if (banner) banner.classList.toggle('hidden', !viewOnly);
 
-            // "+ Add Classroom" button is strictly available ONLY to Admin
+            // "+ Add Classroom" and "Export Excel" buttons in Classroom Allocation are strictly available ONLY to Admin
             const addClassroomBtn = document.getElementById('btnAddClassroomHeader');
             if (addClassroomBtn) {
                 addClassroomBtn.classList.toggle('hidden', !isUserAdmin);
+            }
+            const exportClassroomBtn = document.getElementById('btnExportClassroomsHeader');
+            if (exportClassroomBtn) {
+                exportClassroomBtn.classList.toggle('hidden', !isUserAdmin);
             }
 
             // Tag static CRUD buttons and inputs inside main modules so View Only hides/disables them cleanly
@@ -4952,24 +5105,141 @@ window.renderSocieties = function() {
         let currentModalCustomTimings = {};
         let currentModalReadOnly = false;
 
-        function getBookedSlotsMapForClassroom(room, excludeAllocId = '') {
+        // Helper: Get current local date in YYYY-MM-DD format
+        function getLocalTodayDateString() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // Helper: Check if a Raihaan record is currently active based on today's local date
+        function isRaihaanRecordActiveNow(rec, todayStr = getLocalTodayDateString()) {
+            if (!rec || !rec.fromDate || !rec.toDate) return false;
+            return rec.fromDate <= todayStr && todayStr <= rec.toDate;
+        }
+
+        // Helper: Relate a Raihaan [fromDate, toDate] range to corresponding timetable weekday keys ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat')
+        function getRaihaanWeekdaysSet(fromDateStr, toDateStr) {
+            const daysSet = new Set();
+            if (!fromDateStr || !toDateStr) return daysSet;
+            const parts1 = fromDateStr.split('-').map(Number);
+            const parts2 = toDateStr.split('-').map(Number);
+            if (parts1.length !== 3 || parts2.length !== 3) return daysSet;
+
+            const start = new Date(parts1[0], parts1[1] - 1, parts1[2]);
+            const end = new Date(parts2[0], parts2[1] - 1, parts2[2]);
+            if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return daysSet;
+
+            const dayMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const cur = new Date(start);
+            let steps = 0;
+            while (cur <= end && steps < 366) {
+                const dKey = dayMap[cur.getDay()];
+                if (dKey && dKey !== 'Sun') daysSet.add(dKey);
+                if (daysSet.size === 6) break; // All Mon-Sat covered
+                cur.setDate(cur.getDate() + 1);
+                steps++;
+            }
+            return daysSet;
+        }
+
+        // Helper: For a given classroom & allocation, return the Set of weekday keys ('Mon'..'Sat') where this allocation is currently in Raihaan
+        function getActiveRaihaanDaysForAllocation(room, alloc, todayStr = getLocalTodayDateString()) {
+            const activeDays = new Set();
+            if (!room || !alloc) return activeDays;
+            const roomIdStr = String(room.id);
+            const roomNumStr = String(room.classroomNumber || '').trim().toLowerCase();
+            const allocIdStr = String(alloc.id);
+            const allocNameLower = String(alloc.standardEventName || '').trim().toLowerCase();
+
+            raihaanData.forEach(rec => {
+                if (!isRaihaanRecordActiveNow(rec, todayStr)) return;
+                const matchedEntry = (rec.entries || []).find(e => {
+                    if (e.allocId && String(e.allocId) === allocIdStr) return true;
+                    const matchRoom = (e.classroomId && String(e.classroomId) === roomIdStr) ||
+                                      (e.classroomNumber && String(e.classroomNumber).trim().toLowerCase() === roomNumStr);
+                    const matchName = String(e.darajahName || '').trim().toLowerCase() === allocNameLower;
+                    return matchRoom && matchName;
+                });
+                if (matchedEntry) {
+                    const rDays = getRaihaanWeekdaysSet(rec.fromDate, rec.toDate);
+                    rDays.forEach(d => activeDays.add(d));
+                }
+            });
+            return activeDays;
+        }
+
+        // Helper: Check if a classroom has at least one Darajah/Event currently in an active Raihaan period
+        function isClassroomCurrentlyInRaihaan(room, todayStr = getLocalTodayDateString()) {
+            if (!room) return false;
+            const roomIdStr = String(room.id);
+            const roomNumStr = String(room.classroomNumber || '').trim().toLowerCase();
+            return raihaanData.some(rec => {
+                if (!isRaihaanRecordActiveNow(rec, todayStr)) return false;
+                return (rec.entries || []).some(e =>
+                    (e.classroomId && String(e.classroomId) === roomIdStr) ||
+                    (e.classroomNumber && String(e.classroomNumber).trim().toLowerCase() === roomNumStr)
+                );
+            });
+        }
+
+        // Helper: Get all slots originally owned by Darajahs in this classroom that have Raihaan records (active or expired)
+        // After Raihaan ends, the original Darajah supersedes any temporary event on its original periods.
+        function getSupersededBookedSlotsMapForClassroom(room, excludeAllocId = '') {
             const bookedMap = {};
-            if (!room || !Array.isArray(room.allocations)) return bookedMap;
+            const raihaanOpenSlotInfo = {};
+            if (!room || !Array.isArray(room.allocations)) return { bookedMap, raihaanOpenSlotInfo };
+            const todayStr = getLocalTodayDateString();
+
+            // First pass: identify primary/existing allocations and check which of their slots are currently open due to active Raihaan
             room.allocations.forEach(alloc => {
                 if (!alloc || String(alloc.id) === String(excludeAllocId)) return;
+                const activeRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
                 const slots = Array.isArray(alloc.slots) ? alloc.slots : [];
                 const timings = (alloc.customTimings && typeof alloc.customTimings === 'object') ? alloc.customTimings : {};
+
                 slots.forEach(rawSlot => {
                     let s = rawSlot === 'Sat_PT' ? 'Sat_P1' : rawSlot;
                     if (typeof s === 'string' && s.endsWith('_P11')) s = s.replace(/_P11$/, '_EX1');
-                    bookedMap[s] = {
-                        allocId: alloc.id,
-                        eventName: alloc.standardEventName || 'Allocated',
-                        customTime: timings[s] || ''
-                    };
+                    const dayKey = String(s).split('_')[0];
+
+                    // If this slot was borrowed during a Raihaan period that has now ENDED, and an earlier allocation owns this slot, skip it
+                    if (alloc.raihaanTemporarySlots && alloc.raihaanTemporarySlots[s]) {
+                        const raiId = alloc.raihaanTemporarySlots[s];
+                        const raiRec = raihaanData.find(r => String(r.id) === String(raiId));
+                        if (!raiRec || !isRaihaanRecordActiveNow(raiRec, todayStr)) {
+                            // Raihaan period has ended -> original Darajah supersedes this slot!
+                            return;
+                        }
+                    }
+
+                    // If this allocation is currently in Raihaan on this dayKey, its period on this day is open for other events!
+                    if (activeRaihaanDays.has(dayKey)) {
+                        raihaanOpenSlotInfo[s] = {
+                            allocId: alloc.id,
+                            darajahName: alloc.standardEventName || 'Darajah'
+                        };
+                        return;
+                    }
+
+                    // Otherwise, this allocation blocks the slot (original Darajah supersedes if not in active Raihaan)
+                    if (!bookedMap[s]) {
+                        bookedMap[s] = {
+                            allocId: alloc.id,
+                            eventName: alloc.standardEventName || 'Allocated',
+                            customTime: timings[s] || ''
+                        };
+                    }
                 });
             });
-            return bookedMap;
+
+            return { bookedMap, raihaanOpenSlotInfo };
+        }
+
+        function getBookedSlotsMapForClassroom(room, excludeAllocId = '') {
+            return getSupersededBookedSlotsMapForClassroom(room, excludeAllocId).bookedMap;
         }
 
         function buildTimetableGridTemplate(room = null, currentAllocId = '', isReadOnly = false) {
@@ -4978,7 +5248,7 @@ window.renderSocieties = function() {
             if (!thead || !tbody) return;
 
             currentModalReadOnly = isReadOnly;
-            const bookedMap = getBookedSlotsMapForClassroom(room, currentAllocId);
+            const { bookedMap, raihaanOpenSlotInfo } = getSupersededBookedSlotsMapForClassroom(room, currentAllocId);
 
             // Header Row 1: Period Names + Day column on right
             let headRow1 = '<tr class="bg-gray-100 text-gray-900 font-bold">';
@@ -5101,6 +5371,7 @@ window.renderSocieties = function() {
                                         class="h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}"
                                     >
                                     <span class="text-[10px] text-gray-400 mt-1 font-mono" id="slot-sub-${slotId}">${col.shortLabel}</span>
+                                    ${raihaanOpenSlotInfo[slotId] ? `<span class="text-[9px] text-purple-700 bg-purple-50 border border-purple-200 px-1 rounded mt-0.5 leading-tight" title="Temporarily open while ${raihaanOpenSlotInfo[slotId].darajahName} is in Raihaan">Raihaan Open</span>` : ''}
                                 </label>
                                 ${extraControlsHtml}
                             </div>
@@ -5624,11 +5895,28 @@ window.renderSocieties = function() {
                 }
             });
 
+            // Track any slots that were booked while another Darajah in this classroom is in Raihaan
+            const { raihaanOpenSlotInfo } = getSupersededBookedSlotsMapForClassroom(room, editAllocId);
+            const todayStr = getLocalTodayDateString();
+            const raihaanTemporarySlots = {};
+            selectedSlots.forEach(s => {
+                if (raihaanOpenSlotInfo[s]) {
+                    const activeRec = raihaanData.find(rec =>
+                        isRaihaanRecordActiveNow(rec, todayStr) &&
+                        (rec.entries || []).some(e => String(e.classroomId) === String(room.id) || String(e.classroomNumber).trim() === String(room.classroomNumber).trim())
+                    );
+                    if (activeRec) {
+                        raihaanTemporarySlots[s] = String(activeRec.id);
+                    }
+                }
+            });
+
             const allocRecord = {
                 id: editAllocId ? String(editAllocId) : Date.now().toString() + Math.random().toString().slice(2, 5),
                 standardEventName,
                 slots: selectedSlots,
                 customTimings: savedCustomTimings,
+                raihaanTemporarySlots,
                 updatedAt: new Date().toISOString().split('T')[0]
             };
 
@@ -5651,7 +5939,18 @@ window.renderSocieties = function() {
             showAssetToast(`Saved schedule for "${standardEventName}" in Classroom ${room.classroomNumber}`);
         };
 
-        let selectedClassroomCardFilter = 'all'; // 'all' | 'allocated' | 'vacant'
+        let selectedClassroomCardFilter = 'all'; // 'all' | 'allocated' | 'vacant' | 'raihaan'
+
+        // Effective Allocation / Vacancy status accounting for active Raihaan periods:
+        // During the Raihaan date range, classrooms in Raihaan are shown as Vacant;
+        // once the Raihaan date range ends, they automatically transfer back to Allocated.
+        function isRoomEffectivelyAllocated(room, todayStr = getLocalTodayDateString()) {
+            return !!room.isAllocated && !isClassroomCurrentlyInRaihaan(room, todayStr);
+        }
+
+        function isRoomEffectivelyVacant(room, todayStr = getLocalTodayDateString()) {
+            return !room.isAllocated || isClassroomCurrentlyInRaihaan(room, todayStr);
+        }
 
         window.setClassroomAllocationFilter = function(filter) {
             if (selectedClassroomCardFilter === filter && filter !== 'all') {
@@ -5663,11 +5962,12 @@ window.renderSocieties = function() {
             const btnAll = document.getElementById('cardBtnClassroomsAll');
             const btnAlloc = document.getElementById('cardBtnClassroomsAllocated');
             const btnVacant = document.getElementById('cardBtnClassroomsVacant');
+            const btnRaihaan = document.getElementById('cardBtnClassroomsRaihaan');
 
             if (btnAll) {
                 btnAll.className = selectedClassroomCardFilter === 'all'
-                    ? "bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex justify-between items-center text-left transition hover:opacity-95"
-                    : "bg-emerald-800/90 text-white p-4 rounded-lg shadow border-2 border-transparent flex justify-between items-center text-left transition hover:opacity-95";
+                    ? "bg-emerald-800 text-white p-4 rounded-lg shadow-md border-2 border-emerald-600 ring-2 ring-emerald-500/50 flex flex-col justify-between text-left transition hover:opacity-95"
+                    : "bg-emerald-800/90 text-white p-4 rounded-lg shadow border-2 border-transparent flex flex-col justify-between text-left transition hover:opacity-95";
             }
             if (btnAlloc) {
                 btnAlloc.className = selectedClassroomCardFilter === 'allocated'
@@ -5678,6 +5978,11 @@ window.renderSocieties = function() {
                 btnVacant.className = selectedClassroomCardFilter === 'vacant'
                     ? "bg-amber-50/70 p-4 rounded-lg shadow-md border-2 border-amber-500 ring-2 ring-amber-500/40 border-l-4 border-l-amber-500 flex flex-col justify-between text-left transition"
                     : "bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-amber-500 flex flex-col justify-between text-left transition hover:border-amber-500";
+            }
+            if (btnRaihaan) {
+                btnRaihaan.className = selectedClassroomCardFilter === 'raihaan'
+                    ? "bg-purple-50/70 p-4 rounded-lg shadow-md border-2 border-purple-600 ring-2 ring-purple-500/40 border-l-4 border-l-purple-600 flex flex-col justify-between text-left transition cursor-pointer"
+                    : "bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-purple-600 flex flex-col justify-between text-left transition hover:border-purple-500 cursor-pointer";
             }
 
             renderClassroomsTables();
@@ -5698,20 +6003,526 @@ window.renderSocieties = function() {
             showAssetToast(`Classroom ${room.classroomNumber} marked as ${room.isAllocated ? 'Allocated (Standard Class)' : 'Vacant for Events'}`);
         };
 
+        // =========================================================================
+        // "CURRENTLY IN RAIHAAN" MODAL, ARCHIVE & SUMMARY LOGIC
+        // =========================================================================
+
+        function getAllDarajahOptionsList() {
+            const list = [];
+            const sortedRooms = [...classroomsData].sort((a, b) =>
+                String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' })
+            );
+            sortedRooms.forEach(room => {
+                (room.allocations || []).forEach(alloc => {
+                    if (!alloc || !alloc.standardEventName) return;
+                    list.push({
+                        allocId: String(alloc.id),
+                        darajahName: String(alloc.standardEventName).trim(),
+                        classroomId: String(room.id),
+                        classroomNumber: String(room.classroomNumber || '').trim(),
+                        roomType: room.type || 'Male',
+                        location: room.location || ''
+                    });
+                });
+            });
+            return list;
+        }
+
+        window.openAddRaihaanModal = function() {
+            if (!guardEditingRights()) return;
+            const container = document.getElementById('raihaanRowsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            for (let i = 0; i < 5; i++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = "grid grid-cols-12 gap-2 items-center";
+                rowDiv.innerHTML = `
+                    <div class="col-span-1 text-center font-bold text-xs text-purple-900 bg-purple-50 py-2 rounded border border-purple-200">${i + 1}</div>
+                    <div class="col-span-7 relative raihaan-row-dropdown-wrap">
+                        <div class="relative">
+                            <input
+                                type="text"
+                                id="raihaanDarajahInput_${i}"
+                                onfocus="openRaihaanRowDropdown(${i})"
+                                oninput="handleRaihaanDarajahInput(${i})"
+                                placeholder="Search & select Darajah / Event..."
+                                autocomplete="off"
+                                class="w-full p-2 pr-12 border rounded-lg text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            >
+                            <input type="hidden" id="raihaanClassroomId_${i}" value="">
+                            <input type="hidden" id="raihaanAllocId_${i}" value="">
+                            <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                                <button type="button" onclick="clearRaihaanRow(${i})" class="text-gray-400 hover:text-red-500 text-xs px-1" title="Clear Row">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <button type="button" onclick="openRaihaanRowDropdown(${i})" class="text-gray-400 hover:text-gray-700 text-xs px-0.5">
+                                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="raihaanDropdownList_${i}" class="raihaan-row-dropdown-list hidden absolute left-0 right-0 top-full mt-1 bg-white border border-purple-200 rounded-lg shadow-xl max-h-44 overflow-y-auto z-50 divide-y"></div>
+                    </div>
+                    <div class="col-span-4">
+                        <input
+                            type="text"
+                            id="raihaanClassroomNumber_${i}"
+                            readonly
+                            placeholder="Auto Classroom No."
+                            class="w-full p-2 border rounded-lg text-xs font-extrabold text-purple-900 bg-gray-100 text-center"
+                        >
+                    </div>
+                `;
+                container.appendChild(rowDiv);
+            }
+
+            const todayStr = getLocalTodayDateString();
+            document.getElementById('raihaanFromDateInput').value = todayStr;
+            document.getElementById('raihaanToDateInput').value = todayStr;
+            document.getElementById('raihaanValidationError')?.classList.add('hidden');
+            document.getElementById('modalAddRaihaan').classList.remove('hidden');
+        };
+
+        window.clearRaihaanRow = function(rowIndex) {
+            const inp = document.getElementById(`raihaanDarajahInput_${rowIndex}`);
+            const clsId = document.getElementById(`raihaanClassroomId_${rowIndex}`);
+            const allocId = document.getElementById(`raihaanAllocId_${rowIndex}`);
+            const clsNum = document.getElementById(`raihaanClassroomNumber_${rowIndex}`);
+            const dd = document.getElementById(`raihaanDropdownList_${rowIndex}`);
+            if (inp) inp.value = '';
+            if (clsId) clsId.value = '';
+            if (allocId) allocId.value = '';
+            if (clsNum) clsNum.value = '';
+            if (dd) dd.classList.add('hidden');
+        };
+
+        window.handleRaihaanDarajahInput = function(rowIndex) {
+            document.getElementById(`raihaanClassroomId_${rowIndex}`).value = '';
+            document.getElementById(`raihaanAllocId_${rowIndex}`).value = '';
+            document.getElementById(`raihaanClassroomNumber_${rowIndex}`).value = '';
+
+            // Auto-match if user typed exact Darajah name
+            const rawVal = (document.getElementById(`raihaanDarajahInput_${rowIndex}`)?.value || '').trim().toLowerCase();
+            if (rawVal) {
+                const options = getAllDarajahOptionsList();
+                const exactMatches = options.filter(o => o.darajahName.toLowerCase() === rawVal);
+                if (exactMatches.length === 1) {
+                    document.getElementById(`raihaanClassroomId_${rowIndex}`).value = exactMatches[0].classroomId;
+                    document.getElementById(`raihaanAllocId_${rowIndex}`).value = exactMatches[0].allocId;
+                    document.getElementById(`raihaanClassroomNumber_${rowIndex}`).value = exactMatches[0].classroomNumber;
+                } else if (exactMatches.length > 1) {
+                    document.getElementById(`raihaanClassroomNumber_${rowIndex}`).value = exactMatches.map(m => m.classroomNumber).join(', ');
+                }
+            }
+            openRaihaanRowDropdown(rowIndex);
+        };
+
+        window.openRaihaanRowDropdown = function(rowIndex) {
+            // Hide other row dropdowns first
+            document.querySelectorAll('.raihaan-row-dropdown-list').forEach((el, idx) => {
+                if (idx !== rowIndex) el.classList.add('hidden');
+            });
+
+            const inputEl = document.getElementById(`raihaanDarajahInput_${rowIndex}`);
+            const dd = document.getElementById(`raihaanDropdownList_${rowIndex}`);
+            if (!inputEl || !dd) return;
+
+            const query = inputEl.value.trim().toLowerCase();
+            const options = getAllDarajahOptionsList();
+
+            // If current input exactly matches the already-selected option, show all options for easy switching
+            const selectedAllocId = document.getElementById(`raihaanAllocId_${rowIndex}`)?.value || '';
+            const selectedOpt = selectedAllocId ? options.find(o => o.allocId === selectedAllocId) : null;
+            const effectiveQuery = (selectedOpt && selectedOpt.darajahName.toLowerCase() === query) ? '' : query;
+
+            const filtered = options.filter(o =>
+                !effectiveQuery ||
+                `${o.darajahName} ${o.classroomNumber} ${o.roomType} ${o.location}`.toLowerCase().includes(effectiveQuery)
+            );
+
+            dd.innerHTML = '';
+            if (filtered.length === 0) {
+                dd.innerHTML = '<div class="p-2.5 text-xs text-gray-400 italic">No matching Darajah / Event allocations found.</div>';
+            } else {
+                filtered.forEach(opt => {
+                    const div = document.createElement('div');
+                    div.className = "p-2 hover:bg-purple-50 cursor-pointer text-xs flex justify-between items-center transition";
+                    div.onclick = () => selectRaihaanDarajahOption(rowIndex, opt);
+                    div.innerHTML = `
+                        <div>
+                            <span class="font-bold text-gray-900">${opt.darajahName}</span>
+                            <span class="text-[10px] text-gray-500 ml-1">(${opt.roomType})</span>
+                        </div>
+                        <span class="bg-purple-100 text-purple-900 font-extrabold px-2 py-0.5 rounded text-[11px]">Room ${opt.classroomNumber}</span>
+                    `;
+                    dd.appendChild(div);
+                });
+            }
+            dd.classList.remove('hidden');
+        };
+
+        window.selectRaihaanDarajahOption = function(rowIndex, opt) {
+            document.getElementById(`raihaanDarajahInput_${rowIndex}`).value = opt.darajahName;
+            document.getElementById(`raihaanClassroomId_${rowIndex}`).value = opt.classroomId;
+            document.getElementById(`raihaanAllocId_${rowIndex}`).value = opt.allocId;
+            document.getElementById(`raihaanClassroomNumber_${rowIndex}`).value = opt.classroomNumber;
+            document.getElementById(`raihaanDropdownList_${rowIndex}`)?.classList.add('hidden');
+            document.getElementById('raihaanValidationError')?.classList.add('hidden');
+        };
+
+        window.saveRaihaanDetails = async function(e) {
+            e.preventDefault();
+            if (!guardEditingRights()) return;
+
+            const errEl = document.getElementById('raihaanValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
+            const fromDate = document.getElementById('raihaanFromDateInput').value;
+            const toDate = document.getElementById('raihaanToDateInput').value;
+
+            if (!fromDate || !toDate || fromDate > toDate) {
+                if (errEl) {
+                    errEl.innerText = "Please enter a valid From Date and To Date (From Date must be on or before To Date).";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const allOptions = getAllDarajahOptionsList();
+            const entries = [];
+
+            for (let i = 0; i < 5; i++) {
+                const nameVal = (document.getElementById(`raihaanDarajahInput_${i}`)?.value || '').trim();
+                if (!nameVal) continue;
+
+                let clsId = (document.getElementById(`raihaanClassroomId_${i}`)?.value || '').trim();
+                let allocId = (document.getElementById(`raihaanAllocId_${i}`)?.value || '').trim();
+                let clsNum = (document.getElementById(`raihaanClassroomNumber_${i}`)?.value || '').trim();
+
+                if (!clsId || !clsNum) {
+                    const matched = allOptions.filter(o => o.darajahName.toLowerCase() === nameVal.toLowerCase());
+                    if (matched.length > 0) {
+                        matched.forEach(m => {
+                            entries.push({
+                                darajahName: m.darajahName,
+                                classroomId: m.classroomId,
+                                classroomNumber: m.classroomNumber,
+                                allocId: m.allocId
+                            });
+                        });
+                        continue;
+                    } else {
+                        if (errEl) {
+                            errEl.innerText = `Row ${i + 1}: "${nameVal}" does not match any allocated Darajah / Event. Please select from the dropdown.`;
+                            errEl.classList.remove('hidden');
+                        }
+                        return;
+                    }
+                }
+
+                entries.push({
+                    darajahName: nameVal,
+                    classroomId: clsId,
+                    classroomNumber: clsNum,
+                    allocId
+                });
+            }
+
+            if (entries.length === 0) {
+                if (errEl) {
+                    errEl.innerText = "Please select at least one Darajah Name in the 5 rows above.";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            raihaanData.push({
+                id: Date.now().toString() + Math.random().toString().slice(2, 5),
+                entries,
+                fromDate,
+                toDate,
+                createdAt: getLocalTodayDateString()
+            });
+
+            await saveClassroomsToCloud();
+            closeModal('modalAddRaihaan');
+            renderClassroomsTables();
+            showAssetToast("Saved Raihaan details and updated classroom vacancy status");
+        };
+
+        function formatRaihaanEntriesInline(entries) {
+            if (!Array.isArray(entries) || entries.length === 0) return '-';
+            return entries.map(e => `${e.darajahName} (${e.classroomNumber})`).join(', ');
+        }
+
+        function renderRaihaanCardSummary(todayStr = getLocalTodayDateString()) {
+            const container = document.getElementById('cardRaihaanSummaryContent');
+            const badgeEl = document.getElementById('cardRaihaanActiveCountBadge');
+            if (!container) return;
+
+            // Show currently active records first; if none active today, also show upcoming records so saved details are immediately visible on the card
+            const activeOrUpcoming = raihaanData.filter(r => r.toDate >= todayStr).sort((a, b) => a.fromDate.localeCompare(b.fromDate));
+
+            const activeRoomsCount = classroomsData.filter(r => isClassroomCurrentlyInRaihaan(r, todayStr)).length;
+            if (badgeEl) {
+                badgeEl.innerText = `${activeRoomsCount} Active Class${activeRoomsCount === 1 ? '' : 'es'}`;
+            }
+
+            if (activeOrUpcoming.length === 0) {
+                container.innerHTML = '<p class="text-[11px] text-gray-400 italic">No classes currently in Raihaan.</p>';
+                return;
+            }
+
+            container.innerHTML = activeOrUpcoming.map(rec => {
+                const isActive = isRaihaanRecordActiveNow(rec, todayStr);
+                const inlineStr = formatRaihaanEntriesInline(rec.entries);
+                const statusTag = !isActive
+                    ? `<span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">Upcoming</span>`
+                    : '';
+                return `
+                    <div class="bg-purple-50/70 border border-purple-200 rounded-md p-1.5 leading-snug">
+                        <div class="font-bold text-purple-950 text-[11px] break-words">${inlineStr}${statusTag}</div>
+                        <div class="text-[10px] text-purple-700 font-semibold mt-0.5">
+                            <i class="fa-regular fa-calendar mr-1"></i>${rec.fromDate} to ${rec.toDate}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.openRaihaanArchiveModal = function() {
+            renderRaihaanArchiveTable();
+            document.getElementById('modalRaihaanArchive').classList.remove('hidden');
+        };
+
+        window.renderRaihaanArchiveTable = function() {
+            const tbody = document.getElementById('raihaanArchiveTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (raihaanData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400 text-xs italic">No Raihaan records found in archive.</td></tr>';
+                return;
+            }
+
+            const todayStr = getLocalTodayDateString();
+            const sorted = [...raihaanData].sort((a, b) => b.fromDate.localeCompare(a.fromDate));
+
+            sorted.forEach(rec => {
+                const safeId = String(rec.id).replace(/'/g, "\'");
+                const isActive = isRaihaanRecordActiveNow(rec, todayStr);
+                const isUpcoming = rec.fromDate > todayStr;
+
+                let statusBadge = '';
+                if (isActive) {
+                    statusBadge = '<span class="bg-purple-100 text-purple-900 border border-purple-300 text-[11px] font-bold px-2 py-0.5 rounded-full">Active (Vacant)</span>';
+                } else if (isUpcoming) {
+                    statusBadge = '<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full">Upcoming</span>';
+                } else {
+                    statusBadge = '<span class="bg-gray-100 text-gray-600 border border-gray-300 text-[11px] font-bold px-2 py-0.5 rounded-full">Completed (Restored)</span>';
+                }
+
+                const weekdays = Array.from(getRaihaanWeekdaysSet(rec.fromDate, rec.toDate)).join(', ');
+                const deleteBtnHtml = isUserAdmin
+                    ? `<button type="button" onclick="deleteRaihaanRecord('${safeId}')" class="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50 transition" title="Delete Raihaan Record">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>`
+                    : '<span class="text-[11px] text-gray-400 italic">Admin Only</span>';
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 border-b";
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <div class="font-bold text-gray-900 text-xs">${formatRaihaanEntriesInline(rec.entries)}</div>
+                        <div class="text-[10px] text-gray-500 mt-0.5">Days: ${weekdays || '-'}</div>
+                    </td>
+                    <td class="p-3 font-mono text-xs whitespace-nowrap">${rec.fromDate}</td>
+                    <td class="p-3 font-mono text-xs whitespace-nowrap">${rec.toDate}</td>
+                    <td class="p-3 whitespace-nowrap">${statusBadge}</td>
+                    <td class="p-3 text-center whitespace-nowrap">${deleteBtnHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.deleteRaihaanRecord = async function(raihaanId) {
+            if (!isUserAdmin) {
+                showAssetToast("Admin Privileges Required: Only Administrators can delete Raihaan records.", true);
+                return;
+            }
+            raihaanData = raihaanData.filter(r => String(r.id) !== String(raihaanId));
+            await saveClassroomsToCloud();
+            renderRaihaanArchiveTable();
+            renderClassroomsTables();
+            showAssetToast("Deleted Raihaan record from archive");
+        };
+
+        window.exportClassroomsToExcel = function() {
+            if (!isUserAdmin) {
+                showAssetToast("Admin Privileges Required: Only Administrators can export Classroom Allocation data.", true);
+                return;
+            }
+            if (!classroomsData || classroomsData.length === 0) {
+                showAssetToast("No classroom records available to export.", true);
+                return;
+            }
+
+            const todayStr = getLocalTodayDateString();
+            const sortedRooms = [...classroomsData].sort((a, b) => {
+                if ((a.type || 'Male') !== (b.type || 'Male')) {
+                    return (a.type || 'Male') === 'Male' ? -1 : 1;
+                }
+                return String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            const chronologicalCols = [...TIMETABLE_COLUMNS].reverse();
+
+            function formatDaySlotsForExport(slots, customTimings, dayObj) {
+                if (!Array.isArray(slots) || slots.length === 0) return '-';
+                const normalizedSlots = slots.map(s => {
+                    if (s === 'Sat_PT') return 'Sat_P1';
+                    if (typeof s === 'string' && s.endsWith('_P11')) return s.replace(/_P11$/, '_EX1');
+                    return s;
+                });
+                const availableCols = chronologicalCols.filter(col => !col.saturdayOnly || dayObj.isSaturday);
+                const picked = availableCols.filter(col => normalizedSlots.includes(`${dayObj.key}_${col.key}`));
+                if (picked.length === 0) return '-';
+                return picked.map(col => {
+                    const slotKey = `${dayObj.key}_${col.key}`;
+                    if (col.isExtra) {
+                        const cTime = (customTimings && customTimings[slotKey]) ? customTimings[slotKey] : 'Custom Time';
+                        return `${col.shortLabel} (${cTime})`;
+                    }
+                    const t = dayObj.isSaturday ? col.satTime : col.stdTime;
+                    return `${col.shortLabel} (${t})`;
+                }).join(', ');
+            }
+
+            const columns = [
+                "Classroom Number",
+                "Type (Male / Female)",
+                "Location",
+                "Status",
+                "Darajah / Event Name",
+                "Full Schedule Summary",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Raihaan Status",
+                "Student Count",
+                "Extra Chair"
+            ];
+
+            const rows = [];
+
+            sortedRooms.forEach(room => {
+                const inRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
+                const statusLabel = inRaihaan
+                    ? "Vacant for Events (Currently in Raihaan)"
+                    : (room.isAllocated ? "Allocated as Standard Class" : "Vacant for Events");
+                const studentCountVal = (room.studentCount !== undefined && room.studentCount !== null && room.studentCount !== '') ? room.studentCount : '-';
+                const extraChairVal = (room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '') ? room.extraChair : '-';
+                const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+
+                if (allocations.length === 0) {
+                    rows.push([
+                        room.classroomNumber || '-',
+                        room.type || 'Male',
+                        room.location || '-',
+                        statusLabel,
+                        "Unallocated",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        inRaihaan ? "Currently in Raihaan" : "-",
+                        studentCountVal,
+                        extraChairVal
+                    ]);
+                } else {
+                    allocations.forEach(alloc => {
+                        const summary = formatAllocationScheduleSummary(alloc.slots, alloc.customTimings);
+                        const dayCells = TIMETABLE_DAYS.map(dayObj => formatDaySlotsForExport(alloc.slots, alloc.customTimings, dayObj));
+                        const allocRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
+                        const raihaanStr = allocRaihaanDays.size > 0
+                            ? `In Raihaan (${Array.from(allocRaihaanDays).join(', ')})`
+                            : "-";
+
+                        rows.push([
+                            room.classroomNumber || '-',
+                            room.type || 'Male',
+                            room.location || '-',
+                            statusLabel,
+                            alloc.standardEventName || '-',
+                            summary,
+                            dayCells[0],
+                            dayCells[1],
+                            dayCells[2],
+                            dayCells[3],
+                            dayCells[4],
+                            dayCells[5],
+                            raihaanStr,
+                            studentCountVal,
+                            extraChairVal
+                        ]);
+                    });
+                }
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
+            ws['!cols'] = [
+                { wch: 18 },
+                { wch: 18 },
+                { wch: 24 },
+                { wch: 32 },
+                { wch: 26 },
+                { wch: 55 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 30 },
+                { wch: 24 },
+                { wch: 15 },
+                { wch: 15 }
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Classroom Allocations");
+
+            const fileName = `Classroom_Allocation_Details_${todayStr}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            showAssetToast(`Exported ${rows.length} classroom allocation row(s) to Excel`);
+        };
+
         window.renderClassroomsTables = function() {
             const maleTbody = document.getElementById('maleClassroomsTableBody');
             const femaleTbody = document.getElementById('femaleClassroomsTableBody');
             if (!maleTbody || !femaleTbody) return;
 
-            // Ensure "+ Add Classroom" header button is strictly shown only to Admin
+            // Ensure "+ Add Classroom" and "Export Excel" header buttons are strictly shown only to Admin
             const addClassroomBtn = document.getElementById('btnAddClassroomHeader');
             if (addClassroomBtn) {
                 addClassroomBtn.classList.toggle('hidden', !isUserAdmin);
+            }
+            const exportClassroomBtn = document.getElementById('btnExportClassroomsHeader');
+            if (exportClassroomBtn) {
+                exportClassroomBtn.classList.toggle('hidden', !isUserAdmin);
             }
 
             const canEditDarajah = canEditClassroomColumn('darajah-event');
             const canEditStudentCount = canEditClassroomColumn('student-count');
             const canEditExtraChair = canEditClassroomColumn('extra-chair');
+
+            const todayStr = getLocalTodayDateString();
+            renderRaihaanCardSummary(todayStr);
 
             const query = (document.getElementById('classroomSearchInput')?.value || '').toLowerCase().trim();
             const tokens = query.split(/\s+/).filter(Boolean);
@@ -5720,17 +6531,19 @@ window.renderSocieties = function() {
                 String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' })
             );
 
-            // Compute overview metric counts (including Male & Female bifurcation for Allocated & Vacant)
+            // Compute overview metric counts (accounting for active Raihaan automatic transfer to Vacant)
             const allMaleRooms = classroomsData.filter(r => r.type !== 'Female');
             const allFemaleRooms = classroomsData.filter(r => r.type === 'Female');
 
-            const allocatedMaleCount = allMaleRooms.filter(r => !!r.isAllocated).length;
-            const allocatedFemaleCount = allFemaleRooms.filter(r => !!r.isAllocated).length;
+            const allocatedMaleCount = allMaleRooms.filter(r => isRoomEffectivelyAllocated(r, todayStr)).length;
+            const allocatedFemaleCount = allFemaleRooms.filter(r => isRoomEffectivelyAllocated(r, todayStr)).length;
             const allocatedTotalCount = allocatedMaleCount + allocatedFemaleCount;
 
-            const vacantMaleCount = allMaleRooms.filter(r => !r.isAllocated).length;
-            const vacantFemaleCount = allFemaleRooms.filter(r => !r.isAllocated).length;
+            const vacantMaleCount = allMaleRooms.filter(r => isRoomEffectivelyVacant(r, todayStr)).length;
+            const vacantFemaleCount = allFemaleRooms.filter(r => isRoomEffectivelyVacant(r, todayStr)).length;
             const vacantTotalCount = vacantMaleCount + vacantFemaleCount;
+
+            const raihaanClassroomsCount = classroomsData.filter(r => isClassroomCurrentlyInRaihaan(r, todayStr)).length;
 
             if (document.getElementById('cardTotalClassroomsCount')) document.getElementById('cardTotalClassroomsCount').innerText = classroomsData.length;
             if (document.getElementById('cardMaleClassroomsCount')) document.getElementById('cardMaleClassroomsCount').innerText = allMaleRooms.length;
@@ -5743,15 +6556,18 @@ window.renderSocieties = function() {
             if (document.getElementById('cardVacantEventClassroomsCount')) document.getElementById('cardVacantEventClassroomsCount').innerText = vacantTotalCount;
             if (document.getElementById('cardVacantEventMaleCount')) document.getElementById('cardVacantEventMaleCount').innerText = vacantMaleCount;
             if (document.getElementById('cardVacantEventFemaleCount')) document.getElementById('cardVacantEventFemaleCount').innerText = vacantFemaleCount;
+            if (document.getElementById('cardVacantRaihaanCount')) document.getElementById('cardVacantRaihaanCount').innerText = raihaanClassroomsCount;
 
             const filteredRooms = sortedRooms.filter(room => {
-                if (selectedClassroomCardFilter === 'allocated' && !room.isAllocated) return false;
-                if (selectedClassroomCardFilter === 'vacant' && !!room.isAllocated) return false;
+                if (selectedClassroomCardFilter === 'allocated' && !isRoomEffectivelyAllocated(room, todayStr)) return false;
+                if (selectedClassroomCardFilter === 'vacant' && !isRoomEffectivelyVacant(room, todayStr)) return false;
+                if (selectedClassroomCardFilter === 'raihaan' && !isClassroomCurrentlyInRaihaan(room, todayStr)) return false;
 
                 if (tokens.length === 0) return true;
                 const allocText = (room.allocations || []).map(a => `${a.standardEventName} ${formatAllocationScheduleSummary(a.slots)}`).join(' ');
-                const statusLabel = room.isAllocated ? 'allocated standard class' : 'vacant for events';
-                const corpus = `${room.classroomNumber} ${room.location} ${room.type} ${statusLabel} ${room.studentCount ?? ''} ${room.extraChair ?? ''} ${allocText}`.toLowerCase();
+                const statusLabel = isRoomEffectivelyAllocated(room, todayStr) ? 'allocated standard class' : 'vacant for events';
+                const raihaanLabel = isClassroomCurrentlyInRaihaan(room, todayStr) ? 'currently in raihaan' : '';
+                const corpus = `${room.classroomNumber} ${room.location} ${room.type} ${statusLabel} ${raihaanLabel} ${room.studentCount ?? ''} ${room.extraChair ?? ''} ${allocText}`.toLowerCase();
                 return tokens.every(t => corpus.includes(t));
             });
 
@@ -5771,6 +6587,11 @@ window.renderSocieties = function() {
                 } else {
                     darajahHtml = `<div class="flex flex-wrap gap-1.5">` + allocations.map(alloc => {
                         const safeAllocId = String(alloc.id).replace(/'/g, "\'");
+                        const allocRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
+                        const isAllocInRaihaan = allocRaihaanDays.size > 0;
+                        const raihaanBadgeHtml = isAllocInRaihaan
+                            ? `<span class="bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1" title="Currently in Raihaan (${Array.from(allocRaihaanDays).join(', ')} periods open)">In Raihaan</span>`
+                            : '';
                         const editDeleteBtns = canEditDarajah ? `
                             <div class="flex items-center space-x-1 pl-1.5 border-l border-emerald-200">
                                 <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-0.5" title="Edit Timetable">
@@ -5791,6 +6612,7 @@ window.renderSocieties = function() {
                                 >
                                     <i class="fa-solid fa-table-cells text-emerald-600 text-[11px]"></i>
                                     <span>${alloc.standardEventName}</span>
+                                    ${raihaanBadgeHtml}
                                 </button>
                                 ${editDeleteBtns}
                             </div>
@@ -5852,12 +6674,18 @@ window.renderSocieties = function() {
                     </label>`
                     : '';
 
+                const roomInRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
+                const roomRaihaanPill = roomInRaihaan
+                    ? `<span class="mt-1 text-[9px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.5 rounded" title="Temporarily Vacant during Raihaan period">Raihaan Vacant</span>`
+                    : '';
+
                 return `
                     <tr class="hover:bg-gray-50 border-b align-top">
                         <td class="py-2.5 px-2 w-24 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 <span class="font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'}">${room.classroomNumber}</span>
                                 ${adminAllocatedCheckboxHtml}
+                                ${roomRaihaanPill}
                             </div>
                         </td>
                         <td class="py-2.5 px-2.5 text-gray-700 font-medium text-xs leading-snug">
@@ -5913,6 +6741,7 @@ window.renderSocieties = function() {
                 collections: {
                     estates: estatesData,
                     classrooms: classroomsData,
+                    raihaan: raihaanData,
                     keys: keysInventoryData,
                     faculty: facultyData,
                     societies: societiesData,
@@ -5966,6 +6795,7 @@ window.renderSocieties = function() {
 
                     if (Array.isArray(src.estates)) estatesData = src.estates;
                     if (src.classrooms !== undefined) classroomsData = normalizeClassroomsList(src.classrooms);
+                    if (src.raihaan !== undefined) raihaanData = normalizeRaihaanList(src.raihaan);
                     if (Array.isArray(src.keys)) keysInventoryData = src.keys;
                     if (Array.isArray(src.faculty)) facultyData = src.faculty;
                     if (Array.isArray(src.societies)) societiesData = src.societies;

@@ -6795,9 +6795,7 @@ window.renderSocieties = function() {
             const query = (document.getElementById('classroomSearchInput')?.value || '').toLowerCase().trim();
             const tokens = query.split(/\s+/).filter(Boolean);
 
-            const sortedRooms = [...classroomsData].sort((a, b) =>
-                String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' })
-            );
+            const sortedRooms = [...classroomsData].sort((a, b) => compareClassroomsByAllocatedClass(a, b));
 
             // Compute overview metric counts (accounting for active Raihaan automatic transfer to Vacant)
             const allMaleRooms = classroomsData.filter(r => r.type !== 'Female');

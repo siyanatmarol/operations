@@ -754,29 +754,29 @@
                     </div>
                 </button>
 
-                <!-- 4. Currently in Raihaan Card -->
-                <div id="cardBtnClassroomsRaihaan" onclick="setClassroomAllocationFilter('raihaan')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-purple-600 flex flex-col justify-between text-left transition hover:border-purple-500 cursor-pointer">
+                <!-- 4. Currently in Raihaan Card (Highlighted) -->
+                <div id="cardBtnClassroomsRaihaan" onclick="setClassroomAllocationFilter('raihaan')" class="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white p-4 rounded-xl shadow-lg border-2 border-purple-400 ring-2 ring-purple-400/50 flex flex-col justify-between text-left transition hover:shadow-xl hover:scale-[1.01] cursor-pointer">
                     <div class="flex justify-between items-start gap-2 w-full">
                         <div>
-                            <span class="text-xs text-purple-900 font-bold uppercase block leading-tight flex items-center space-x-1">
-                                <i class="fa-solid fa-route text-purple-600"></i>
+                            <span class="text-xs text-purple-100 font-extrabold uppercase tracking-wider block leading-tight flex items-center space-x-1.5">
+                                <span class="bg-amber-400 text-purple-950 p-1 rounded-md shadow-sm inline-flex items-center justify-center"><i class="fa-solid fa-route text-xs"></i></span>
                                 <span>Currently in Raihaan</span>
                             </span>
-                            <span id="cardRaihaanActiveCountBadge" class="inline-block mt-1 text-[11px] bg-purple-100 text-purple-900 font-extrabold px-2 py-0.5 rounded-full">0 Active Classes</span>
+                            <span id="cardRaihaanActiveCountBadge" class="inline-block mt-1.5 text-xs bg-amber-400 text-purple-950 font-extrabold px-2.5 py-0.5 rounded-full shadow-sm">0 Active Classes</span>
                         </div>
-                        <div class="flex flex-col items-end space-y-1 shrink-0" onclick="event.stopPropagation()">
-                            <button type="button" onclick="openAddRaihaanModal()" class="crud-action-btn bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold px-2.5 py-1 rounded shadow-sm transition flex items-center space-x-1 whitespace-nowrap">
-                                <i class="fa-solid fa-plus text-[10px]"></i>
+                        <div class="flex flex-col items-end space-y-1.5 shrink-0" onclick="event.stopPropagation()">
+                            <button type="button" onclick="openAddRaihaanModal()" class="crud-action-btn bg-white hover:bg-purple-50 text-purple-950 text-[11px] font-extrabold px-2.5 py-1 rounded-md shadow transition flex items-center space-x-1 whitespace-nowrap border border-purple-200">
+                                <i class="fa-solid fa-plus text-[10px] text-purple-700"></i>
                                 <span>Add Details</span>
                             </button>
-                            <button type="button" onclick="openRaihaanArchiveModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 text-[11px] font-bold px-2.5 py-1 rounded transition flex items-center space-x-1 whitespace-nowrap">
-                                <i class="fa-solid fa-box-archive text-[10px] text-purple-700"></i>
+                            <button type="button" onclick="openRaihaanArchiveModal()" class="bg-purple-950/80 hover:bg-purple-950 text-purple-100 border border-purple-400/60 text-[11px] font-bold px-2.5 py-1 rounded-md transition flex items-center space-x-1 whitespace-nowrap">
+                                <i class="fa-solid fa-box-archive text-[10px] text-amber-300"></i>
                                 <span>Archive</span>
                             </button>
                         </div>
                     </div>
-                    <div id="cardRaihaanSummaryContent" class="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-700 space-y-1.5 max-h-28 overflow-y-auto">
-                        <p class="text-[11px] text-gray-400 italic">No classes currently in Raihaan.</p>
+                    <div id="cardRaihaanSummaryContent" class="mt-2.5 pt-2 border-t border-purple-600/80 text-xs text-purple-100 space-y-1.5 max-h-28 overflow-y-auto">
+                        <p class="text-[11px] text-purple-200/80 italic">No classes currently in Raihaan.</p>
                     </div>
                 </div>
             </div>
@@ -796,12 +796,13 @@
                         <table class="w-full text-left text-xs sm:text-sm table-auto">
                             <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
                                 <tr>
-                                    <th class="py-2.5 px-2.5 w-24 text-center leading-tight">Class<br>No.</th>
-                                    <th class="py-2.5 px-2.5 w-32">Location</th>
-                                    <th class="py-2.5 px-2.5">Darajah / Event</th>
-                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Student<br>Count</th>
-                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Extra<br>Chair</th>
-                                    <th class="py-2.5 px-2.5 w-32 text-center">Action</th>
+                                    <th class="py-2.5 px-2 w-20 text-center leading-tight">Class<br>No.</th>
+                                    <th class="py-2.5 px-2 w-28">Location</th>
+                                    <th class="py-2.5 px-2">Allocated Class</th>
+                                    <th class="py-2.5 px-2">Other Events</th>
+                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Student<br>Count</th>
+                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Extra<br>Chair</th>
+                                    <th class="py-2.5 px-2 w-28 text-center leading-tight">Integrated<br>Timetable / Action</th>
                                 </tr>
                             </thead>
                             <tbody id="maleClassroomsTableBody" class="divide-y"></tbody>
@@ -822,12 +823,13 @@
                         <table class="w-full text-left text-xs sm:text-sm table-auto">
                             <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
                                 <tr>
-                                    <th class="py-2.5 px-2.5 w-24 text-center leading-tight">Class<br>No.</th>
-                                    <th class="py-2.5 px-2.5 w-32">Location</th>
-                                    <th class="py-2.5 px-2.5">Darajah / Event</th>
-                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Student<br>Count</th>
-                                    <th class="py-2.5 px-2 w-24 text-center leading-tight">Extra<br>Chair</th>
-                                    <th class="py-2.5 px-2.5 w-32 text-center">Action</th>
+                                    <th class="py-2.5 px-2 w-20 text-center leading-tight">Class<br>No.</th>
+                                    <th class="py-2.5 px-2 w-28">Location</th>
+                                    <th class="py-2.5 px-2">Allocated Class</th>
+                                    <th class="py-2.5 px-2">Other Events</th>
+                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Student<br>Count</th>
+                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Extra<br>Chair</th>
+                                    <th class="py-2.5 px-2 w-28 text-center leading-tight">Integrated<br>Timetable / Action</th>
                                 </tr>
                             </thead>
                             <tbody id="femaleClassroomsTableBody" class="divide-y"></tbody>
@@ -1902,11 +1904,12 @@
             <form id="classroomScheduleForm" onsubmit="saveClassroomScheduleAllocation(event)" class="space-y-4 flex-grow overflow-y-auto pr-1">
                 <input type="hidden" id="scheduleClassroomId" value="">
                 <input type="hidden" id="scheduleEditAllocId" value="">
+                <input type="hidden" id="scheduleAllocationCategory" value="class">
 
                 <!-- Top Input Bar: Standard / Event Name + Select All Checkbox -->
                 <div id="scheduleModalFormTopBar" class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4">
                     <div class="flex-grow">
-                        <label class="text-xs font-bold text-emerald-950 uppercase tracking-wider block mb-1">Standard / Event Name <span class="text-red-600">*</span></label>
+                        <label id="scheduleEventNameLabel" class="text-xs font-bold text-emerald-950 uppercase tracking-wider block mb-1">Allocated Class Name <span class="text-red-600">*</span></label>
                         <input
                             type="text"
                             id="scheduleEventNameInput"
@@ -2045,6 +2048,55 @@
 
             <div class="flex justify-end pt-2 border-t">
                 <button type="button" onclick="closeModal('modalRaihaanArchive')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Integrated Classroom Timetable (Full Master View) -->
+    <div id="modalIntegratedClassroomTimetable" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full p-5 sm:p-6 space-y-4 max-h-[94vh] flex flex-col">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-table-cells text-teal-700"></i>
+                        <span id="integratedTimetableModalTitle">Integrated Classroom Timetable</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5" id="integratedTimetableModalSubtitle">Complete weekly period schedule showing Allocated Classes and Other Events.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalIntegratedClassroomTimetable')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold self-end sm:self-auto">&times;</button>
+            </div>
+
+            <!-- Legend & Summary Pills -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-3.5 py-2.5 rounded-lg border text-xs">
+                <div class="flex flex-wrap items-center gap-3 font-bold">
+                    <span class="inline-flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-emerald-100 border border-emerald-400 inline-block"></span>
+                        <span class="text-emerald-950">Allocated Class</span>
+                    </span>
+                    <span class="inline-flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-amber-100 border border-amber-400 inline-block"></span>
+                        <span class="text-amber-950">Other Event</span>
+                    </span>
+                    <span class="inline-flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-purple-100 border border-purple-400 inline-block"></span>
+                        <span class="text-purple-950">In Raihaan (Vacant Slot)</span>
+                    </span>
+                </div>
+                <div id="integratedTimetableSummaryBadges" class="flex flex-wrap items-center gap-1.5"></div>
+            </div>
+
+            <!-- Full Weekly Timetable Grid -->
+            <div class="flex-grow overflow-y-auto pr-1">
+                <div class="overflow-x-auto border-2 border-gray-800 rounded-lg shadow-sm">
+                    <table class="w-full text-center text-xs border-collapse timetable-grid min-w-[960px]">
+                        <thead id="integratedTimetableGridHead"></thead>
+                        <tbody id="integratedTimetableGridBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-3 border-t">
+                <button type="button" onclick="closeModal('modalIntegratedClassroomTimetable')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-sm font-bold transition">Close</button>
             </div>
         </div>
     </div>
@@ -2625,28 +2677,42 @@
                 } else if (item.allocations && typeof item.allocations === 'object') {
                     allocations = Object.values(item.allocations).filter(Boolean);
                 }
-                allocations = allocations.map(a => {
+                allocations = allocations.map((a, idx) => {
                     const rawSlots = Array.isArray(a.slots) ? a.slots : (a.slots && typeof a.slots === 'object' ? Object.values(a.slots) : []);
                     const migratedSlots = rawSlots.map(s => {
                         if (s === 'Sat_PT') return 'Sat_P1';
                         if (typeof s === 'string' && s.endsWith('_P11')) return s.replace(/_P11$/, '_EX1');
                         return s;
                     });
+                    let allocType = a.allocationType || a.category || '';
+                    if (allocType !== 'class' && allocType !== 'event') {
+                        // Legacy migration: if room was marked isAllocated and this is the primary allocation (or has Darajah in name), treat as 'class'
+                        const nameLower = String(a.standardEventName || a.name || '').toLowerCase();
+                        if (item.isAllocated && idx === 0) {
+                            allocType = 'class';
+                        } else if (nameLower.includes('darajah') || nameLower.includes('std') || nameLower.includes('class')) {
+                            allocType = 'class';
+                        } else {
+                            allocType = item.isAllocated ? 'class' : 'event';
+                        }
+                    }
                     return {
                         id: String(a.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
                         standardEventName: a.standardEventName || a.name || '',
+                        allocationType: allocType,
                         slots: migratedSlots,
                         customTimings: (a.customTimings && typeof a.customTimings === 'object') ? { ...a.customTimings } : {},
                         raihaanTemporarySlots: (a.raihaanTemporarySlots && typeof a.raihaanTemporarySlots === 'object') ? { ...a.raihaanTemporarySlots } : {},
                         updatedAt: a.updatedAt || ''
                     };
                 });
+                const hasAllocatedClass = allocations.some(a => (a.allocationType || 'class') === 'class');
                 return {
                     id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
                     classroomNumber: String(item.classroomNumber || item.number || ''),
                     location: String(item.location || ''),
                     type: item.type === 'Female' ? 'Female' : 'Male',
-                    isAllocated: !!item.isAllocated,
+                    isAllocated: hasAllocatedClass,
                     studentCount: (item.studentCount !== undefined && item.studentCount !== null && item.studentCount !== '') ? Number(item.studentCount) : null,
                     extraChair: (item.extraChair !== undefined && item.extraChair !== null && item.extraChair !== '') ? Number(item.extraChair) : null,
                     allocations,
@@ -5717,19 +5783,37 @@ window.renderSocieties = function() {
             showAssetToast(`Updated ${fieldType === 'studentCount' ? 'Student Count' : 'Extra Chair'} for Classroom ${room.classroomNumber}`);
         };
 
-        // Clicking a Darajah / Event name on the main page opens its full timetable (even for View Only users in read-only mode)
-        window.openClassroomScheduleModal = function(classroomId, allocId = '') {
+        function applyScheduleModalCategoryUI(category) {
+            const cleanCat = category === 'event' ? 'event' : 'class';
+            const catInput = document.getElementById('scheduleAllocationCategory');
+            if (catInput) catInput.value = cleanCat;
+
+            const lbl = document.getElementById('scheduleEventNameLabel');
+            const inp = document.getElementById('scheduleEventNameInput');
+            const topBar = document.getElementById('scheduleModalFormTopBar');
+
+            if (cleanCat === 'event') {
+                if (lbl) lbl.innerHTML = 'Other Event Name <span class="text-red-600">*</span>';
+                if (inp) inp.placeholder = 'e.g. Hifzul Quran, Seminar, Guest Lecture, Exam...';
+                if (topBar) topBar.className = 'bg-amber-50 p-4 rounded-xl border border-amber-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4';
+            } else {
+                if (lbl) lbl.innerHTML = 'Allocated Class (Darajah) Name <span class="text-red-600">*</span>';
+                if (inp) inp.placeholder = 'e.g. Darajah 1 (Al-Ula), Darajah 5, Standard Class...';
+                if (topBar) topBar.className = 'bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4';
+            }
+        }
+
+        // Clicking an Allocated Class or Other Event name (or the + Add button in either column) opens its full timetable
+        window.openClassroomScheduleModal = function(classroomId, allocId = '', category = 'class') {
             const canEdit = canEditClassroomColumn('darajah-event');
             if (!canEdit && !allocId) {
-                showAssetToast("View Only: You do not have permission to add Darajah / Event schedules.", true);
+                showAssetToast("View Only: You do not have permission to add schedules.", true);
                 return;
             }
             const room = classroomsData.find(c => String(c.id) === String(classroomId));
             if (!room) return;
 
             document.getElementById('scheduleClassroomId').value = String(room.id);
-            document.getElementById('scheduleModalTitle').innerText = `Schedule Timetable — Classroom ${room.classroomNumber} (${room.type})`;
-            document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • Connected Classroom Timetable`;
 
             const nameInput = document.getElementById('scheduleEventNameInput');
             const selectAllCb = document.getElementById('scheduleSelectAllCheckbox');
@@ -5741,19 +5825,26 @@ window.renderSocieties = function() {
             if (allocId) {
                 editScheduleAllocationInModal(room.id, allocId, !canEdit);
             } else {
-                resetScheduleModalFormForNew();
+                applyScheduleModalCategoryUI(category);
+                const catLabel = category === 'event' ? 'Other Event' : 'Allocated Class';
+                document.getElementById('scheduleModalTitle').innerText = `Add ${catLabel} — Classroom ${room.classroomNumber} (${room.type})`;
+                document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • Select periods for this ${catLabel.toLowerCase()} (Booked slots are blocked)`;
+                resetScheduleModalFormForNew(category);
             }
 
             renderExistingClassroomAllocationsInModal(room);
             document.getElementById('modalClassroomSchedule').classList.remove('hidden');
         };
 
-        window.resetScheduleModalFormForNew = function() {
+        window.resetScheduleModalFormForNew = function(category = null) {
             const roomId = document.getElementById('scheduleClassroomId').value;
             const room = classroomsData.find(c => String(c.id) === String(roomId));
+            const activeCat = category || document.getElementById('scheduleAllocationCategory')?.value || 'class';
+            applyScheduleModalCategoryUI(activeCat);
+
             document.getElementById('scheduleEditAllocId').value = '';
             document.getElementById('scheduleEventNameInput').value = '';
-            document.getElementById('btnSaveClassroomScheduleText').innerText = 'Save Schedule Allocation';
+            document.getElementById('btnSaveClassroomScheduleText').innerText = activeCat === 'event' ? 'Save Other Event' : 'Save Allocated Class';
             document.getElementById('cancelEditScheduleAllocBtn')?.classList.add('hidden');
             document.getElementById('scheduleValidationError')?.classList.add('hidden');
             currentModalCustomTimings = {};
@@ -5767,10 +5858,17 @@ window.renderSocieties = function() {
             const alloc = room.allocations.find(a => String(a.id) === String(allocId));
             if (!alloc) return;
 
+            const allocCat = alloc.allocationType === 'event' ? 'event' : 'class';
+            applyScheduleModalCategoryUI(allocCat);
+
+            const catLabel = allocCat === 'event' ? 'Other Event' : 'Allocated Class';
+            document.getElementById('scheduleModalTitle').innerText = `${catLabel} Timetable — Classroom ${room.classroomNumber} (${room.type})`;
+            document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • ${alloc.standardEventName}`;
+
             const isReadOnly = forceReadOnly || !canEditClassroomColumn('darajah-event');
             document.getElementById('scheduleEditAllocId').value = String(alloc.id);
             document.getElementById('scheduleEventNameInput').value = alloc.standardEventName || '';
-            document.getElementById('btnSaveClassroomScheduleText').innerText = 'Update Schedule Allocation';
+            document.getElementById('btnSaveClassroomScheduleText').innerText = allocCat === 'event' ? 'Update Other Event' : 'Update Allocated Class';
             if (!isReadOnly) {
                 document.getElementById('cancelEditScheduleAllocBtn')?.classList.remove('hidden');
             } else {
@@ -5795,14 +5893,21 @@ window.renderSocieties = function() {
             updateScheduleSelectAllState();
         };
 
+        function syncRoomAllocatedStatusFromClasses(room) {
+            if (!room) return;
+            const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+            room.isAllocated = allocations.some(a => (a.allocationType || 'class') === 'class');
+        }
+
         window.deleteClassroomScheduleAllocation = async function(classroomId, allocId) {
             if (!canEditClassroomColumn('darajah-event')) {
-                showAssetToast("View Only: You do not have permission to modify Darajah / Event schedules.", true);
+                showAssetToast("View Only: You do not have permission to modify schedules.", true);
                 return;
             }
             const room = classroomsData.find(c => String(c.id) === String(classroomId));
             if (!room || !Array.isArray(room.allocations)) return;
             room.allocations = room.allocations.filter(a => String(a.id) !== String(allocId));
+            syncRoomAllocatedStatusFromClasses(room);
             await saveClassroomsToCloud();
 
             const currentEditAllocId = document.getElementById('scheduleEditAllocId')?.value || '';
@@ -5813,7 +5918,7 @@ window.renderSocieties = function() {
             }
             renderExistingClassroomAllocationsInModal(room);
             renderClassroomsTables();
-            showAssetToast("Removed Darajah / Event allocation");
+            showAssetToast("Removed schedule allocation");
         };
 
         function renderExistingClassroomAllocationsInModal(room) {
@@ -5824,7 +5929,7 @@ window.renderSocieties = function() {
             const canEdit = canEditClassroomColumn('darajah-event');
             const allocations = Array.isArray(room.allocations) ? room.allocations : [];
             if (allocations.length === 0) {
-                listEl.innerHTML = '<p class="text-xs text-gray-400 italic">No Darajah / Event allocations saved for this classroom yet.</p>';
+                listEl.innerHTML = '<p class="text-xs text-gray-400 italic">No Allocated Classes or Other Events saved for this classroom yet.</p>';
                 return;
             }
 
@@ -5832,14 +5937,21 @@ window.renderSocieties = function() {
             allocations.forEach(alloc => {
                 const safeAllocId = String(alloc.id).replace(/'/g, "\'");
                 const summary = formatAllocationScheduleSummary(alloc.slots, alloc.customTimings);
+                const isEvent = alloc.allocationType === 'event';
+                const typeBadge = isEvent
+                    ? '<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Other Event</span>'
+                    : '<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Allocated Class</span>';
                 const item = document.createElement('div');
                 item.className = "bg-white p-2.5 rounded border flex justify-between items-start gap-2 text-xs";
                 item.innerHTML = `
                     <div>
-                        <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="font-bold text-emerald-900 hover:underline text-left flex items-center space-x-1">
-                            <i class="fa-solid fa-calendar-days text-emerald-600 text-[11px]"></i>
-                            <span>${alloc.standardEventName}</span>
-                        </button>
+                        <div class="flex items-center space-x-1.5">
+                            <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="font-bold text-emerald-900 hover:underline text-left flex items-center space-x-1">
+                                <i class="fa-solid fa-calendar-days text-emerald-600 text-[11px]"></i>
+                                <span>${alloc.standardEventName}</span>
+                            </button>
+                            ${typeBadge}
+                        </div>
                         <span class="text-[11px] text-gray-600 block mt-0.5">${summary}</span>
                     </div>
                     ${canEdit ? `
@@ -5860,12 +5972,13 @@ window.renderSocieties = function() {
         window.saveClassroomScheduleAllocation = async function(e) {
             e.preventDefault();
             if (!canEditClassroomColumn('darajah-event')) {
-                showAssetToast("View Only: You do not have permission to save Darajah / Event schedules.", true);
+                showAssetToast("View Only: You do not have permission to save schedules.", true);
                 return;
             }
 
             const classroomId = document.getElementById('scheduleClassroomId').value;
             const editAllocId = document.getElementById('scheduleEditAllocId').value.trim();
+            const allocationCategory = document.getElementById('scheduleAllocationCategory')?.value === 'event' ? 'event' : 'class';
             const standardEventName = document.getElementById('scheduleEventNameInput').value.trim();
 
             const selectedSlots = Array.from(document.querySelectorAll('input[name="timetableSlotCheckbox"]:checked')).map(cb => cb.value);
@@ -5914,6 +6027,7 @@ window.renderSocieties = function() {
             const allocRecord = {
                 id: editAllocId ? String(editAllocId) : Date.now().toString() + Math.random().toString().slice(2, 5),
                 standardEventName,
+                allocationType: allocationCategory,
                 slots: selectedSlots,
                 customTimings: savedCustomTimings,
                 raihaanTemporarySlots,
@@ -5931,25 +6045,36 @@ window.renderSocieties = function() {
                 room.allocations.push(allocRecord);
             }
 
+            // Automatically designate classroom as Allocated if it has at least one Allocated Class ('class')
+            syncRoomAllocatedStatusFromClasses(room);
+
             await saveClassroomsToCloud();
             renderExistingClassroomAllocationsInModal(room);
             renderClassroomsTables();
-            resetScheduleModalFormForNew();
+            resetScheduleModalFormForNew(allocationCategory);
             closeModal('modalClassroomSchedule');
-            showAssetToast(`Saved schedule for "${standardEventName}" in Classroom ${room.classroomNumber}`);
+            showAssetToast(`Saved ${allocationCategory === 'event' ? 'Other Event' : 'Allocated Class'} "${standardEventName}" in Classroom ${room.classroomNumber}`);
         };
 
         let selectedClassroomCardFilter = 'all'; // 'all' | 'allocated' | 'vacant' | 'raihaan'
 
+        function hasClassroomAllocatedClass(room) {
+            if (!room || !Array.isArray(room.allocations)) return false;
+            return room.allocations.some(a => (a.allocationType || 'class') === 'class');
+        }
+
         // Effective Allocation / Vacancy status accounting for active Raihaan periods:
-        // During the Raihaan date range, classrooms in Raihaan are shown as Vacant;
+        // When a class is added to the Allocated Class column, that classroom is designated as Allocated.
+        // During an active Raihaan date range, classrooms in Raihaan are shown as Vacant;
         // once the Raihaan date range ends, they automatically transfer back to Allocated.
         function isRoomEffectivelyAllocated(room, todayStr = getLocalTodayDateString()) {
-            return !!room.isAllocated && !isClassroomCurrentlyInRaihaan(room, todayStr);
+            const isDesignatedAllocated = hasClassroomAllocatedClass(room);
+            return isDesignatedAllocated && !isClassroomCurrentlyInRaihaan(room, todayStr);
         }
 
         function isRoomEffectivelyVacant(room, todayStr = getLocalTodayDateString()) {
-            return !room.isAllocated || isClassroomCurrentlyInRaihaan(room, todayStr);
+            const isDesignatedAllocated = hasClassroomAllocatedClass(room);
+            return !isDesignatedAllocated || isClassroomCurrentlyInRaihaan(room, todayStr);
         }
 
         window.setClassroomAllocationFilter = function(filter) {
@@ -5981,8 +6106,8 @@ window.renderSocieties = function() {
             }
             if (btnRaihaan) {
                 btnRaihaan.className = selectedClassroomCardFilter === 'raihaan'
-                    ? "bg-purple-50/70 p-4 rounded-lg shadow-md border-2 border-purple-600 ring-2 ring-purple-500/40 border-l-4 border-l-purple-600 flex flex-col justify-between text-left transition cursor-pointer"
-                    : "bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-purple-600 flex flex-col justify-between text-left transition hover:border-purple-500 cursor-pointer";
+                    ? "bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-950 text-white p-4 rounded-xl shadow-xl border-2 border-amber-400 ring-4 ring-amber-400/50 flex flex-col justify-between text-left transition cursor-pointer"
+                    : "bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white p-4 rounded-xl shadow-lg border-2 border-purple-400 ring-2 ring-purple-400/50 flex flex-col justify-between text-left transition hover:shadow-xl hover:scale-[1.01] cursor-pointer";
             }
 
             renderClassroomsTables();
@@ -6269,7 +6394,7 @@ window.renderSocieties = function() {
             }
 
             if (activeOrUpcoming.length === 0) {
-                container.innerHTML = '<p class="text-[11px] text-gray-400 italic">No classes currently in Raihaan.</p>';
+                container.innerHTML = '<p class="text-[11px] text-purple-200/80 italic">No classes currently in Raihaan.</p>';
                 return;
             }
 
@@ -6277,12 +6402,12 @@ window.renderSocieties = function() {
                 const isActive = isRaihaanRecordActiveNow(rec, todayStr);
                 const inlineStr = formatRaihaanEntriesInline(rec.entries);
                 const statusTag = !isActive
-                    ? `<span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold ml-1">Upcoming</span>`
+                    ? `<span class="text-[9px] bg-amber-300 text-purple-950 px-1.5 py-0.5 rounded font-extrabold ml-1">Upcoming</span>`
                     : '';
                 return `
-                    <div class="bg-purple-50/70 border border-purple-200 rounded-md p-1.5 leading-snug">
-                        <div class="font-bold text-purple-950 text-[11px] break-words">${inlineStr}${statusTag}</div>
-                        <div class="text-[10px] text-purple-700 font-semibold mt-0.5">
+                    <div class="bg-white/15 backdrop-blur-sm border border-purple-300/40 rounded-lg p-2 leading-snug shadow-sm">
+                        <div class="font-extrabold text-white text-[11px] break-words">${inlineStr}${statusTag}</div>
+                        <div class="text-[10px] text-amber-300 font-bold mt-0.5">
                             <i class="fa-regular fa-calendar mr-1"></i>${rec.fromDate} to ${rec.toDate}
                         </div>
                     </div>
@@ -6403,7 +6528,8 @@ window.renderSocieties = function() {
                 "Type (Male / Female)",
                 "Location",
                 "Status",
-                "Darajah / Event Name",
+                "Category (Allocated Class / Other Event)",
+                "Allocated Class / Event Name",
                 "Full Schedule Summary",
                 "Monday",
                 "Tuesday",
@@ -6420,9 +6546,10 @@ window.renderSocieties = function() {
 
             sortedRooms.forEach(room => {
                 const inRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
+                const isRoomAllocated = hasClassroomAllocatedClass(room);
                 const statusLabel = inRaihaan
                     ? "Vacant for Events (Currently in Raihaan)"
-                    : (room.isAllocated ? "Allocated as Standard Class" : "Vacant for Events");
+                    : (isRoomAllocated ? "Allocated as Standard Class" : "Vacant for Events");
                 const studentCountVal = (room.studentCount !== undefined && room.studentCount !== null && room.studentCount !== '') ? room.studentCount : '-';
                 const extraChairVal = (room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '') ? room.extraChair : '-';
                 const allocations = Array.isArray(room.allocations) ? room.allocations : [];
@@ -6433,6 +6560,7 @@ window.renderSocieties = function() {
                         room.type || 'Male',
                         room.location || '-',
                         statusLabel,
+                        "-",
                         "Unallocated",
                         "-",
                         "-",
@@ -6453,12 +6581,14 @@ window.renderSocieties = function() {
                         const raihaanStr = allocRaihaanDays.size > 0
                             ? `In Raihaan (${Array.from(allocRaihaanDays).join(', ')})`
                             : "-";
+                        const catLabel = alloc.allocationType === 'event' ? 'Other Event' : 'Allocated Class';
 
                         rows.push([
                             room.classroomNumber || '-',
                             room.type || 'Male',
                             room.location || '-',
                             statusLabel,
+                            catLabel,
                             alloc.standardEventName || '-',
                             summary,
                             dayCells[0],
@@ -6577,15 +6707,15 @@ window.renderSocieties = function() {
             if (document.getElementById('maleClassesBadgeCount')) document.getElementById('maleClassesBadgeCount').innerText = `${maleRooms.length} Room${maleRooms.length === 1 ? '' : 's'}`;
             if (document.getElementById('femaleClassesBadgeCount')) document.getElementById('femaleClassesBadgeCount').innerText = `${femaleRooms.length} Room${femaleRooms.length === 1 ? '' : 's'}`;
 
-            function buildClassroomRowHtml(room, accentColor) {
+            function buildAllocationPillsHtml(room, items, categoryKey) {
                 const safeRoomId = String(room.id).replace(/'/g, "\'");
-                const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+                const isEventCol = categoryKey === 'event';
 
-                let darajahHtml = '';
-                if (allocations.length === 0) {
-                    darajahHtml = '<span class="text-xs text-gray-400 italic">Unallocated</span>';
+                let pillsHtml = '';
+                if (items.length === 0) {
+                    pillsHtml = `<span class="text-[11px] text-gray-400 italic block mb-1">${isEventCol ? 'No events' : 'Unallocated'}</span>`;
                 } else {
-                    darajahHtml = `<div class="flex flex-wrap gap-1.5">` + allocations.map(alloc => {
+                    pillsHtml = `<div class="flex flex-wrap gap-1.5 mb-1.5">` + items.map(alloc => {
                         const safeAllocId = String(alloc.id).replace(/'/g, "\'");
                         const allocRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
                         const isAllocInRaihaan = allocRaihaanDays.size > 0;
@@ -6593,24 +6723,34 @@ window.renderSocieties = function() {
                             ? `<span class="bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1" title="Currently in Raihaan (${Array.from(allocRaihaanDays).join(', ')} periods open)">In Raihaan</span>`
                             : '';
                         const editDeleteBtns = canEditDarajah ? `
-                            <div class="flex items-center space-x-1 pl-1.5 border-l border-emerald-200">
+                            <div class="flex items-center space-x-1 pl-1.5 border-l ${isEventCol ? 'border-amber-200' : 'border-emerald-200'}">
                                 <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-0.5" title="Edit Timetable">
                                     <i class="fa-solid fa-pen-to-square text-[11px]"></i>
                                 </button>
-                                <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-500 hover:text-red-700 px-0.5" title="Remove Allocation">
+                                <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-500 hover:text-red-700 px-0.5" title="Remove">
                                     <i class="fa-solid fa-xmark text-xs"></i>
                                 </button>
                             </div>
                         ` : '';
+                        const boxTheme = isEventCol
+                            ? 'bg-amber-50/80 hover:bg-amber-100/80 border-amber-200'
+                            : 'bg-emerald-50/80 hover:bg-emerald-100/80 border-emerald-200';
+                        const textTheme = isEventCol
+                            ? 'text-amber-950 hover:text-amber-800'
+                            : 'text-emerald-950 hover:text-emerald-700';
+                        const iconTheme = isEventCol
+                            ? 'fa-calendar-day text-amber-600'
+                            : 'fa-table-cells text-emerald-600';
+
                         return `
-                            <div class="inline-flex items-center justify-between gap-2 bg-emerald-50/80 hover:bg-emerald-100/80 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-xs transition shadow-sm">
+                            <div class="inline-flex items-center justify-between gap-1.5 ${boxTheme} border rounded-lg px-2 py-1 text-xs transition shadow-sm">
                                 <button
                                     type="button"
                                     onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')"
-                                    class="font-bold text-emerald-950 hover:text-emerald-700 hover:underline text-left flex items-center space-x-1.5"
-                                    title="Click to view full timetable for ${alloc.standardEventName}"
+                                    class="font-bold ${textTheme} hover:underline text-left flex items-center space-x-1"
+                                    title="Click to view timetable for ${alloc.standardEventName}"
                                 >
-                                    <i class="fa-solid fa-table-cells text-emerald-600 text-[11px]"></i>
+                                    <i class="fa-solid ${iconTheme} text-[10px]"></i>
                                     <span>${alloc.standardEventName}</span>
                                     ${raihaanBadgeHtml}
                                 </button>
@@ -6619,6 +6759,29 @@ window.renderSocieties = function() {
                         `;
                     }).join('') + `</div>`;
                 }
+
+                const addBtnHtml = canEditDarajah
+                    ? `<button
+                        type="button"
+                        onclick="openClassroomScheduleModal('${safeRoomId}', '', '${categoryKey}')"
+                        class="inline-flex items-center space-x-1 text-[11px] font-bold px-2 py-1 rounded ${isEventCol ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300'} transition shadow-sm"
+                    >
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>${isEventCol ? 'Add Event' : 'Add Class'}</span>
+                    </button>`
+                    : '';
+
+                return `<div class="flex flex-col items-start">${pillsHtml}${addBtnHtml}</div>`;
+            }
+
+            function buildClassroomRowHtml(room, accentColor) {
+                const safeRoomId = String(room.id).replace(/'/g, "\'");
+                const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+                const allocatedClassesList = allocations.filter(a => (a.allocationType || 'class') === 'class');
+                const otherEventsList = allocations.filter(a => a.allocationType === 'event');
+
+                const allocatedClassesCellHtml = buildAllocationPillsHtml(room, allocatedClassesList, 'class');
+                const otherEventsCellHtml = buildAllocationPillsHtml(room, otherEventsList, 'event');
 
                 // Student Count Column Cell
                 const hasStudentCount = room.studentCount !== undefined && room.studentCount !== null && room.studentCount !== '';
@@ -6644,20 +6807,21 @@ window.renderSocieties = function() {
                     </button>`
                     : `<span class="block text-[10px] text-gray-400 italic mt-0.5">View Only</span>`;
 
-                // Action Column Cell (Add Std / Event button governed by darajah-event permission; Classroom Edit/Delete strictly Admin only)
-                const addStdEventBtnHtml = canEditDarajah
-                    ? `<button
+                // Last Column: Integrated Timetable button before Admin Edit & Delete options
+                const integratedTimetableBtnHtml = `
+                    <button
                         type="button"
-                        onclick="openClassroomScheduleModal('${safeRoomId}')"
-                        class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm"
+                        onclick="openIntegratedClassroomTimetableModal('${safeRoomId}')"
+                        class="bg-teal-700 hover:bg-teal-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm whitespace-nowrap"
+                        title="View Full Integrated Classroom Timetable"
                     >
-                        <i class="fa-solid fa-calendar-plus"></i>
-                        <span>Add Std / Event</span>
-                    </button>`
-                    : `<span class="text-[11px] text-gray-400 italic">View Only</span>`;
+                        <i class="fa-solid fa-table-cells"></i>
+                        <span>Integrated TT</span>
+                    </button>
+                `;
 
                 const adminRoomControlsHtml = isUserAdmin
-                    ? `<div class="flex items-center space-x-1">
+                    ? `<div class="flex items-center space-x-1 pt-0.5">
                         <button type="button" onclick="openEditClassroomModal('${safeRoomId}')" class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Edit Classroom">
                             <i class="fa-solid fa-pen-to-square text-xs"></i>
                         </button>
@@ -6667,48 +6831,46 @@ window.renderSocieties = function() {
                     </div>`
                     : '';
 
-                const adminAllocatedCheckboxHtml = isUserAdmin
-                    ? `<label class="inline-flex items-center space-x-1 text-[10px] font-semibold ${room.isAllocated ? 'text-teal-900 bg-teal-50 border-teal-300' : 'text-gray-600 bg-gray-50 border-gray-200'} border px-1.5 py-0.5 rounded cursor-pointer hover:bg-teal-50 transition select-none mt-1" title="Mark as Allocated Standard Class">
-                        <input type="checkbox" ${room.isAllocated ? 'checked' : ''} onchange="toggleClassroomStandardAllocated('${safeRoomId}', this.checked)" class="h-3 w-3 rounded text-teal-600 focus:ring-teal-500 cursor-pointer">
-                        <span>Allocated</span>
-                    </label>`
-                    : '';
-
                 const roomInRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
-                const roomRaihaanPill = roomInRaihaan
+                const isAutoAllocated = allocatedClassesList.length > 0;
+                const statusPillHtml = roomInRaihaan
                     ? `<span class="mt-1 text-[9px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.5 rounded" title="Temporarily Vacant during Raihaan period">Raihaan Vacant</span>`
-                    : '';
+                    : (isAutoAllocated
+                        ? `<span class="mt-1 text-[9px] font-extrabold bg-teal-50 text-teal-800 border border-teal-300 px-1.5 py-0.5 rounded">Allocated</span>`
+                        : `<span class="mt-1 text-[9px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">Vacant</span>`);
 
                 return `
                     <tr class="hover:bg-gray-50 border-b align-top">
-                        <td class="py-2.5 px-2 w-24 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-2 w-20 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 <span class="font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'}">${room.classroomNumber}</span>
-                                ${adminAllocatedCheckboxHtml}
-                                ${roomRaihaanPill}
+                                ${statusPillHtml}
                             </div>
                         </td>
-                        <td class="py-2.5 px-2.5 text-gray-700 font-medium text-xs leading-snug">
+                        <td class="py-2.5 px-2 text-gray-700 font-medium text-xs leading-snug">
                             ${room.location}
                         </td>
-                        <td class="py-2.5 px-2.5">
-                            ${darajahHtml}
+                        <td class="py-2.5 px-2">
+                            ${allocatedClassesCellHtml}
                         </td>
-                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-2">
+                            ${otherEventsCellHtml}
+                        </td>
+                        <td class="py-2.5 px-1.5 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 ${studentCountDisplay}
                                 ${studentCountBtn}
                             </div>
                         </td>
-                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-1.5 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 ${extraChairDisplay}
                                 ${extraChairBtn}
                             </div>
                         </td>
-                        <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center gap-1">
-                                ${addStdEventBtnHtml}
+                                ${integratedTimetableBtnHtml}
                                 ${adminRoomControlsHtml}
                             </div>
                         </td>
@@ -6717,16 +6879,201 @@ window.renderSocieties = function() {
             }
 
             if (maleRooms.length === 0) {
-                maleTbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-400 text-xs italic">No Male classrooms registered yet.</td></tr>';
+                maleTbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400 text-xs italic">No Male classrooms registered yet.</td></tr>';
             } else {
                 maleTbody.innerHTML = maleRooms.map(r => buildClassroomRowHtml(r, 'blue')).join('');
             }
 
             if (femaleRooms.length === 0) {
-                femaleTbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-400 text-xs italic">No Female classrooms registered yet.</td></tr>';
+                femaleTbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400 text-xs italic">No Female classrooms registered yet.</td></tr>';
             } else {
                 femaleTbody.innerHTML = femaleRooms.map(r => buildClassroomRowHtml(r, 'pink')).join('');
             }
+        };
+
+        // Integrated Classroom Timetable Modal: Shows full timetable with Allocated Class or Other Event name written on each period box
+        window.openIntegratedClassroomTimetableModal = function(classroomId) {
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room) return;
+
+            const todayStr = getLocalTodayDateString();
+            document.getElementById('integratedTimetableModalTitle').innerText = `Integrated Timetable — Classroom ${room.classroomNumber} (${room.type})`;
+            document.getElementById('integratedTimetableModalSubtitle').innerText = `Location: ${room.location} • Full weekly schedule across all Allocated Classes & Other Events`;
+
+            const thead = document.getElementById('integratedTimetableGridHead');
+            const tbody = document.getElementById('integratedTimetableGridBody');
+            const badgesContainer = document.getElementById('integratedTimetableSummaryBadges');
+            if (!thead || !tbody) return;
+
+            // Build slot lookup across all allocations in this classroom
+            const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+            const slotOccupantMap = {};
+            const raihaanOpenMap = {};
+
+            if (badgesContainer) {
+                if (allocations.length === 0) {
+                    badgesContainer.innerHTML = '<span class="text-xs text-gray-400 italic">No classes or events allocated yet</span>';
+                } else {
+                    badgesContainer.innerHTML = allocations.map(a => {
+                        const isEv = a.allocationType === 'event';
+                        return `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold border ${isEv ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-emerald-100 text-emerald-900 border-emerald-300'}">${a.standardEventName} (${isEv ? 'Event' : 'Class'})</span>`;
+                    }).join('');
+                }
+            }
+
+            allocations.forEach(alloc => {
+                if (!alloc) return;
+                const isEvent = alloc.allocationType === 'event';
+                const activeRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
+                const slots = Array.isArray(alloc.slots) ? alloc.slots : [];
+                const timings = (alloc.customTimings && typeof alloc.customTimings === 'object') ? alloc.customTimings : {};
+
+                slots.forEach(rawSlot => {
+                    let s = rawSlot === 'Sat_PT' ? 'Sat_P1' : rawSlot;
+                    if (typeof s === 'string' && s.endsWith('_P11')) s = s.replace(/_P11$/, '_EX1');
+                    const dayKey = String(s).split('_')[0];
+
+                    // Skip expired temporary Raihaan event bookings so original class supersedes
+                    if (alloc.raihaanTemporarySlots && alloc.raihaanTemporarySlots[s]) {
+                        const raiId = alloc.raihaanTemporarySlots[s];
+                        const raiRec = raihaanData.find(r => String(r.id) === String(raiId));
+                        if (!raiRec || !isRaihaanRecordActiveNow(raiRec, todayStr)) {
+                            return;
+                        }
+                    }
+
+                    if (activeRaihaanDays.has(dayKey)) {
+                        raihaanOpenMap[s] = {
+                            name: alloc.standardEventName || 'Class',
+                            customTime: timings[s] || ''
+                        };
+                        return;
+                    }
+
+                    // Allocated Class ('class') takes precedence or first active booking occupies the slot
+                    if (!slotOccupantMap[s] || !isEvent) {
+                        slotOccupantMap[s] = {
+                            name: alloc.standardEventName || 'Allocated',
+                            isEvent,
+                            customTime: timings[s] || ''
+                        };
+                    }
+                });
+            });
+
+            // Header Row 1: Period Names + Day column on right
+            let headRow1 = '<tr class="bg-gray-100 text-gray-900 font-bold">';
+            TIMETABLE_COLUMNS.forEach(col => {
+                headRow1 += `
+                    <th class="p-2">
+                        <div class="text-xs">${col.label}</div>
+                        ${col.saturdayOnly ? '<div class="text-[9px] text-amber-800 font-semibold">(Sat Only)</div>' : ''}
+                        ${col.isExtra ? '<div class="text-[9px] text-teal-700 font-semibold">(Custom Time)</div>' : ''}
+                    </th>
+                `;
+            });
+            headRow1 += '<th class="p-2 bg-emerald-900 text-white w-32">Day</th></tr>';
+
+            // Header Row 2: Standard Timings (Mon - Fri)
+            let headRow2 = '<tr class="bg-gray-50 text-gray-700 font-semibold text-[11px]">';
+            TIMETABLE_COLUMNS.forEach(col => {
+                if (col.isExtra) {
+                    headRow2 += `<th class="py-1.5 px-1 text-[10px] text-teal-800 bg-teal-50/50 font-semibold">Dynamic Time</th>`;
+                } else {
+                    headRow2 += `<th class="py-1.5 px-1 font-mono ${col.saturdayOnly ? 'text-gray-300 bg-gray-100/60' : ''}">${col.stdTime}</th>`;
+                }
+            });
+            headRow2 += '<th class="py-1.5 px-2 bg-emerald-800 text-emerald-100 font-bold">Time</th></tr>';
+
+            thead.innerHTML = headRow1 + headRow2;
+
+            let bodyHtml = '';
+            TIMETABLE_DAYS.forEach(day => {
+                if (day.isSaturday) {
+                    bodyHtml += '<tr class="bg-amber-50/90 text-gray-800 font-semibold text-[11px] border-t-2 border-gray-800">';
+                    TIMETABLE_COLUMNS.forEach(col => {
+                        if (col.isExtra) {
+                            bodyHtml += `<td class="py-1 px-1 text-[10px] text-teal-800 bg-amber-50/60 font-semibold">Dynamic Time</td>`;
+                        } else {
+                            bodyHtml += `<td class="py-1 px-1 font-mono ${col.satTime === '00:00 - 00:00' ? 'text-gray-400' : 'text-amber-900 font-bold'}">${col.satTime}</td>`;
+                        }
+                    });
+                    bodyHtml += '<td class="py-1 px-2 bg-amber-100 text-amber-950 font-bold">Time</td></tr>';
+                }
+
+                bodyHtml += `<tr class="hover:bg-gray-50/60 transition">`;
+                TIMETABLE_COLUMNS.forEach(col => {
+                    const slotId = `${day.key}_${col.key}`;
+
+                    if (col.saturdayOnly && !day.isSaturday) {
+                        bodyHtml += `
+                            <td class="p-2 align-middle bg-gray-100/70 text-gray-300 select-none">
+                                <span class="text-xs font-mono">&mdash;</span>
+                            </td>
+                        `;
+                        return;
+                    }
+
+                    const occ = slotOccupantMap[slotId];
+                    const raiOpen = raihaanOpenMap[slotId];
+
+                    if (occ) {
+                        const cellBg = occ.isEvent ? 'bg-amber-50/90 border-amber-300' : 'bg-emerald-50/90 border-emerald-300';
+                        const badgeStyle = occ.isEvent
+                            ? 'bg-amber-100 text-amber-950 border-amber-400'
+                            : 'bg-emerald-100 text-emerald-950 border-emerald-400';
+                        const customTimeHtml = (col.isExtra && occ.customTime)
+                            ? `<span class="block text-[9px] font-mono text-teal-900 bg-white px-1 rounded mt-0.5 border border-teal-200">${occ.customTime}</span>`
+                            : '';
+                        const raiSubNote = raiOpen
+                            ? `<span class="block text-[8px] text-purple-700 mt-0.5">(${raiOpen.name} in Raihaan)</span>`
+                            : '';
+
+                        bodyHtml += `
+                            <td class="p-1.5 align-middle ${cellBg}">
+                                <div class="flex flex-col items-center justify-center py-1 px-1 rounded text-center">
+                                    <span class="text-[10px] font-extrabold ${badgeStyle} border px-1.5 py-0.5 rounded leading-tight break-words max-w-[100px] shadow-sm">
+                                        ${occ.name}
+                                    </span>
+                                    ${customTimeHtml}
+                                    ${raiSubNote}
+                                    <span class="text-[9px] text-gray-500 mt-0.5 font-mono">${col.shortLabel}</span>
+                                </div>
+                            </td>
+                        `;
+                    } else if (raiOpen) {
+                        bodyHtml += `
+                            <td class="p-1.5 align-middle bg-purple-50/70">
+                                <div class="flex flex-col items-center justify-center py-1 px-1 rounded text-center">
+                                    <span class="text-[10px] font-bold text-purple-900 bg-purple-100 border border-purple-300 px-1.5 py-0.5 rounded leading-tight break-words max-w-[100px]">
+                                        Vacant (Raihaan: ${raiOpen.name})
+                                    </span>
+                                    <span class="text-[9px] text-purple-500 mt-0.5 font-mono">${col.shortLabel}</span>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        bodyHtml += `
+                            <td class="p-1.5 align-middle bg-white text-gray-300">
+                                <div class="flex flex-col items-center justify-center py-2">
+                                    <span class="text-[10px] font-mono text-gray-400">${col.shortLabel}</span>
+                                    <span class="text-[9px] text-gray-300 italic">Free</span>
+                                </div>
+                            </td>
+                        `;
+                    }
+                });
+
+                bodyHtml += `
+                    <td class="p-2.5 bg-gray-50 font-bold text-gray-900 select-none">
+                        <div class="text-base leading-tight" dir="rtl">${day.arLabel}</div>
+                        <div class="text-[10px] text-gray-500 font-normal mt-0.5">${day.enLabel}</div>
+                    </td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = bodyHtml;
+            document.getElementById('modalIntegratedClassroomTimetable').classList.remove('hidden');
         };
 
         // =========================================================================

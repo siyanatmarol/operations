@@ -785,24 +785,39 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:gap-5 items-start">
                 <!-- Male Classes Table -->
                 <div class="bg-white rounded-lg shadow border overflow-hidden">
-                    <div class="bg-blue-900 text-white px-4 py-3 flex justify-between items-center">
-                        <h3 class="font-bold text-base flex items-center space-x-2">
-                            <i class="fa-solid fa-person text-blue-300"></i>
-                            <span>Male Classes</span>
-                        </h3>
-                        <span id="maleClassesBadgeCount" class="bg-blue-800 text-blue-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs sm:text-sm table-auto">
-                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
-                                <tr>
-                                    <th class="py-2.5 px-2 w-20 text-center leading-tight">Class<br>No.</th>
-                                    <th class="py-2.5 px-2 w-28">Location</th>
-                                    <th class="py-2.5 px-2">Allocated Class</th>
-                                    <th class="py-2.5 px-2">Other Events</th>
-                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Student<br>Count</th>
-                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Extra<br>Chair</th>
-                                    <th class="py-2.5 px-2 w-28 text-center leading-tight">Integrated<br>Timetable / Action</th>
+                    <div class="max-h-[75vh] overflow-y-auto overflow-x-auto relative">
+                        <table class="w-full text-left text-xs sm:text-sm table-auto border-collapse">
+                            <thead class="sticky top-0 z-20 shadow-sm">
+                                <!-- Frozen Line 1: Male Classes Title Bar + All Male Classes Timetable Button -->
+                                <tr class="bg-blue-900 text-white">
+                                    <th colspan="7" class="px-3.5 py-2.5 normal-case font-normal">
+                                        <div class="flex flex-wrap justify-between items-center gap-2">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fa-solid fa-person text-blue-300 text-base"></i>
+                                                <span class="font-bold text-base tracking-normal">Male Classes</span>
+                                                <span id="maleClassesBadgeCount" class="bg-blue-800 text-blue-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onclick="openAllClassesTimetableModal('Male')"
+                                                class="bg-white hover:bg-blue-50 text-blue-950 text-xs font-extrabold px-3 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1.5 border border-blue-200 whitespace-nowrap"
+                                                title="View & Download All Male Classes Timetables"
+                                            >
+                                                <i class="fa-solid fa-calendar-days text-blue-700"></i>
+                                                <span>All Male Classes Timetable</span>
+                                            </button>
+                                        </div>
+                                    </th>
+                                </tr>
+                                <!-- Frozen Line 2: Column Headers -->
+                                <tr class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px]">
+                                    <th class="py-2.5 px-1.5 w-16 text-center leading-tight bg-gray-100">Class<br>No.</th>
+                                    <th class="py-2.5 px-1.5 w-20 max-w-[85px] bg-gray-100">Location</th>
+                                    <th class="py-2.5 px-2.5 min-w-[185px] w-[35%] bg-gray-100">Allocated Class</th>
+                                    <th class="py-2.5 px-1.5 w-24 max-w-[115px] bg-gray-100">Other Events</th>
+                                    <th class="py-2.5 px-1 w-16 text-center leading-tight bg-gray-100">Student<br>Count</th>
+                                    <th class="py-2.5 px-1 w-16 text-center leading-tight bg-gray-100">Extra<br>Chair</th>
+                                    <th class="py-2.5 px-1.5 w-24 text-center leading-tight bg-gray-100">Integrated<br>Timetable / Action</th>
                                 </tr>
                             </thead>
                             <tbody id="maleClassroomsTableBody" class="divide-y"></tbody>
@@ -812,24 +827,39 @@
 
                 <!-- Female Classes Table -->
                 <div class="bg-white rounded-lg shadow border overflow-hidden">
-                    <div class="bg-pink-900 text-white px-4 py-3 flex justify-between items-center">
-                        <h3 class="font-bold text-base flex items-center space-x-2">
-                            <i class="fa-solid fa-person-dress text-pink-300"></i>
-                            <span>Female Classes</span>
-                        </h3>
-                        <span id="femaleClassesBadgeCount" class="bg-pink-800 text-pink-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs sm:text-sm table-auto">
-                            <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
-                                <tr>
-                                    <th class="py-2.5 px-2 w-20 text-center leading-tight">Class<br>No.</th>
-                                    <th class="py-2.5 px-2 w-28">Location</th>
-                                    <th class="py-2.5 px-2">Allocated Class</th>
-                                    <th class="py-2.5 px-2">Other Events</th>
-                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Student<br>Count</th>
-                                    <th class="py-2.5 px-1.5 w-20 text-center leading-tight">Extra<br>Chair</th>
-                                    <th class="py-2.5 px-2 w-28 text-center leading-tight">Integrated<br>Timetable / Action</th>
+                    <div class="max-h-[75vh] overflow-y-auto overflow-x-auto relative">
+                        <table class="w-full text-left text-xs sm:text-sm table-auto border-collapse">
+                            <thead class="sticky top-0 z-20 shadow-sm">
+                                <!-- Frozen Line 1: Female Classes Title Bar + All Female Classes Timetable Button -->
+                                <tr class="bg-pink-900 text-white">
+                                    <th colspan="7" class="px-3.5 py-2.5 normal-case font-normal">
+                                        <div class="flex flex-wrap justify-between items-center gap-2">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fa-solid fa-person-dress text-pink-300 text-base"></i>
+                                                <span class="font-bold text-base tracking-normal">Female Classes</span>
+                                                <span id="femaleClassesBadgeCount" class="bg-pink-800 text-pink-100 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Rooms</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onclick="openAllClassesTimetableModal('Female')"
+                                                class="bg-white hover:bg-pink-50 text-pink-950 text-xs font-extrabold px-3 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1.5 border border-pink-200 whitespace-nowrap"
+                                                title="View & Download All Female Classes Timetables"
+                                            >
+                                                <i class="fa-solid fa-calendar-days text-pink-700"></i>
+                                                <span>All Female Classes Timetable</span>
+                                            </button>
+                                        </div>
+                                    </th>
+                                </tr>
+                                <!-- Frozen Line 2: Column Headers -->
+                                <tr class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px]">
+                                    <th class="py-2.5 px-1.5 w-16 text-center leading-tight bg-gray-100">Class<br>No.</th>
+                                    <th class="py-2.5 px-1.5 w-20 max-w-[85px] bg-gray-100">Location</th>
+                                    <th class="py-2.5 px-2.5 min-w-[185px] w-[35%] bg-gray-100">Allocated Class</th>
+                                    <th class="py-2.5 px-1.5 w-24 max-w-[115px] bg-gray-100">Other Events</th>
+                                    <th class="py-2.5 px-1 w-16 text-center leading-tight bg-gray-100">Student<br>Count</th>
+                                    <th class="py-2.5 px-1 w-16 text-center leading-tight bg-gray-100">Extra<br>Chair</th>
+                                    <th class="py-2.5 px-1.5 w-24 text-center leading-tight bg-gray-100">Integrated<br>Timetable / Action</th>
                                 </tr>
                             </thead>
                             <tbody id="femaleClassroomsTableBody" class="divide-y"></tbody>
@@ -2097,6 +2127,59 @@
 
             <div class="flex justify-end pt-3 border-t">
                 <button type="button" onclick="closeModal('modalIntegratedClassroomTimetable')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-sm font-bold transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: All Male / Female Classes Joined Timetable Popup -->
+    <div id="modalAllClassesTimetable" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full p-5 sm:p-6 space-y-4 max-h-[94vh] flex flex-col">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-3">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center space-x-2">
+                        <i id="allClassesTimetableModalIcon" class="fa-solid fa-calendar-days text-blue-800"></i>
+                        <span id="allClassesTimetableModalTitle">All Male Classes Timetable</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5" id="allClassesTimetableModalSubtitle">Joined weekly timetables ordered by Allocated Class (Std 1 A, Std 1 B, Std 2... Std 10, Std 11, followed by Vacant classrooms).</p>
+                </div>
+                <div class="flex items-center space-x-2.5 self-end sm:self-auto">
+                    <button
+                        type="button"
+                        id="btnDownloadAllClassesTimetablePdf"
+                        onclick="downloadAllClassesTimetablePdf()"
+                        class="bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-extrabold px-4 py-2 rounded-lg shadow transition inline-flex items-center space-x-1.5 whitespace-nowrap"
+                    >
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Download PDF</span>
+                    </button>
+                    <button type="button" onclick="closeModal('modalAllClassesTimetable')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold px-1">&times;</button>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-3.5 py-2 rounded-lg border text-xs">
+                <div class="flex flex-wrap items-center gap-3 font-bold">
+                    <span class="inline-flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-emerald-100 border border-emerald-400 inline-block"></span>
+                        <span class="text-emerald-950">Allocated Class</span>
+                    </span>
+                    <span class="inline-flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-amber-100 border border-amber-400 inline-block"></span>
+                        <span class="text-amber-950">Other Event</span>
+                    </span>
+                    <span class="inline-flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-purple-100 border border-purple-400 inline-block"></span>
+                        <span class="text-purple-950">In Raihaan (Vacant Slot)</span>
+                    </span>
+                </div>
+                <span id="allClassesTimetableCountBadge" class="text-xs font-extrabold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border">0 Classrooms</span>
+            </div>
+
+            <!-- Joined Timetables Scrollable Container -->
+            <div id="allClassesTimetableModalBody" class="flex-grow overflow-y-auto pr-1 space-y-6"></div>
+
+            <div class="flex justify-end pt-3 border-t">
+                <button type="button" onclick="closeModal('modalAllClassesTimetable')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-sm font-bold transition">Close</button>
             </div>
         </div>
     </div>
@@ -6134,9 +6217,7 @@ window.renderSocieties = function() {
 
         function getAllDarajahOptionsList() {
             const list = [];
-            const sortedRooms = [...classroomsData].sort((a, b) =>
-                String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' })
-            );
+            const sortedRooms = [...classroomsData].sort((a, b) => compareClassroomsByAllocatedClass(a, b));
             sortedRooms.forEach(room => {
                 (room.allocations || []).forEach(alloc => {
                     if (!alloc || !alloc.standardEventName) return;
@@ -6482,6 +6563,63 @@ window.renderSocieties = function() {
             showAssetToast("Deleted Raihaan record from archive");
         };
 
+        // Normalize class name for natural sorting (e.g. "Std 1 A", "Std 1 B", "Std 2 A", ..., "Std 9", "Std 10", "Std 11")
+        function normalizeAllocatedClassForSort(rawName) {
+            if (!rawName || typeof rawName !== 'string') return '';
+            return rawName
+                .trim()
+                .replace(/(\d+)([A-Za-z])/g, '$1 $2')
+                .replace(/([A-Za-z])(\d+)/g, '$1 $2')
+                .replace(/\s+/g, ' ');
+        }
+
+        function getClassroomSortedAllocatedClassNames(room) {
+            if (!room || !Array.isArray(room.allocations)) return [];
+            return room.allocations
+                .filter(a => a && (a.allocationType || 'class') === 'class' && a.standardEventName && String(a.standardEventName).trim() !== '')
+                .map(a => String(a.standardEventName).trim())
+                .sort((x, y) =>
+                    normalizeAllocatedClassForSort(x).localeCompare(
+                        normalizeAllocatedClassForSort(y),
+                        undefined,
+                        { numeric: true, sensitivity: 'base' }
+                    )
+                );
+        }
+
+        // Sort by Allocated Class (Std 1 A -> Std 1 B -> Std 2 A ... -> Std 9 -> Std 10 -> Std 11) with Vacant classes at the end
+        function compareClassroomsByAllocatedClass(a, b) {
+            const aClasses = getClassroomSortedAllocatedClassNames(a);
+            const bClasses = getClassroomSortedAllocatedClassNames(b);
+            const aHasClass = aClasses.length > 0;
+            const bHasClass = bClasses.length > 0;
+
+            // Vacant classes (no Allocated Class) always go at the end
+            if (aHasClass !== bHasClass) {
+                return aHasClass ? -1 : 1;
+            }
+
+            if (aHasClass && bHasClass) {
+                const aNorm = normalizeAllocatedClassForSort(aClasses[0]);
+                const bNorm = normalizeAllocatedClassForSort(bClasses[0]);
+                const cmp = aNorm.localeCompare(bNorm, undefined, { numeric: true, sensitivity: 'base' });
+                if (cmp !== 0) return cmp;
+
+                // Secondary compare on full joined class names if multiple classes exist
+                const aFull = aClasses.map(normalizeAllocatedClassForSort).join(', ');
+                const bFull = bClasses.map(normalizeAllocatedClassForSort).join(', ');
+                const fullCmp = aFull.localeCompare(bFull, undefined, { numeric: true, sensitivity: 'base' });
+                if (fullCmp !== 0) return fullCmp;
+            }
+
+            // Tie-breaker: Classroom Number in natural numeric order
+            return String(a.classroomNumber || '').localeCompare(
+                String(b.classroomNumber || ''),
+                undefined,
+                { numeric: true, sensitivity: 'base' }
+            );
+        }
+
         window.exportClassroomsToExcel = function() {
             if (!isUserAdmin) {
                 showAssetToast("Admin Privileges Required: Only Administrators can export Classroom Allocation data.", true);
@@ -6497,7 +6635,7 @@ window.renderSocieties = function() {
                 if ((a.type || 'Male') !== (b.type || 'Male')) {
                     return (a.type || 'Male') === 'Male' ? -1 : 1;
                 }
-                return String(a.classroomNumber || '').localeCompare(String(b.classroomNumber || ''), undefined, { numeric: true, sensitivity: 'base' });
+                return compareClassroomsByAllocatedClass(a, b);
             });
 
             const chronologicalCols = [...TIMETABLE_COLUMNS].reverse();
@@ -6841,34 +6979,34 @@ window.renderSocieties = function() {
 
                 return `
                     <tr class="hover:bg-gray-50 border-b align-top">
-                        <td class="py-2.5 px-2 w-20 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-1.5 w-16 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 <span class="font-bold ${accentColor === 'pink' ? 'text-pink-900' : 'text-blue-900'}">${room.classroomNumber}</span>
                                 ${statusPillHtml}
                             </div>
                         </td>
-                        <td class="py-2.5 px-2 text-gray-700 font-medium text-xs leading-snug">
+                        <td class="py-2.5 px-1.5 w-20 max-w-[85px] break-words text-gray-700 font-medium text-[11px] leading-snug">
                             ${room.location}
                         </td>
-                        <td class="py-2.5 px-2">
+                        <td class="py-2.5 px-2.5 min-w-[185px] w-[35%]">
                             ${allocatedClassesCellHtml}
                         </td>
-                        <td class="py-2.5 px-2">
+                        <td class="py-2.5 px-1.5 w-24 max-w-[115px] break-words">
                             ${otherEventsCellHtml}
                         </td>
-                        <td class="py-2.5 px-1.5 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-1 w-16 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 ${studentCountDisplay}
                                 ${studentCountBtn}
                             </div>
                         </td>
-                        <td class="py-2.5 px-1.5 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-1 w-16 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center">
                                 ${extraChairDisplay}
                                 ${extraChairBtn}
                             </div>
                         </td>
-                        <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                        <td class="py-2.5 px-1.5 w-24 text-center whitespace-nowrap">
                             <div class="flex flex-col items-center justify-center gap-1">
                                 ${integratedTimetableBtnHtml}
                                 ${adminRoomControlsHtml}
@@ -7074,6 +7212,414 @@ window.renderSocieties = function() {
 
             tbody.innerHTML = bodyHtml;
             document.getElementById('modalIntegratedClassroomTimetable').classList.remove('hidden');
+        };
+
+        // Helper: Build slot occupant & Raihaan maps for a single classroom
+        function computeClassroomTimetableMaps(room, todayStr) {
+            const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+            const slotOccupantMap = {};
+            const raihaanOpenMap = {};
+
+            allocations.forEach(alloc => {
+                if (!alloc) return;
+                const isEvent = alloc.allocationType === 'event';
+                const activeRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
+                const slots = Array.isArray(alloc.slots) ? alloc.slots : [];
+                const timings = (alloc.customTimings && typeof alloc.customTimings === 'object') ? alloc.customTimings : {};
+
+                slots.forEach(rawSlot => {
+                    let s = rawSlot === 'Sat_PT' ? 'Sat_P1' : rawSlot;
+                    if (typeof s === 'string' && s.endsWith('_P11')) s = s.replace(/_P11$/, '_EX1');
+                    const dayKey = String(s).split('_')[0];
+
+                    if (alloc.raihaanTemporarySlots && alloc.raihaanTemporarySlots[s]) {
+                        const raiId = alloc.raihaanTemporarySlots[s];
+                        const raiRec = raihaanData.find(r => String(r.id) === String(raiId));
+                        if (!raiRec || !isRaihaanRecordActiveNow(raiRec, todayStr)) {
+                            return;
+                        }
+                    }
+
+                    if (activeRaihaanDays.has(dayKey)) {
+                        raihaanOpenMap[s] = {
+                            name: alloc.standardEventName || 'Class',
+                            customTime: timings[s] || ''
+                        };
+                        return;
+                    }
+
+                    if (!slotOccupantMap[s] || !isEvent) {
+                        slotOccupantMap[s] = {
+                            name: alloc.standardEventName || 'Allocated',
+                            isEvent,
+                            customTime: timings[s] || ''
+                        };
+                    }
+                });
+            });
+
+            return { slotOccupantMap, raihaanOpenMap };
+        }
+
+        // Helper: Build full HTML table for a single classroom's weekly timetable
+        function buildSingleClassroomTimetableTableHtml(room, todayStr) {
+            const { slotOccupantMap, raihaanOpenMap } = computeClassroomTimetableMaps(room, todayStr);
+
+            let headRow1 = '<tr class="bg-gray-100 text-gray-900 font-bold">';
+            TIMETABLE_COLUMNS.forEach(col => {
+                headRow1 += `
+                    <th class="p-1.5">
+                        <div class="text-[11px]">${col.label}</div>
+                        ${col.saturdayOnly ? '<div class="text-[9px] text-amber-800 font-semibold">(Sat Only)</div>' : ''}
+                        ${col.isExtra ? '<div class="text-[9px] text-teal-700 font-semibold">(Custom Time)</div>' : ''}
+                    </th>
+                `;
+            });
+            headRow1 += '<th class="p-1.5 bg-emerald-900 text-white w-28">Day</th></tr>';
+
+            let headRow2 = '<tr class="bg-gray-50 text-gray-700 font-semibold text-[10px]">';
+            TIMETABLE_COLUMNS.forEach(col => {
+                if (col.isExtra) {
+                    headRow2 += `<th class="py-1 px-1 text-[9px] text-teal-800 bg-teal-50/50 font-semibold">Dynamic Time</th>`;
+                } else {
+                    headRow2 += `<th class="py-1 px-1 font-mono ${col.saturdayOnly ? 'text-gray-300 bg-gray-100/60' : ''}">${col.stdTime}</th>`;
+                }
+            });
+            headRow2 += '<th class="py-1 px-1.5 bg-emerald-800 text-emerald-100 font-bold">Time</th></tr>';
+
+            let bodyHtml = '';
+            TIMETABLE_DAYS.forEach(day => {
+                if (day.isSaturday) {
+                    bodyHtml += '<tr class="bg-amber-50/90 text-gray-800 font-semibold text-[10px] border-t-2 border-gray-800">';
+                    TIMETABLE_COLUMNS.forEach(col => {
+                        if (col.isExtra) {
+                            bodyHtml += `<td class="py-1 px-1 text-[9px] text-teal-800 bg-amber-50/60 font-semibold">Dynamic Time</td>`;
+                        } else {
+                            bodyHtml += `<td class="py-1 px-1 font-mono ${col.satTime === '00:00 - 00:00' ? 'text-gray-400' : 'text-amber-900 font-bold'}">${col.satTime}</td>`;
+                        }
+                    });
+                    bodyHtml += '<td class="py-1 px-1.5 bg-amber-100 text-amber-950 font-bold">Time</td></tr>';
+                }
+
+                bodyHtml += `<tr class="hover:bg-gray-50/60 transition">`;
+                TIMETABLE_COLUMNS.forEach(col => {
+                    const slotId = `${day.key}_${col.key}`;
+
+                    if (col.saturdayOnly && !day.isSaturday) {
+                        bodyHtml += `
+                            <td class="p-1.5 align-middle bg-gray-100/70 text-gray-300 select-none">
+                                <span class="text-xs font-mono">&mdash;</span>
+                            </td>
+                        `;
+                        return;
+                    }
+
+                    const occ = slotOccupantMap[slotId];
+                    const raiOpen = raihaanOpenMap[slotId];
+
+                    if (occ) {
+                        const cellBg = occ.isEvent ? 'bg-amber-50/90 border-amber-300' : 'bg-emerald-50/90 border-emerald-300';
+                        const badgeStyle = occ.isEvent
+                            ? 'bg-amber-100 text-amber-950 border-amber-400'
+                            : 'bg-emerald-100 text-emerald-950 border-emerald-400';
+                        const customTimeHtml = (col.isExtra && occ.customTime)
+                            ? `<span class="block text-[9px] font-mono text-teal-900 bg-white px-1 rounded mt-0.5 border border-teal-200">${occ.customTime}</span>`
+                            : '';
+                        const raiSubNote = raiOpen
+                            ? `<span class="block text-[8px] text-purple-700 mt-0.5">(${raiOpen.name} in Raihaan)</span>`
+                            : '';
+
+                        bodyHtml += `
+                            <td class="p-1 align-middle ${cellBg}">
+                                <div class="flex flex-col items-center justify-center py-0.5 px-0.5 rounded text-center">
+                                    <span class="text-[10px] font-extrabold ${badgeStyle} border px-1.5 py-0.5 rounded leading-tight break-words max-w-[95px] shadow-sm">
+                                        ${occ.name}
+                                    </span>
+                                    ${customTimeHtml}
+                                    ${raiSubNote}
+                                    <span class="text-[8px] text-gray-500 mt-0.5 font-mono">${col.shortLabel}</span>
+                                </div>
+                            </td>
+                        `;
+                    } else if (raiOpen) {
+                        bodyHtml += `
+                            <td class="p-1 align-middle bg-purple-50/70">
+                                <div class="flex flex-col items-center justify-center py-0.5 px-0.5 rounded text-center">
+                                    <span class="text-[9px] font-bold text-purple-900 bg-purple-100 border border-purple-300 px-1 py-0.5 rounded leading-tight break-words max-w-[95px]">
+                                        Vacant (Raihaan: ${raiOpen.name})
+                                    </span>
+                                    <span class="text-[8px] text-purple-500 mt-0.5 font-mono">${col.shortLabel}</span>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        bodyHtml += `
+                            <td class="p-1 align-middle bg-white text-gray-300">
+                                <div class="flex flex-col items-center justify-center py-1.5">
+                                    <span class="text-[9px] font-mono text-gray-400">${col.shortLabel}</span>
+                                    <span class="text-[8px] text-gray-300 italic">Free</span>
+                                </div>
+                            </td>
+                        `;
+                    }
+                });
+
+                bodyHtml += `
+                    <td class="p-1.5 font-bold text-gray-900 ${day.isSaturday ? 'bg-amber-50/70' : 'bg-gray-50'} whitespace-nowrap">
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-xs">${day.label}</span>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            return `
+                <table class="w-full text-center text-xs border-collapse timetable-grid min-w-[920px]">
+                    <thead>${headRow1}${headRow2}</thead>
+                    <tbody>${bodyHtml}</tbody>
+                </table>
+            `;
+        }
+
+        let currentAllClassesTimetableGender = 'Male';
+
+        window.openAllClassesTimetableModal = function(genderType) {
+            const isFemale = genderType === 'Female';
+            currentAllClassesTimetableGender = isFemale ? 'Female' : 'Male';
+            const todayStr = getLocalTodayDateString();
+
+            const titleEl = document.getElementById('allClassesTimetableModalTitle');
+            const iconEl = document.getElementById('allClassesTimetableModalIcon');
+            const countBadgeEl = document.getElementById('allClassesTimetableCountBadge');
+            const bodyContainer = document.getElementById('allClassesTimetableModalBody');
+            if (!bodyContainer) return;
+
+            if (titleEl) {
+                titleEl.innerText = isFemale ? 'All Female Classes Timetable' : 'All Male Classes Timetable';
+            }
+            if (iconEl) {
+                iconEl.className = isFemale
+                    ? 'fa-solid fa-calendar-days text-pink-700'
+                    : 'fa-solid fa-calendar-days text-blue-800';
+            }
+
+            const genderRooms = classroomsData
+                .filter(r => isFemale ? r.type === 'Female' : r.type !== 'Female')
+                .sort((a, b) => compareClassroomsByAllocatedClass(a, b));
+
+            if (countBadgeEl) {
+                countBadgeEl.innerText = `${genderRooms.length} Classroom${genderRooms.length === 1 ? '' : 's'}`;
+            }
+
+            if (genderRooms.length === 0) {
+                bodyContainer.innerHTML = `<div class="p-8 text-center text-gray-400 italic text-sm">No ${currentAllClassesTimetableGender} classrooms registered yet.</div>`;
+            } else {
+                bodyContainer.innerHTML = genderRooms.map((room, idx) => {
+                    const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+                    const classAllocs = allocations.filter(a => (a.allocationType || 'class') === 'class');
+                    const eventAllocs = allocations.filter(a => a.allocationType === 'event');
+                    const inRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
+
+                    const classNamesStr = classAllocs.length > 0
+                        ? classAllocs.map(a => a.standardEventName).join(', ')
+                        : 'Vacant (Unallocated)';
+                    const eventNamesStr = eventAllocs.length > 0
+                        ? eventAllocs.map(a => a.standardEventName).join(', ')
+                        : 'None';
+
+                    const headerBg = isFemale ? 'bg-pink-900 text-white' : 'bg-blue-900 text-white';
+                    const subBadgeBg = isFemale ? 'bg-pink-800 text-pink-100 border-pink-700' : 'bg-blue-800 text-blue-100 border-blue-700';
+
+                    return `
+                        <div class="border-2 border-gray-800 rounded-xl overflow-hidden shadow-md bg-white">
+                            <div class="${headerBg} px-4 py-2.5 flex flex-wrap justify-between items-center gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="bg-white/20 text-white text-xs font-extrabold px-2 py-0.5 rounded">#${idx + 1}</span>
+                                    <span class="font-extrabold text-sm sm:text-base">Classroom: ${room.classroomNumber}</span>
+                                    <span class="text-xs px-2.5 py-0.5 rounded-full font-extrabold ${classAllocs.length > 0 ? 'bg-emerald-400 text-emerald-950' : 'bg-amber-300 text-amber-950'}">
+                                        Allocated Class: ${classNamesStr}
+                                    </span>
+                                    ${inRaihaan ? '<span class="bg-purple-300 text-purple-950 text-[11px] font-extrabold px-2 py-0.5 rounded-full">Currently in Raihaan</span>' : ''}
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                    <span class="${subBadgeBg} border px-2.5 py-0.5 rounded font-semibold">Location: ${room.location || '-'}</span>
+                                    <span class="${subBadgeBg} border px-2.5 py-0.5 rounded font-semibold">Other Events: ${eventNamesStr}</span>
+                                    <span class="${subBadgeBg} border px-2 py-0.5 rounded font-semibold">Students: ${room.studentCount ?? '-'}</span>
+                                    <span class="${subBadgeBg} border px-2 py-0.5 rounded font-semibold">Extra Chair: ${room.extraChair ?? '-'}</span>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                ${buildSingleClassroomTimetableTableHtml(room, todayStr)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('modalAllClassesTimetable').classList.remove('hidden');
+        };
+
+        window.downloadAllClassesTimetablePdf = function() {
+            const isFemale = currentAllClassesTimetableGender === 'Female';
+            const todayStr = getLocalTodayDateString();
+            const genderRooms = classroomsData
+                .filter(r => isFemale ? r.type === 'Female' : r.type !== 'Female')
+                .sort((a, b) => compareClassroomsByAllocatedClass(a, b));
+
+            if (genderRooms.length === 0) {
+                showAssetToast(`No ${currentAllClassesTimetableGender} classrooms available to download.`, true);
+                return;
+            }
+
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showAssetToast("PDF library is still loading. Please try again in a moment.", true);
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            // Main Document Title Header
+            const primaryColor = isFemale ? [131, 24, 67] : [30, 58, 138]; // pink-900 or blue-900
+            doc.setFillColor(...primaryColor);
+            doc.rect(10, 8, pageWidth - 20, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`All ${currentAllClassesTimetableGender} Classes Timetable (${genderRooms.length} Classrooms) — Generated: ${todayStr}`, 14, 14.5);
+
+            let currentY = 22;
+
+            const headRow1 = [
+                ...TIMETABLE_COLUMNS.map(col => col.shortLabel),
+                'Day'
+            ];
+            const headRow2 = [
+                ...TIMETABLE_COLUMNS.map(col => col.isExtra ? 'Custom' : col.stdTime),
+                'Mon-Fri Time'
+            ];
+
+            genderRooms.forEach((room, idx) => {
+                const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+                const classAllocs = allocations.filter(a => (a.allocationType || 'class') === 'class');
+                const eventAllocs = allocations.filter(a => a.allocationType === 'event');
+                const inRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
+
+                const classNamesStr = classAllocs.length > 0
+                    ? classAllocs.map(a => a.standardEventName).join(', ')
+                    : 'Vacant (Unallocated)';
+                const eventNamesStr = eventAllocs.length > 0
+                    ? eventAllocs.map(a => a.standardEventName).join(', ')
+                    : 'None';
+
+                // Check if enough vertical space remains on page for room banner + timetable (~58mm); if not, add page
+                if (currentY + 56 > pageHeight - 10) {
+                    doc.addPage();
+                    currentY = 12;
+                }
+
+                const { slotOccupantMap, raihaanOpenMap } = computeClassroomTimetableMaps(room, todayStr);
+
+                const bodyRows = [];
+                TIMETABLE_DAYS.forEach(day => {
+                    if (day.isSaturday) {
+                        bodyRows.push([
+                            ...TIMETABLE_COLUMNS.map(col => col.isExtra ? 'Custom' : col.satTime),
+                            'Sat Time'
+                        ]);
+                    }
+
+                    const rowCells = TIMETABLE_COLUMNS.map(col => {
+                        const slotId = `${day.key}_${col.key}`;
+                        if (col.saturdayOnly && !day.isSaturday) {
+                            return '—';
+                        }
+                        const occ = slotOccupantMap[slotId];
+                        const raiOpen = raihaanOpenMap[slotId];
+                        if (occ) {
+                            const tag = occ.isEvent ? `${occ.name} [Event]` : occ.name;
+                            const timeSuffix = (col.isExtra && occ.customTime) ? `\n(${occ.customTime})` : '';
+                            return `${tag}${timeSuffix}`;
+                        } else if (raiOpen) {
+                            return `Vacant\n(Raihaan: ${raiOpen.name})`;
+                        }
+                        return 'Free';
+                    });
+                    rowCells.push(day.label);
+                    bodyRows.push(rowCells);
+                });
+
+                const roomBannerText = `#${idx + 1} | Classroom: ${room.classroomNumber} | Allocated Class: ${classNamesStr} | Location: ${room.location || '-'} | Other Events: ${eventNamesStr} | Students: ${room.studentCount ?? '-'} | Extra Chair: ${room.extraChair ?? '-'}${inRaihaan ? ' | [Currently in Raihaan]' : ''}`;
+
+                doc.autoTable({
+                    startY: currentY,
+                    margin: { left: 10, right: 10 },
+                    head: [
+                        [{ content: roomBannerText, colSpan: 13, styles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5, halign: 'left' } }],
+                        headRow1,
+                        headRow2
+                    ],
+                    body: bodyRows,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 6.5,
+                        cellPadding: 1.2,
+                        halign: 'center',
+                        valign: 'middle',
+                        lineColor: [180, 180, 180],
+                        lineWidth: 0.15
+                    },
+                    headStyles: {
+                        fillColor: [243, 244, 246],
+                        textColor: [17, 24, 39],
+                        fontStyle: 'bold',
+                        fontSize: 6.5
+                    },
+                    didParseCell: function(data) {
+                        if (data.section === 'head' && data.row.index === 0) {
+                            data.cell.styles.fillColor = primaryColor;
+                            data.cell.styles.textColor = [255, 255, 255];
+                            data.cell.styles.fontSize = 8;
+                        }
+                        if (data.section === 'body') {
+                            const rawText = String(data.cell.raw || '');
+                            // Row 5 in body is Saturday timing header row
+                            if (data.row.index === 5) {
+                                data.cell.styles.fillColor = [254, 243, 199];
+                                data.cell.styles.textColor = [120, 53, 15];
+                                data.cell.styles.fontStyle = 'bold';
+                            } else if (data.column.index === 12) {
+                                data.cell.styles.fillColor = [243, 244, 246];
+                                data.cell.styles.fontStyle = 'bold';
+                            } else if (rawText !== 'Free' && rawText !== '—') {
+                                if (rawText.includes('[Event]')) {
+                                    data.cell.styles.fillColor = [254, 243, 199]; // amber-100
+                                    data.cell.styles.textColor = [120, 53, 15];
+                                    data.cell.styles.fontStyle = 'bold';
+                                } else if (rawText.startsWith('Vacant')) {
+                                    data.cell.styles.fillColor = [243, 232, 255]; // purple-100
+                                    data.cell.styles.textColor = [88, 28, 135];
+                                    data.cell.styles.fontStyle = 'bold';
+                                } else {
+                                    data.cell.styles.fillColor = [209, 250, 229]; // emerald-100
+                                    data.cell.styles.textColor = [6, 78, 59];
+                                    data.cell.styles.fontStyle = 'bold';
+                                }
+                            } else {
+                                data.cell.styles.textColor = [180, 180, 180];
+                            }
+                        }
+                    }
+                });
+
+                currentY = doc.lastAutoTable.finalY + 6;
+            });
+
+            const fileName = `All_${currentAllClassesTimetableGender}_Classes_Timetable_${todayStr}.pdf`;
+            doc.save(fileName);
+            showAssetToast(`Downloaded ${fileName}`);
         };
 
         // =========================================================================

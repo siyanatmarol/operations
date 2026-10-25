@@ -801,10 +801,10 @@
                                                 type="button"
                                                 onclick="openAllClassesTimetableModal('Male')"
                                                 class="bg-white hover:bg-blue-50 text-blue-950 text-xs font-extrabold px-3 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1.5 border border-blue-200 whitespace-nowrap"
-                                                title="View & Download All Male Classes Timetables"
+                                                title="View & Download Super Integrated Timetable - Male (Linked with active Overview Card filter)"
                                             >
                                                 <i class="fa-solid fa-calendar-days text-blue-700"></i>
-                                                <span>All Male Classes Timetable</span>
+                                                <span>Super Integrated Timetable - Male</span>
                                             </button>
                                         </div>
                                     </th>
@@ -843,10 +843,10 @@
                                                 type="button"
                                                 onclick="openAllClassesTimetableModal('Female')"
                                                 class="bg-white hover:bg-pink-50 text-pink-950 text-xs font-extrabold px-3 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1.5 border border-pink-200 whitespace-nowrap"
-                                                title="View & Download All Female Classes Timetables"
+                                                title="View & Download Super Integrated Timetable - Female (Linked with active Overview Card filter)"
                                             >
                                                 <i class="fa-solid fa-calendar-days text-pink-700"></i>
-                                                <span>All Female Classes Timetable</span>
+                                                <span>Super Integrated Timetable - Female</span>
                                             </button>
                                         </div>
                                     </th>
@@ -2138,7 +2138,7 @@
                 <div>
                     <h3 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center space-x-2">
                         <i id="allClassesTimetableModalIcon" class="fa-solid fa-calendar-days text-blue-800"></i>
-                        <span id="allClassesTimetableModalTitle">All Male Classes Timetable</span>
+                        <span id="allClassesTimetableModalTitle">Super Integrated Timetable - Male</span>
                     </h3>
                     <p class="text-xs text-gray-500 mt-0.5" id="allClassesTimetableModalSubtitle">Joined weekly timetables ordered by Allocated Class (Std 1 A, Std 1 B, Std 2... Std 10, Std 11, followed by Vacant classrooms).</p>
                 </div>
@@ -7381,19 +7381,52 @@ window.renderSocieties = function() {
 
         let currentAllClassesTimetableGender = 'Male';
 
+        function getSuperIntegratedFilterInfo(isFemale, todayStr) {
+            let filterLabel = 'All Classrooms';
+            let filterSlug = 'All';
+            if (selectedClassroomCardFilter === 'allocated') {
+                filterLabel = 'Allocated Classes';
+                filterSlug = 'Allocated';
+            } else if (selectedClassroomCardFilter === 'vacant') {
+                filterLabel = 'Vacant Classes';
+                filterSlug = 'Vacant';
+            } else if (selectedClassroomCardFilter === 'raihaan') {
+                filterLabel = 'Currently in Raihaan';
+                filterSlug = 'Raihaan';
+            }
+
+            const rooms = classroomsData
+                .filter(room => {
+                    if (isFemale ? room.type !== 'Female' : room.type === 'Female') return false;
+                    if (selectedClassroomCardFilter === 'allocated' && !isRoomEffectivelyAllocated(room, todayStr)) return false;
+                    if (selectedClassroomCardFilter === 'vacant' && !isRoomEffectivelyVacant(room, todayStr)) return false;
+                    if (selectedClassroomCardFilter === 'raihaan' && !isClassroomCurrentlyInRaihaan(room, todayStr)) return false;
+                    return true;
+                })
+                .sort((a, b) => compareClassroomsByAllocatedClass(a, b));
+
+            return { rooms, filterLabel, filterSlug };
+        }
+
         window.openAllClassesTimetableModal = function(genderType) {
             const isFemale = genderType === 'Female';
             currentAllClassesTimetableGender = isFemale ? 'Female' : 'Male';
             const todayStr = getLocalTodayDateString();
 
             const titleEl = document.getElementById('allClassesTimetableModalTitle');
+            const subtitleEl = document.getElementById('allClassesTimetableModalSubtitle');
             const iconEl = document.getElementById('allClassesTimetableModalIcon');
             const countBadgeEl = document.getElementById('allClassesTimetableCountBadge');
             const bodyContainer = document.getElementById('allClassesTimetableModalBody');
             if (!bodyContainer) return;
 
+            const { rooms: genderRooms, filterLabel } = getSuperIntegratedFilterInfo(isFemale, todayStr);
+
             if (titleEl) {
-                titleEl.innerText = isFemale ? 'All Female Classes Timetable' : 'All Male Classes Timetable';
+                titleEl.innerText = `Super Integrated Timetable - ${currentAllClassesTimetableGender} (${filterLabel})`;
+            }
+            if (subtitleEl) {
+                subtitleEl.innerText = `Showing ${filterLabel.toLowerCase()} for ${currentAllClassesTimetableGender} classrooms (linked with the selected Overview Card), ordered by Allocated Class.`;
             }
             if (iconEl) {
                 iconEl.className = isFemale
@@ -7401,16 +7434,12 @@ window.renderSocieties = function() {
                     : 'fa-solid fa-calendar-days text-blue-800';
             }
 
-            const genderRooms = classroomsData
-                .filter(r => isFemale ? r.type === 'Female' : r.type !== 'Female')
-                .sort((a, b) => compareClassroomsByAllocatedClass(a, b));
-
             if (countBadgeEl) {
-                countBadgeEl.innerText = `${genderRooms.length} Classroom${genderRooms.length === 1 ? '' : 's'}`;
+                countBadgeEl.innerText = `${filterLabel}: ${genderRooms.length} Classroom${genderRooms.length === 1 ? '' : 's'}`;
             }
 
             if (genderRooms.length === 0) {
-                bodyContainer.innerHTML = `<div class="p-8 text-center text-gray-400 italic text-sm">No ${currentAllClassesTimetableGender} classrooms registered yet.</div>`;
+                bodyContainer.innerHTML = `<div class="p-8 text-center text-gray-400 italic text-sm">No ${currentAllClassesTimetableGender} classrooms match the "${filterLabel}" card filter.</div>`;
             } else {
                 bodyContainer.innerHTML = genderRooms.map((room, idx) => {
                     const allocations = Array.isArray(room.allocations) ? room.allocations : [];
@@ -7460,12 +7489,10 @@ window.renderSocieties = function() {
         window.downloadAllClassesTimetablePdf = function() {
             const isFemale = currentAllClassesTimetableGender === 'Female';
             const todayStr = getLocalTodayDateString();
-            const genderRooms = classroomsData
-                .filter(r => isFemale ? r.type === 'Female' : r.type !== 'Female')
-                .sort((a, b) => compareClassroomsByAllocatedClass(a, b));
+            const { rooms: genderRooms, filterLabel, filterSlug } = getSuperIntegratedFilterInfo(isFemale, todayStr);
 
             if (genderRooms.length === 0) {
-                showAssetToast(`No ${currentAllClassesTimetableGender} classrooms available to download.`, true);
+                showAssetToast(`No ${currentAllClassesTimetableGender} classrooms (${filterLabel}) available to download.`, true);
                 return;
             }
 
@@ -7484,9 +7511,9 @@ window.renderSocieties = function() {
             doc.setFillColor(...primaryColor);
             doc.rect(10, 8, pageWidth - 20, 10, 'F');
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(12);
+            doc.setFontSize(11.5);
             doc.setFont('helvetica', 'bold');
-            doc.text(`All ${currentAllClassesTimetableGender} Classes Timetable (${genderRooms.length} Classrooms) — Generated: ${todayStr}`, 14, 14.5);
+            doc.text(`Super Integrated Timetable - ${currentAllClassesTimetableGender} (${filterLabel}: ${genderRooms.length} Classrooms) — Generated: ${todayStr}`, 14, 14.5);
 
             let currentY = 22;
 
@@ -7615,7 +7642,7 @@ window.renderSocieties = function() {
                 currentY = doc.lastAutoTable.finalY + 6;
             });
 
-            const fileName = `All_${currentAllClassesTimetableGender}_Classes_Timetable_${todayStr}.pdf`;
+            const fileName = `Super_Integrated_Timetable_${currentAllClassesTimetableGender}_${filterSlug}_${todayStr}.pdf`;
             doc.save(fileName);
             showAssetToast(`Downloaded ${fileName}`);
         };

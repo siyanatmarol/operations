@@ -742,15 +742,10 @@
                             <i class="fa-solid fa-calendar-day"></i>
                         </div>
                     </div>
-                    <div class="mt-2 pt-1.5 border-t border-gray-100 w-full space-y-1.5 text-[11px] font-bold">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200"><i class="fa-solid fa-person mr-1"></i>Male: <span id="cardVacantEventMaleCount">0</span></span>
-                            <span class="bg-pink-50 text-pink-800 px-2 py-0.5 rounded border border-pink-200"><i class="fa-solid fa-person-dress mr-1"></i>Female: <span id="cardVacantEventFemaleCount">0</span></span>
-                        </div>
-                        <div class="flex items-center justify-between bg-purple-50 text-purple-900 px-2 py-0.5 rounded border border-purple-200">
-                            <span><i class="fa-solid fa-plane-departure mr-1 text-purple-700"></i>Currently in Raihaan:</span>
-                            <span id="cardVacantRaihaanCount" class="font-extrabold">0</span>
-                        </div>
+                    <div class="flex flex-wrap xl:flex-nowrap items-center gap-1.5 mt-3 pt-2 border-t border-gray-100 w-full text-[10.5px] font-bold">
+                        <span class="bg-blue-50 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-person mr-0.5"></i>Male: <span id="cardVacantEventMaleCount">0</span></span>
+                        <span class="bg-pink-50 text-pink-800 px-1.5 py-0.5 rounded border border-pink-200 whitespace-nowrap"><i class="fa-solid fa-person-dress mr-0.5"></i>Female: <span id="cardVacantEventFemaleCount">0</span></span>
+                        <span class="bg-purple-50 text-purple-900 px-1.5 py-0.5 rounded border border-purple-200 whitespace-nowrap"><i class="fa-solid fa-plane-departure mr-1 text-purple-700"></i>Currently in Raihaan: <span id="cardVacantRaihaanCount" class="font-extrabold">0</span></span>
                     </div>
                 </button>
 
@@ -6075,6 +6070,14 @@ window.renderSocieties = function() {
             if (!room) return;
             if (!Array.isArray(room.allocations)) room.allocations = [];
 
+            if (!editAllocId && allocationCategory === 'class') {
+                const existingClass = room.allocations.find(a => (a.allocationType || 'class') === 'class');
+                if (existingClass) {
+                    showAssetToast(`Classroom ${room.classroomNumber} already has an Allocated Class (${existingClass.standardEventName}). Please edit or delete it instead.`, true);
+                    return;
+                }
+            }
+
             // Double-check no conflict with other allocations in the same classroom
             const bookedMap = getBookedSlotsMapForClassroom(room, editAllocId);
             const conflictSlot = selectedSlots.find(s => !!bookedMap[s]);
@@ -6851,7 +6854,7 @@ window.renderSocieties = function() {
                 if (items.length === 0) {
                     pillsHtml = `<span class="text-[11px] text-gray-400 italic block mb-1">${isEventCol ? 'No events' : 'Unallocated'}</span>`;
                 } else {
-                    pillsHtml = `<div class="flex flex-wrap gap-1.5 mb-1.5">` + items.map(alloc => {
+                    pillsHtml = `<div class="flex flex-wrap gap-1.5 ${isEventCol ? 'mb-1.5' : ''}">` + items.map(alloc => {
                         const safeAllocId = String(alloc.id).replace(/'/g, "\'");
                         const allocRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
                         const isAllocInRaihaan = allocRaihaanDays.size > 0;
@@ -6896,7 +6899,8 @@ window.renderSocieties = function() {
                     }).join('') + `</div>`;
                 }
 
-                const addBtnHtml = canEditDarajah
+                const showAddButton = canEditDarajah && (isEventCol || items.length === 0);
+                const addBtnHtml = showAddButton
                     ? `<button
                         type="button"
                         onclick="openClassroomScheduleModal('${safeRoomId}', '', '${categoryKey}')"

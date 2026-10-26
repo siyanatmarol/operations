@@ -1901,7 +1901,7 @@
 
     <!-- Modal: Add / Edit Student Count or Extra Chair -->
     <div id="modalClassroomMetric" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 max-h-[92vh] flex flex-col">
             <div class="flex justify-between items-center border-b pb-3">
                 <div>
                     <h3 class="text-lg font-bold text-gray-800" id="classroomMetricModalTitle">Update Classroom Count</h3>
@@ -1909,11 +1909,15 @@
                 </div>
                 <button type="button" onclick="closeModal('modalClassroomMetric')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
-            <form id="classroomMetricForm" onsubmit="saveClassroomMetricValue(event)" class="space-y-4">
+            <form id="classroomMetricForm" onsubmit="saveClassroomMetricValue(event)" class="space-y-4 overflow-y-auto pr-1">
                 <input type="hidden" id="metricClassroomId" value="">
                 <input type="hidden" id="metricFieldType" value="">
+                <input type="hidden" id="metricEditEntryId" value="">
                 <div>
-                    <label class="text-xs font-bold text-gray-700 uppercase block mb-1" id="classroomMetricInputLabel">Value *</label>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-bold text-gray-700 uppercase block" id="classroomMetricInputLabel">Value *</label>
+                        <button type="button" id="cancelEditExtraChairBtn" onclick="resetExtraChairFormInModal()" class="hidden text-[11px] text-blue-600 hover:underline font-bold">+ Add New Entry Instead</button>
+                    </div>
                     <input
                         type="number"
                         id="classroomMetricValueInput"
@@ -1923,9 +1927,46 @@
                         class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-base font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                     >
                 </div>
+
+                <!-- Extra Chair From Date & To Date Fields -->
+                <div id="extraChairDatesContainer" class="hidden space-y-3 bg-amber-50/80 p-3.5 rounded-xl border border-amber-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-bold text-amber-950 uppercase block mb-1">From Date <span class="text-red-600">*</span></label>
+                            <input
+                                type="date"
+                                id="extraChairFromDateInput"
+                                class="w-full p-2 border border-amber-300 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            >
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-amber-950 uppercase block mb-1">To Date <span class="text-red-600">*</span></label>
+                            <input
+                                type="date"
+                                id="extraChairToDateInput"
+                                class="w-full p-2 border border-amber-300 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            >
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-amber-800 leading-snug">
+                        <i class="fa-solid fa-clock-rotate-left mr-1"></i>After the <strong>To Date</strong> has passed, this quantity of chairs is automatically reduced from the classroom's total Extra Chair count.
+                    </p>
+                </div>
+
+                <p id="classroomMetricValidationError" class="hidden text-xs text-red-600 font-bold"></p>
+
+                <!-- Existing Extra Chair Entries List -->
+                <div id="extraChairExistingEntriesSection" class="hidden bg-gray-50 p-3 rounded-lg border space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Extra Chair Entries</span>
+                        <span id="extraChairModalTotalBadge" class="text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">Active Total: 0</span>
+                    </div>
+                    <div id="extraChairExistingEntriesList" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+                </div>
+
                 <div class="flex justify-end space-x-2 pt-2 border-t">
                     <button type="button" onclick="closeModal('modalClassroomMetric')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition shadow-sm">Save</button>
+                    <button type="submit" id="btnSaveClassroomMetric" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition shadow-sm">Save</button>
                 </div>
             </form>
         </div>
@@ -2854,6 +2895,32 @@
                     };
                 });
                 const hasAllocatedClass = allocations.some(a => (a.allocationType || 'class') === 'class');
+                let extraChairEntries = [];
+                if (item.extraChairEntries !== undefined) {
+                    const rawEntries = Array.isArray(item.extraChairEntries)
+                        ? item.extraChairEntries
+                        : (item.extraChairEntries && typeof item.extraChairEntries === 'object' ? Object.values(item.extraChairEntries) : []);
+                    extraChairEntries = rawEntries.filter(Boolean).map(ec => ({
+                        id: String(ec.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                        count: Math.max(0, Number(ec.count) || 0),
+                        fromDate: String(ec.fromDate || ''),
+                        toDate: String(ec.toDate || ''),
+                        createdAt: String(ec.createdAt || '')
+                    })).filter(ec => ec.count > 0);
+                } else if (item.extraChair !== undefined && item.extraChair !== null && item.extraChair !== '' && Number(item.extraChair) > 0) {
+                    extraChairEntries = [{
+                        id: 'ec_init_' + String(item.id || Date.now()),
+                        count: Math.max(0, Number(item.extraChair) || 0),
+                        fromDate: String(item.extraChairFromDate || ''),
+                        toDate: String(item.extraChairToDate || ''),
+                        createdAt: String(item.updatedAt || '')
+                    }];
+                }
+                const todayNow = new Date();
+                const todayIso = `${todayNow.getFullYear()}-${String(todayNow.getMonth() + 1).padStart(2, '0')}-${String(todayNow.getDate()).padStart(2, '0')}`;
+                const activeExtraChairSum = extraChairEntries
+                    .filter(ec => !ec.toDate || ec.toDate >= todayIso)
+                    .reduce((acc, ec) => acc + (Number(ec.count) || 0), 0);
                 return {
                     id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
                     classroomNumber: String(item.classroomNumber || item.number || ''),
@@ -2861,7 +2928,8 @@
                     type: item.type === 'Female' ? 'Female' : 'Male',
                     isAllocated: hasAllocatedClass,
                     studentCount: (item.studentCount !== undefined && item.studentCount !== null && item.studentCount !== '') ? Number(item.studentCount) : null,
-                    extraChair: (item.extraChair !== undefined && item.extraChair !== null && item.extraChair !== '') ? Number(item.extraChair) : null,
+                    extraChair: activeExtraChairSum > 0 ? activeExtraChairSum : null,
+                    extraChairEntries,
                     allocations,
                     updatedAt: item.updatedAt || ''
                 };
@@ -6600,6 +6668,26 @@ window.renderSocieties = function() {
             showAssetToast(`Deleted Classroom ${room.classroomNumber} (${room.type})`);
         };
 
+        // Helper: Compute active Extra Chair total for a classroom (reducing any entries whose To Date has passed)
+        function getEffectiveExtraChairTotal(room, todayStr = getLocalTodayDateString()) {
+            if (!room) return 0;
+            if (Array.isArray(room.extraChairEntries)) {
+                const activeSum = room.extraChairEntries
+                    .filter(ec => ec && (Number(ec.count) || 0) > 0 && (!ec.toDate || ec.toDate >= todayStr))
+                    .reduce((sum, ec) => sum + (Number(ec.count) || 0), 0);
+                room.extraChair = activeSum > 0 ? activeSum : null;
+                return activeSum;
+            }
+            return (room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '')
+                ? Math.max(0, Number(room.extraChair) || 0)
+                : 0;
+        }
+
+        function getActiveExtraChairEntries(room, todayStr = getLocalTodayDateString()) {
+            if (!room || !Array.isArray(room.extraChairEntries)) return [];
+            return room.extraChairEntries.filter(ec => ec && (Number(ec.count) || 0) > 0 && (!ec.toDate || ec.toDate >= todayStr));
+        }
+
         // Modal & Save Logic for Student Count and Extra Chair Columns
         window.openClassroomMetricModal = function(classroomId, fieldType) {
             const colPermKey = fieldType === 'studentCount' ? 'student-count' : 'extra-chair';
@@ -6612,21 +6700,180 @@ window.renderSocieties = function() {
 
             document.getElementById('metricClassroomId').value = String(room.id);
             document.getElementById('metricFieldType').value = fieldType;
+            document.getElementById('metricEditEntryId').value = '';
+            document.getElementById('classroomMetricValidationError')?.classList.add('hidden');
+            document.getElementById('cancelEditExtraChairBtn')?.classList.add('hidden');
 
             const isStudentCount = fieldType === 'studentCount';
-            const currentVal = isStudentCount ? room.studentCount : room.extraChair;
-            const hasVal = currentVal !== undefined && currentVal !== null && currentVal !== '';
+            const datesBox = document.getElementById('extraChairDatesContainer');
+            const entriesSection = document.getElementById('extraChairExistingEntriesSection');
+            const fromInput = document.getElementById('extraChairFromDateInput');
+            const toInput = document.getElementById('extraChairToDateInput');
+            const saveBtn = document.getElementById('btnSaveClassroomMetric');
 
-            document.getElementById('classroomMetricModalTitle').innerText = isStudentCount
-                ? `${hasVal ? 'Edit' : 'Add'} Student Count`
-                : `${hasVal ? 'Edit' : 'Add'} Extra Chair`;
-            document.getElementById('classroomMetricModalSubtitle').innerText = `Classroom ${room.classroomNumber} (${room.type}) • ${room.location}`;
-            document.getElementById('classroomMetricInputLabel').innerText = isStudentCount ? 'Student Count *' : 'Extra Chair Count *';
-            document.getElementById('classroomMetricValueInput').value = hasVal ? currentVal : '';
+            if (isStudentCount) {
+                const currentVal = room.studentCount;
+                const hasVal = currentVal !== undefined && currentVal !== null && currentVal !== '';
+                document.getElementById('classroomMetricModalTitle').innerText = `${hasVal ? 'Edit' : 'Add'} Student Count`;
+                document.getElementById('classroomMetricModalSubtitle').innerText = `Classroom ${room.classroomNumber} (${room.type}) • ${room.location}`;
+                document.getElementById('classroomMetricInputLabel').innerText = 'Student Count *';
+                document.getElementById('classroomMetricValueInput').min = '0';
+                document.getElementById('classroomMetricValueInput').placeholder = 'Enter number (e.g. 35)';
+                document.getElementById('classroomMetricValueInput').value = hasVal ? currentVal : '';
+                if (datesBox) datesBox.classList.add('hidden');
+                if (entriesSection) entriesSection.classList.add('hidden');
+                if (fromInput) fromInput.required = false;
+                if (toInput) toInput.required = false;
+                if (saveBtn) saveBtn.innerText = 'Save';
+            } else {
+                const todayStr = getLocalTodayDateString();
+                if (!Array.isArray(room.extraChairEntries)) room.extraChairEntries = [];
+                document.getElementById('classroomMetricModalTitle').innerText = 'Add Extra Chair';
+                document.getElementById('classroomMetricModalSubtitle').innerText = `Classroom ${room.classroomNumber} (${room.type}) • ${room.location}`;
+                document.getElementById('classroomMetricInputLabel').innerText = 'Extra Chair Count (Qty) *';
+                document.getElementById('classroomMetricValueInput').min = '1';
+                document.getElementById('classroomMetricValueInput').placeholder = 'Enter chair quantity to add (e.g. 5)';
+                document.getElementById('classroomMetricValueInput').value = '';
+                if (datesBox) datesBox.classList.remove('hidden');
+                if (fromInput) {
+                    fromInput.required = true;
+                    fromInput.value = todayStr;
+                }
+                if (toInput) {
+                    toInput.required = true;
+                    toInput.value = todayStr;
+                }
+                if (saveBtn) saveBtn.innerText = 'Add Extra Chairs';
+                renderExtraChairEntriesInModal(room);
+            }
 
             document.getElementById('modalClassroomMetric').classList.remove('hidden');
             setTimeout(() => document.getElementById('classroomMetricValueInput')?.focus(), 50);
         };
+
+        window.resetExtraChairFormInModal = function() {
+            const roomId = document.getElementById('metricClassroomId').value;
+            const room = classroomsData.find(c => String(c.id) === String(roomId));
+            const todayStr = getLocalTodayDateString();
+            document.getElementById('metricEditEntryId').value = '';
+            document.getElementById('classroomMetricModalTitle').innerText = 'Add Extra Chair';
+            document.getElementById('classroomMetricInputLabel').innerText = 'Extra Chair Count (Qty) *';
+            document.getElementById('classroomMetricValueInput').value = '';
+            document.getElementById('extraChairFromDateInput').value = todayStr;
+            document.getElementById('extraChairToDateInput').value = todayStr;
+            document.getElementById('cancelEditExtraChairBtn')?.classList.add('hidden');
+            document.getElementById('classroomMetricValidationError')?.classList.add('hidden');
+            const saveBtn = document.getElementById('btnSaveClassroomMetric');
+            if (saveBtn) saveBtn.innerText = 'Add Extra Chairs';
+            if (room) renderExtraChairEntriesInModal(room);
+        };
+
+        window.editExtraChairEntryInModal = function(classroomId, entryId) {
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room || !Array.isArray(room.extraChairEntries)) return;
+            const entry = room.extraChairEntries.find(ec => String(ec.id) === String(entryId));
+            if (!entry) return;
+
+            const todayStr = getLocalTodayDateString();
+            document.getElementById('metricEditEntryId').value = String(entry.id);
+            document.getElementById('classroomMetricModalTitle').innerText = 'Edit Extra Chair Entry';
+            document.getElementById('classroomMetricInputLabel').innerText = 'Extra Chair Count (Qty) *';
+            document.getElementById('classroomMetricValueInput').value = entry.count;
+            document.getElementById('extraChairFromDateInput').value = entry.fromDate || todayStr;
+            document.getElementById('extraChairToDateInput').value = entry.toDate || todayStr;
+            document.getElementById('cancelEditExtraChairBtn')?.classList.remove('hidden');
+            document.getElementById('classroomMetricValidationError')?.classList.add('hidden');
+            const saveBtn = document.getElementById('btnSaveClassroomMetric');
+            if (saveBtn) saveBtn.innerText = 'Update Entry';
+        };
+
+        window.deleteExtraChairEntryInModal = async function(classroomId, entryId) {
+            if (!canEditClassroomColumn('extra-chair')) {
+                showAssetToast("View Only: You do not have permission to modify Extra Chairs.", true);
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room || !Array.isArray(room.extraChairEntries)) return;
+            const targetEntry = room.extraChairEntries.find(ec => String(ec.id) === String(entryId));
+            if (!targetEntry) return;
+
+            room.extraChairEntries = room.extraChairEntries.filter(ec => String(ec.id) !== String(entryId));
+            const newTotal = getEffectiveExtraChairTotal(room);
+            room.updatedAt = getLocalTodayDateString();
+
+            await recordClassroomChangeNotification(
+                'extra-chair',
+                'edit-extra-chair',
+                `Removed ${targetEntry.count} Extra Chair(s) (${targetEntry.fromDate || '-'} to ${targetEntry.toDate || '-'}) in Classroom ${room.classroomNumber} (${room.type})`,
+                `Active Total Extra Chairs: ${newTotal}`
+            );
+
+            await saveClassroomsToCloud();
+            if (String(document.getElementById('metricEditEntryId')?.value) === String(entryId)) {
+                resetExtraChairFormInModal();
+            } else {
+                renderExtraChairEntriesInModal(room);
+            }
+            renderClassroomsTables();
+            showAssetToast(`Removed ${targetEntry.count} Extra Chair(s) from Classroom ${room.classroomNumber}`);
+        };
+
+        function renderExtraChairEntriesInModal(room) {
+            const sectionEl = document.getElementById('extraChairExistingEntriesSection');
+            const listEl = document.getElementById('extraChairExistingEntriesList');
+            const badgeEl = document.getElementById('extraChairModalTotalBadge');
+            if (!sectionEl || !listEl) return;
+
+            const entries = Array.isArray(room.extraChairEntries) ? room.extraChairEntries : [];
+            const todayStr = getLocalTodayDateString();
+            const activeTotal = getEffectiveExtraChairTotal(room, todayStr);
+
+            if (badgeEl) {
+                badgeEl.innerText = `Active Total: ${activeTotal}`;
+            }
+
+            if (entries.length === 0) {
+                sectionEl.classList.add('hidden');
+                listEl.innerHTML = '';
+                return;
+            }
+
+            sectionEl.classList.remove('hidden');
+            const safeRoomId = String(room.id).replace(/'/g, "\'");
+
+            listEl.innerHTML = entries.map(ec => {
+                const safeEntryId = String(ec.id).replace(/'/g, "\'");
+                const isExpired = ec.toDate && ec.toDate < todayStr;
+                const dateLabel = (ec.fromDate || ec.toDate)
+                    ? `${ec.fromDate || '-'} to ${ec.toDate || '-'}`
+                    : 'No expiry date set';
+                const statusBadge = isExpired
+                    ? '<span class="bg-gray-200 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded">Expired (Reduced)</span>'
+                    : '<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Active</span>';
+
+                return `
+                    <div class="flex items-center justify-between bg-white p-2 rounded border ${isExpired ? 'opacity-60 bg-gray-50' : 'border-amber-200'} text-xs gap-2">
+                        <div>
+                            <div class="flex items-center space-x-1.5">
+                                <span class="font-extrabold ${isExpired ? 'line-through text-gray-500' : 'text-amber-950'}">+${ec.count} Chair${Number(ec.count) === 1 ? '' : 's'}</span>
+                                ${statusBadge}
+                            </div>
+                            <div class="text-[10px] text-gray-500 font-mono mt-0.5">
+                                <i class="fa-regular fa-calendar mr-1"></i>${dateLabel}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <button type="button" onclick="editExtraChairEntryInModal('${safeRoomId}', '${safeEntryId}')" class="text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50 font-bold" title="Edit Entry">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button type="button" onclick="deleteExtraChairEntryInModal('${safeRoomId}', '${safeEntryId}')" class="text-red-600 hover:text-red-800 px-1.5 py-0.5 rounded hover:bg-red-50 font-bold" title="Remove Entry">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         window.saveClassroomMetricValue = async function(e) {
             e.preventDefault();
@@ -6642,29 +6889,96 @@ window.renderSocieties = function() {
             const room = classroomsData.find(c => String(c.id) === String(classroomId));
             if (!room) return;
 
+            const errEl = document.getElementById('classroomMetricValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
             const rawVal = document.getElementById('classroomMetricValueInput').value;
             const numVal = rawVal !== '' ? Math.max(0, parseInt(rawVal, 10) || 0) : null;
 
-            const prevVal = fieldType === 'studentCount' ? room.studentCount : room.extraChair;
-            const hadPrevVal = prevVal !== undefined && prevVal !== null && prevVal !== '';
-            const metricLabel = fieldType === 'studentCount' ? 'Student Count' : 'Extra Chair';
-
             if (fieldType === 'studentCount') {
+                const prevVal = room.studentCount;
+                const hadPrevVal = prevVal !== undefined && prevVal !== null && prevVal !== '';
                 room.studentCount = numVal;
-            } else if (fieldType === 'extraChair') {
-                room.extraChair = numVal;
-            }
-            room.updatedAt = new Date().toISOString().split('T')[0];
+                room.updatedAt = getLocalTodayDateString();
 
-            const notifDetail = hadPrevVal
-                ? `Edited ${metricLabel} from ${prevVal} to ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`
-                : `Added ${metricLabel}: ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`;
-            await recordClassroomChangeNotification(colPermKey, hadPrevVal ? `edit-${colPermKey}` : `add-${colPermKey}`, notifDetail);
+                const notifDetail = hadPrevVal
+                    ? `Edited Student Count from ${prevVal} to ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`
+                    : `Added Student Count: ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`;
+                await recordClassroomChangeNotification(colPermKey, hadPrevVal ? `edit-${colPermKey}` : `add-${colPermKey}`, notifDetail);
+
+                await saveClassroomsToCloud();
+                closeModal('modalClassroomMetric');
+                renderClassroomsTables();
+                showAssetToast(`Updated Student Count for Classroom ${room.classroomNumber}`);
+                return;
+            }
+
+            // Extra Chair logic with From Date & To Date
+            const fromDate = (document.getElementById('extraChairFromDateInput')?.value || '').trim();
+            const toDate = (document.getElementById('extraChairToDateInput')?.value || '').trim();
+            const editEntryId = (document.getElementById('metricEditEntryId')?.value || '').trim();
+
+            if (!numVal || numVal <= 0) {
+                if (errEl) {
+                    errEl.innerText = "Please enter an Extra Chair quantity greater than 0.";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (!fromDate || !toDate || fromDate > toDate) {
+                if (errEl) {
+                    errEl.innerText = "Please select valid From Date and To Date (From Date must be on or before To Date).";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (!Array.isArray(room.extraChairEntries)) room.extraChairEntries = [];
+            const todayStr = getLocalTodayDateString();
+
+            let notifDetail = '';
+            if (editEntryId) {
+                const idx = room.extraChairEntries.findIndex(ec => String(ec.id) === String(editEntryId));
+                const prevEntry = idx !== -1 ? room.extraChairEntries[idx] : null;
+                const updatedEntry = {
+                    id: String(editEntryId),
+                    count: numVal,
+                    fromDate,
+                    toDate,
+                    createdAt: prevEntry ? (prevEntry.createdAt || todayStr) : todayStr
+                };
+                if (idx !== -1) {
+                    room.extraChairEntries[idx] = updatedEntry;
+                } else {
+                    room.extraChairEntries.push(updatedEntry);
+                }
+                notifDetail = `Edited Extra Chair entry to ${numVal} chair(s) (${fromDate} to ${toDate}) in Classroom ${room.classroomNumber} (${room.type})`;
+            } else {
+                room.extraChairEntries.push({
+                    id: 'ec_' + Date.now().toString() + '_' + Math.random().toString().slice(2, 6),
+                    count: numVal,
+                    fromDate,
+                    toDate,
+                    createdAt: todayStr
+                });
+                notifDetail = `Added ${numVal} Extra Chair(s) (${fromDate} to ${toDate}) in Classroom ${room.classroomNumber} (${room.type})`;
+            }
+
+            const newActiveTotal = getEffectiveExtraChairTotal(room, todayStr);
+            room.updatedAt = todayStr;
+
+            await recordClassroomChangeNotification(
+                'extra-chair',
+                editEntryId ? 'edit-extra-chair' : 'add-extra-chair',
+                notifDetail,
+                `From: ${fromDate} to ${toDate} | Active Total Extra Chairs: ${newActiveTotal}`
+            );
 
             await saveClassroomsToCloud();
             closeModal('modalClassroomMetric');
             renderClassroomsTables();
-            showAssetToast(`Updated ${fieldType === 'studentCount' ? 'Student Count' : 'Extra Chair'} for Classroom ${room.classroomNumber}`);
+            showAssetToast(`Saved Extra Chair (${numVal} from ${fromDate} to ${toDate}) — Active Total: ${newActiveTotal}`);
         };
 
         function applyScheduleModalCategoryUI(category) {
@@ -7551,7 +7865,8 @@ window.renderSocieties = function() {
                     ? "Currently in Raihaan"
                     : (isRoomAllocated ? "Allocated as Standard Class" : "Vacant for Events");
                 const studentCountVal = (room.studentCount !== undefined && room.studentCount !== null && room.studentCount !== '') ? room.studentCount : '-';
-                const extraChairVal = (room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '') ? room.extraChair : '-';
+                const activeEcTotal = getEffectiveExtraChairTotal(room, todayStr);
+                const extraChairVal = activeEcTotal > 0 ? activeEcTotal : '-';
                 const allocations = Array.isArray(room.allocations) ? room.allocations : [];
 
                 if (allocations.length === 0) {
@@ -7796,15 +8111,28 @@ window.renderSocieties = function() {
                     </button>`
                     : `<span class="block text-[10px] text-gray-400 italic mt-0.5">View Only</span>`;
 
-                // Extra Chair Column Cell
-                const hasExtraChair = room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '';
+                // Extra Chair Column Cell (Automatically reduces expired entries whose To Date < todayStr)
+                const activeExtraChairTotal = getEffectiveExtraChairTotal(room, todayStr);
+                const activeExtraChairEntries = getActiveExtraChairEntries(room, todayStr);
+                const hasExtraChair = activeExtraChairTotal > 0;
+                const extraChairDateTooltip = activeExtraChairEntries.length > 0
+                    ? activeExtraChairEntries.map(ec => `${ec.count} chair(s): ${ec.fromDate || '-'} to ${ec.toDate || '-'}`).join(' | ')
+                    : '';
+                const latestToDate = activeExtraChairEntries
+                    .map(ec => ec.toDate)
+                    .filter(Boolean)
+                    .sort()
+                    .pop() || '';
+                const extraChairDateSub = (hasExtraChair && latestToDate)
+                    ? `<span class="text-[9px] text-amber-800 font-mono mt-0.5 leading-tight" title="${extraChairDateTooltip}">Until ${latestToDate}</span>`
+                    : '';
                 const extraChairDisplay = hasExtraChair
-                    ? `<span class="font-extrabold text-amber-900 text-sm bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">${room.extraChair}</span>`
+                    ? `<span class="font-extrabold text-amber-900 text-sm bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full cursor-pointer" onclick="openClassroomMetricModal('${safeRoomId}', 'extraChair')" title="${extraChairDateTooltip || 'Active Extra Chairs'}">${activeExtraChairTotal}</span>${extraChairDateSub}`
                     : `<span class="text-xs text-gray-400 italic">-</span>`;
                 const extraChairBtn = canEditExtraChair
-                    ? `<button type="button" onclick="openClassroomMetricModal('${safeRoomId}', 'extraChair')" class="mt-1 inline-flex items-center space-x-1 text-[11px] font-bold px-2 py-1 rounded ${hasExtraChair ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'} transition">
-                        <i class="fa-solid ${hasExtraChair ? 'fa-pen-to-square' : 'fa-plus'} text-[10px]"></i>
-                        <span>${hasExtraChair ? 'Edit' : 'Add'}</span>
+                    ? `<button type="button" onclick="openClassroomMetricModal('${safeRoomId}', 'extraChair')" class="mt-1 inline-flex items-center space-x-1 text-[11px] font-bold px-2 py-1 rounded ${hasExtraChair ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'} transition" title="${extraChairDateTooltip || 'Add Extra Chair with From/To Date'}">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>Add</span>
                     </button>`
                     : `<span class="block text-[10px] text-gray-400 italic mt-0.5">View Only</span>`;
 
@@ -8337,7 +8665,7 @@ window.renderSocieties = function() {
                                     <span class="${subBadgeBg} border px-2.5 py-0.5 rounded font-semibold">Location: ${room.location || '-'}</span>
                                     <span class="${subBadgeBg} border px-2.5 py-0.5 rounded font-semibold">Other Events: ${eventNamesStr}</span>
                                     <span class="${subBadgeBg} border px-2 py-0.5 rounded font-semibold">Students: ${room.studentCount ?? '-'}</span>
-                                    <span class="${subBadgeBg} border px-2 py-0.5 rounded font-semibold">Extra Chair: ${room.extraChair ?? '-'}</span>
+                                    <span class="${subBadgeBg} border px-2 py-0.5 rounded font-semibold">Extra Chair: ${getEffectiveExtraChairTotal(room, todayStr) || '-'}</span>
                                 </div>
                             </div>
                             <div class="overflow-x-auto">
@@ -8441,7 +8769,7 @@ window.renderSocieties = function() {
                     bodyRows.push(rowCells);
                 });
 
-                const roomBannerText = `#${idx + 1} | Classroom: ${room.classroomNumber} | Allocated Class: ${classNamesStr} | Location: ${room.location || '-'} | Other Events: ${eventNamesStr} | Students: ${room.studentCount ?? '-'} | Extra Chair: ${room.extraChair ?? '-'}${inRaihaan ? ' | [Currently in Raihaan]' : ''}`;
+                const roomBannerText = `#${idx + 1} | Classroom: ${room.classroomNumber} | Allocated Class: ${classNamesStr} | Location: ${room.location || '-'} | Other Events: ${eventNamesStr} | Students: ${room.studentCount ?? '-'} | Extra Chair: ${getEffectiveExtraChairTotal(room, todayStr) || '-'}${inRaihaan ? ' | [Currently in Raihaan]' : ''}`;
 
                 doc.autoTable({
                     startY: currentY,

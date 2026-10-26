@@ -100,6 +100,7 @@
                 <button onclick="switchModule('classroom-allocation')" id="mod-classroom-allocation" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     <span>Classroom Allocation</span>
+                    <span id="notifBadgeClassroomAllocation" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchModule('inventory')" id="mod-inventory" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-key"></i>
@@ -731,7 +732,7 @@
                     </div>
                 </button>
 
-                <!-- 3. Vacant for Events (with Male & Female + Currently in Raihaan Bifurcation) -->
+                <!-- 3. Vacant for Events (with Male & Female Bifurcation - Raihaan kept separate) -->
                 <button type="button" id="cardBtnClassroomsVacant" onclick="setClassroomAllocationFilter('vacant')" class="bg-white p-4 rounded-lg shadow border-2 border-transparent border-l-4 border-l-amber-500 flex flex-col justify-between text-left transition hover:border-amber-500">
                     <div class="flex justify-between items-start w-full">
                         <div>
@@ -745,7 +746,7 @@
                     <div class="flex flex-wrap xl:flex-nowrap items-center gap-1.5 mt-3 pt-2 border-t border-gray-100 w-full text-[10.5px] font-bold">
                         <span class="bg-blue-50 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-person mr-0.5"></i>Male: <span id="cardVacantEventMaleCount">0</span></span>
                         <span class="bg-pink-50 text-pink-800 px-1.5 py-0.5 rounded border border-pink-200 whitespace-nowrap"><i class="fa-solid fa-person-dress mr-0.5"></i>Female: <span id="cardVacantEventFemaleCount">0</span></span>
-                        <span class="bg-purple-50 text-purple-900 px-1.5 py-0.5 rounded border border-purple-200 whitespace-nowrap"><i class="fa-solid fa-plane-departure mr-1 text-purple-700"></i>Currently in Raihaan: <span id="cardVacantRaihaanCount" class="font-extrabold">0</span></span>
+                        <span class="bg-purple-50 text-purple-900 px-1.5 py-0.5 rounded border border-purple-200 whitespace-nowrap" title="Separate count (not included in Vacant total or Vacant list)"><i class="fa-solid fa-plane-departure mr-1 text-purple-700"></i>Currently in Raihaan: <span id="cardVacantRaihaanCount" class="font-extrabold">0</span></span>
                     </div>
                 </button>
 
@@ -2003,7 +2004,7 @@
                         <i class="fa-solid fa-route text-purple-700"></i>
                         <span>Add Raihaan Details</span>
                     </h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Select up to 5 Darajah / Event names going to Raihaan. Classrooms will automatically show as Vacant for the specified dates.</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Select up to 5 Darajah / Event names going to Raihaan. Classrooms will appear under the separate Currently in Raihaan category for the specified dates.</p>
                 </div>
                 <button type="button" onclick="closeModal('modalAddRaihaan')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
@@ -2179,11 +2180,28 @@
         </div>
     </div>
 
+    <!-- Modal: Classroom Allocation Pop-Up Notifications (1 Pop-Up Card per User who made Additions/Edits) -->
+    <div id="modalClassroomNotifications" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="max-w-2xl w-full max-h-[90vh] flex flex-col space-y-4 overflow-y-auto pr-1">
+            <div id="classroomNotificationsPopupsContainer" class="space-y-4"></div>
+            <div id="classroomNotificationsDismissAllBar" class="hidden flex justify-end">
+                <button
+                    type="button"
+                    onclick="dismissAllClassroomNotifications()"
+                    class="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-5 py-2.5 rounded-xl shadow-lg text-xs sm:text-sm transition inline-flex items-center space-x-2 border border-emerald-500"
+                >
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>Mark All as Seen & Close</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
-        import { getDatabase, ref as dbRef, set, get, child } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+        import { getDatabase, ref as dbRef, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAmfhe1OId_cHrnHnf4iPIHgJN81-tFluY",
@@ -2211,6 +2229,8 @@
         let estatesData = [];
         let classroomsData = [];
         let raihaanData = [];
+        let portalNotificationsData = [];
+        let notificationsRealtimeListenerAttached = false;
         let keysInventoryData = [];
         let facultyData = [];
         let societiesData = [
@@ -2799,6 +2819,37 @@
             });
         }
 
+        function normalizeNotificationsList(rawNotifs) {
+            if (!rawNotifs) return [];
+            const arr = Array.isArray(rawNotifs)
+                ? rawNotifs
+                : (typeof rawNotifs === 'object' ? Object.values(rawNotifs) : []);
+            return arr.filter(Boolean).map(item => {
+                let seenArr = [];
+                if (Array.isArray(item.seenBy)) {
+                    seenArr = item.seenBy.filter(Boolean).map(e => String(e).trim().toLowerCase());
+                } else if (item.seenBy && typeof item.seenBy === 'object') {
+                    seenArr = Object.values(item.seenBy).filter(Boolean).map(e => String(e).trim().toLowerCase());
+                }
+                const actorEmail = String(item.actorEmail || '').trim();
+                if (actorEmail && !seenArr.includes(actorEmail.toLowerCase())) {
+                    seenArr.push(actorEmail.toLowerCase());
+                }
+                return {
+                    id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                    module: String(item.module || 'classroom-allocation'),
+                    subPermission: String(item.subPermission || ''),
+                    actorEmail,
+                    actionType: String(item.actionType || ''),
+                    detailText: String(item.detailText || ''),
+                    scheduleSummary: String(item.scheduleSummary || ''),
+                    createdAt: String(item.createdAt || ''),
+                    timestamp: Number(item.timestamp || Date.now()),
+                    seenBy: Array.from(new Set(seenArr))
+                };
+            }).filter(n => n.actorEmail && n.detailText);
+        }
+
         function normalizeRaihaanList(rawRaihaan) {
             if (!rawRaihaan) return [];
             const arr = Array.isArray(rawRaihaan)
@@ -2881,6 +2932,12 @@
                         const raiSnap = await get(child(dbRef(db), 'raihaan'));
                         raihaanData = raiSnap.exists() ? normalizeRaihaanList(raiSnap.val()) : [];
                     }
+                    if (data.notifications) {
+                        portalNotificationsData = normalizeNotificationsList(data.notifications);
+                    } else {
+                        const notifSnap = await get(child(dbRef(db), 'notifications'));
+                        portalNotificationsData = notifSnap.exists() ? normalizeNotificationsList(notifSnap.val()) : [];
+                    }
                     if (data.estate_assets) {
                         estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
                     } else {
@@ -2923,12 +2980,248 @@
             }
         };
 
+        window.saveNotificationsToCloud = async function() {
+            try {
+                await set(dbRef(db, 'notifications'), portalNotificationsData);
+                await set(dbRef(db, 'portalData/notifications'), portalNotificationsData);
+            } catch (err) {
+                console.error("Error saving notifications to cloud:", err);
+            }
+        };
+
+        function attachNotificationsRealtimeListener() {
+            if (notificationsRealtimeListenerAttached) return;
+            notificationsRealtimeListenerAttached = true;
+            try {
+                onValue(dbRef(db, 'notifications'), (snapshot) => {
+                    if (snapshot.exists()) {
+                        portalNotificationsData = normalizeNotificationsList(snapshot.val());
+                    } else {
+                        portalNotificationsData = [];
+                    }
+                    updateModuleNotificationBadges();
+                });
+            } catch (err) {
+                console.error("Error attaching notifications listener:", err);
+            }
+        }
+
+        function canCurrentUserReceiveModuleNotification(notif) {
+            if (!currentUser || !currentUser.email || !notif) return false;
+            const myEmail = currentUser.email.trim().toLowerCase();
+            const actorEmail = String(notif.actorEmail || '').trim().toLowerCase();
+            if (!actorEmail || actorEmail === myEmail) return false;
+
+            const seenBy = Array.isArray(notif.seenBy) ? notif.seenBy.map(e => String(e).trim().toLowerCase()) : [];
+            if (seenBy.includes(myEmail)) return false;
+
+            const modKey = notif.module || 'classroom-allocation';
+            if (isUserAdmin) return true;
+            if (!Array.isArray(currentUserModules) || !currentUserModules.includes(modKey)) return false;
+
+            return true;
+        }
+
+        function getUnseenNotificationsForModule(modKey = 'classroom-allocation') {
+            return portalNotificationsData
+                .filter(n => (n.module || 'classroom-allocation') === modKey && canCurrentUserReceiveModuleNotification(n))
+                .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        }
+
+        window.updateModuleNotificationBadges = function() {
+            const badgeEl = document.getElementById('notifBadgeClassroomAllocation');
+            if (!badgeEl) return;
+            const unseen = getUnseenNotificationsForModule('classroom-allocation');
+            const totalIndividualCount = unseen.length;
+            if (totalIndividualCount > 0) {
+                badgeEl.innerText = String(totalIndividualCount);
+                badgeEl.classList.remove('hidden');
+            } else {
+                badgeEl.innerText = '';
+                badgeEl.classList.add('hidden');
+            }
+        };
+
+        async function recordClassroomChangeNotification(subPermission, actionType, detailText, scheduleSummary = '') {
+            if (!currentUser || !currentUser.email) return;
+            const actorEmail = currentUser.email.trim();
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const formattedTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+            const newNotif = {
+                id: 'notif_' + Date.now().toString() + '_' + Math.random().toString().slice(2, 6),
+                module: 'classroom-allocation',
+                subPermission: subPermission || '',
+                actorEmail,
+                actionType: actionType || '',
+                detailText: detailText || '',
+                scheduleSummary: scheduleSummary || '',
+                createdAt: formattedTime,
+                timestamp: Date.now(),
+                seenBy: [actorEmail.toLowerCase()]
+            };
+
+            portalNotificationsData.push(newNotif);
+            updateModuleNotificationBadges();
+        }
+
+        window.openModuleNotificationsPopupIfAny = async function(modKey = 'classroom-allocation') {
+            const unseen = getUnseenNotificationsForModule(modKey);
+            const modalEl = document.getElementById('modalClassroomNotifications');
+            const containerEl = document.getElementById('classroomNotificationsPopupsContainer');
+            const dismissAllBar = document.getElementById('classroomNotificationsDismissAllBar');
+            if (!modalEl || !containerEl) return;
+
+            if (unseen.length === 0) {
+                modalEl.classList.add('hidden');
+                updateModuleNotificationBadges();
+                return;
+            }
+
+            // Group unseen notifications by actorEmail (1 pop-up notification per user who made additions or edits)
+            const groupedByUser = new Map();
+            unseen.forEach(notif => {
+                const key = notif.actorEmail.trim().toLowerCase();
+                if (!groupedByUser.has(key)) {
+                    groupedByUser.set(key, {
+                        actorEmail: notif.actorEmail.trim(),
+                        items: []
+                    });
+                }
+                groupedByUser.get(key).items.push(notif);
+            });
+
+            const userGroups = Array.from(groupedByUser.values());
+            if (dismissAllBar) {
+                dismissAllBar.classList.toggle('hidden', userGroups.length <= 1);
+            }
+
+            containerEl.innerHTML = userGroups.map((group) => {
+                const safeActorKey = encodeURIComponent(group.actorEmail.toLowerCase()).replace(/'/g, "%27");
+                const itemsHtml = group.items.map((item, idx) => {
+                    const schedHtml = item.scheduleSummary
+                        ? `<div class="text-[11px] text-gray-500 mt-0.5 pl-4"><i class="fa-regular fa-clock mr-1 text-emerald-600"></i>${item.scheduleSummary}</div>`
+                        : '';
+                    return `
+                        <li class="py-2 px-3 bg-emerald-50/60 border border-emerald-200/80 rounded-lg text-xs text-gray-800">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="font-bold text-gray-900">
+                                    <span class="inline-block bg-emerald-800 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded mr-1.5">${idx + 1}</span>
+                                    <span>${item.detailText}</span>
+                                </div>
+                                <span class="text-[10px] text-gray-400 font-mono whitespace-nowrap shrink-0">${item.createdAt || ''}</span>
+                            </div>
+                            ${schedHtml}
+                        </li>
+                    `;
+                }).join('');
+
+                return `
+                    <div data-actor-key="${safeActorKey}" class="bg-white rounded-xl shadow-2xl border-2 border-emerald-600 overflow-hidden">
+                        <div class="bg-emerald-900 text-white px-5 py-3 flex justify-between items-center gap-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-amber-400 text-emerald-950 p-1.5 rounded-lg shadow-sm inline-flex items-center justify-center">
+                                    <i class="fa-solid fa-bell text-sm"></i>
+                                </span>
+                                <div>
+                                    <h3 class="text-sm sm:text-base font-extrabold tracking-wide">Classroom Allocation Update Notification</h3>
+                                    <p class="text-[11px] text-emerald-200">Counted as ${group.items.length} individual notification${group.items.length === 1 ? '' : 's'}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-red-600 text-white text-xs font-extrabold px-2.5 py-1 rounded-full border border-red-300 shadow-sm whitespace-nowrap">
+                                    ${group.items.length} ${group.items.length === 1 ? 'Update' : 'Updates'}
+                                </span>
+                                <button
+                                    type="button"
+                                    onclick="dismissUserClassroomNotifications(decodeURIComponent('${safeActorKey}'))"
+                                    class="text-emerald-200 hover:text-white text-xl font-bold px-1.5"
+                                    title="Mark as Seen & Close"
+                                >&times;</button>
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-3">
+                            <p class="text-sm font-extrabold text-gray-900 bg-amber-50 border border-amber-200 px-3.5 py-2.5 rounded-lg">
+                                The user (<span class="text-emerald-800 underline">${group.actorEmail}</span>) has added or edited the following -
+                            </p>
+                            <ul class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                ${itemsHtml}
+                            </ul>
+                            <div class="flex justify-end pt-2 border-t">
+                                <button
+                                    type="button"
+                                    onclick="dismissUserClassroomNotifications(decodeURIComponent('${safeActorKey}'))"
+                                    class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-4 py-2 rounded-lg shadow transition inline-flex items-center space-x-1.5"
+                                >
+                                    <i class="fa-solid fa-check"></i>
+                                    <span>Seen & OK</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            modalEl.classList.remove('hidden');
+
+            // Immediately mark these displayed notifications as seen by currentUser so the count in the module header disappears once seen
+            if (currentUser && currentUser.email) {
+                const myEmail = currentUser.email.trim().toLowerCase();
+                let updated = false;
+                unseen.forEach(notif => {
+                    if (!Array.isArray(notif.seenBy)) notif.seenBy = [];
+                    if (!notif.seenBy.includes(myEmail)) {
+                        notif.seenBy.push(myEmail);
+                        updated = true;
+                    }
+                });
+                if (updated) {
+                    updateModuleNotificationBadges();
+                    await saveNotificationsToCloud();
+                }
+            }
+        };
+
+        window.dismissUserClassroomNotifications = async function(actorEmailLower) {
+            const modalEl = document.getElementById('modalClassroomNotifications');
+            const containerEl = document.getElementById('classroomNotificationsPopupsContainer');
+            if (!containerEl || !modalEl) return;
+
+            const safeActorKey = encodeURIComponent(String(actorEmailLower || '').trim().toLowerCase()).replace(/'/g, "%27");
+            const cards = Array.from(containerEl.children);
+            const targetCard = cards.find(c => c.getAttribute('data-actor-key') === safeActorKey);
+            if (targetCard) {
+                targetCard.remove();
+            }
+
+            const remainingCards = containerEl.children.length;
+            const dismissAllBar = document.getElementById('classroomNotificationsDismissAllBar');
+            if (dismissAllBar) {
+                dismissAllBar.classList.toggle('hidden', remainingCards <= 1);
+            }
+            if (remainingCards === 0) {
+                modalEl.classList.add('hidden');
+            }
+            updateModuleNotificationBadges();
+        };
+
+        window.dismissAllClassroomNotifications = async function() {
+            const modalEl = document.getElementById('modalClassroomNotifications');
+            const containerEl = document.getElementById('classroomNotificationsPopupsContainer');
+            if (containerEl) containerEl.innerHTML = '';
+            if (modalEl) modalEl.classList.add('hidden');
+            updateModuleNotificationBadges();
+        };
+
         window.saveCloudData = async function() {
             try {
                 await set(dbRef(db, 'portalData'), {
                     estates: estatesData,
                     classrooms: classroomsData,
                     raihaan: raihaanData,
+                    notifications: portalNotificationsData,
+                    notifications: portalNotificationsData,
                     keys: keysInventoryData,
                     faculty: facultyData,
                     societies: societiesData,
@@ -2942,6 +3235,7 @@
                 await set(dbRef(db, 'estate_assets'), estateAssetsData);
                 await set(dbRef(db, 'classrooms'), classroomsData);
                 await set(dbRef(db, 'raihaan'), raihaanData);
+                await set(dbRef(db, 'notifications'), portalNotificationsData);
             } catch (err) {
                 console.error("Error saving to cloud:", err);
             }
@@ -3057,6 +3351,8 @@
             const today = new Date().toISOString().slice(0, 7);
             document.getElementById('billMonthPicker').value = today;
             renderVacantBills();
+            attachNotificationsRealtimeListener();
+            updateModuleNotificationBadges();
             applyModuleAndSubHeaderPermissions();
         }
 
@@ -3080,6 +3376,7 @@
 
             if (modName === 'classroom-allocation') {
                 renderClassroomsTables();
+                openModuleNotificationsPopupIfAny('classroom-allocation');
             }
         };
 
@@ -5848,12 +6145,21 @@ window.renderSocieties = function() {
             const rawVal = document.getElementById('classroomMetricValueInput').value;
             const numVal = rawVal !== '' ? Math.max(0, parseInt(rawVal, 10) || 0) : null;
 
+            const prevVal = fieldType === 'studentCount' ? room.studentCount : room.extraChair;
+            const hadPrevVal = prevVal !== undefined && prevVal !== null && prevVal !== '';
+            const metricLabel = fieldType === 'studentCount' ? 'Student Count' : 'Extra Chair';
+
             if (fieldType === 'studentCount') {
                 room.studentCount = numVal;
             } else if (fieldType === 'extraChair') {
                 room.extraChair = numVal;
             }
             room.updatedAt = new Date().toISOString().split('T')[0];
+
+            const notifDetail = hadPrevVal
+                ? `Edited ${metricLabel} from ${prevVal} to ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`
+                : `Added ${metricLabel}: ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`;
+            await recordClassroomChangeNotification(colPermKey, hadPrevVal ? `edit-${colPermKey}` : `add-${colPermKey}`, notifDetail);
 
             await saveClassroomsToCloud();
             closeModal('modalClassroomMetric');
@@ -6120,6 +6426,10 @@ window.renderSocieties = function() {
                 updatedAt: new Date().toISOString().split('T')[0]
             };
 
+            const prevAllocObj = editAllocId
+                ? room.allocations.find(a => String(a.id) === String(editAllocId))
+                : null;
+
             if (editAllocId) {
                 const idx = room.allocations.findIndex(a => String(a.id) === String(editAllocId));
                 if (idx !== -1) {
@@ -6133,6 +6443,24 @@ window.renderSocieties = function() {
 
             // Automatically designate classroom as Allocated if it has at least one Allocated Class ('class')
             syncRoomAllocatedStatusFromClasses(room);
+
+            const catTitle = allocationCategory === 'event' ? 'Other Event' : 'Allocated Class';
+            const schedSummaryStr = formatAllocationScheduleSummary(selectedSlots, savedCustomTimings);
+            let schedNotifDetail = '';
+            if (editAllocId) {
+                const renamed = prevAllocObj && prevAllocObj.standardEventName && prevAllocObj.standardEventName !== standardEventName;
+                schedNotifDetail = renamed
+                    ? `Edited ${catTitle} "${prevAllocObj.standardEventName}" to "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`
+                    : `Edited ${catTitle} "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`;
+            } else {
+                schedNotifDetail = `Added ${catTitle} "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`;
+            }
+            await recordClassroomChangeNotification(
+                'darajah-event',
+                editAllocId ? `edit-${allocationCategory}` : `add-${allocationCategory}`,
+                schedNotifDetail,
+                schedSummaryStr
+            );
 
             await saveClassroomsToCloud();
             renderExistingClassroomAllocationsInModal(room);
@@ -6149,18 +6477,19 @@ window.renderSocieties = function() {
             return room.allocations.some(a => (a.allocationType || 'class') === 'class');
         }
 
-        // Effective Allocation / Vacancy status accounting for active Raihaan periods:
-        // When a class is added to the Allocated Class column, that classroom is designated as Allocated.
-        // During an active Raihaan date range, classrooms in Raihaan are shown as Vacant;
-        // once the Raihaan date range ends, they automatically transfer back to Allocated.
+        // Effective Allocation / Vacancy / Raihaan status (3 mutually exclusive categories):
+        // 1. Allocated as Standard Class: has an Allocated Class and is NOT currently in Raihaan
+        // 2. Vacant for Events: does NOT have an Allocated Class and is NOT currently in Raihaan
+        // 3. Currently in Raihaan: kept separate from Vacant (clickable via the Currently in Raihaan card)
         function isRoomEffectivelyAllocated(room, todayStr = getLocalTodayDateString()) {
             const isDesignatedAllocated = hasClassroomAllocatedClass(room);
             return isDesignatedAllocated && !isClassroomCurrentlyInRaihaan(room, todayStr);
         }
 
         function isRoomEffectivelyVacant(room, todayStr = getLocalTodayDateString()) {
+            if (isClassroomCurrentlyInRaihaan(room, todayStr)) return false;
             const isDesignatedAllocated = hasClassroomAllocatedClass(room);
-            return !isDesignatedAllocated || isClassroomCurrentlyInRaihaan(room, todayStr);
+            return !isDesignatedAllocated;
         }
 
         window.setClassroomAllocationFilter = function(filter) {
@@ -6456,7 +6785,7 @@ window.renderSocieties = function() {
             await saveClassroomsToCloud();
             closeModal('modalAddRaihaan');
             renderClassroomsTables();
-            showAssetToast("Saved Raihaan details and updated classroom vacancy status");
+            showAssetToast("Saved Raihaan details and updated Currently in Raihaan list");
         };
 
         function formatRaihaanEntriesInline(entries) {
@@ -6524,7 +6853,7 @@ window.renderSocieties = function() {
 
                 let statusBadge = '';
                 if (isActive) {
-                    statusBadge = '<span class="bg-purple-100 text-purple-900 border border-purple-300 text-[11px] font-bold px-2 py-0.5 rounded-full">Active (Vacant)</span>';
+                    statusBadge = '<span class="bg-purple-100 text-purple-900 border border-purple-300 text-[11px] font-bold px-2 py-0.5 rounded-full">Active (In Raihaan)</span>';
                 } else if (isUpcoming) {
                     statusBadge = '<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full">Upcoming</span>';
                 } else {
@@ -6689,7 +7018,7 @@ window.renderSocieties = function() {
                 const inRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
                 const isRoomAllocated = hasClassroomAllocatedClass(room);
                 const statusLabel = inRaihaan
-                    ? "Vacant for Events (Currently in Raihaan)"
+                    ? "Currently in Raihaan"
                     : (isRoomAllocated ? "Allocated as Standard Class" : "Vacant for Events");
                 const studentCountVal = (room.studentCount !== undefined && room.studentCount !== null && room.studentCount !== '') ? room.studentCount : '-';
                 const extraChairVal = (room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '') ? room.extraChair : '-';
@@ -6974,7 +7303,7 @@ window.renderSocieties = function() {
                 const roomInRaihaan = isClassroomCurrentlyInRaihaan(room, todayStr);
                 const isAutoAllocated = allocatedClassesList.length > 0;
                 const statusPillHtml = roomInRaihaan
-                    ? `<span class="mt-1 text-[9px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.5 rounded" title="Temporarily Vacant during Raihaan period">Raihaan Vacant</span>`
+                    ? `<span class="mt-1 text-[9px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.5 rounded" title="Currently in Raihaan">In Raihaan</span>`
                     : (isAutoAllocated
                         ? `<span class="mt-1 text-[9px] font-extrabold bg-teal-50 text-teal-800 border border-teal-300 px-1.5 py-0.5 rounded">Allocated</span>`
                         : `<span class="mt-1 text-[9px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">Vacant</span>`);
@@ -7718,6 +8047,7 @@ window.renderSocieties = function() {
                     if (Array.isArray(src.estates)) estatesData = src.estates;
                     if (src.classrooms !== undefined) classroomsData = normalizeClassroomsList(src.classrooms);
                     if (src.raihaan !== undefined) raihaanData = normalizeRaihaanList(src.raihaan);
+                    if (src.notifications !== undefined) portalNotificationsData = normalizeNotificationsList(src.notifications);
                     if (Array.isArray(src.keys)) keysInventoryData = src.keys;
                     if (Array.isArray(src.faculty)) facultyData = src.faculty;
                     if (Array.isArray(src.societies)) societiesData = src.societies;

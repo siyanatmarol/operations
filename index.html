@@ -940,7 +940,7 @@
                         <h3 class="text-sm font-bold text-gray-700 uppercase" id="inviteFormHeading">Invite / Configure Team Member</h3>
                         <button type="button" id="cancelEditUserBtn" onclick="resetInviteUserForm()" class="hidden text-xs text-red-600 hover:underline font-semibold">Cancel Edit</button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">User Name *</label>
                             <input type="text" id="inviteUserName" required placeholder="e.g. Murtaza Kheraluwala" class="w-full p-2 border rounded text-sm bg-white">
@@ -948,6 +948,10 @@
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">User Email Address *</label>
                             <input type="email" id="inviteEmail" required placeholder="e.g. staff@gmail.com" class="w-full p-2 border rounded text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1"><i class="fa-brands fa-whatsapp text-green-600 mr-1"></i>User WhatsApp No.</label>
+                            <input type="tel" id="inviteWhatsappNumber" placeholder="e.g. 919820011223" class="w-full p-2 border rounded text-sm bg-white font-mono" title="Enter WhatsApp number with country code (e.g. 919820011223)">
                         </div>
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">System Role</label>
@@ -1049,6 +1053,16 @@
                                     <span class="font-semibold text-gray-800"><i class="fa-solid fa-chair text-amber-600 mr-1"></i>Extra Chair</span>
                                 </label>
                             </div>
+                            <div class="pt-2.5 mt-1 border-t border-blue-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <label class="flex items-center space-x-2.5 bg-green-50 border-2 border-green-300 px-3.5 py-2 rounded-lg cursor-pointer hover:bg-green-100/70 transition shadow-sm">
+                                    <input type="checkbox" id="cls-perm-whatsapp-notify" checked class="rounded text-green-600 focus:ring-green-500 h-4 w-4">
+                                    <span class="font-bold text-green-950 text-xs flex items-center space-x-1.5">
+                                        <i class="fa-brands fa-whatsapp text-green-600 text-base"></i>
+                                        <span>Receive WhatsApp Notification for Classroom Module Notification</span>
+                                    </span>
+                                </label>
+                                <span class="text-[11px] text-blue-900/80 font-medium"><i class="fa-solid fa-circle-info mr-1 text-blue-600"></i>Sends WATI template <code class="bg-white px-1.5 py-0.5 rounded border text-emerald-800 font-mono">classroom_portal_alert</code> to the user&apos;s WhatsApp No.</span>
+                            </div>
                         </div>
                     </div>
 
@@ -1067,6 +1081,7 @@
                                 <tr>
                                     <th class="p-3">User Name</th>
                                     <th class="p-3">Email</th>
+                                    <th class="p-3">WhatsApp & Classroom Alert</th>
                                     <th class="p-3">Role & Access Level</th>
                                     <th class="p-3">Allowed Modules</th>
                                     <th class="p-3">Module Sub-Permissions (Estates & Classroom Columns)</th>
@@ -1076,6 +1091,63 @@
                             <tbody id="userListTableBody" class="divide-y"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- WATI WhatsApp API Integration Settings Card -->
+                <div class="bg-green-50/70 p-5 rounded-xl shadow-sm border-2 border-green-300 space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-green-200 pb-3 gap-2">
+                        <div>
+                            <h3 class="text-base font-extrabold text-green-950 flex items-center space-x-2">
+                                <i class="fa-brands fa-whatsapp text-green-600 text-xl"></i>
+                                <span>WATI WhatsApp API Configuration (Classroom Module Alerts)</span>
+                            </h3>
+                            <p class="text-xs text-green-800 mt-0.5">Automatically sends WhatsApp template <code class="bg-white px-1.5 py-0.5 rounded border border-green-300 font-mono font-bold">classroom_portal_alert</code> whenever an Allotted Class, Other Event, Student Count, or Extra Chair is added or edited.</p>
+                        </div>
+                        <label class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-green-400 cursor-pointer shadow-sm">
+                            <input type="checkbox" id="watiEnabledCheckbox" checked onchange="saveWatiConfigFromUI()" class="rounded text-green-600 focus:ring-green-500 h-4 w-4">
+                            <span class="text-xs font-extrabold text-green-900">WATI Integration Active</span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <label class="font-bold text-green-950 block mb-1">WATI API Endpoint *</label>
+                            <input type="text" id="watiApiEndpointInput" value="https://live-mt-server.wati.io/310385" placeholder="https://live-mt-server.wati.io/310385" class="w-full p-2 border border-green-300 rounded-lg bg-white font-mono text-xs">
+                            <span class="text-[10px] text-green-700 mt-0.5 block">Auto-resolves Tenant ID (<code class="font-mono">310385</code>) from your WATI JWT token.</span>
+                        </div>
+                        <div>
+                            <label class="font-bold text-green-950 block mb-1">Approved Template Name *</label>
+                            <input type="text" id="watiTemplateNameInput" value="classroom_portal_alert" placeholder="classroom_portal_alert" class="w-full p-2 border border-green-300 rounded-lg bg-white font-mono text-xs font-bold text-emerald-900">
+                            <span class="text-[10px] text-green-700 mt-0.5 block">Variables: <code class="font-mono">{{1}}</code> User, <code class="font-mono">{{2}}</code> Action, <code class="font-mono">{{3}}</code> Room, <code class="font-mono">{{4}}</code> Details, <code class="font-mono">{{5}}</code> Schedule/Dates</span>
+                        </div>
+                        <div>
+                            <label class="font-bold text-green-950 block mb-1">WATI Access Token (Bearer JWT) *</label>
+                            <input type="password" id="watiAccessTokenInput" placeholder="Bearer eyJhbGci..." class="w-full p-2 border border-green-300 rounded-lg bg-white font-mono text-xs">
+                            <button type="button" onclick="toggleWatiTokenVisibility()" class="text-[10px] text-green-800 underline font-semibold mt-0.5">Show / Hide Token</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pt-2 border-t border-green-200">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <label class="flex items-center space-x-2 text-xs text-green-950 font-semibold cursor-pointer">
+                                <input type="checkbox" id="watiNotifyActorSelfCheckbox" onchange="saveWatiConfigFromUI()" class="rounded text-green-600 focus:ring-green-500 h-3.5 w-3.5">
+                                <span>Also send WhatsApp alert to the user who performed the edit</span>
+                            </label>
+                            <button type="button" onclick="saveWatiConfigFromUI(true)" class="bg-green-700 hover:bg-green-800 text-white font-bold px-4 py-2 rounded-lg text-xs transition shadow-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>Save WATI Settings</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end bg-white p-2 rounded-lg border border-green-200">
+                            <input type="tel" id="watiTestPhoneInput" value="918320039709" placeholder="Test Phone (e.g. 918320039709)" class="p-1.5 border rounded text-xs font-mono w-48">
+                            <button type="button" id="btnSendTestWati" onclick="sendTestWatiWhatsAppMessage()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-xs transition flex items-center space-x-1 whitespace-nowrap">
+                                <i class="fa-brands fa-whatsapp"></i>
+                                <span>Send Test WhatsApp</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p id="watiStatusFeedbackMsg" class="hidden text-xs font-bold px-3 py-2 rounded-lg border"></p>
                 </div>
 
                 <!-- Data Backup & Restore (JSON Export/Import) -->
@@ -2389,9 +2461,18 @@
         const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
         const ALL_CLASSROOM_COL_PERMS = ['allotted-class', 'event', 'student-count', 'extra-chair'];
 
+        const DEFAULT_WATI_ACCESS_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6Im11cnRhemEua2hlcmFsdXdhbGFAamFtZWFzYWlmaXlhaC5lZHUiLCJuYW1laWQiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiZW1haWwiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiYXV0aF90aW1lIjoiMTAvMjYvMjAyNiAxMjoyMjo0OCIsInRlbmFudF9pZCI6IjMxMDM4NSIsImRiX25hbWUiOiJtdC1wcm9kLVRlbmFudHMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBRE1JTklTVFJBVE9SIiwiZXhwIjoyNTM0MDIzMDA4MDAsImlzcyI6IkNsYXJlX0FJIiwiYXVkIjoiQ2xhcmVfQUkifQ.K69obg-iYKCwmE4B8M7EklmXokQBT63bXpdQsdimVNw";
+        let watiConfig = {
+            enabled: true,
+            apiEndpoint: "https://live-mt-server.wati.io",
+            accessToken: DEFAULT_WATI_ACCESS_TOKEN,
+            templateName: "classroom_portal_alert",
+            notifyActorSelf: false
+        };
+
         let usersList = [
-            { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] },
-            { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
+            { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', whatsappNumber: '918320039709', receiveClassroomWhatsapp: true, role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] },
+            { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu', whatsappNumber: '', receiveClassroomWhatsapp: true, role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
         ];
 
         function getUserDisplayNameByEmail(email, fallbackName = '') {
@@ -3001,7 +3082,7 @@
             const arr = Array.isArray(rawUsers)
                 ? rawUsers
                 : (typeof rawUsers === 'object' ? Object.values(rawUsers) : []);
-            return arr.filter(Boolean).map(u => {
+            const normalizedList = arr.filter(Boolean).map(u => {
                 const rawPerms = Array.isArray(u.permissions)
                     ? u.permissions.map(Number)
                     : (u.permissions && typeof u.permissions === 'object' ? Object.values(u.permissions).map(Number) : [1,2,3,4,5,6,7,8]);
@@ -3021,20 +3102,68 @@
                 }
                 const emailClean = String(u.email || '').trim();
                 const fallbackDefaultUser = [
-                    { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu' },
-                    { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu' }
+                    { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', whatsappNumber: '918320039709' },
+                    { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu', whatsappNumber: '' }
                 ].find(d => d.email.toLowerCase() === emailClean.toLowerCase());
                 const userNameClean = String(u.name || u.userName || (fallbackDefaultUser ? fallbackDefaultUser.name : '')).trim();
+                const whatsappClean = normalizeWhatsAppPhone(u.whatsappNumber || u.whatsapp || u.phone || (fallbackDefaultUser ? fallbackDefaultUser.whatsappNumber : ''));
+                const receiveClsWa = u.receiveClassroomWhatsapp !== undefined ? Boolean(u.receiveClassroomWhatsapp) : true;
                 return {
                     name: userNameClean,
                     email: emailClean,
-                    role: u.role === 'Admin' ? 'Admin' : 'User',
+                    whatsappNumber: whatsappClean,
+                    receiveClassroomWhatsapp: receiveClsWa,
+                    role: (u.role === 'Admin' || fallbackDefaultUser) ? 'Admin' : 'User',
                     accessLevel: u.accessLevel === 'View Only' ? 'View Only' : 'Editing Rights',
                     allowedModules: rawMods,
                     permissions: rawPerms,
                     classroomPermissions: rawClsPerms
                 };
             });
+
+            // Guarantee default superAdmins (including Murtaza Kheraluwala with 918320039709) are always present in usersList
+            const defaultSuperUsers = [
+                { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', whatsappNumber: '918320039709', receiveClassroomWhatsapp: true, role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] },
+                { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu', whatsappNumber: '', receiveClassroomWhatsapp: true, role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
+            ];
+            defaultSuperUsers.slice().reverse().forEach(defU => {
+                const exists = normalizedList.some(item => String(item.email || '').trim().toLowerCase() === defU.email.toLowerCase());
+                if (!exists) {
+                    normalizedList.unshift(defU);
+                }
+            });
+            return normalizedList;
+        }
+
+        function normalizeWhatsAppPhone(rawPhone) {
+            if (!rawPhone) return '';
+            let digits = String(rawPhone).replace(/\D/g, '');
+            if (!digits) return '';
+            if (digits.length === 10) {
+                digits = '91' + digits;
+            } else if (digits.length === 11 && digits.startsWith('0')) {
+                digits = '91' + digits.slice(1);
+            }
+            return digits;
+        }
+
+        function normalizeWatiConfig(rawCfg) {
+            if (!rawCfg || typeof rawCfg !== 'object') {
+                return {
+                    enabled: true,
+                    apiEndpoint: "https://live-mt-server.wati.io",
+                    accessToken: DEFAULT_WATI_ACCESS_TOKEN,
+                    templateName: "classroom_portal_alert",
+                    notifyActorSelf: false
+                };
+            }
+            return {
+                enabled: rawCfg.enabled !== undefined ? Boolean(rawCfg.enabled) : true,
+                apiEndpoint: String(rawCfg.apiEndpoint || "https://live-mt-server.wati.io").trim(),
+                accessToken: String(rawCfg.accessToken || DEFAULT_WATI_ACCESS_TOKEN).trim(),
+                templateName: String(rawCfg.templateName || "classroom_portal_alert").trim(),
+                notifyActorSelf: Boolean(rawCfg.notifyActorSelf)
+            };
         }
 
         async function loadCloudData() {
@@ -3050,6 +3179,9 @@
                     vacantBills = data.bills || {};
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     usersList = normalizeUsersList(data.users || usersList);
+                    if (data.watiConfig) {
+                        watiConfig = normalizeWatiConfig(data.watiConfig);
+                    }
                     keysInventoryData = data.keys || [];
                     if (data.classrooms) {
                         classroomsData = normalizeClassroomsList(data.classrooms);
@@ -3211,6 +3343,10 @@
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     if (data.users !== undefined) {
                         usersList = normalizeUsersList(data.users);
+                    }
+                    if (data.watiConfig !== undefined) {
+                        watiConfig = normalizeWatiConfig(data.watiConfig);
+                        populateWatiConfigInputs();
                     }
                     keysInventoryData = Array.isArray(data.keys) ? data.keys : (data.keys && typeof data.keys === 'object' ? Object.values(data.keys) : []);
                     if (data.classrooms !== undefined) {
@@ -3394,7 +3530,211 @@
             });
         };
 
-        async function recordClassroomChangeNotification(subPermission, actionType, detailText, scheduleSummary = '') {
+        function extractTenantIdFromWatiToken(rawToken) {
+            try {
+                const cleanJwt = String(rawToken || '').replace(/^Bearer\s+/i, '').trim();
+                const parts = cleanJwt.split('.');
+                if (parts.length < 2) return '';
+                const base64Url = parts[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+                const payload = JSON.parse(atob(padded));
+                return payload && payload.tenant_id ? String(payload.tenant_id).trim() : '';
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function resolveWatiCandidateBaseUrls(rawEndpoint, rawToken) {
+            let base = String(rawEndpoint || 'https://live-mt-server.wati.io').trim().replace(/\/+$/, '');
+            base = base.replace(/\/api\/v1.*$/i, '');
+            const tenantId = extractTenantIdFromWatiToken(rawToken);
+            const candidates = [];
+            if (tenantId && !base.endsWith('/' + tenantId)) {
+                candidates.push(`${base}/${tenantId}`);
+                candidates.push(base);
+            } else {
+                candidates.push(base);
+                if (tenantId && base.endsWith('/' + tenantId)) {
+                    candidates.push(base.slice(0, -(tenantId.length + 1)));
+                }
+            }
+            return Array.from(new Set(candidates.filter(Boolean)));
+        }
+
+        function sanitizeWatiParamValue(val, fallback = '-') {
+            const cleaned = String(val ?? '')
+                .replace(/[\r\n\t]+/g, ' ')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+            if (!cleaned) return fallback;
+            return cleaned.length > 900 ? cleaned.slice(0, 897) + '...' : cleaned;
+        }
+
+        function getReadableClassroomActionLabel(actionType, subPermission) {
+            const map = {
+                'add-class': 'Added Allotted Class',
+                'edit-class': 'Edited Allotted Class',
+                'delete-class': 'Removed Allotted Class',
+                'add-event': 'Added Event',
+                'edit-event': 'Edited Event',
+                'delete-event': 'Removed Event',
+                'add-student-count': 'Added Student Count',
+                'edit-student-count': 'Updated Student Count',
+                'add-extra-chair': 'Added Extra Chair',
+                'edit-extra-chair': 'Updated Extra Chair'
+            };
+            if (map[actionType]) return map[actionType];
+            if (subPermission === 'allotted-class') return 'Updated Allotted Class';
+            if (subPermission === 'event') return 'Updated Event';
+            if (subPermission === 'student-count') return 'Updated Student Count';
+            if (subPermission === 'extra-chair') return 'Updated Extra Chair';
+            return 'Classroom Portal Update';
+        }
+
+        async function dispatchWatiTemplateMessages(phoneNumbers, customParamsArray) {
+            const cfg = normalizeWatiConfig(watiConfig);
+            const rawToken = String(cfg.accessToken || DEFAULT_WATI_ACCESS_TOKEN).trim();
+            const authHeader = /^Bearer\s+/i.test(rawToken) ? rawToken : `Bearer ${rawToken}`;
+            const templateName = String(cfg.templateName || 'classroom_portal_alert').trim();
+            const candidateBaseUrls = resolveWatiCandidateBaseUrls(cfg.apiEndpoint, rawToken);
+
+            const cleanPhones = Array.from(new Set(phoneNumbers.map(normalizeWhatsAppPhone).filter(p => p.length >= 10)));
+            if (cleanPhones.length === 0) {
+                return { ok: false, sentCount: 0, message: 'No valid recipient WhatsApp numbers configured.' };
+            }
+
+            let lastErrorMsg = '';
+            for (const baseUrl of candidateBaseUrls) {
+                // 1. Try WATI Bulk Template Endpoint: POST {baseUrl}/api/v1/sendTemplateMessages
+                try {
+                    const bulkUrl = `${baseUrl}/api/v1/sendTemplateMessages`;
+                    const bulkPayload = {
+                        template_name: templateName,
+                        broadcast_name: `Classroom_Alert_${Date.now()}`,
+                        receivers: cleanPhones.map(ph => ({
+                            whatsappNumber: ph,
+                            customParams: customParamsArray
+                        }))
+                    };
+                    const res = await fetch(bulkUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': authHeader,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(bulkPayload)
+                    });
+                    if (res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        if (data && data.result !== false) {
+                            return { ok: true, sentCount: cleanPhones.length, endpointUsed: bulkUrl, response: data };
+                        }
+                        lastErrorMsg = (data && (data.info || data.message || data.error)) || 'WATI returned result: false';
+                    } else {
+                        const errText = await res.text().catch(() => '');
+                        lastErrorMsg = `HTTP ${res.status}: ${errText.slice(0, 160)}`;
+                    }
+                } catch (err) {
+                    lastErrorMsg = err.message || String(err);
+                }
+
+                // 2. Fallback to Single Template Endpoint per number: POST {baseUrl}/api/v1/sendTemplateMessage?whatsappNumber={phone}
+                try {
+                    let singleSuccessCount = 0;
+                    for (const ph of cleanPhones) {
+                        const singleUrl = `${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${encodeURIComponent(ph)}`;
+                        const singlePayload = {
+                            template_name: templateName,
+                            broadcast_name: `Classroom_Alert_${Date.now()}`,
+                            parameters: customParamsArray
+                        };
+                        const sRes = await fetch(singleUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': authHeader,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(singlePayload)
+                        });
+                        if (sRes.ok) {
+                            const sData = await sRes.json().catch(() => ({}));
+                            if (!sData || sData.result !== false) {
+                                singleSuccessCount++;
+                            } else {
+                                lastErrorMsg = (sData && (sData.info || sData.message || sData.error)) || lastErrorMsg;
+                            }
+                        }
+                    }
+                    if (singleSuccessCount > 0) {
+                        return { ok: true, sentCount: singleSuccessCount, endpointUsed: `${baseUrl}/api/v1/sendTemplateMessage` };
+                    }
+                } catch (err2) {
+                    lastErrorMsg = err2.message || String(err2);
+                }
+            }
+
+            return { ok: false, sentCount: 0, message: lastErrorMsg || 'Failed to reach WATI endpoint.' };
+        }
+
+        async function sendClassroomWhatsAppAlert({ subPermission, actionType, detailText, scheduleSummary, roomObj, actorEmail, actorName, formattedTime }) {
+            try {
+                const cfg = normalizeWatiConfig(watiConfig);
+                if (!cfg.enabled) return;
+
+                const actorEmailLower = String(actorEmail || '').trim().toLowerCase();
+
+                // Collect eligible users who have Classroom module access, Receive WhatsApp Notification enabled, and a valid WhatsApp number
+                const targetPhones = [];
+                usersList.forEach(u => {
+                    if (!u) return;
+                    const uEmailLower = String(u.email || '').trim().toLowerCase();
+                    if (!cfg.notifyActorSelf && uEmailLower && uEmailLower === actorEmailLower) {
+                        return;
+                    }
+                    const isSuper = superAdmins.map(e => e.trim().toLowerCase()).includes(uEmailLower);
+                    const hasClassroomAccess = isSuper || u.role === 'Admin' || (Array.isArray(u.allowedModules) && u.allowedModules.includes('classroom-allocation'));
+                    if (!hasClassroomAccess) return;
+                    if (u.receiveClassroomWhatsapp === false) return;
+                    const ph = normalizeWhatsAppPhone(u.whatsappNumber);
+                    if (ph && ph.length >= 10) {
+                        targetPhones.push(ph);
+                    }
+                });
+
+                if (targetPhones.length === 0) return;
+
+                const actionLabel = getReadableClassroomActionLabel(actionType, subPermission);
+                let roomLabel = '';
+                if (roomObj && roomObj.classroomNumber) {
+                    roomLabel = `Classroom ${roomObj.classroomNumber} (${roomObj.type || 'Male'})${roomObj.location ? ' - ' + roomObj.location : ''}`;
+                } else {
+                    const m = String(detailText || '').match(/Classroom\s+([^()]+\([^)]+\))/i);
+                    roomLabel = m ? `Classroom ${m[1].trim()}` : 'Classroom Allocation Module';
+                }
+
+                const summaryOrTime = scheduleSummary
+                    ? `${scheduleSummary} (Updated: ${formattedTime})`
+                    : `Updated on ${formattedTime}`;
+
+                const customParams = [
+                    { name: "1", value: sanitizeWatiParamValue(actorName, 'Portal User') },
+                    { name: "2", value: sanitizeWatiParamValue(actionLabel, 'Classroom Update') },
+                    { name: "3", value: sanitizeWatiParamValue(roomLabel, 'Classroom') },
+                    { name: "4", value: sanitizeWatiParamValue(detailText, 'Classroom details updated') },
+                    { name: "5", value: sanitizeWatiParamValue(summaryOrTime, formattedTime) }
+                ];
+
+                const res = await dispatchWatiTemplateMessages(targetPhones, customParams);
+                if (!res.ok) {
+                    console.warn("WATI WhatsApp notification warning:", res.message);
+                }
+            } catch (err) {
+                console.error("Error sending WATI WhatsApp notification:", err);
+            }
+        }
+
+        async function recordClassroomChangeNotification(subPermission, actionType, detailText, scheduleSummary = '', roomObj = null) {
             if (!currentUser || !currentUser.email) return;
             const actorEmail = currentUser.email.trim();
             const actorName = getUserDisplayNameByEmail(actorEmail, currentUser.displayName || '');
@@ -3419,6 +3759,18 @@
 
             portalNotificationsData.push(newNotif);
             updateModuleNotificationBadges();
+
+            // Fire WATI WhatsApp template alert to all subscribed users
+            sendClassroomWhatsAppAlert({
+                subPermission,
+                actionType,
+                detailText,
+                scheduleSummary,
+                roomObj,
+                actorEmail,
+                actorName,
+                formattedTime
+            });
         }
 
         async function recordDawatEstatesNotification(subHeaderKey, actionType, detailText, scheduleSummary = '') {
@@ -3645,6 +3997,7 @@
                     bills: vacantBills,
                     socBills: societyBillsData,
                     users: usersList,
+                    watiConfig: watiConfig,
                     estate_assets: estateAssetsData
                 });
                 await set(dbRef(db, 'estate_assets'), estateAssetsData);
@@ -3758,6 +4111,7 @@
             renderSocietyDocs();
             renderMaintenanceGrid();
             renderUsersList();
+            populateWatiConfigInputs();
             populateSocietyDropdowns();
             populateFlatMaintenanceDropdown();
             populateIntegratedFlatDropdown();
@@ -5855,10 +6209,111 @@ window.renderSocieties = function() {
             });
         };
 
+        window.toggleWatiTokenVisibility = function() {
+            const el = document.getElementById('watiAccessTokenInput');
+            if (!el) return;
+            el.type = el.type === 'password' ? 'text' : 'password';
+        };
+
+        window.populateWatiConfigInputs = function() {
+            const cfg = normalizeWatiConfig(watiConfig);
+            const enabledEl = document.getElementById('watiEnabledCheckbox');
+            const endpointEl = document.getElementById('watiApiEndpointInput');
+            const templateEl = document.getElementById('watiTemplateNameInput');
+            const tokenEl = document.getElementById('watiAccessTokenInput');
+            const selfEl = document.getElementById('watiNotifyActorSelfCheckbox');
+
+            if (enabledEl) enabledEl.checked = cfg.enabled;
+            if (endpointEl) endpointEl.value = cfg.apiEndpoint;
+            if (templateEl) templateEl.value = cfg.templateName;
+            if (tokenEl) tokenEl.value = cfg.accessToken;
+            if (selfEl) selfEl.checked = cfg.notifyActorSelf;
+        };
+
+        window.saveWatiConfigFromUI = async function(showToast = false) {
+            if (!isUserAdmin) return;
+            watiConfig = normalizeWatiConfig({
+                enabled: document.getElementById('watiEnabledCheckbox')?.checked ?? true,
+                apiEndpoint: document.getElementById('watiApiEndpointInput')?.value || 'https://live-mt-server.wati.io',
+                templateName: document.getElementById('watiTemplateNameInput')?.value || 'classroom_portal_alert',
+                accessToken: document.getElementById('watiAccessTokenInput')?.value || DEFAULT_WATI_ACCESS_TOKEN,
+                notifyActorSelf: document.getElementById('watiNotifyActorSelfCheckbox')?.checked ?? false
+            });
+            await saveCloudData();
+            if (showToast) {
+                showAssetToast("WATI WhatsApp API configuration saved to Cloud");
+            }
+        };
+
+        window.sendTestWatiWhatsAppMessage = async function() {
+            const phoneInput = document.getElementById('watiTestPhoneInput');
+            const feedbackEl = document.getElementById('watiStatusFeedbackMsg');
+            const btn = document.getElementById('btnSendTestWati');
+            const rawPhone = (phoneInput?.value || '').trim();
+            const normalizedPhone = normalizeWhatsAppPhone(rawPhone);
+
+            if (!normalizedPhone || normalizedPhone.length < 10) {
+                if (feedbackEl) {
+                    feedbackEl.className = "text-xs font-bold px-3 py-2 rounded-lg border bg-red-50 text-red-800 border-red-300";
+                    feedbackEl.innerText = "Please enter a valid WhatsApp number with country code (e.g. 919820011223) to test.";
+                    feedbackEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            await saveWatiConfigFromUI(false);
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Sending...</span>';
+            }
+            if (feedbackEl) {
+                feedbackEl.className = "text-xs font-bold px-3 py-2 rounded-lg border bg-blue-50 text-blue-800 border-blue-200";
+                feedbackEl.innerText = `Sending test template "${watiConfig.templateName}" to ${normalizedPhone}...`;
+                feedbackEl.classList.remove('hidden');
+            }
+
+            const actorName = currentUser ? getUserDisplayNameByEmail(currentUser.email, currentUser.displayName || '') : 'Admin User';
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const formattedTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+            const testParams = [
+                { name: "1", value: sanitizeWatiParamValue(actorName, 'Admin') },
+                { name: "2", value: "Test Classroom Alert" },
+                { name: "3", value: "Classroom 101 (Male) - Test" },
+                { name: "4", value: "WATI WhatsApp API integration test from Siyanat Operations Portal" },
+                { name: "5", value: `Verified on ${formattedTime}` }
+            ];
+
+            const result = await dispatchWatiTemplateMessages([normalizedPhone], testParams);
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-brands fa-whatsapp"></i><span>Send Test WhatsApp</span>';
+            }
+
+            if (result.ok) {
+                if (feedbackEl) {
+                    feedbackEl.className = "text-xs font-bold px-3 py-2 rounded-lg border bg-green-100 text-green-900 border-green-400";
+                    feedbackEl.innerText = `Success! Test WhatsApp template "${watiConfig.templateName}" dispatched to +${normalizedPhone} via ${result.endpointUsed}.`;
+                }
+                showAssetToast(`Test WhatsApp sent to +${normalizedPhone}`);
+            } else {
+                if (feedbackEl) {
+                    feedbackEl.className = "text-xs font-bold px-3 py-2 rounded-lg border bg-red-50 text-red-800 border-red-300";
+                    feedbackEl.innerText = `WATI API Response Error: ${result.message}. Please verify that template "${watiConfig.templateName}" is Approved in your WATI dashboard.`;
+                }
+                showAssetToast("WATI Test Failed — check status message", true);
+            }
+        };
+
         window.resetInviteUserForm = function() {
             const form = document.getElementById('inviteUserForm');
             if (form) form.reset();
             if (document.getElementById('inviteUserName')) document.getElementById('inviteUserName').value = '';
+            if (document.getElementById('inviteWhatsappNumber')) document.getElementById('inviteWhatsappNumber').value = '';
+            if (document.getElementById('cls-perm-whatsapp-notify')) document.getElementById('cls-perm-whatsapp-notify').checked = true;
             document.getElementById('inviteEmail').readOnly = false;
             document.getElementById('inviteEmail').classList.remove('bg-gray-100');
             document.getElementById('inviteFormHeading').innerText = 'Invite / Configure Team Member';
@@ -5882,6 +6337,12 @@ window.renderSocieties = function() {
                 document.getElementById('inviteUserName').value = u.name || getUserDisplayNameByEmail(u.email);
             }
             document.getElementById('inviteEmail').value = u.email;
+            if (document.getElementById('inviteWhatsappNumber')) {
+                document.getElementById('inviteWhatsappNumber').value = u.whatsappNumber || '';
+            }
+            if (document.getElementById('cls-perm-whatsapp-notify')) {
+                document.getElementById('cls-perm-whatsapp-notify').checked = u.receiveClassroomWhatsapp !== false;
+            }
             document.getElementById('inviteRole').value = u.role || 'User';
 
             const isViewOnly = u.accessLevel === 'View Only';
@@ -5951,9 +6412,21 @@ window.renderSocieties = function() {
                 const isSuperOwner = superAdmins.map(e => e.toLowerCase()).includes(u.email.trim().toLowerCase());
                 const displayName = u.name || getUserDisplayNameByEmail(u.email);
 
+                const hasPhone = u.whatsappNumber && String(u.whatsappNumber).trim() !== '';
+                const waNotifyOn = u.receiveClassroomWhatsapp !== false && mods.includes('classroom-allocation');
+                const waPhoneHtml = hasPhone
+                    ? `<span class="font-mono font-bold text-gray-900 block"><i class="fa-brands fa-whatsapp text-green-600 mr-1"></i>+${u.whatsappNumber}</span>`
+                    : `<span class="text-gray-400 italic block">No WhatsApp No.</span>`;
+                const waBadgeHtml = waNotifyOn
+                    ? (hasPhone
+                        ? `<span class="inline-block mt-0.5 bg-green-100 text-green-900 border border-green-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full"><i class="fa-solid fa-bell mr-1 text-green-700"></i>Classroom WhatsApp ON</span>`
+                        : `<span class="inline-block mt-0.5 bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">Add No. to Receive Alerts</span>`)
+                    : `<span class="inline-block mt-0.5 bg-gray-100 text-gray-500 border border-gray-300 text-[10px] font-semibold px-2 py-0.5 rounded-full">WhatsApp Alerts OFF</span>`;
+
                 tr.innerHTML = `
                     <td class="p-3 font-bold text-emerald-950">${displayName}</td>
                     <td class="p-3 font-semibold text-gray-800">${u.email}</td>
+                    <td class="p-3 whitespace-nowrap">${waPhoneHtml}${waBadgeHtml}</td>
                     <td class="p-3 whitespace-nowrap">
                         <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span>
                         ${accessBadge}
@@ -5973,6 +6446,8 @@ window.renderSocieties = function() {
             e.preventDefault();
             const name = (document.getElementById('inviteUserName')?.value || '').trim();
             const email = document.getElementById('inviteEmail').value.trim();
+            const whatsappNumber = normalizeWhatsAppPhone(document.getElementById('inviteWhatsappNumber')?.value || '');
+            const receiveClassroomWhatsapp = document.getElementById('cls-perm-whatsapp-notify') ? document.getElementById('cls-perm-whatsapp-notify').checked : true;
             const role = document.getElementById('inviteRole').value;
             const accessRadio = document.querySelector('input[name="inviteAccessLevel"]:checked');
             const accessLevel = accessRadio ? accessRadio.value : 'Editing Rights';
@@ -6006,6 +6481,8 @@ window.renderSocieties = function() {
             const userObj = {
                 name: name || getUserDisplayNameByEmail(email),
                 email,
+                whatsappNumber,
+                receiveClassroomWhatsapp,
                 role,
                 accessLevel,
                 allowedModules,
@@ -6805,7 +7282,8 @@ window.renderSocieties = function() {
                 'extra-chair',
                 'edit-extra-chair',
                 `Removed ${targetEntry.count} Extra Chair(s) (${targetEntry.fromDate || '-'} to ${targetEntry.toDate || '-'}) in Classroom ${room.classroomNumber} (${room.type})`,
-                `Active Total Extra Chairs: ${newTotal}`
+                `Active Total Extra Chairs: ${newTotal}`,
+                room
             );
 
             await saveClassroomsToCloud();
@@ -6904,7 +7382,7 @@ window.renderSocieties = function() {
                 const notifDetail = hadPrevVal
                     ? `Edited Student Count from ${prevVal} to ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`
                     : `Added Student Count: ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`;
-                await recordClassroomChangeNotification(colPermKey, hadPrevVal ? `edit-${colPermKey}` : `add-${colPermKey}`, notifDetail);
+                await recordClassroomChangeNotification(colPermKey, hadPrevVal ? `edit-${colPermKey}` : `add-${colPermKey}`, notifDetail, `Current Student Count: ${numVal ?? 0}`, room);
 
                 await saveClassroomsToCloud();
                 closeModal('modalClassroomMetric');
@@ -6972,7 +7450,8 @@ window.renderSocieties = function() {
                 'extra-chair',
                 editEntryId ? 'edit-extra-chair' : 'add-extra-chair',
                 notifDetail,
-                `From: ${fromDate} to ${toDate} | Active Total Extra Chairs: ${newActiveTotal}`
+                `From: ${fromDate} to ${toDate} | Active Total Extra Chairs: ${newActiveTotal}`,
+                room
             );
 
             await saveClassroomsToCloud();
@@ -7303,7 +7782,8 @@ window.renderSocieties = function() {
                 permKey,
                 editAllocId ? `edit-${allocationCategory}` : `add-${allocationCategory}`,
                 schedNotifDetail,
-                schedSummaryStr
+                schedSummaryStr,
+                room
             );
 
             await saveClassroomsToCloud();
@@ -8861,6 +9341,7 @@ window.renderSocieties = function() {
                     bills: vacantBills,
                     socBills: societyBillsData,
                     users: usersList,
+                    watiConfig: watiConfig,
                     estate_assets: estateAssetsData
                 }
             };
@@ -8916,6 +9397,7 @@ window.renderSocieties = function() {
                     if (src.bills && typeof src.bills === 'object') vacantBills = src.bills;
                     if (src.socBills && typeof src.socBills === 'object') societyBillsData = normalizeSocietyBillsData(src.socBills);
                     if (src.users !== undefined) usersList = normalizeUsersList(src.users);
+                    if (src.watiConfig !== undefined) watiConfig = normalizeWatiConfig(src.watiConfig);
                     if (src.estate_assets !== undefined) estateAssetsData = normalizeEstateAssetsList(src.estate_assets);
 
                     await saveCloudData();

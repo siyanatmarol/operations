@@ -96,6 +96,7 @@
                 <button onclick="switchModule('dawat-estates')" id="mod-dawat-estates" class="px-5 py-3 text-sm font-semibold text-emerald-100 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 active-tab">
                     <i class="fa-solid fa-city text-emerald-400"></i>
                     <span>Dawat Estates</span>
+                    <span id="notifBadgeDawatEstates" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchModule('classroom-allocation')" id="mod-classroom-allocation" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-chalkboard-user"></i>
@@ -136,34 +137,42 @@
                 <button onclick="switchSubHeader('estate-details')" id="sub-estate-details" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-active flex items-center space-x-2">
                     <i class="fa-solid fa-building"></i>
                     <span>1. Estate Details</span>
+                    <span id="notifBadgeSub-estate-details" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchSubHeader('allocation')" id="sub-allocation" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
                     <i class="fa-solid fa-key"></i>
                     <span>2. Allocation</span>
+                    <span id="notifBadgeSub-allocation" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchSubHeader('maintenance')" id="sub-maintenance" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
                     <i class="fa-solid fa-screwdriver-wrench"></i>
                     <span>3. Maintenance Data</span>
+                    <span id="notifBadgeSub-maintenance" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchSubHeader('bachelor')" id="sub-bachelor" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
                     <i class="fa-solid fa-user-group"></i>
                     <span>4. Bachelor Flats</span>
+                    <span id="notifBadgeSub-bachelor" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchSubHeader('vacant-bills')" id="sub-vacant-bills" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
                     <i class="fa-solid fa-file-invoice-dollar"></i>
                     <span>5. Vacant/Bachelor Flats Bills</span>
+                    <span id="notifBadgeSub-vacant-bills" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchSubHeader('society')" id="sub-society" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
                     <i class="fa-solid fa-sitemap"></i>
                     <span>6. Society Maintenance</span>
+                    <span id="notifBadgeSub-society" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchSubHeader('integrated')" id="sub-integrated" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
                     <i class="fa-solid fa-layer-group"></i>
                     <span>7. Integrated View</span>
+                    <span id="notifBadgeSub-integrated" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
                 <button onclick="switchSubHeader('asset-details')" id="sub-asset-details" class="px-4 py-2 rounded-md text-sm font-medium transition sub-tab-inactive flex items-center space-x-2">
                     <i class="fa-solid fa-boxes-stacked"></i>
                     <span>8. Asset Details</span>
+                    <span id="notifBadgeSub-asset-details" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
                 </button>
             </div>
 
@@ -931,7 +940,11 @@
                         <h3 class="text-sm font-bold text-gray-700 uppercase" id="inviteFormHeading">Invite / Configure Team Member</h3>
                         <button type="button" id="cancelEditUserBtn" onclick="resetInviteUserForm()" class="hidden text-xs text-red-600 hover:underline font-semibold">Cancel Edit</button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">User Name *</label>
+                            <input type="text" id="inviteUserName" required placeholder="e.g. Murtaza Kheraluwala" class="w-full p-2 border rounded text-sm bg-white">
+                        </div>
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">User Email Address *</label>
                             <input type="email" id="inviteEmail" required placeholder="e.g. staff@gmail.com" class="w-full p-2 border rounded text-sm bg-white">
@@ -1018,10 +1031,14 @@
                                     <button type="button" onclick="setAllClassroomSubPerms(false)" class="text-gray-600 font-semibold hover:underline">Clear All</button>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
                                 <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
-                                    <input type="checkbox" id="cls-perm-darajah-event" value="darajah-event" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
-                                    <span class="font-semibold text-gray-800"><i class="fa-solid fa-calendar-plus text-emerald-600 mr-1"></i>Add Darajah / Event</span>
+                                    <input type="checkbox" id="cls-perm-allotted-class" value="allotted-class" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                    <span class="font-semibold text-gray-800"><i class="fa-solid fa-chalkboard text-emerald-600 mr-1"></i>Add Allotted Class</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                                    <input type="checkbox" id="cls-perm-event" value="event" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                    <span class="font-semibold text-gray-800"><i class="fa-solid fa-calendar-plus text-amber-600 mr-1"></i>Add Event</span>
                                 </label>
                                 <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
                                     <input type="checkbox" id="cls-perm-student-count" value="student-count" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
@@ -1048,6 +1065,7 @@
                         <table class="w-full text-left text-sm">
                             <thead class="bg-gray-100 text-gray-600 text-xs uppercase">
                                 <tr>
+                                    <th class="p-3">User Name</th>
                                     <th class="p-3">Email</th>
                                     <th class="p-3">Role & Access Level</th>
                                     <th class="p-3">Allowed Modules</th>
@@ -2222,7 +2240,7 @@
         let currentUser = null;
         let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
         let currentUserModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
-        let currentUserClassroomPerms = ['darajah-event', 'student-count', 'extra-chair'];
+        let currentUserClassroomPerms = ['allotted-class', 'event', 'student-count', 'extra-chair'];
         let currentUserAccessLevel = 'Editing Rights'; // 'Editing Rights' | 'View Only'
         let isUserAdmin = false;
 
@@ -2328,12 +2346,36 @@
         ];
 
         const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
-        const ALL_CLASSROOM_COL_PERMS = ['darajah-event', 'student-count', 'extra-chair'];
+        const ALL_CLASSROOM_COL_PERMS = ['allotted-class', 'event', 'student-count', 'extra-chair'];
 
         let usersList = [
-            { email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] },
-            { email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
+            { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] },
+            { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu', role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
         ];
+
+        function getUserDisplayNameByEmail(email, fallbackName = '') {
+            const rawEmail = String(email || '').trim();
+            const emailLower = rawEmail.toLowerCase();
+            if (emailLower) {
+                const matchedUser = usersList.find(u => u && String(u.email || '').trim().toLowerCase() === emailLower);
+                if (matchedUser && matchedUser.name && String(matchedUser.name).trim() !== '') {
+                    return String(matchedUser.name).trim();
+                }
+            }
+            if (fallbackName && String(fallbackName).trim() !== '' && !String(fallbackName).includes('@')) {
+                return String(fallbackName).trim();
+            }
+            if (currentUser && currentUser.email && currentUser.email.trim().toLowerCase() === emailLower && currentUser.displayName) {
+                return String(currentUser.displayName).trim();
+            }
+            if (rawEmail.includes('@')) {
+                const prefix = rawEmail.split('@')[0];
+                return prefix
+                    .replace(/[._-]+/g, ' ')
+                    .replace(/\b\w/g, c => c.toUpperCase());
+            }
+            return rawEmail || 'User';
+        }
 
         function isCurrentUserViewOnly() {
             return !isUserAdmin && currentUserAccessLevel === 'View Only';
@@ -2342,7 +2384,14 @@
         function canEditClassroomColumn(colKey) {
             if (isUserAdmin) return true;
             if (isCurrentUserViewOnly()) return false;
-            return Array.isArray(currentUserClassroomPerms) && currentUserClassroomPerms.includes(colKey);
+            if (!Array.isArray(currentUserClassroomPerms)) return false;
+            if (colKey === 'allotted-class' || colKey === 'class') {
+                return currentUserClassroomPerms.includes('allotted-class') || currentUserClassroomPerms.includes('darajah-event');
+            }
+            if (colKey === 'event') {
+                return currentUserClassroomPerms.includes('event') || currentUserClassroomPerms.includes('darajah-event');
+            }
+            return currentUserClassroomPerms.includes(colKey);
         }
 
         function guardEditingRights() {
@@ -2838,8 +2887,10 @@
                 return {
                     id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
                     module: String(item.module || 'classroom-allocation'),
+                    subHeader: String(item.subHeader || ''),
                     subPermission: String(item.subPermission || ''),
                     actorEmail,
+                    actorName: String(item.actorName || ''),
                     actionType: String(item.actionType || ''),
                     detailText: String(item.detailText || ''),
                     scheduleSummary: String(item.scheduleSummary || ''),
@@ -2892,11 +2943,23 @@
                 let rawClsPerms = [...ALL_CLASSROOM_COL_PERMS];
                 if (u.classroomPermissions !== undefined) {
                     rawClsPerms = Array.isArray(u.classroomPermissions)
-                        ? u.classroomPermissions
+                        ? [...u.classroomPermissions]
                         : (u.classroomPermissions && typeof u.classroomPermissions === 'object' ? Object.values(u.classroomPermissions) : []);
+                    if (rawClsPerms.includes('darajah-event')) {
+                        if (!rawClsPerms.includes('allotted-class')) rawClsPerms.push('allotted-class');
+                        if (!rawClsPerms.includes('event')) rawClsPerms.push('event');
+                        rawClsPerms = rawClsPerms.filter(k => k !== 'darajah-event');
+                    }
                 }
+                const emailClean = String(u.email || '').trim();
+                const fallbackDefaultUser = [
+                    { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu' },
+                    { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu' }
+                ].find(d => d.email.toLowerCase() === emailClean.toLowerCase());
+                const userNameClean = String(u.name || u.userName || (fallbackDefaultUser ? fallbackDefaultUser.name : '')).trim();
                 return {
-                    email: String(u.email || '').trim(),
+                    name: userNameClean,
+                    email: emailClean,
                     role: u.role === 'Admin' ? 'Admin' : 'User',
                     accessLevel: u.accessLevel === 'View Only' ? 'View Only' : 'Editing Rights',
                     allowedModules: rawMods,
@@ -2960,10 +3023,17 @@
         // Firestore / Firebase Cloud Database Read/Write Helpers for Classroom Allocation & Permissions
         window.saveClassroomsToCloud = async function() {
             try {
-                await set(dbRef(db, 'classrooms'), classroomsData);
-                await saveCloudData();
+                await Promise.all([
+                    set(dbRef(db, 'classrooms'), classroomsData),
+                    set(dbRef(db, 'portalData/classrooms'), classroomsData),
+                    set(dbRef(db, 'raihaan'), raihaanData),
+                    set(dbRef(db, 'portalData/raihaan'), raihaanData),
+                    set(dbRef(db, 'notifications'), portalNotificationsData),
+                    set(dbRef(db, 'portalData/notifications'), portalNotificationsData)
+                ]);
             } catch (err) {
                 console.error("Error saving classrooms to cloud:", err);
+                await saveCloudData();
             }
         };
 
@@ -2982,17 +3052,162 @@
 
         window.saveNotificationsToCloud = async function() {
             try {
-                await set(dbRef(db, 'notifications'), portalNotificationsData);
-                await set(dbRef(db, 'portalData/notifications'), portalNotificationsData);
+                await Promise.all([
+                    set(dbRef(db, 'notifications'), portalNotificationsData),
+                    set(dbRef(db, 'portalData/notifications'), portalNotificationsData)
+                ]);
             } catch (err) {
                 console.error("Error saving notifications to cloud:", err);
             }
         };
 
+        function syncCurrentUserLivePermissions() {
+            if (!currentUser || !currentUser.email) return;
+            const userEmailLower = currentUser.email.trim().toLowerCase();
+            const isSuper = superAdmins.map(e => e.trim().toLowerCase()).includes(userEmailLower);
+            const dbUser = usersList.find(u => u.email.trim().toLowerCase() === userEmailLower);
+            isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
+
+            if (isUserAdmin) {
+                currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
+                currentUserModules = [...ALL_PORTAL_MODULES];
+                currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
+                currentUserAccessLevel = 'Editing Rights';
+            } else if (dbUser) {
+                currentUserPermissions = Array.isArray(dbUser.permissions) ? [...dbUser.permissions] : [];
+                currentUserModules = (Array.isArray(dbUser.allowedModules) && dbUser.allowedModules.length > 0)
+                    ? [...dbUser.allowedModules]
+                    : [...ALL_PORTAL_MODULES];
+                currentUserClassroomPerms = Array.isArray(dbUser.classroomPermissions)
+                    ? [...dbUser.classroomPermissions]
+                    : [...ALL_CLASSROOM_COL_PERMS];
+                currentUserAccessLevel = dbUser.accessLevel || 'Editing Rights';
+            }
+
+            const roleEl = document.getElementById('currentUserRole');
+            if (roleEl) roleEl.innerText = isUserAdmin ? 'Administrator' : 'Standard User';
+
+            const accessBadge = document.getElementById('currentUserAccessBadge');
+            if (accessBadge) {
+                accessBadge.innerText = isUserAdmin ? 'Editing Rights' : currentUserAccessLevel;
+                accessBadge.className = isCurrentUserViewOnly()
+                    ? 'text-[11px] bg-amber-600 text-white px-2 py-0.5 rounded-full font-semibold border border-amber-400'
+                    : 'text-[11px] bg-teal-800 text-teal-100 px-2 py-0.5 rounded-full font-semibold border border-teal-600';
+            }
+            applyAccessLevelEnforcement();
+        }
+
+        function refreshAllPortalViews() {
+            renderEstateTable();
+            renderAllocationTable();
+            renderBachelorGrid();
+            renderMaintenanceGrid();
+            renderVacantBills();
+            renderSocieties();
+            renderSocietyDocs();
+            populateFlatMaintenanceDropdown();
+            populateIntegratedFlatDropdown();
+            if (document.getElementById('integratedFlatSelect')?.value) {
+                renderIntegratedView();
+            }
+            renderAssetDetailsTable();
+            renderClassroomsTables();
+            renderFacultyTable();
+            renderUsersList();
+            updateModuleNotificationBadges();
+
+            if (!document.getElementById('modalRaihaanArchive')?.classList.contains('hidden')) {
+                renderRaihaanArchiveTable();
+            }
+            if (!document.getElementById('modalBillsSummary')?.classList.contains('hidden') && currentSummarySocName && !document.activeElement?.closest('#modalBillsSummary')) {
+                renderBillsSummaryModalContent();
+            }
+        }
+
         function attachNotificationsRealtimeListener() {
             if (notificationsRealtimeListenerAttached) return;
             notificationsRealtimeListenerAttached = true;
             try {
+                // Real-time listener on entire portalData so all edits by any user in any module immediately reflect for all users
+                onValue(dbRef(db, 'portalData'), (snapshot) => {
+                    if (!snapshot.exists()) return;
+                    const data = snapshot.val() || {};
+                    estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
+                    facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
+                    if (data.societies) {
+                        societiesData = Array.isArray(data.societies) ? data.societies : (typeof data.societies === 'object' ? Object.values(data.societies) : societiesData);
+                    }
+                    societyDocs = Array.isArray(data.docs) ? data.docs : (data.docs && typeof data.docs === 'object' ? Object.values(data.docs) : []);
+                    maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
+                    vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
+                    societyBillsData = normalizeSocietyBillsData(data.socBills || {});
+                    if (data.users !== undefined) {
+                        usersList = normalizeUsersList(data.users);
+                    }
+                    keysInventoryData = Array.isArray(data.keys) ? data.keys : (data.keys && typeof data.keys === 'object' ? Object.values(data.keys) : []);
+                    if (data.classrooms !== undefined) {
+                        classroomsData = normalizeClassroomsList(data.classrooms);
+                    }
+                    if (data.raihaan !== undefined) {
+                        raihaanData = normalizeRaihaanList(data.raihaan);
+                    }
+                    if (data.notifications !== undefined) {
+                        portalNotificationsData = normalizeNotificationsList(data.notifications);
+                    }
+                    if (data.estate_assets !== undefined) {
+                        estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
+                    }
+
+                    syncCurrentUserLivePermissions();
+                    refreshAllPortalViews();
+
+                    const clsModEl = document.getElementById('module-classroom-allocation');
+                    if (clsModEl && !clsModEl.classList.contains('hidden')) {
+                        const unseen = getUnseenNotificationsForModule('classroom-allocation');
+                        if (unseen.length > 0) {
+                            openModuleNotificationsPopupIfAny('classroom-allocation');
+                        }
+                    }
+                    const dawatModEl = document.getElementById('module-dawat-estates');
+                    if (dawatModEl && !dawatModEl.classList.contains('hidden') && currentActiveDawatSubHeader) {
+                        const unseenSub = getUnseenNotificationsForModule('dawat-estates', currentActiveDawatSubHeader);
+                        if (unseenSub.length > 0) {
+                            openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
+                        }
+                    }
+                });
+
+                // Dedicated listener on /classrooms for instant Classroom Allocation table updates
+                onValue(dbRef(db, 'classrooms'), (snapshot) => {
+                    if (snapshot.exists()) {
+                        classroomsData = normalizeClassroomsList(snapshot.val());
+                        renderClassroomsTables();
+                    }
+                });
+
+                // Dedicated listener on /raihaan for instant Raihaan status updates
+                onValue(dbRef(db, 'raihaan'), (snapshot) => {
+                    if (snapshot.exists()) {
+                        raihaanData = normalizeRaihaanList(snapshot.val());
+                        renderClassroomsTables();
+                        if (!document.getElementById('modalRaihaanArchive')?.classList.contains('hidden')) {
+                            renderRaihaanArchiveTable();
+                        }
+                    }
+                });
+
+                // Dedicated listener on /estate_assets for instant Asset Details updates
+                onValue(dbRef(db, 'estate_assets'), (snapshot) => {
+                    if (snapshot.exists()) {
+                        estateAssetsData = normalizeEstateAssetsList(snapshot.val());
+                        renderAssetDetailsTable();
+                        if (document.getElementById('integratedFlatSelect')?.value) {
+                            renderIntegratedView();
+                        }
+                    }
+                });
+
+                // Dedicated listener on /notifications for instant badge & pop-up notification updates
                 onValue(dbRef(db, 'notifications'), (snapshot) => {
                     if (snapshot.exists()) {
                         portalNotificationsData = normalizeNotificationsList(snapshot.val());
@@ -3000,11 +3215,51 @@
                         portalNotificationsData = [];
                     }
                     updateModuleNotificationBadges();
+                    const clsModEl = document.getElementById('module-classroom-allocation');
+                    if (clsModEl && !clsModEl.classList.contains('hidden')) {
+                        const unseen = getUnseenNotificationsForModule('classroom-allocation');
+                        if (unseen.length > 0) {
+                            openModuleNotificationsPopupIfAny('classroom-allocation');
+                        }
+                    }
+                    const dawatModEl = document.getElementById('module-dawat-estates');
+                    if (dawatModEl && !dawatModEl.classList.contains('hidden') && currentActiveDawatSubHeader) {
+                        const unseenSub = getUnseenNotificationsForModule('dawat-estates', currentActiveDawatSubHeader);
+                        if (unseenSub.length > 0) {
+                            openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
+                        }
+                    }
+                });
+                // Also refresh cloud data when tab regains focus or visibility
+                window.addEventListener('focus', async () => {
+                    if (!currentUser) return;
+                    await loadCloudData();
+                    syncCurrentUserLivePermissions();
+                    refreshAllPortalViews();
+                });
+                document.addEventListener('visibilitychange', async () => {
+                    if (document.visibilityState === 'visible' && currentUser) {
+                        await loadCloudData();
+                        syncCurrentUserLivePermissions();
+                        refreshAllPortalViews();
+                    }
                 });
             } catch (err) {
-                console.error("Error attaching notifications listener:", err);
+                console.error("Error attaching realtime listeners:", err);
             }
         }
+
+        const DAWAT_SUBHEADER_META = {
+            'estate-details': { permNum: 1, label: '1. Estate Details' },
+            'allocation': { permNum: 2, label: '2. Allocation' },
+            'maintenance': { permNum: 3, label: '3. Maintenance Data' },
+            'bachelor': { permNum: 4, label: '4. Bachelor Flats' },
+            'vacant-bills': { permNum: 5, label: '5. Vacant/Bachelor Flats Bills' },
+            'society': { permNum: 6, label: '6. Society Maintenance' },
+            'integrated': { permNum: 7, label: '7. Integrated View' },
+            'asset-details': { permNum: 8, label: '8. Asset Details' }
+        };
+        let currentActiveDawatSubHeader = 'estate-details';
 
         function canCurrentUserReceiveModuleNotification(notif) {
             if (!currentUser || !currentUser.email || !notif) return false;
@@ -3019,32 +3274,62 @@
             if (isUserAdmin) return true;
             if (!Array.isArray(currentUserModules) || !currentUserModules.includes(modKey)) return false;
 
+            if (modKey === 'dawat-estates' && notif.subHeader) {
+                const subMeta = DAWAT_SUBHEADER_META[notif.subHeader];
+                if (subMeta && subMeta.permNum) {
+                    if (!Array.isArray(currentUserPermissions) || !currentUserPermissions.includes(subMeta.permNum)) {
+                        return false;
+                    }
+                }
+            }
+
             return true;
         }
 
-        function getUnseenNotificationsForModule(modKey = 'classroom-allocation') {
+        function getUnseenNotificationsForModule(modKey = 'classroom-allocation', subHeaderKey = null) {
             return portalNotificationsData
-                .filter(n => (n.module || 'classroom-allocation') === modKey && canCurrentUserReceiveModuleNotification(n))
+                .filter(n => {
+                    if ((n.module || 'classroom-allocation') !== modKey) return false;
+                    if (subHeaderKey && String(n.subHeader || '') !== String(subHeaderKey)) return false;
+                    return canCurrentUserReceiveModuleNotification(n);
+                })
                 .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         }
 
-        window.updateModuleNotificationBadges = function() {
-            const badgeEl = document.getElementById('notifBadgeClassroomAllocation');
+        function setBadgeElementCount(badgeEl, count) {
             if (!badgeEl) return;
-            const unseen = getUnseenNotificationsForModule('classroom-allocation');
-            const totalIndividualCount = unseen.length;
-            if (totalIndividualCount > 0) {
-                badgeEl.innerText = String(totalIndividualCount);
+            if (count > 0) {
+                badgeEl.innerText = String(count);
                 badgeEl.classList.remove('hidden');
             } else {
                 badgeEl.innerText = '';
                 badgeEl.classList.add('hidden');
             }
+        }
+
+        window.updateModuleNotificationBadges = function() {
+            // Classroom Allocation module badge
+            const clsBadgeEl = document.getElementById('notifBadgeClassroomAllocation');
+            const unseenCls = getUnseenNotificationsForModule('classroom-allocation');
+            setBadgeElementCount(clsBadgeEl, unseenCls.length);
+
+            // Dawat Estates module badge (aggregated unseen across all allowed sub-headers)
+            const dawatBadgeEl = document.getElementById('notifBadgeDawatEstates');
+            const unseenDawatAll = getUnseenNotificationsForModule('dawat-estates');
+            setBadgeElementCount(dawatBadgeEl, unseenDawatAll.length);
+
+            // Each of the 8 Dawat Estates sub-headers
+            Object.keys(DAWAT_SUBHEADER_META).forEach(subKey => {
+                const subBadgeEl = document.getElementById('notifBadgeSub-' + subKey);
+                const unseenSub = getUnseenNotificationsForModule('dawat-estates', subKey);
+                setBadgeElementCount(subBadgeEl, unseenSub.length);
+            });
         };
 
         async function recordClassroomChangeNotification(subPermission, actionType, detailText, scheduleSummary = '') {
             if (!currentUser || !currentUser.email) return;
             const actorEmail = currentUser.email.trim();
+            const actorName = getUserDisplayNameByEmail(actorEmail, currentUser.displayName || '');
             const now = new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const formattedTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
@@ -3052,8 +3337,10 @@
             const newNotif = {
                 id: 'notif_' + Date.now().toString() + '_' + Math.random().toString().slice(2, 6),
                 module: 'classroom-allocation',
+                subHeader: '',
                 subPermission: subPermission || '',
                 actorEmail,
+                actorName,
                 actionType: actionType || '',
                 detailText: detailText || '',
                 scheduleSummary: scheduleSummary || '',
@@ -3066,8 +3353,57 @@
             updateModuleNotificationBadges();
         }
 
-        window.openModuleNotificationsPopupIfAny = async function(modKey = 'classroom-allocation') {
-            const unseen = getUnseenNotificationsForModule(modKey);
+        async function recordDawatEstatesNotification(subHeaderKey, actionType, detailText, scheduleSummary = '') {
+            if (!currentUser || !currentUser.email) return;
+            const actorEmail = currentUser.email.trim();
+            const actorName = getUserDisplayNameByEmail(actorEmail, currentUser.displayName || '');
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const formattedTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            const subMeta = DAWAT_SUBHEADER_META[subHeaderKey] || { permNum: '', label: subHeaderKey };
+
+            const newNotif = {
+                id: 'notif_' + Date.now().toString() + '_' + Math.random().toString().slice(2, 6),
+                module: 'dawat-estates',
+                subHeader: subHeaderKey || '',
+                subPermission: String(subMeta.permNum || ''),
+                actorEmail,
+                actorName,
+                actionType: actionType || '',
+                detailText: detailText || '',
+                scheduleSummary: scheduleSummary || '',
+                createdAt: formattedTime,
+                timestamp: Date.now(),
+                seenBy: [actorEmail.toLowerCase()]
+            };
+
+            portalNotificationsData.push(newNotif);
+            updateModuleNotificationBadges();
+        }
+
+        let isOpeningNotificationsPopup = false;
+        window.openModuleNotificationsPopupIfAny = async function(modKey = 'classroom-allocation', subHeaderKey = null) {
+            if (isOpeningNotificationsPopup) return;
+            const initialUnseen = getUnseenNotificationsForModule(modKey, subHeaderKey);
+            if (initialUnseen.length === 0) {
+                updateModuleNotificationBadges();
+                return;
+            }
+            isOpeningNotificationsPopup = true;
+            try {
+                if (modKey === 'classroom-allocation') {
+                    await loadClassroomsFromCloud();
+                    renderClassroomsTables();
+                } else {
+                    await loadCloudData();
+                    refreshAllPortalViews();
+                }
+            } catch (e) {
+                console.error("Error refreshing data before notification popup:", e);
+            } finally {
+                isOpeningNotificationsPopup = false;
+            }
+            const unseen = getUnseenNotificationsForModule(modKey, subHeaderKey);
             const modalEl = document.getElementById('modalClassroomNotifications');
             const containerEl = document.getElementById('classroomNotificationsPopupsContainer');
             const dismissAllBar = document.getElementById('classroomNotificationsDismissAllBar');
@@ -3079,6 +3415,14 @@
                 return;
             }
 
+            let popupHeaderTitle = 'Classroom Allocation Update Notification';
+            if (modKey === 'dawat-estates') {
+                const subMeta = subHeaderKey ? DAWAT_SUBHEADER_META[subHeaderKey] : null;
+                popupHeaderTitle = subMeta
+                    ? `Dawat Estates — ${subMeta.label} Update Notification`
+                    : 'Dawat Estates Update Notification';
+            }
+
             // Group unseen notifications by actorEmail (1 pop-up notification per user who made additions or edits)
             const groupedByUser = new Map();
             unseen.forEach(notif => {
@@ -3086,8 +3430,11 @@
                 if (!groupedByUser.has(key)) {
                     groupedByUser.set(key, {
                         actorEmail: notif.actorEmail.trim(),
+                        actorName: notif.actorName || '',
                         items: []
                     });
+                } else if (!groupedByUser.get(key).actorName && notif.actorName) {
+                    groupedByUser.get(key).actorName = notif.actorName;
                 }
                 groupedByUser.get(key).items.push(notif);
             });
@@ -3099,6 +3446,7 @@
 
             containerEl.innerHTML = userGroups.map((group) => {
                 const safeActorKey = encodeURIComponent(group.actorEmail.toLowerCase()).replace(/'/g, "%27");
+                const actorDisplayName = getUserDisplayNameByEmail(group.actorEmail, group.actorName);
                 const itemsHtml = group.items.map((item, idx) => {
                     const schedHtml = item.scheduleSummary
                         ? `<div class="text-[11px] text-gray-500 mt-0.5 pl-4"><i class="fa-regular fa-clock mr-1 text-emerald-600"></i>${item.scheduleSummary}</div>`
@@ -3125,7 +3473,7 @@
                                     <i class="fa-solid fa-bell text-sm"></i>
                                 </span>
                                 <div>
-                                    <h3 class="text-sm sm:text-base font-extrabold tracking-wide">Classroom Allocation Update Notification</h3>
+                                    <h3 class="text-sm sm:text-base font-extrabold tracking-wide">${popupHeaderTitle}</h3>
                                     <p class="text-[11px] text-emerald-200">Counted as ${group.items.length} individual notification${group.items.length === 1 ? '' : 's'}</p>
                                 </div>
                             </div>
@@ -3143,7 +3491,7 @@
                         </div>
                         <div class="p-5 space-y-3">
                             <p class="text-sm font-extrabold text-gray-900 bg-amber-50 border border-amber-200 px-3.5 py-2.5 rounded-lg">
-                                The user (<span class="text-emerald-800 underline">${group.actorEmail}</span>) has added or edited the following -
+                                The user (<span class="text-emerald-800 underline">${actorDisplayName}</span>) has added or edited the following -
                             </p>
                             <ul class="space-y-2 max-h-60 overflow-y-auto pr-1">
                                 ${itemsHtml}
@@ -3220,7 +3568,6 @@
                     estates: estatesData,
                     classrooms: classroomsData,
                     raihaan: raihaanData,
-                    notifications: portalNotificationsData,
                     notifications: portalNotificationsData,
                     keys: keysInventoryData,
                     faculty: facultyData,
@@ -3377,6 +3724,10 @@
             if (modName === 'classroom-allocation') {
                 renderClassroomsTables();
                 openModuleNotificationsPopupIfAny('classroom-allocation');
+            } else if (modName === 'dawat-estates') {
+                if (currentActiveDawatSubHeader) {
+                    openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
+                }
             }
         };
 
@@ -3426,6 +3777,12 @@
                 }
             }
             if(secName === 'asset-details') renderAssetDetailsTable();
+
+            currentActiveDawatSubHeader = secName;
+            const dawatModEl = document.getElementById('module-dawat-estates');
+            if (dawatModEl && !dawatModEl.classList.contains('hidden')) {
+                openModuleNotificationsPopupIfAny('dawat-estates', secName);
+            }
         };
 
         window.exportData = function(section, format) {
@@ -3600,12 +3957,18 @@
                 residents: []
             };
 
+            const flatDisplayLabel = `${flatObj.building}${flatObj.wing ? ' (' + flatObj.wing + ')' : ''} - Flat ${flatObj.flatNo}`;
             if(id) {
                 const idx = estatesData.findIndex(item => String(item.id) === String(id));
                 if(idx !== -1) estatesData[idx] = { ...estatesData[idx], ...flatObj };
             } else {
                 estatesData.push(flatObj);
             }
+            await recordDawatEstatesNotification(
+                'estate-details',
+                id ? 'edit-flat' : 'add-flat',
+                `${id ? 'Edited' : 'Added'} flat "${flatDisplayLabel}" (${flatObj.type}, ${flatObj.sqft} SqFt, Owner: ${flatObj.owner}${flatObj.isBachelor ? ', Bachelor Flat' : ''})`
+            );
             await saveCloudData();
             closeModal('modalAddFlat');
             renderEstateTable();
@@ -3695,11 +4058,18 @@
                     endDate: new Date().toISOString().split('T')[0]
                 });
 
+                const prevOccupantName = flat.occupant;
+                const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
                 flat.occupant = '';
                 flat.its = '';
                 flat.contact = '';
                 flat.startDate = '';
 
+                await recordDawatEstatesNotification(
+                    'allocation',
+                    'mark-vacant',
+                    `Marked flat "${flatDisplayLabel}" as Vacant (moved ${prevOccupantName} to Past Allocation Archive)`
+                );
                 await saveCloudData();
                 closeModal('modalAllocation');
                 renderAllocationTable();
@@ -3746,6 +4116,12 @@
                 endDate: document.getElementById('pastEndDate').value || ''
             });
 
+            const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
+            await recordDawatEstatesNotification(
+                'allocation',
+                'add-past-history',
+                `Added past allocation record for "${flatDisplayLabel}" — Resident: ${occupantName}`
+            );
             await saveCloudData();
             document.getElementById('manualPastForm').reset();
             renderModalArchiveList(flat);
@@ -3790,11 +4166,21 @@
                 });
             }
 
+            const prevOcc = (flat.occupant || '').trim();
+            const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
             flat.occupant = facName;
             flat.its = facIts;
             flat.contact = facContact;
             flat.startDate = startDateVal || new Date().toISOString().split('T')[0];
 
+            await recordDawatEstatesNotification(
+                'allocation',
+                prevOcc ? 'edit-allocation' : 'add-allocation',
+                prevOcc
+                    ? `Updated allocation for "${flatDisplayLabel}" — Occupant: ${facName} (ITS: ${facIts || 'N/A'})`
+                    : `Allocated flat "${flatDisplayLabel}" to ${facName} (ITS: ${facIts || 'N/A'})`,
+                `Allocated Since: ${flat.startDate}`
+            );
             await saveCloudData();
             closeModal('modalAllocation');
             renderAllocationTable();
@@ -3923,13 +4309,21 @@
             if(!facName) return alert("Please select or enter a resident name.");
 
             if(!flat.residents) flat.residents = [];
+            const bachStartVal = document.getElementById('bachStartDate').value;
             flat.residents.push({
                 name: facName,
                 its: facIts,
                 contact: facContact,
-                startDate: document.getElementById('bachStartDate').value
+                startDate: bachStartVal
             });
 
+            const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
+            await recordDawatEstatesNotification(
+                'bachelor',
+                'add-bachelor-resident',
+                `Added resident "${facName}" (ITS: ${facIts || 'N/A'}) to Bachelor Flat "${flatDisplayLabel}"`,
+                bachStartVal ? `Assigned Since: ${bachStartVal}` : ''
+            );
             await saveCloudData();
             closeModal('modalAddBachelorResident');
             renderBachelorGrid();
@@ -3941,7 +4335,14 @@
         window.removeBachelorResident = async function(flatId, resIndex) {
             const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(flat && flat.residents) {
+                const removedRes = flat.residents[resIndex];
+                const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
                 flat.residents.splice(resIndex, 1);
+                await recordDawatEstatesNotification(
+                    'bachelor',
+                    'edit-bachelor-resident',
+                    `Removed resident "${removedRes ? removedRes.name : 'Resident'}" from Bachelor Flat "${flatDisplayLabel}"`
+                );
                 await saveCloudData();
                 renderBachelorGrid();
                 renderAllocationTable();
@@ -3992,17 +4393,33 @@
         window.toggleBillStatus = async function(billKey, field) {
             if(!vacantBills[billKey]) vacantBills[billKey] = { elecPaid: false, gasPaid: false };
             vacantBills[billKey][field] = !vacantBills[billKey][field];
+            const monthVal = document.getElementById('billMonthPicker')?.value || '';
+            const flatIdPart = String(billKey).split('_')[0];
+            const flat = estatesData.find(e => `${e.id}_${monthVal}` === billKey || String(e.id) === flatIdPart);
+            const flatDisplayLabel = flat ? `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}` : billKey;
+            const billTypeLabel = field === 'elecPaid' ? 'Electricity Bill' : 'Gas Bill';
+            const statusLabel = vacantBills[billKey][field] ? 'Paid' : 'Missing';
+            await recordDawatEstatesNotification(
+                'vacant-bills',
+                'edit-vacant-bill',
+                `Updated ${billTypeLabel} status to "${statusLabel}" for "${flatDisplayLabel}"${monthVal ? ' (' + monthVal + ')' : ''}`
+            );
             await saveCloudData();
             renderVacantBills();
         };
 
         function populateFlatMaintenanceDropdown() {
             const select = document.getElementById('maintFlatSelect');
+            if (!select) return;
+            const prevVal = select.value;
             select.innerHTML = '';
             estatesData.forEach(e => {
                 const wing = e.wing ? ` (${e.wing})` : '';
                 select.innerHTML += `<option value="${e.building}${wing} - ${e.flatNo}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
             });
+            if (prevVal && Array.from(select.options).some(o => o.value === prevVal)) {
+                select.value = prevVal;
+            }
         }
 
         window.openAddMaintenanceModal = function() {
@@ -4092,6 +4509,12 @@
                 maintLogs.push(logRecord);
             }
 
+            await recordDawatEstatesNotification(
+                'maintenance',
+                editId ? 'edit-maintenance' : 'add-maintenance',
+                `${editId ? 'Edited' : 'Added'} ${logRecord.type || 'Maintenance'} log for "${logRecord.flat}" — Cost: ₹${(parseFloat(logRecord.cost) || 0).toLocaleString('en-IN')}`,
+                `${logRecord.date ? 'Date: ' + logRecord.date + ' | ' : ''}${logRecord.desc || ''}`
+            );
             await saveCloudData();
             btn.innerText = "Upload & Save Log";
             btn.disabled = false;
@@ -4247,15 +4670,23 @@
 
         window.saveSocietyRecord = async function(e) {
             e.preventDefault();
+            const socNameVal = document.getElementById('socName').value;
+            const socFlatsVal = document.getElementById('socFlats').value;
+            const socCycleVal = document.getElementById('socCycle').value;
             societiesData.push({
                 id: Date.now().toString(),
-                name: document.getElementById('socName').value,
-                flats: document.getElementById('socFlats').value,
-                cycle: document.getElementById('socCycle').value,
+                name: socNameVal,
+                flats: socFlatsVal,
+                cycle: socCycleVal,
                 contactPerson: document.getElementById('socContactPerson').value,
                 billSubmittedBy: document.getElementById('socBillSubmittedBy').value
             });
 
+            await recordDawatEstatesNotification(
+                'society',
+                'add-society',
+                `Added society "${socNameVal}" (${socFlatsVal} Flats, Billing Cycle: ${socCycleVal})`
+            );
             await saveCloudData();
             closeModal('modalAddSociety');
             renderSocieties();
@@ -4493,6 +4924,11 @@ window.renderSocieties = function() {
                 });
             }
 
+            await recordDawatEstatesNotification(
+                'society',
+                'edit-society',
+                `Edited society details for "${socName}" (Cycle: ${cycle}, Contact: ${contactPerson || 'N/A'}, Bill Responsible: ${billSubmittedBy || 'N/A'})`
+            );
             await saveCloudData();
             closeModal('modalEditSociety');
             renderSocieties();
@@ -4630,6 +5066,14 @@ window.renderSocieties = function() {
             }
 
             record.regular[periodKey][field] = value;
+            const fieldSummary = field === 'amount'
+                ? `Amount set to ₹${(parseFloat(value) || 0).toLocaleString('en-IN')}`
+                : `Date set to ${value || 'Cleared'}`;
+            await recordDawatEstatesNotification(
+                'society',
+                'edit-regular-bill',
+                `Updated regular maintenance bill (${periodKey}) for "${currentSummarySocName}" (${selYear}) — ${fieldSummary}`
+            );
             await saveCloudData();
             renderBillsSummaryModalContent();
             renderSocieties();
@@ -4651,6 +5095,11 @@ window.renderSocieties = function() {
                 }
 
                 record.regular[periodKey].fileUrl = (res && (res.fileUrl || res.url || res.directImgUrl)) || '';
+                await recordDawatEstatesNotification(
+                    'society',
+                    'upload-regular-bill',
+                    `Uploaded regular maintenance bill receipt (${periodKey}) for "${targetSocName}" (${selYear})`
+                );
                 await saveCloudData();
                 renderBillsSummaryModalContent();
                 renderSocieties();
@@ -4741,12 +5190,18 @@ window.renderSocieties = function() {
                     fileUrl: fileUrl || ""
                 };
 
-                if(editIdx >= 0 && editIdx < currentData.other.length) {
+                const isEditingOther = (editIdx >= 0 && editIdx < currentData.other.length);
+                if(isEditingOther) {
                     currentData.other[editIdx] = billEntry;
                 } else {
                     currentData.other.push(billEntry);
                 }
 
+                await recordDawatEstatesNotification(
+                    'society',
+                    isEditingOther ? 'edit-other-bill' : 'add-other-bill',
+                    `${isEditingOther ? 'Edited' : 'Added'} other society bill for "${targetSocName}" (${selYear}) — ${desc}: ₹${(parseFloat(amount) || 0).toLocaleString('en-IN')}`
+                );
                 await saveCloudData();
                 closeOtherBillInputBox();
                 renderBillsSummaryModalContent();
@@ -4797,6 +5252,9 @@ window.renderSocieties = function() {
         window.populateSocietyDropdowns = function() {
             const selDoc = document.getElementById('docFilterSociety');
             const selUpload = document.getElementById('docSocietySelect');
+            if (!selDoc || !selUpload) return;
+            const prevDocVal = selDoc.value;
+            const prevUploadVal = selUpload.value;
             selDoc.innerHTML = '<option value="">All Societies</option>';
             selUpload.innerHTML = '';
             
@@ -4805,6 +5263,12 @@ window.renderSocieties = function() {
                 selDoc.innerHTML += `<option value="${s.name}">${s.name}</option>`;
                 selUpload.innerHTML += `<option value="${s.name}">${s.name}</option>`;
             });
+            if (prevDocVal && Array.from(selDoc.options).some(o => o.value === prevDocVal)) {
+                selDoc.value = prevDocVal;
+            }
+            if (prevUploadVal && Array.from(selUpload.options).some(o => o.value === prevUploadVal)) {
+                selUpload.value = prevUploadVal;
+            }
         };
 
       window.renderSocietyDocs = function() {
@@ -4910,15 +5374,24 @@ window.renderSocieties = function() {
                 }
             }
 
+            const docSocVal = document.getElementById('docSocietySelect').value;
+            const docTitleVal = document.getElementById('docTitle').value;
+            const docNotesVal = document.getElementById('docNotes').value;
             societyDocs.push({
                 id: Date.now().toString(),
-                society: document.getElementById('docSocietySelect').value,
-                title: document.getElementById('docTitle').value,
-                notes: document.getElementById('docNotes').value,
+                society: docSocVal,
+                title: docTitleVal,
+                notes: docNotesVal,
                 fileUrl: fileUrl,
                 date: new Date().toISOString().split('T')[0]
             });
 
+            await recordDawatEstatesNotification(
+                'society',
+                'add-society-doc',
+                `Uploaded society document "${docTitleVal}" for "${docSocVal}"`,
+                docNotesVal ? `Notes: ${docNotesVal}` : ''
+            );
             await saveCloudData();
             btn.innerText = "Upload File";
             btn.disabled = false;
@@ -4928,6 +5401,8 @@ window.renderSocieties = function() {
 
         function populateIntegratedFlatDropdown() {
             const select = document.getElementById('integratedFlatSelect');
+            if (!select) return;
+            const prevVal = select.value;
             const search = (document.getElementById('integratedSearch') ? document.getElementById('integratedSearch').value : '').toLowerCase();
             select.innerHTML = '<option value="">-- Choose Building & Flat Number --</option>';
 
@@ -4938,6 +5413,9 @@ window.renderSocieties = function() {
                 const wing = e.wing ? ` (${e.wing})` : '';
                 select.innerHTML += `<option value="${e.id}">${e.building}${wing} - Flat ${e.flatNo}</option>`;
             });
+            if (prevVal && Array.from(select.options).some(o => String(o.value) === String(prevVal))) {
+                select.value = prevVal;
+            }
         }
 
         window.filterIntegratedDropdown = function() {
@@ -5232,6 +5710,12 @@ window.renderSocieties = function() {
                         });
                     });
 
+                    await recordDawatEstatesNotification(
+                        'estate-details',
+                        'import-flats',
+                        `Imported ${jsonData.length} flat record${jsonData.length === 1 ? '' : 's'} into Estate Details via Excel`
+                    );
+                    await saveCloudData();
                     renderEstateTable();
                     renderAllocationTable();
                     populateIntegratedFlatDropdown();
@@ -5266,7 +5750,9 @@ window.renderSocieties = function() {
         };
 
         const CLASSROOM_COL_LABELS_MAP = {
-            'darajah-event': 'Add Darajah / Event',
+            'allotted-class': 'Add Allotted Class',
+            'event': 'Add Event',
+            'darajah-event': 'Add Allotted Class & Event',
             'student-count': 'Student Count',
             'extra-chair': 'Extra Chair'
         };
@@ -5295,7 +5781,7 @@ window.renderSocieties = function() {
         };
 
         window.setAllClassroomSubPerms = function(checked) {
-            ['darajah-event', 'student-count', 'extra-chair'].forEach(k => {
+            ['allotted-class', 'event', 'student-count', 'extra-chair'].forEach(k => {
                 const chk = document.getElementById(`cls-perm-${k}`);
                 if (chk) chk.checked = checked;
             });
@@ -5304,6 +5790,7 @@ window.renderSocieties = function() {
         window.resetInviteUserForm = function() {
             const form = document.getElementById('inviteUserForm');
             if (form) form.reset();
+            if (document.getElementById('inviteUserName')) document.getElementById('inviteUserName').value = '';
             document.getElementById('inviteEmail').readOnly = false;
             document.getElementById('inviteEmail').classList.remove('bg-gray-100');
             document.getElementById('inviteFormHeading').innerText = 'Invite / Configure Team Member';
@@ -5323,6 +5810,9 @@ window.renderSocieties = function() {
             const u = usersList.find(item => item.email.trim().toLowerCase() === String(email).trim().toLowerCase());
             if (!u) return;
 
+            if (document.getElementById('inviteUserName')) {
+                document.getElementById('inviteUserName').value = u.name || getUserDisplayNameByEmail(u.email);
+            }
             document.getElementById('inviteEmail').value = u.email;
             document.getElementById('inviteRole').value = u.role || 'User';
 
@@ -5343,14 +5833,20 @@ window.renderSocieties = function() {
             }
 
             const clsPerms = Array.isArray(u.classroomPermissions) ? u.classroomPermissions : [...ALL_CLASSROOM_COL_PERMS];
-            ['darajah-event', 'student-count', 'extra-chair'].forEach(k => {
+            const hasLegacyDarajahEvent = clsPerms.includes('darajah-event');
+            ['allotted-class', 'event', 'student-count', 'extra-chair'].forEach(k => {
                 const chk = document.getElementById(`cls-perm-${k}`);
-                if (chk) chk.checked = clsPerms.includes(k);
+                if (!chk) return;
+                if ((k === 'allotted-class' || k === 'event') && hasLegacyDarajahEvent) {
+                    chk.checked = true;
+                } else {
+                    chk.checked = clsPerms.includes(k);
+                }
             });
 
             toggleNestedDawatEstatesPerms();
             toggleNestedClassroomPerms();
-            document.getElementById('inviteFormHeading').innerText = `Editing User: ${u.email}`;
+            document.getElementById('inviteFormHeading').innerText = `Editing User: ${u.name ? u.name + ' (' + u.email + ')' : u.email}`;
             document.getElementById('cancelEditUserBtn')?.classList.remove('hidden');
             document.getElementById('inviteUserForm')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         };
@@ -5385,8 +5881,10 @@ window.renderSocieties = function() {
 
                 const safeEmail = String(u.email).replace(/'/g, "\'");
                 const isSuperOwner = superAdmins.map(e => e.toLowerCase()).includes(u.email.trim().toLowerCase());
+                const displayName = u.name || getUserDisplayNameByEmail(u.email);
 
                 tr.innerHTML = `
+                    <td class="p-3 font-bold text-emerald-950">${displayName}</td>
                     <td class="p-3 font-semibold text-gray-800">${u.email}</td>
                     <td class="p-3 whitespace-nowrap">
                         <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${u.role}</span>
@@ -5405,6 +5903,7 @@ window.renderSocieties = function() {
 
         window.handleInviteUser = async function(e) {
             e.preventDefault();
+            const name = (document.getElementById('inviteUserName')?.value || '').trim();
             const email = document.getElementById('inviteEmail').value.trim();
             const role = document.getElementById('inviteRole').value;
             const accessRadio = document.querySelector('input[name="inviteAccessLevel"]:checked');
@@ -5430,13 +5929,14 @@ window.renderSocieties = function() {
 
             const classroomPermissions = [];
             if (allowedModules.includes('classroom-allocation')) {
-                ['darajah-event', 'student-count', 'extra-chair'].forEach(k => {
+                ['allotted-class', 'event', 'student-count', 'extra-chair'].forEach(k => {
                     if (document.getElementById(`cls-perm-${k}`)?.checked) classroomPermissions.push(k);
                 });
             }
 
             const existingIdx = usersList.findIndex(u => u.email.trim().toLowerCase() === email.toLowerCase());
             const userObj = {
+                name: name || getUserDisplayNameByEmail(email),
                 email,
                 role,
                 accessLevel,
@@ -6189,13 +6689,23 @@ window.renderSocieties = function() {
 
         // Clicking an Allocated Class or Other Event name (or the + Add button in either column) opens its full timetable
         window.openClassroomScheduleModal = function(classroomId, allocId = '', category = 'class') {
-            const canEdit = canEditClassroomColumn('darajah-event');
-            if (!canEdit && !allocId) {
-                showAssetToast("View Only: You do not have permission to add schedules.", true);
-                return;
-            }
             const room = classroomsData.find(c => String(c.id) === String(classroomId));
             if (!room) return;
+
+            let targetCat = category === 'event' ? 'event' : 'class';
+            if (allocId && Array.isArray(room.allocations)) {
+                const existingAlloc = room.allocations.find(a => String(a.id) === String(allocId));
+                if (existingAlloc) {
+                    targetCat = existingAlloc.allocationType === 'event' ? 'event' : 'class';
+                }
+            }
+            const permKey = targetCat === 'event' ? 'event' : 'allotted-class';
+            const canEdit = canEditClassroomColumn(permKey);
+
+            if (!canEdit && !allocId) {
+                showAssetToast(`View Only: You do not have permission to add ${targetCat === 'event' ? 'events' : 'allotted classes'}.`, true);
+                return;
+            }
 
             document.getElementById('scheduleClassroomId').value = String(room.id);
 
@@ -6209,11 +6719,11 @@ window.renderSocieties = function() {
             if (allocId) {
                 editScheduleAllocationInModal(room.id, allocId, !canEdit);
             } else {
-                applyScheduleModalCategoryUI(category);
-                const catLabel = category === 'event' ? 'Other Event' : 'Allocated Class';
+                applyScheduleModalCategoryUI(targetCat);
+                const catLabel = targetCat === 'event' ? 'Other Event' : 'Allocated Class';
                 document.getElementById('scheduleModalTitle').innerText = `Add ${catLabel} — Classroom ${room.classroomNumber} (${room.type})`;
                 document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • Select periods for this ${catLabel.toLowerCase()} (Booked slots are blocked)`;
-                resetScheduleModalFormForNew(category);
+                resetScheduleModalFormForNew(targetCat);
             }
 
             renderExistingClassroomAllocationsInModal(room);
@@ -6224,7 +6734,16 @@ window.renderSocieties = function() {
             const roomId = document.getElementById('scheduleClassroomId').value;
             const room = classroomsData.find(c => String(c.id) === String(roomId));
             const activeCat = category || document.getElementById('scheduleAllocationCategory')?.value || 'class';
+            const permKey = activeCat === 'event' ? 'event' : 'allotted-class';
+            const canEdit = canEditClassroomColumn(permKey);
             applyScheduleModalCategoryUI(activeCat);
+
+            const nameInput = document.getElementById('scheduleEventNameInput');
+            const selectAllCb = document.getElementById('scheduleSelectAllCheckbox');
+            const saveBtn = document.getElementById('btnSaveClassroomSchedule');
+            if (nameInput) nameInput.readOnly = !canEdit;
+            if (selectAllCb) selectAllCb.disabled = !canEdit;
+            if (saveBtn) saveBtn.classList.toggle('hidden', !canEdit);
 
             document.getElementById('scheduleEditAllocId').value = '';
             document.getElementById('scheduleEventNameInput').value = '';
@@ -6232,7 +6751,7 @@ window.renderSocieties = function() {
             document.getElementById('cancelEditScheduleAllocBtn')?.classList.add('hidden');
             document.getElementById('scheduleValidationError')?.classList.add('hidden');
             currentModalCustomTimings = {};
-            buildTimetableGridTemplate(room, '', !canEditClassroomColumn('darajah-event'));
+            buildTimetableGridTemplate(room, '', !canEdit);
             updateScheduleSelectAllState();
         };
 
@@ -6243,13 +6762,21 @@ window.renderSocieties = function() {
             if (!alloc) return;
 
             const allocCat = alloc.allocationType === 'event' ? 'event' : 'class';
+            const permKey = allocCat === 'event' ? 'event' : 'allotted-class';
             applyScheduleModalCategoryUI(allocCat);
 
             const catLabel = allocCat === 'event' ? 'Other Event' : 'Allocated Class';
             document.getElementById('scheduleModalTitle').innerText = `${catLabel} Timetable — Classroom ${room.classroomNumber} (${room.type})`;
             document.getElementById('scheduleModalSubtitle').innerText = `Location: ${room.location} • ${alloc.standardEventName}`;
 
-            const isReadOnly = forceReadOnly || !canEditClassroomColumn('darajah-event');
+            const isReadOnly = forceReadOnly || !canEditClassroomColumn(permKey);
+            const nameInput = document.getElementById('scheduleEventNameInput');
+            const selectAllCb = document.getElementById('scheduleSelectAllCheckbox');
+            const saveBtn = document.getElementById('btnSaveClassroomSchedule');
+            if (nameInput) nameInput.readOnly = isReadOnly;
+            if (selectAllCb) selectAllCb.disabled = isReadOnly;
+            if (saveBtn) saveBtn.classList.toggle('hidden', isReadOnly);
+
             document.getElementById('scheduleEditAllocId').value = String(alloc.id);
             document.getElementById('scheduleEventNameInput').value = alloc.standardEventName || '';
             document.getElementById('btnSaveClassroomScheduleText').innerText = allocCat === 'event' ? 'Update Other Event' : 'Update Allocated Class';
@@ -6284,12 +6811,15 @@ window.renderSocieties = function() {
         }
 
         window.deleteClassroomScheduleAllocation = async function(classroomId, allocId) {
-            if (!canEditClassroomColumn('darajah-event')) {
-                showAssetToast("View Only: You do not have permission to modify schedules.", true);
-                return;
-            }
             const room = classroomsData.find(c => String(c.id) === String(classroomId));
             if (!room || !Array.isArray(room.allocations)) return;
+            const targetAlloc = room.allocations.find(a => String(a.id) === String(allocId));
+            if (!targetAlloc) return;
+            const permKey = targetAlloc.allocationType === 'event' ? 'event' : 'allotted-class';
+            if (!canEditClassroomColumn(permKey)) {
+                showAssetToast("View Only: You do not have permission to modify this schedule.", true);
+                return;
+            }
             room.allocations = room.allocations.filter(a => String(a.id) !== String(allocId));
             syncRoomAllocatedStatusFromClasses(room);
             await saveClassroomsToCloud();
@@ -6310,7 +6840,6 @@ window.renderSocieties = function() {
             if (!listEl) return;
             listEl.innerHTML = '';
 
-            const canEdit = canEditClassroomColumn('darajah-event');
             const allocations = Array.isArray(room.allocations) ? room.allocations : [];
             if (allocations.length === 0) {
                 listEl.innerHTML = '<p class="text-xs text-gray-400 italic">No Allocated Classes or Other Events saved for this classroom yet.</p>';
@@ -6322,6 +6851,7 @@ window.renderSocieties = function() {
                 const safeAllocId = String(alloc.id).replace(/'/g, "\'");
                 const summary = formatAllocationScheduleSummary(alloc.slots, alloc.customTimings);
                 const isEvent = alloc.allocationType === 'event';
+                const canEditThisAlloc = canEditClassroomColumn(isEvent ? 'event' : 'allotted-class');
                 const typeBadge = isEvent
                     ? '<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Other Event</span>'
                     : '<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Allocated Class</span>';
@@ -6338,7 +6868,7 @@ window.renderSocieties = function() {
                         </div>
                         <span class="text-[11px] text-gray-600 block mt-0.5">${summary}</span>
                     </div>
-                    ${canEdit ? `
+                    ${canEditThisAlloc ? `
                     <div class="flex items-center space-x-1.5 whitespace-nowrap">
                         <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50 font-bold" title="Edit Allocation">
                             <i class="fa-solid fa-pen-to-square"></i>
@@ -6355,14 +6885,14 @@ window.renderSocieties = function() {
 
         window.saveClassroomScheduleAllocation = async function(e) {
             e.preventDefault();
-            if (!canEditClassroomColumn('darajah-event')) {
-                showAssetToast("View Only: You do not have permission to save schedules.", true);
-                return;
-            }
-
             const classroomId = document.getElementById('scheduleClassroomId').value;
             const editAllocId = document.getElementById('scheduleEditAllocId').value.trim();
             const allocationCategory = document.getElementById('scheduleAllocationCategory')?.value === 'event' ? 'event' : 'class';
+            const permKey = allocationCategory === 'event' ? 'event' : 'allotted-class';
+            if (!canEditClassroomColumn(permKey)) {
+                showAssetToast(`View Only: You do not have permission to save ${allocationCategory === 'event' ? 'events' : 'allotted classes'}.`, true);
+                return;
+            }
             const standardEventName = document.getElementById('scheduleEventNameInput').value.trim();
 
             const selectedSlots = Array.from(document.querySelectorAll('input[name="timetableSlotCheckbox"]:checked')).map(cb => cb.value);
@@ -6456,7 +6986,7 @@ window.renderSocieties = function() {
                 schedNotifDetail = `Added ${catTitle} "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`;
             }
             await recordClassroomChangeNotification(
-                'darajah-event',
+                permKey,
                 editAllocId ? `edit-${allocationCategory}` : `add-${allocationCategory}`,
                 schedNotifDetail,
                 schedSummaryStr
@@ -7117,7 +7647,8 @@ window.renderSocieties = function() {
                 exportClassroomBtn.classList.toggle('hidden', !isUserAdmin);
             }
 
-            const canEditDarajah = canEditClassroomColumn('darajah-event');
+            const canEditAllottedClass = canEditClassroomColumn('allotted-class');
+            const canEditEvent = canEditClassroomColumn('event');
             const canEditStudentCount = canEditClassroomColumn('student-count');
             const canEditExtraChair = canEditClassroomColumn('extra-chair');
 
@@ -7178,6 +7709,7 @@ window.renderSocieties = function() {
             function buildAllocationPillsHtml(room, items, categoryKey) {
                 const safeRoomId = String(room.id).replace(/'/g, "\'");
                 const isEventCol = categoryKey === 'event';
+                const canEditThisCol = isEventCol ? canEditEvent : canEditAllottedClass;
 
                 let pillsHtml = '';
                 if (items.length === 0) {
@@ -7190,7 +7722,7 @@ window.renderSocieties = function() {
                         const raihaanBadgeHtml = isAllocInRaihaan
                             ? `<span class="bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1" title="Currently in Raihaan (${Array.from(allocRaihaanDays).join(', ')} periods open)">In Raihaan</span>`
                             : '';
-                        const editDeleteBtns = canEditDarajah ? `
+                        const editDeleteBtns = canEditThisCol ? `
                             <div class="flex items-center space-x-1 pl-1.5 border-l ${isEventCol ? 'border-amber-200' : 'border-emerald-200'}">
                                 <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-0.5" title="Edit Timetable">
                                     <i class="fa-solid fa-pen-to-square text-[11px]"></i>
@@ -7228,7 +7760,7 @@ window.renderSocieties = function() {
                     }).join('') + `</div>`;
                 }
 
-                const showAddButton = canEditDarajah && (isEventCol || items.length === 0);
+                const showAddButton = canEditThisCol && (isEventCol || items.length === 0);
                 const addBtnHtml = showAddButton
                     ? `<button
                         type="button"
@@ -8694,6 +9226,15 @@ window.renderSocieties = function() {
             // Expand the flat drawer so the user immediately sees the saved asset
             expandedAssetFlats.add(String(flatObj.id));
 
+            const assetActionVerb = editId ? 'Edited' : (cloneSourceId ? 'Cloned & added' : 'Added');
+            const assetDetailMsg = `${assetActionVerb} asset "${assetName}" (${location || 'General'}${brand ? ', Brand: ' + brand : ''}) in "${record.flatLabel}"`;
+            const targetAssetSubHeader = (currentActiveDawatSubHeader === 'integrated') ? 'integrated' : 'asset-details';
+            await recordDawatEstatesNotification(
+                targetAssetSubHeader,
+                editId ? 'edit-asset' : 'add-asset',
+                assetDetailMsg,
+                modelNumber || capacity ? `Model: ${modelNumber || '-'} | Capacity: ${capacity || '-'}` : ''
+            );
             await saveCloudData();
             closeModal('modalAddAsset');
             renderAssetDetailsTable();

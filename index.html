@@ -3582,7 +3582,8 @@
                 'add-student-count': 'Added Student Count',
                 'edit-student-count': 'Updated Student Count',
                 'add-extra-chair': 'Added Extra Chair',
-                'edit-extra-chair': 'Updated Extra Chair'
+                'edit-extra-chair': 'Updated Extra Chair',
+                'delete-extra-chair': 'Removed Extra Chair'
             };
             if (map[actionType]) return map[actionType];
             if (subPermission === 'allotted-class') return 'Updated Allotted Class';
@@ -3677,7 +3678,7 @@
             return { ok: false, sentCount: 0, message: lastErrorMsg || 'Failed to reach WATI endpoint.' };
         }
 
-        async function sendClassroomWhatsAppAlert({ subPermission, actionType, detailText, scheduleSummary, roomObj, actorEmail, actorName, formattedTime }) {
+        async function sendClassroomWhatsAppAlert({ subPermission, actionType, detailText, scheduleSummary, roomObj, actorEmail, actorName, waDetails = '', waSchedule = '' }) {
             try {
                 const cfg = normalizeWatiConfig(watiConfig);
                 if (!cfg.enabled) return;
@@ -3707,22 +3708,22 @@
                 const actionLabel = getReadableClassroomActionLabel(actionType, subPermission);
                 let roomLabel = '';
                 if (roomObj && roomObj.classroomNumber) {
-                    roomLabel = `Classroom ${roomObj.classroomNumber} (${roomObj.type || 'Male'})${roomObj.location ? ' - ' + roomObj.location : ''}`;
+                    roomLabel = `${roomObj.classroomNumber} (${roomObj.type || 'Male'})${roomObj.location ? ' - ' + roomObj.location : ''}`;
                 } else {
                     const m = String(detailText || '').match(/Classroom\s+([^()]+\([^)]+\))/i);
-                    roomLabel = m ? `Classroom ${m[1].trim()}` : 'Classroom Allocation Module';
+                    roomLabel = m ? m[1].trim() : 'Classroom Allocation';
                 }
 
-                const summaryOrTime = scheduleSummary
-                    ? `${scheduleSummary} (Updated: ${formattedTime})`
-                    : `Updated on ${formattedTime}`;
+                // Clean, non-repetitive Details ({{4}}) and Schedule / Dates ({{5}}) without repeating Action, Classroom, or Updated timestamp
+                const cleanDetails = String(waDetails || detailText || '').trim();
+                const cleanSchedule = String(waSchedule || scheduleSummary || '-').trim();
 
                 const customParams = [
                     { name: "1", value: sanitizeWatiParamValue(actorName, 'Portal User') },
                     { name: "2", value: sanitizeWatiParamValue(actionLabel, 'Classroom Update') },
                     { name: "3", value: sanitizeWatiParamValue(roomLabel, 'Classroom') },
-                    { name: "4", value: sanitizeWatiParamValue(detailText, 'Classroom details updated') },
-                    { name: "5", value: sanitizeWatiParamValue(summaryOrTime, formattedTime) }
+                    { name: "4", value: sanitizeWatiParamValue(cleanDetails, '-') },
+                    { name: "5", value: sanitizeWatiParamValue(cleanSchedule, '-') }
                 ];
 
                 const res = await dispatchWatiTemplateMessages(targetPhones, customParams);
@@ -3734,7 +3735,7 @@
             }
         }
 
-        async function recordClassroomChangeNotification(subPermission, actionType, detailText, scheduleSummary = '', roomObj = null) {
+        async function recordClassroomChangeNotification(subPermission, actionType, detailText, scheduleSummary = '', roomObj = null, waOverrides = {}) {
             if (!currentUser || !currentUser.email) return;
             const actorEmail = currentUser.email.trim();
             const actorName = getUserDisplayNameByEmail(actorEmail, currentUser.displayName || '');
@@ -3769,7 +3770,8 @@
                 roomObj,
                 actorEmail,
                 actorName,
-                formattedTime
+                waDetails: waOverrides.waDetails || '',
+                waSchedule: waOverrides.waSchedule || ''
             });
         }
 
@@ -6274,16 +6276,13 @@ window.renderSocieties = function() {
             }
 
             const actorName = currentUser ? getUserDisplayNameByEmail(currentUser.email, currentUser.displayName || '') : 'Admin User';
-            const now = new Date();
-            const pad = (n) => String(n).padStart(2, '0');
-            const formattedTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
             const testParams = [
                 { name: "1", value: sanitizeWatiParamValue(actorName, 'Admin') },
-                { name: "2", value: "Test Classroom Alert" },
-                { name: "3", value: "Classroom 101 (Male) - Test" },
-                { name: "4", value: "WATI WhatsApp API integration test from Siyanat Operations Portal" },
-                { name: "5", value: `Verified on ${formattedTime}` }
+                { name: "2", value: "Added Extra Chair" },
+                { name: "3", value: "1411 (Female) - 4th Floor" },
+                { name: "4", value: "2 Chairs (Total Extra Chairs: 2)" },
+                { name: "5", value: `${getLocalTodayDateString()} to ${getLocalTodayDateString()}` }
             ];
 
             const result = await dispatchWatiTemplateMessages([normalizedPhone], testParams);
@@ -7060,6 +7059,91 @@ window.renderSocieties = function() {
             return daySummaries.join(' | ');
         }
 
+        // Clean, concise schedule summary for WhatsApp notifications (groups consecutive periods like P4-P10 and merges days with identical schedules)
+        function formatCleanWhatsAppScheduleSummary(slots, customTimings = {}) {
+            if (!Array.isArray(slots) || slots.length === 0) return 'No periods selected';
+            const normalizedSlots = slots.map(s => {
+                if (s === 'Sat_PT') return 'Sat_P1';
+                if (typeof s === 'string' && s.endsWith('_P11')) return s.replace(/_P11$/, '_EX1');
+                return s;
+            }).filter(s => !s.endsWith('_PT'));
+            if (normalizedSlots.length === 0) return 'No periods selected';
+
+            const chronologicalCols = [...TIMETABLE_COLUMNS].reverse();
+            const dayEntries = [];
+
+            TIMETABLE_DAYS.forEach(day => {
+                const availableColsForDay = chronologicalCols.filter(col => !col.saturdayOnly || day.isSaturday);
+                const pickedCols = availableColsForDay.filter(col => normalizedSlots.includes(`${day.key}_${col.key}`));
+                if (pickedCols.length === 0) return;
+
+                const stdNumbers = [];
+                const extraParts = [];
+                pickedCols.forEach(col => {
+                    const slotKey = `${day.key}_${col.key}`;
+                    if (col.isExtra) {
+                        const customT = (customTimings && customTimings[slotKey]) ? customTimings[slotKey].trim() : '';
+                        extraParts.push(customT ? `${col.shortLabel} (${customT})` : col.shortLabel);
+                    } else {
+                        const num = parseInt(String(col.key).replace('P', ''), 10);
+                        if (!isNaN(num)) stdNumbers.push(num);
+                    }
+                });
+
+                stdNumbers.sort((a, b) => a - b);
+                const rangeParts = [];
+                let i = 0;
+                while (i < stdNumbers.length) {
+                    let start = stdNumbers[i];
+                    let end = start;
+                    while (i + 1 < stdNumbers.length && stdNumbers[i + 1] === end + 1) {
+                        end = stdNumbers[i + 1];
+                        i++;
+                    }
+                    if (start === end) {
+                        rangeParts.push(`P${start}`);
+                    } else {
+                        rangeParts.push(`P${start}-P${end}`);
+                    }
+                    i++;
+                }
+
+                const combinedPeriods = [...rangeParts, ...extraParts].join(', ');
+                dayEntries.push({ dayKey: day.key, periodsStr: combinedPeriods });
+            });
+
+            if (dayEntries.length === 0) return 'No periods selected';
+
+            // Merge consecutive days that share the exact same period string (e.g., Mon-Thu: P4-P10)
+            const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const mergedGroups = [];
+            dayEntries.forEach(item => {
+                const prev = mergedGroups[mergedGroups.length - 1];
+                if (prev && prev.periodsStr === item.periodsStr) {
+                    const prevEndIdx = dayOrder.indexOf(prev.endDay);
+                    const curIdx = dayOrder.indexOf(item.dayKey);
+                    if (curIdx === prevEndIdx + 1) {
+                        prev.endDay = item.dayKey;
+                        prev.daysList.push(item.dayKey);
+                        return;
+                    }
+                }
+                mergedGroups.push({
+                    startDay: item.dayKey,
+                    endDay: item.dayKey,
+                    daysList: [item.dayKey],
+                    periodsStr: item.periodsStr
+                });
+            });
+
+            return mergedGroups.map(g => {
+                const dayLabel = g.daysList.length >= 2
+                    ? `${g.startDay}-${g.endDay}`
+                    : g.startDay;
+                return `${dayLabel}: ${g.periodsStr}`;
+            }).join(' | ');
+        }
+
         window.openAddClassroomModal = function() {
             if (!isUserAdmin) {
                 showAssetToast("Admin Privileges Required: Only Administrators can add classrooms.", true);
@@ -7278,12 +7362,20 @@ window.renderSocieties = function() {
             const newTotal = getEffectiveExtraChairTotal(room);
             room.updatedAt = getLocalTodayDateString();
 
+            const removedChairsLabel = `${targetEntry.count} Chair${Number(targetEntry.count) === 1 ? '' : 's'} (Total Extra Chairs: ${newTotal})`;
+            const removedDatesLabel = (targetEntry.fromDate || targetEntry.toDate)
+                ? `${targetEntry.fromDate || '-'} to ${targetEntry.toDate || '-'}`
+                : 'No fixed date';
             await recordClassroomChangeNotification(
                 'extra-chair',
-                'edit-extra-chair',
+                'delete-extra-chair',
                 `Removed ${targetEntry.count} Extra Chair(s) (${targetEntry.fromDate || '-'} to ${targetEntry.toDate || '-'}) in Classroom ${room.classroomNumber} (${room.type})`,
                 `Active Total Extra Chairs: ${newTotal}`,
-                room
+                room,
+                {
+                    waDetails: removedChairsLabel,
+                    waSchedule: removedDatesLabel
+                }
             );
 
             await saveClassroomsToCloud();
@@ -7382,7 +7474,20 @@ window.renderSocieties = function() {
                 const notifDetail = hadPrevVal
                     ? `Edited Student Count from ${prevVal} to ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`
                     : `Added Student Count: ${numVal ?? 0} in Classroom ${room.classroomNumber} (${room.type})`;
-                await recordClassroomChangeNotification(colPermKey, hadPrevVal ? `edit-${colPermKey}` : `add-${colPermKey}`, notifDetail, `Current Student Count: ${numVal ?? 0}`, room);
+                const waStudentDetail = hadPrevVal
+                    ? `Changed from ${prevVal} to ${numVal ?? 0} Students`
+                    : `${numVal ?? 0} Students`;
+                await recordClassroomChangeNotification(
+                    colPermKey,
+                    hadPrevVal ? `edit-${colPermKey}` : `add-${colPermKey}`,
+                    notifDetail,
+                    `Current Student Count: ${numVal ?? 0}`,
+                    room,
+                    {
+                        waDetails: waStudentDetail,
+                        waSchedule: 'Regular Class Strength'
+                    }
+                );
 
                 await saveClassroomsToCloud();
                 closeModal('modalClassroomMetric');
@@ -7446,12 +7551,18 @@ window.renderSocieties = function() {
             const newActiveTotal = getEffectiveExtraChairTotal(room, todayStr);
             room.updatedAt = todayStr;
 
+            const waChairDetails = `${numVal} Chair${Number(numVal) === 1 ? '' : 's'} (Total Extra Chairs: ${newActiveTotal})`;
+            const waChairDates = `${fromDate} to ${toDate}`;
             await recordClassroomChangeNotification(
                 'extra-chair',
                 editEntryId ? 'edit-extra-chair' : 'add-extra-chair',
                 notifDetail,
                 `From: ${fromDate} to ${toDate} | Active Total Extra Chairs: ${newActiveTotal}`,
-                room
+                room,
+                {
+                    waDetails: waChairDetails,
+                    waSchedule: waChairDates
+                }
             );
 
             await saveClassroomsToCloud();
@@ -7769,12 +7880,17 @@ window.renderSocieties = function() {
 
             const catTitle = allocationCategory === 'event' ? 'Other Event' : 'Allocated Class';
             const schedSummaryStr = formatAllocationScheduleSummary(selectedSlots, savedCustomTimings);
+            const cleanWaSchedStr = formatCleanWhatsAppScheduleSummary(selectedSlots, savedCustomTimings);
             let schedNotifDetail = '';
+            let waAllocDetail = standardEventName;
             if (editAllocId) {
                 const renamed = prevAllocObj && prevAllocObj.standardEventName && prevAllocObj.standardEventName !== standardEventName;
                 schedNotifDetail = renamed
                     ? `Edited ${catTitle} "${prevAllocObj.standardEventName}" to "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`
                     : `Edited ${catTitle} "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`;
+                if (renamed) {
+                    waAllocDetail = `${prevAllocObj.standardEventName} -> ${standardEventName}`;
+                }
             } else {
                 schedNotifDetail = `Added ${catTitle} "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`;
             }
@@ -7783,7 +7899,11 @@ window.renderSocieties = function() {
                 editAllocId ? `edit-${allocationCategory}` : `add-${allocationCategory}`,
                 schedNotifDetail,
                 schedSummaryStr,
-                room
+                room,
+                {
+                    waDetails: waAllocDetail,
+                    waSchedule: cleanWaSchedStr
+                }
             );
 
             await saveClassroomsToCloud();

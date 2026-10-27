@@ -101,7 +101,7 @@
                 <button onclick="switchModule('classroom-allocation')" id="mod-classroom-allocation" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     <span>Classroom Allocation</span>
-                    <span id="notifBadgeClassroomAllocation" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none"></span>
+                    <span id="notifBadgeClassroomAllocation" onclick="event.stopPropagation(); switchModule('classroom-allocation'); openModuleNotificationsPopupIfAny('classroom-allocation');" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none cursor-pointer" title="Click to view unseen notifications"></span>
                 </button>
                 <button onclick="switchModule('inventory')" id="mod-inventory" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-key"></i>
@@ -697,6 +697,10 @@
                     <button type="button" id="btnExportClassroomsHeader" onclick="exportClassroomsToExcel()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Download Classroom Allocation & Darajah/Event Details (.xlsx)">
                         <i class="fa-solid fa-file-excel"></i>
                         <span>Export Excel</span>
+                    </button>
+                    <button type="button" id="btnEventsArchiveHeader" onclick="openEventsArchiveModal()" class="bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="View Active, Upcoming & Past Events Details">
+                        <i class="fa-solid fa-box-archive text-amber-300"></i>
+                        <span>Events Archive</span>
                     </button>
                     <button type="button" id="btnAddClassroomHeader" onclick="openAddClassroomModal()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-plus"></i>
@@ -2089,6 +2093,35 @@
                     </div>
                 </div>
 
+                <!-- Event Dates (From Date & To Date) - Displayed only when category is 'event' -->
+                <div id="scheduleEventDatesContainer" class="hidden bg-amber-50 p-3.5 rounded-xl border border-amber-300 space-y-2">
+                    <div class="flex items-center space-x-1.5 text-xs font-bold text-amber-950">
+                        <i class="fa-regular fa-calendar-days text-amber-700"></i>
+                        <span>Event Duration (From Date & To Date)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-bold text-amber-950 uppercase block mb-1">From Date <span class="text-red-600">*</span></label>
+                            <input
+                                type="date"
+                                id="scheduleEventFromDateInput"
+                                class="w-full p-2 border border-amber-300 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            >
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-amber-950 uppercase block mb-1">To Date <span class="text-red-600">*</span></label>
+                            <input
+                                type="date"
+                                id="scheduleEventToDateInput"
+                                class="w-full p-2 border border-amber-300 rounded-lg text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            >
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-amber-800 leading-snug">
+                        <i class="fa-solid fa-clock-rotate-left mr-1"></i>After the <strong>To Date</strong> has passed, the event automatically vanishes from the main module page, its periods become free for new events, and it is preserved in the <strong>Events Archive</strong>.
+                    </p>
+                </div>
+
                 <!-- Interactive Weekly Timetable Grid (Matching Attached Screenshot) -->
                 <div class="space-y-1.5">
                     <div class="flex flex-wrap justify-between items-center text-xs text-gray-600 gap-2">
@@ -2171,6 +2204,71 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: Classroom Events Archive (Active, Upcoming & Past Events) -->
+    <div id="modalEventsArchive" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-box-archive text-purple-700"></i>
+                        <span>Classroom Events Archive & History</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Track and view active, upcoming, and past/completed events across all classrooms.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalEventsArchive')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold self-end sm:self-auto">&times;</button>
+            </div>
+
+            <!-- Top Filter Pills & Search -->
+            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 bg-gray-50 p-3 rounded-lg border">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" id="btnEventsArchiveFilterAll" onclick="setEventsArchiveFilter('all')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-purple-700 text-white shadow-sm transition">
+                        All (<span id="eventsArchiveCountAll">0</span>)
+                    </button>
+                    <button type="button" id="btnEventsArchiveFilterActive" onclick="setEventsArchiveFilter('active')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-emerald-800 border border-emerald-300 hover:bg-emerald-50 transition">
+                        Active (<span id="eventsArchiveCountActive">0</span>)
+                    </button>
+                    <button type="button" id="btnEventsArchiveFilterUpcoming" onclick="setEventsArchiveFilter('upcoming')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-blue-800 border border-blue-300 hover:bg-blue-50 transition">
+                        Upcoming (<span id="eventsArchiveCountUpcoming">0</span>)
+                    </button>
+                    <button type="button" id="btnEventsArchiveFilterPast" onclick="setEventsArchiveFilter('past')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 transition">
+                        Past / Completed (<span id="eventsArchiveCountPast">0</span>)
+                    </button>
+                </div>
+                <div class="relative w-full md:w-64">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                    <input
+                        type="text"
+                        id="eventsArchiveSearchInput"
+                        oninput="renderEventsArchiveList()"
+                        placeholder="Search event name, classroom, dates..."
+                        class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    >
+                </div>
+            </div>
+
+            <!-- Table of Events -->
+            <div class="flex-grow overflow-y-auto border rounded-lg">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead class="bg-purple-900 text-white uppercase text-[11px] sticky top-0 z-10">
+                        <tr>
+                            <th class="p-3">Event Name</th>
+                            <th class="p-3">Classroom & Location</th>
+                            <th class="p-3 whitespace-nowrap">Event Dates</th>
+                            <th class="p-3">Weekly Timetable Schedule</th>
+                            <th class="p-3 text-center whitespace-nowrap">Status</th>
+                            <th class="p-3 text-center whitespace-nowrap">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsArchiveTableBody" class="divide-y bg-white"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t">
+                <button type="button" onclick="closeModal('modalEventsArchive')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-sm font-bold transition">Close</button>
+            </div>
         </div>
     </div>
 
@@ -3050,6 +3148,28 @@
             }).filter(n => n.actorEmail && n.detailText);
         }
 
+        function mergeNotificationsArrays(listA, listB) {
+            const map = new Map();
+            (listA || []).forEach(n => {
+                if (n && n.id) map.set(String(n.id), n);
+            });
+            (listB || []).forEach(n => {
+                if (n && n.id) {
+                    if (map.has(String(n.id))) {
+                        const existing = map.get(String(n.id));
+                        const mergedSeen = Array.from(new Set([
+                            ...(Array.isArray(existing.seenBy) ? existing.seenBy : []),
+                            ...(Array.isArray(n.seenBy) ? n.seenBy : [])
+                        ]));
+                        map.set(String(n.id), { ...existing, ...n, seenBy: mergedSeen });
+                    } else {
+                        map.set(String(n.id), n);
+                    }
+                }
+            });
+            return Array.from(map.values()).sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+        }
+
         function normalizeRaihaanList(rawRaihaan) {
             if (!rawRaihaan) return [];
             const arr = Array.isArray(rawRaihaan)
@@ -3195,12 +3315,20 @@
                         const raiSnap = await get(child(dbRef(db), 'raihaan'));
                         raihaanData = raiSnap.exists() ? normalizeRaihaanList(raiSnap.val()) : [];
                     }
+                    let cloudNotifs = [];
                     if (data.notifications) {
-                        portalNotificationsData = normalizeNotificationsList(data.notifications);
-                    } else {
-                        const notifSnap = await get(child(dbRef(db), 'notifications'));
-                        portalNotificationsData = notifSnap.exists() ? normalizeNotificationsList(notifSnap.val()) : [];
+                        cloudNotifs = normalizeNotificationsList(data.notifications);
                     }
+                    try {
+                        const notifSnap = await get(child(dbRef(db), 'notifications'));
+                        if (notifSnap && notifSnap.exists() && notifSnap.val()) {
+                            const rootNotifs = normalizeNotificationsList(notifSnap.val());
+                            cloudNotifs = mergeNotificationsArrays(cloudNotifs, rootNotifs);
+                        }
+                    } catch (eSnap) {
+                        console.warn("Could not read root notifications:", eSnap);
+                    }
+                    portalNotificationsData = mergeNotificationsArrays(cloudNotifs, portalNotificationsData);
                     if (data.estate_assets) {
                         estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
                     } else {
@@ -3355,8 +3483,11 @@
                     if (data.raihaan !== undefined) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
                     }
-                    if (data.notifications !== undefined) {
-                        portalNotificationsData = normalizeNotificationsList(data.notifications);
+                    if (data.notifications !== undefined && data.notifications !== null) {
+                        const incoming = normalizeNotificationsList(data.notifications);
+                        if (incoming.length > 0) {
+                            portalNotificationsData = mergeNotificationsArrays(incoming, portalNotificationsData);
+                        }
                     }
                     if (data.estate_assets !== undefined) {
                         estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
@@ -3364,21 +3495,7 @@
 
                     syncCurrentUserLivePermissions();
                     refreshAllPortalViews();
-
-                    const clsModEl = document.getElementById('module-classroom-allocation');
-                    if (clsModEl && !clsModEl.classList.contains('hidden')) {
-                        const unseen = getUnseenNotificationsForModule('classroom-allocation');
-                        if (unseen.length > 0) {
-                            openModuleNotificationsPopupIfAny('classroom-allocation');
-                        }
-                    }
-                    const dawatModEl = document.getElementById('module-dawat-estates');
-                    if (dawatModEl && !dawatModEl.classList.contains('hidden') && currentActiveDawatSubHeader) {
-                        const unseenSub = getUnseenNotificationsForModule('dawat-estates', currentActiveDawatSubHeader);
-                        if (unseenSub.length > 0) {
-                            openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
-                        }
-                    }
+                    checkAndTriggerActiveModuleNotifications();
                 });
 
                 // Dedicated listener on /classrooms for instant Classroom Allocation table updates
@@ -3413,26 +3530,14 @@
 
                 // Dedicated listener on /notifications for instant badge & pop-up notification updates
                 onValue(dbRef(db, 'notifications'), (snapshot) => {
-                    if (snapshot.exists()) {
-                        portalNotificationsData = normalizeNotificationsList(snapshot.val());
-                    } else {
-                        portalNotificationsData = [];
+                    if (snapshot.exists() && snapshot.val()) {
+                        const incoming = normalizeNotificationsList(snapshot.val());
+                        if (incoming.length > 0) {
+                            portalNotificationsData = mergeNotificationsArrays(incoming, portalNotificationsData);
+                        }
                     }
                     updateModuleNotificationBadges();
-                    const clsModEl = document.getElementById('module-classroom-allocation');
-                    if (clsModEl && !clsModEl.classList.contains('hidden')) {
-                        const unseen = getUnseenNotificationsForModule('classroom-allocation');
-                        if (unseen.length > 0) {
-                            openModuleNotificationsPopupIfAny('classroom-allocation');
-                        }
-                    }
-                    const dawatModEl = document.getElementById('module-dawat-estates');
-                    if (dawatModEl && !dawatModEl.classList.contains('hidden') && currentActiveDawatSubHeader) {
-                        const unseenSub = getUnseenNotificationsForModule('dawat-estates', currentActiveDawatSubHeader);
-                        if (unseenSub.length > 0) {
-                            openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
-                        }
-                    }
+                    checkAndTriggerActiveModuleNotifications();
                 });
                 // Also refresh cloud data when tab regains focus or visibility
                 window.addEventListener('focus', async () => {
@@ -3440,16 +3545,35 @@
                     await loadCloudData();
                     syncCurrentUserLivePermissions();
                     refreshAllPortalViews();
+                    checkAndTriggerActiveModuleNotifications();
                 });
                 document.addEventListener('visibilitychange', async () => {
                     if (document.visibilityState === 'visible' && currentUser) {
                         await loadCloudData();
                         syncCurrentUserLivePermissions();
                         refreshAllPortalViews();
+                        checkAndTriggerActiveModuleNotifications();
                     }
                 });
             } catch (err) {
                 console.error("Error attaching realtime listeners:", err);
+            }
+        }
+
+        function checkAndTriggerActiveModuleNotifications() {
+            const clsModEl = document.getElementById('module-classroom-allocation');
+            if (clsModEl && !clsModEl.classList.contains('hidden')) {
+                const unseen = getUnseenNotificationsForModule('classroom-allocation');
+                if (unseen.length > 0) {
+                    openModuleNotificationsPopupIfAny('classroom-allocation');
+                }
+            }
+            const dawatModEl = document.getElementById('module-dawat-estates');
+            if (dawatModEl && !dawatModEl.classList.contains('hidden') && currentActiveDawatSubHeader) {
+                const unseenSub = getUnseenNotificationsForModule('dawat-estates', currentActiveDawatSubHeader);
+                if (unseenSub.length > 0) {
+                    openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
+                }
             }
         }
 
@@ -3571,6 +3695,48 @@
             return cleaned.length > 900 ? cleaned.slice(0, 897) + '...' : cleaned;
         }
 
+        // Helper: Extract allotted class name for a given classroom (if any)
+        function getAllottedClassNameForRoom(roomObj) {
+            if (!roomObj) return '';
+            if (Array.isArray(roomObj.allocations)) {
+                const classAlloc = roomObj.allocations.find(a => a && (a.allocationType || 'class') === 'class' && a.standardEventName);
+                if (classAlloc && classAlloc.standardEventName) {
+                    return String(classAlloc.standardEventName).trim();
+                }
+            }
+            return '';
+        }
+
+        // Format Classroom label per user specification:
+        // "first mention the allotted class name if any then dash then clasroom number followed by in brackets Male or female - location"
+        // e.g. "Std 1 A M - 1411 (Female) - 4th Floor" or "1411 (Female) - 4th Floor" if unallocated
+        function formatClassroomWhatsAppRoomLabel(roomObj, detailText = '', explicitClassName = '') {
+            let targetRoom = roomObj;
+            if (!targetRoom || !targetRoom.classroomNumber) {
+                const m = String(detailText || '').match(/Classroom\s+(\d+|[A-Za-z0-9_-]+)/i);
+                if (m && Array.isArray(classroomsData)) {
+                    targetRoom = classroomsData.find(c => String(c.classroomNumber).trim().toLowerCase() === m[1].trim().toLowerCase());
+                }
+            }
+
+            if (targetRoom && targetRoom.classroomNumber) {
+                const roomNum = String(targetRoom.classroomNumber).trim();
+                const type = targetRoom.type === 'Female' ? 'Female' : 'Male';
+                const location = String(targetRoom.location || '').trim();
+
+                let allottedClassName = String(explicitClassName || '').trim();
+                if (!allottedClassName) {
+                    allottedClassName = getAllottedClassNameForRoom(targetRoom);
+                }
+
+                const baseRoom = `${roomNum} (${type})${location ? ' - ' + location : ''}`;
+                return allottedClassName ? `${allottedClassName} - ${baseRoom}` : baseRoom;
+            }
+
+            const m = String(detailText || '').match(/Classroom\s+([^()]+\([^)]+\))/i);
+            return m ? m[1].trim() : 'Classroom Allocation';
+        }
+
         function getReadableClassroomActionLabel(actionType, subPermission) {
             const map = {
                 'add-class': 'Added Allotted Class',
@@ -3678,7 +3844,7 @@
             return { ok: false, sentCount: 0, message: lastErrorMsg || 'Failed to reach WATI endpoint.' };
         }
 
-        async function sendClassroomWhatsAppAlert({ subPermission, actionType, detailText, scheduleSummary, roomObj, actorEmail, actorName, waDetails = '', waSchedule = '' }) {
+        async function sendClassroomWhatsAppAlert({ subPermission, actionType, detailText, scheduleSummary, roomObj, actorEmail, actorName, waDetails = '', waSchedule = '', waClassName = '' }) {
             try {
                 const cfg = normalizeWatiConfig(watiConfig);
                 if (!cfg.enabled) return;
@@ -3706,13 +3872,8 @@
                 if (targetPhones.length === 0) return;
 
                 const actionLabel = getReadableClassroomActionLabel(actionType, subPermission);
-                let roomLabel = '';
-                if (roomObj && roomObj.classroomNumber) {
-                    roomLabel = `${roomObj.classroomNumber} (${roomObj.type || 'Male'})${roomObj.location ? ' - ' + roomObj.location : ''}`;
-                } else {
-                    const m = String(detailText || '').match(/Classroom\s+([^()]+\([^)]+\))/i);
-                    roomLabel = m ? m[1].trim() : 'Classroom Allocation';
-                }
+                // First mention the allotted class name if any, then dash, then classroom number followed by in brackets (Male or Female) - location
+                const roomLabel = formatClassroomWhatsAppRoomLabel(roomObj, detailText, waClassName);
 
                 // Clean, non-repetitive Details ({{4}}) and Schedule / Dates ({{5}}) without repeating Action, Classroom, or Updated timestamp
                 const cleanDetails = String(waDetails || detailText || '').trim();
@@ -3761,6 +3922,18 @@
             portalNotificationsData.push(newNotif);
             updateModuleNotificationBadges();
 
+            // Immediately persist notification atomically to Firebase so any user opening the portal receives it right away
+            try {
+                await Promise.all([
+                    set(dbRef(db, `notifications/${newNotif.id}`), newNotif),
+                    set(dbRef(db, `portalData/notifications/${newNotif.id}`), newNotif),
+                    set(dbRef(db, 'portalData/notifications'), portalNotificationsData),
+                    set(dbRef(db, 'notifications'), portalNotificationsData)
+                ]);
+            } catch (errPersist) {
+                console.error("Error immediately persisting classroom notification to cloud:", errPersist);
+            }
+
             // Fire WATI WhatsApp template alert to all subscribed users
             sendClassroomWhatsAppAlert({
                 subPermission,
@@ -3771,7 +3944,8 @@
                 actorEmail,
                 actorName,
                 waDetails: waOverrides.waDetails || '',
-                waSchedule: waOverrides.waSchedule || ''
+                waSchedule: waOverrides.waSchedule || '',
+                waClassName: waOverrides.waClassName || ''
             });
         }
 
@@ -3801,18 +3975,42 @@
 
             portalNotificationsData.push(newNotif);
             updateModuleNotificationBadges();
+
+            try {
+                await Promise.all([
+                    set(dbRef(db, `notifications/${newNotif.id}`), newNotif),
+                    set(dbRef(db, `portalData/notifications/${newNotif.id}`), newNotif),
+                    set(dbRef(db, 'portalData/notifications'), portalNotificationsData),
+                    set(dbRef(db, 'notifications'), portalNotificationsData)
+                ]);
+            } catch (errPersist) {
+                console.error("Error persisting estate notification to cloud:", errPersist);
+            }
         }
 
         let isOpeningNotificationsPopup = false;
         window.openModuleNotificationsPopupIfAny = async function(modKey = 'classroom-allocation', subHeaderKey = null) {
             if (isOpeningNotificationsPopup) return;
-            const initialUnseen = getUnseenNotificationsForModule(modKey, subHeaderKey);
-            if (initialUnseen.length === 0) {
-                updateModuleNotificationBadges();
-                return;
-            }
             isOpeningNotificationsPopup = true;
             try {
+                // Always pull the freshest notifications directly from Firebase Realtime Database
+                const [portalSnap, notifSnap] = await Promise.all([
+                    get(child(dbRef(db), 'portalData/notifications')).catch(() => null),
+                    get(child(dbRef(db), 'notifications')).catch(() => null)
+                ]);
+                let cloudNotifs = [];
+                if (portalSnap && portalSnap.exists() && portalSnap.val()) {
+                    cloudNotifs = normalizeNotificationsList(portalSnap.val());
+                }
+                if (notifSnap && notifSnap.exists() && notifSnap.val()) {
+                    const rootNotifs = normalizeNotificationsList(notifSnap.val());
+                    cloudNotifs = mergeNotificationsArrays(cloudNotifs, rootNotifs);
+                }
+                if (cloudNotifs.length > 0) {
+                    portalNotificationsData = mergeNotificationsArrays(cloudNotifs, portalNotificationsData);
+                    updateModuleNotificationBadges();
+                }
+
                 if (modKey === 'classroom-allocation') {
                     await loadClassroomsFromCloud();
                     renderClassroomsTables();
@@ -3825,6 +4023,7 @@
             } finally {
                 isOpeningNotificationsPopup = false;
             }
+
             const unseen = getUnseenNotificationsForModule(modKey, subHeaderKey);
             const modalEl = document.getElementById('modalClassroomNotifications');
             const containerEl = document.getElementById('classroomNotificationsPopupsContainer');
@@ -4125,6 +4324,7 @@
             attachNotificationsRealtimeListener();
             updateModuleNotificationBadges();
             applyModuleAndSubHeaderPermissions();
+            checkAndTriggerActiveModuleNotifications();
         }
 
         window.switchModule = function(modName) {
@@ -6280,7 +6480,7 @@ window.renderSocieties = function() {
             const testParams = [
                 { name: "1", value: sanitizeWatiParamValue(actorName, 'Admin') },
                 { name: "2", value: "Added Extra Chair" },
-                { name: "3", value: "1411 (Female) - 4th Floor" },
+                { name: "3", value: "Std 1 A M - 1411 (Female) - 4th Floor" },
                 { name: "4", value: "2 Chairs (Total Extra Chairs: 2)" },
                 { name: "5", value: `${getLocalTodayDateString()} to ${getLocalTodayDateString()}` }
             ];
@@ -6681,6 +6881,10 @@ window.renderSocieties = function() {
             // First pass: identify primary/existing allocations and check which of their slots are currently open due to active Raihaan
             room.allocations.forEach(alloc => {
                 if (!alloc || String(alloc.id) === String(excludeAllocId)) return;
+                // If this is an Other Event whose To Date has passed, it has vanished/expired and its slots are freed up for new events!
+                if (alloc.allocationType === 'event' && alloc.toDate && alloc.toDate < todayStr) {
+                    return;
+                }
                 const activeRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
                 const slots = Array.isArray(alloc.slots) ? alloc.slots : [];
                 const timings = (alloc.customTimings && typeof alloc.customTimings === 'object') ? alloc.customTimings : {};
@@ -7579,15 +7783,18 @@ window.renderSocieties = function() {
             const lbl = document.getElementById('scheduleEventNameLabel');
             const inp = document.getElementById('scheduleEventNameInput');
             const topBar = document.getElementById('scheduleModalFormTopBar');
+            const datesWrap = document.getElementById('scheduleEventDatesContainer');
 
             if (cleanCat === 'event') {
                 if (lbl) lbl.innerHTML = 'Other Event Name <span class="text-red-600">*</span>';
                 if (inp) inp.placeholder = 'e.g. Hifzul Quran, Seminar, Guest Lecture, Exam...';
                 if (topBar) topBar.className = 'bg-amber-50 p-4 rounded-xl border border-amber-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4';
+                if (datesWrap) datesWrap.classList.remove('hidden');
             } else {
                 if (lbl) lbl.innerHTML = 'Allocated Class (Darajah) Name <span class="text-red-600">*</span>';
                 if (inp) inp.placeholder = 'e.g. Darajah 1 (Al-Ula), Darajah 5, Standard Class...';
                 if (topBar) topBar.className = 'bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex flex-col md:flex-row items-stretch md:items-end justify-between gap-4';
+                if (datesWrap) datesWrap.classList.add('hidden');
             }
         }
 
@@ -7651,6 +7858,15 @@ window.renderSocieties = function() {
 
             document.getElementById('scheduleEditAllocId').value = '';
             document.getElementById('scheduleEventNameInput').value = '';
+            const todayStr = getLocalTodayDateString();
+            if (document.getElementById('scheduleEventFromDateInput')) {
+                document.getElementById('scheduleEventFromDateInput').value = todayStr;
+                document.getElementById('scheduleEventFromDateInput').readOnly = !canEdit;
+            }
+            if (document.getElementById('scheduleEventToDateInput')) {
+                document.getElementById('scheduleEventToDateInput').value = todayStr;
+                document.getElementById('scheduleEventToDateInput').readOnly = !canEdit;
+            }
             document.getElementById('btnSaveClassroomScheduleText').innerText = activeCat === 'event' ? 'Save Other Event' : 'Save Allocated Class';
             document.getElementById('cancelEditScheduleAllocBtn')?.classList.add('hidden');
             document.getElementById('scheduleValidationError')?.classList.add('hidden');
@@ -7683,6 +7899,17 @@ window.renderSocieties = function() {
 
             document.getElementById('scheduleEditAllocId').value = String(alloc.id);
             document.getElementById('scheduleEventNameInput').value = alloc.standardEventName || '';
+            if (allocCat === 'event') {
+                const todayStr = getLocalTodayDateString();
+                if (document.getElementById('scheduleEventFromDateInput')) {
+                    document.getElementById('scheduleEventFromDateInput').value = alloc.fromDate || todayStr;
+                    document.getElementById('scheduleEventFromDateInput').readOnly = isReadOnly;
+                }
+                if (document.getElementById('scheduleEventToDateInput')) {
+                    document.getElementById('scheduleEventToDateInput').value = alloc.toDate || todayStr;
+                    document.getElementById('scheduleEventToDateInput').readOnly = isReadOnly;
+                }
+            }
             document.getElementById('btnSaveClassroomScheduleText').innerText = allocCat === 'event' ? 'Update Other Event' : 'Update Allocated Class';
             if (!isReadOnly) {
                 document.getElementById('cancelEditScheduleAllocBtn')?.classList.remove('hidden');
@@ -7759,6 +7986,9 @@ window.renderSocieties = function() {
                 const typeBadge = isEvent
                     ? '<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Other Event</span>'
                     : '<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Allocated Class</span>';
+                const datesNotice = (isEvent && (alloc.fromDate || alloc.toDate))
+                    ? `<span class="text-[10px] text-amber-800 font-mono block mt-0.5"><i class="fa-regular fa-calendar mr-1"></i>${alloc.fromDate || '-'} to ${alloc.toDate || '-'}</span>`
+                    : '';
                 const item = document.createElement('div');
                 item.className = "bg-white p-2.5 rounded border flex justify-between items-start gap-2 text-xs";
                 item.innerHTML = `
@@ -7770,6 +8000,7 @@ window.renderSocieties = function() {
                             </button>
                             ${typeBadge}
                         </div>
+                        ${datesNotice}
                         <span class="text-[11px] text-gray-600 block mt-0.5">${summary}</span>
                     </div>
                     ${canEditThisAlloc ? `
@@ -7799,10 +8030,29 @@ window.renderSocieties = function() {
             }
             const standardEventName = document.getElementById('scheduleEventNameInput').value.trim();
 
+            let eventFromDate = '';
+            let eventToDate = '';
+            if (allocationCategory === 'event') {
+                eventFromDate = (document.getElementById('scheduleEventFromDateInput')?.value || '').trim();
+                eventToDate = (document.getElementById('scheduleEventToDateInput')?.value || '').trim();
+                const errEl = document.getElementById('scheduleValidationError');
+                if (!eventFromDate || !eventToDate || eventFromDate > eventToDate) {
+                    if (errEl) {
+                        errEl.innerText = "Please select valid From Date and To Date for this Event (From Date must be on or before To Date).";
+                        errEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+
             const selectedSlots = Array.from(document.querySelectorAll('input[name="timetableSlotCheckbox"]:checked')).map(cb => cb.value);
 
             if (selectedSlots.length === 0) {
-                document.getElementById('scheduleValidationError')?.classList.remove('hidden');
+                const errEl = document.getElementById('scheduleValidationError');
+                if (errEl) {
+                    errEl.innerText = "Please select at least one day/period slot.";
+                    errEl.classList.remove('hidden');
+                }
                 return;
             }
 
@@ -7854,6 +8104,8 @@ window.renderSocieties = function() {
                 id: editAllocId ? String(editAllocId) : Date.now().toString() + Math.random().toString().slice(2, 5),
                 standardEventName,
                 allocationType: allocationCategory,
+                fromDate: allocationCategory === 'event' ? eventFromDate : '',
+                toDate: allocationCategory === 'event' ? eventToDate : '',
                 slots: selectedSlots,
                 customTimings: savedCustomTimings,
                 raihaanTemporarySlots,
@@ -7881,28 +8133,31 @@ window.renderSocieties = function() {
             const catTitle = allocationCategory === 'event' ? 'Other Event' : 'Allocated Class';
             const schedSummaryStr = formatAllocationScheduleSummary(selectedSlots, savedCustomTimings);
             const cleanWaSchedStr = formatCleanWhatsAppScheduleSummary(selectedSlots, savedCustomTimings);
+            const eventDatesNotice = allocationCategory === 'event' ? ` (${eventFromDate} to ${eventToDate})` : '';
+            const waScheduleStr = allocationCategory === 'event' ? `${eventFromDate} to ${eventToDate} | ${cleanWaSchedStr}` : cleanWaSchedStr;
             let schedNotifDetail = '';
             let waAllocDetail = standardEventName;
             if (editAllocId) {
                 const renamed = prevAllocObj && prevAllocObj.standardEventName && prevAllocObj.standardEventName !== standardEventName;
                 schedNotifDetail = renamed
-                    ? `Edited ${catTitle} "${prevAllocObj.standardEventName}" to "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`
-                    : `Edited ${catTitle} "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`;
+                    ? `Edited ${catTitle} "${prevAllocObj.standardEventName}" to "${standardEventName}"${eventDatesNotice} in Classroom ${room.classroomNumber} (${room.type})`
+                    : `Edited ${catTitle} "${standardEventName}"${eventDatesNotice} in Classroom ${room.classroomNumber} (${room.type})`;
                 if (renamed) {
                     waAllocDetail = `${prevAllocObj.standardEventName} -> ${standardEventName}`;
                 }
             } else {
-                schedNotifDetail = `Added ${catTitle} "${standardEventName}" in Classroom ${room.classroomNumber} (${room.type})`;
+                schedNotifDetail = `Added ${catTitle} "${standardEventName}"${eventDatesNotice} in Classroom ${room.classroomNumber} (${room.type})`;
             }
             await recordClassroomChangeNotification(
                 permKey,
                 editAllocId ? `edit-${allocationCategory}` : `add-${allocationCategory}`,
                 schedNotifDetail,
-                schedSummaryStr,
+                schedSummaryStr + (allocationCategory === 'event' ? ` [Dates: ${eventFromDate} to ${eventToDate}]` : ''),
                 room,
                 {
                     waDetails: waAllocDetail,
-                    waSchedule: cleanWaSchedStr
+                    waSchedule: waScheduleStr,
+                    waClassName: allocationCategory === 'class' ? standardEventName : ''
                 }
             );
 
@@ -8339,6 +8594,211 @@ window.renderSocieties = function() {
             showAssetToast("Deleted Raihaan record from archive");
         };
 
+
+        // =========================================================================
+        // CLASSROOM EVENTS ARCHIVE & HISTORY (Active, Upcoming & Past Events)
+        // =========================================================================
+
+        let selectedEventsArchiveFilter = 'all'; // 'all' | 'active' | 'upcoming' | 'past'
+
+        function getAllClassroomEventsList() {
+            const list = [];
+            const todayStr = getLocalTodayDateString();
+            classroomsData.forEach(room => {
+                const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+                allocations.forEach(alloc => {
+                    if (!alloc || alloc.allocationType !== 'event') return;
+
+                    const fromDate = String(alloc.fromDate || '').trim();
+                    const toDate = String(alloc.toDate || '').trim();
+
+                    let status = 'active'; // 'active' | 'upcoming' | 'past'
+                    if (toDate && toDate < todayStr) {
+                        status = 'past';
+                    } else if (fromDate && fromDate > todayStr) {
+                        status = 'upcoming';
+                    } else {
+                        status = 'active';
+                    }
+
+                    list.push({
+                        allocId: String(alloc.id),
+                        eventName: alloc.standardEventName || 'Event',
+                        classroomId: String(room.id),
+                        classroomNumber: String(room.classroomNumber || ''),
+                        roomType: room.type || 'Male',
+                        location: room.location || '',
+                        fromDate,
+                        toDate,
+                        slots: Array.isArray(alloc.slots) ? alloc.slots : [],
+                        customTimings: alloc.customTimings || {},
+                        status,
+                        updatedAt: alloc.updatedAt || ''
+                    });
+                });
+            });
+            return list;
+        }
+
+        window.openEventsArchiveModal = function() {
+            selectedEventsArchiveFilter = 'all';
+            if (document.getElementById('eventsArchiveSearchInput')) {
+                document.getElementById('eventsArchiveSearchInput').value = '';
+            }
+            renderEventsArchiveList();
+            document.getElementById('modalEventsArchive').classList.remove('hidden');
+        };
+
+        window.setEventsArchiveFilter = function(filter) {
+            selectedEventsArchiveFilter = filter;
+            const filterBtns = {
+                'all': 'btnEventsArchiveFilterAll',
+                'active': 'btnEventsArchiveFilterActive',
+                'upcoming': 'btnEventsArchiveFilterUpcoming',
+                'past': 'btnEventsArchiveFilterPast'
+            };
+            Object.keys(filterBtns).forEach(k => {
+                const btn = document.getElementById(filterBtns[k]);
+                if (!btn) return;
+                if (k === filter) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-extrabold bg-purple-700 text-white shadow-sm transition";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 transition";
+                }
+            });
+            renderEventsArchiveList();
+        };
+
+        window.renderEventsArchiveList = function() {
+            const tbody = document.getElementById('eventsArchiveTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const allEvents = getAllClassroomEventsList();
+            const todayStr = getLocalTodayDateString();
+
+            const countAll = allEvents.length;
+            const countActive = allEvents.filter(e => e.status === 'active').length;
+            const countUpcoming = allEvents.filter(e => e.status === 'upcoming').length;
+            const countPast = allEvents.filter(e => e.status === 'past').length;
+
+            if (document.getElementById('eventsArchiveCountAll')) document.getElementById('eventsArchiveCountAll').innerText = countAll;
+            if (document.getElementById('eventsArchiveCountActive')) document.getElementById('eventsArchiveCountActive').innerText = countActive;
+            if (document.getElementById('eventsArchiveCountUpcoming')) document.getElementById('eventsArchiveCountUpcoming').innerText = countUpcoming;
+            if (document.getElementById('eventsArchiveCountPast')) document.getElementById('eventsArchiveCountPast').innerText = countPast;
+
+            const query = (document.getElementById('eventsArchiveSearchInput')?.value || '').toLowerCase().trim();
+            const tokens = query.split(/\s+/).filter(Boolean);
+
+            const filtered = allEvents.filter(ev => {
+                if (selectedEventsArchiveFilter !== 'all' && ev.status !== selectedEventsArchiveFilter) {
+                    return false;
+                }
+                if (tokens.length === 0) return true;
+                const corpus = `${ev.eventName} ${ev.classroomNumber} ${ev.roomType} ${ev.location} ${ev.fromDate} ${ev.toDate} ${ev.status}`.toLowerCase();
+                return tokens.every(t => corpus.includes(t));
+            });
+
+            // Sort: Active first, then Upcoming, then Past (most recent to oldest)
+            filtered.sort((a, b) => {
+                const order = { 'active': 1, 'upcoming': 2, 'past': 3 };
+                if (order[a.status] !== order[b.status]) {
+                    return order[a.status] - order[b.status];
+                }
+                if (a.status === 'past') {
+                    return (b.toDate || '').localeCompare(a.toDate || '');
+                }
+                return (a.fromDate || '').localeCompare(b.fromDate || '');
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-400 text-xs italic">No events match the selected criteria in the archive.</td></tr>';
+                return;
+            }
+
+            const canDeleteEvents = canEditClassroomColumn('event');
+
+            tbody.innerHTML = filtered.map(ev => {
+                const safeRoomId = String(ev.classroomId).replace(/'/g, "\'");
+                const safeAllocId = String(ev.allocId).replace(/'/g, "\'");
+                const schedStr = formatCleanWhatsAppScheduleSummary(ev.slots, ev.customTimings);
+
+                let statusBadge = '';
+                if (ev.status === 'active') {
+                    statusBadge = '<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-extrabold px-2 py-0.5 rounded-full text-[11px] whitespace-nowrap">Active (Ongoing)</span>';
+                } else if (ev.status === 'upcoming') {
+                    statusBadge = '<span class="bg-blue-100 text-blue-900 border border-blue-300 font-extrabold px-2 py-0.5 rounded-full text-[11px] whitespace-nowrap">Upcoming</span>';
+                } else {
+                    statusBadge = '<span class="bg-gray-100 text-gray-600 border border-gray-300 font-bold px-2 py-0.5 rounded-full text-[11px] whitespace-nowrap">Past (Vanished)</span>';
+                }
+
+                const datesDisplay = (ev.fromDate || ev.toDate)
+                    ? `<span class="font-mono text-xs font-semibold text-gray-800">${ev.fromDate || '-'} to ${ev.toDate || '-'}</span>`
+                    : '<span class="text-xs text-gray-400 italic">No dates set</span>';
+
+                const deleteBtnHtml = canDeleteEvents
+                    ? `<button type="button" onclick="deleteEventFromArchive('${safeRoomId}', '${safeAllocId}')" class="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50 transition" title="Delete Event Record">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>`
+                    : '';
+
+                return `
+                    <tr class="hover:bg-gray-50 border-b align-middle">
+                        <td class="p-3">
+                            <span class="font-extrabold text-amber-950 text-xs sm:text-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-calendar-day text-amber-600"></i>
+                                <span>${ev.eventName}</span>
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <div class="font-bold text-gray-900 text-xs">Classroom ${ev.classroomNumber} (${ev.roomType})</div>
+                            <div class="text-[10px] text-gray-500">${ev.location || '-'}</div>
+                        </td>
+                        <td class="p-3 whitespace-nowrap">
+                            ${datesDisplay}
+                        </td>
+                        <td class="p-3 text-xs text-gray-700">
+                            ${schedStr}
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            ${statusBadge}
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap space-x-1">
+                            <button
+                                type="button"
+                                onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}', 'event')"
+                                class="text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 font-bold text-xs inline-flex items-center space-x-1"
+                                title="View / Edit Event Timetable"
+                            >
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <span>Timetable</span>
+                            </button>
+                            ${deleteBtnHtml}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.deleteEventFromArchive = async function(classroomId, allocId) {
+            if (!canEditClassroomColumn('event')) {
+                showAssetToast("View Only: You do not have permission to delete events.", true);
+                return;
+            }
+            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            if (!room || !Array.isArray(room.allocations)) return;
+            const targetAlloc = room.allocations.find(a => String(a.id) === String(allocId));
+            if (!targetAlloc) return;
+
+            if (confirm(`Are you sure you want to permanently delete event "${targetAlloc.standardEventName}" from Classroom ${room.classroomNumber}?`)) {
+                room.allocations = room.allocations.filter(a => String(a.id) !== String(allocId));
+                await saveClassroomsToCloud();
+                renderClassroomsTables();
+                renderEventsArchiveList();
+                showAssetToast(`Deleted event "${targetAlloc.standardEventName}"`);
+            }
+        };
+
         // Normalize class name for natural sorting (e.g. "Std 1 A", "Std 1 B", "Std 2 A", ..., "Std 9", "Std 10", "Std 11")
         function normalizeAllocatedClassForSort(rawName) {
             if (!rawName || typeof rawName !== 'string') return '';
@@ -8657,18 +9117,29 @@ window.renderSocieties = function() {
                             ? 'fa-calendar-day text-amber-600'
                             : 'fa-table-cells text-emerald-600';
 
+                        const eventDatesHtml = (isEventCol && (alloc.fromDate || alloc.toDate))
+                            ? `<span class="block text-[9px] text-amber-800 font-mono leading-tight mt-0.5"><i class="fa-regular fa-calendar mr-0.5"></i>${alloc.fromDate || '-'} to ${alloc.toDate || '-'}</span>`
+                            : '';
+                        const upcomingBadgeHtml = (isEventCol && alloc.fromDate && alloc.fromDate > todayStr)
+                            ? `<span class="bg-blue-100 text-blue-900 border border-blue-200 text-[9px] font-extrabold px-1 py-0.2 rounded ml-1">Upcoming</span>`
+                            : '';
+
                         return `
                             <div class="inline-flex items-center justify-between gap-1.5 ${boxTheme} border rounded-lg px-2 py-1 text-xs transition shadow-sm">
-                                <button
-                                    type="button"
-                                    onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')"
-                                    class="font-bold ${textTheme} hover:underline text-left flex items-center space-x-1"
-                                    title="Click to view timetable for ${alloc.standardEventName}"
-                                >
-                                    <i class="fa-solid ${iconTheme} text-[10px]"></i>
-                                    <span>${alloc.standardEventName}</span>
-                                    ${raihaanBadgeHtml}
-                                </button>
+                                <div>
+                                    <button
+                                        type="button"
+                                        onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')"
+                                        class="font-bold ${textTheme} hover:underline text-left flex items-center space-x-1"
+                                        title="Click to view timetable for ${alloc.standardEventName}"
+                                    >
+                                        <i class="fa-solid ${iconTheme} text-[10px]"></i>
+                                        <span>${alloc.standardEventName}</span>
+                                        ${upcomingBadgeHtml}
+                                        ${raihaanBadgeHtml}
+                                    </button>
+                                    ${eventDatesHtml}
+                                </div>
                                 ${editDeleteBtns}
                             </div>
                         `;
@@ -8694,7 +9165,8 @@ window.renderSocieties = function() {
                 const safeRoomId = String(room.id).replace(/'/g, "\'");
                 const allocations = Array.isArray(room.allocations) ? room.allocations : [];
                 const allocatedClassesList = allocations.filter(a => (a.allocationType || 'class') === 'class');
-                const otherEventsList = allocations.filter(a => a.allocationType === 'event');
+                // Other Events whose To Date has passed automatically vanish from the main module page
+                const otherEventsList = allocations.filter(a => a && a.allocationType === 'event' && (!a.toDate || a.toDate >= todayStr));
 
                 const allocatedClassesCellHtml = buildAllocationPillsHtml(room, allocatedClassesList, 'class');
                 const otherEventsCellHtml = buildAllocationPillsHtml(room, otherEventsList, 'event');
@@ -8852,6 +9324,8 @@ window.renderSocieties = function() {
 
             allocations.forEach(alloc => {
                 if (!alloc) return;
+                // Exclude expired events so their slots show as free on the integrated timetable
+                if (alloc.allocationType === 'event' && alloc.toDate && alloc.toDate < todayStr) return;
                 const isEvent = alloc.allocationType === 'event';
                 const activeRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
                 const slots = Array.isArray(alloc.slots) ? alloc.slots : [];
@@ -9013,6 +9487,8 @@ window.renderSocieties = function() {
 
             allocations.forEach(alloc => {
                 if (!alloc) return;
+                // Exclude expired events
+                if (alloc.allocationType === 'event' && alloc.toDate && alloc.toDate < todayStr) return;
                 const isEvent = alloc.allocationType === 'event';
                 const activeRaihaanDays = getActiveRaihaanDaysForAllocation(room, alloc, todayStr);
                 const slots = Array.isArray(alloc.slots) ? alloc.slots : [];

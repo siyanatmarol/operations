@@ -3072,8 +3072,8 @@
                         id: stableAllocId,
                         standardEventName: String(a.standardEventName || a.name || '').trim(),
                         allocationType: allocType,
-                        fromDate: String(a.fromDate || a.startDate || '').trim(),
-                        toDate: String(a.toDate || a.endDate || '').trim(),
+                        fromDate: String(a.fromDate || a.eventFromDate || a.startDate || '').trim(),
+toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDate || '').trim(),
                         slots: migratedSlots,
                         customTimings: (a.customTimings && typeof a.customTimings === 'object') ? { ...a.customTimings } : {},
                         raihaanTemporarySlots: (a.raihaanTemporarySlots && typeof a.raihaanTemporarySlots === 'object') ? { ...a.raihaanTemporarySlots } : {},
@@ -3365,43 +3365,44 @@
         }
 
         // Firestore / Firebase Cloud Database Read/Write Helpers for Classroom Allocation & Permissions
-        window.saveClassroomsToCloud = async function() {
-            isSavingClassrooms = true;
-            try {
-                await Promise.all([
-                    set(dbRef(db, 'classrooms'), classroomsData),
-                    set(dbRef(db, 'portalData/classrooms'), classroomsData),
-                    set(dbRef(db, 'raihaan'), raihaanData),
-                    set(dbRef(db, 'portalData/raihaan'), raihaanData),
-                    set(dbRef(db, 'notifications'), portalNotificationsData),
-                    set(dbRef(db, 'portalData/notifications'), portalNotificationsData)
-                ]);
-            } catch (err) {
-                console.error("Error saving classrooms to cloud:", err);
-                try {
-                    await set(dbRef(db, 'classrooms'), classroomsData);
-                } catch (e2) {
-                    console.error("Direct fallback classrooms save failed:", e2);
-                }
-            } finally {
-                setTimeout(() => {
-                    isSavingClassrooms = false;
-                }, 2000);
-            }
-        };
+       window.saveClassroomsToCloud = async function() {
+    isSavingClassrooms = true;
+    try {
+        // Save both root /classrooms and /portalData/classrooms reliably
+        await Promise.allSettled([
+            set(dbRef(db, 'classrooms'), classroomsData),
+            set(dbRef(db, 'portalData/classrooms'), classroomsData),
+            set(dbRef(db, 'raihaan'), raihaanData),
+            set(dbRef(db, 'portalData/raihaan'), raihaanData),
+            set(dbRef(db, 'notifications'), portalNotificationsData),
+            set(dbRef(db, 'portalData/notifications'), portalNotificationsData)
+        ]);
+    } catch (err) {
+        console.error("Error saving classrooms to cloud:", err);
+    } finally {
+        setTimeout(() => {
+            isSavingClassrooms = false;
+        }, 2000);
+    }
+};
 
-        window.loadClassroomsFromCloud = async function() {
-            try {
-                const snap = await get(child(dbRef(db), 'classrooms'));
-                if (snap.exists()) {
-                    classroomsData = normalizeClassroomsList(snap.val());
-                }
-                return classroomsData;
-            } catch (err) {
-                console.error("Error reading classrooms from cloud:", err);
-                return classroomsData;
+window.loadClassroomsFromCloud = async function() {
+    try {
+        let snap = await get(child(dbRef(db), 'classrooms')).catch(() => null);
+        if (snap && snap.exists()) {
+            classroomsData = normalizeClassroomsList(snap.val());
+        } else {
+            const pSnap = await get(child(dbRef(db), 'portalData/classrooms')).catch(() => null);
+            if (pSnap && pSnap.exists()) {
+                classroomsData = normalizeClassroomsList(pSnap.val());
             }
-        };
+        }
+        return classroomsData;
+    } catch (err) {
+        console.error("Error reading classrooms from cloud:", err);
+        return classroomsData;
+    }
+};
 
         window.saveNotificationsToCloud = async function() {
             try {
@@ -4210,33 +4211,34 @@
             updateModuleNotificationBadges();
         };
 
-        window.saveCloudData = async function() {
-            try {
-                await set(dbRef(db, 'portalData'), {
-                    estates: estatesData,
-                    classrooms: classroomsData,
-                    raihaan: raihaanData,
-                    notifications: portalNotificationsData,
-                    keys: keysInventoryData,
-                    faculty: facultyData,
-                    societies: societiesData,
-                    docs: societyDocs,
-                    maint: maintLogs,
-                    bills: vacantBills,
-                    socBills: societyBillsData,
-                    users: usersList,
-                    watiConfig: watiConfig,
-                    estate_assets: estateAssetsData
-                });
-                await set(dbRef(db, 'estate_assets'), estateAssetsData);
-                // Do NOT overwrite /classrooms from saveCloudData — /classrooms is exclusively managed by saveClassroomsToCloud
-                // to prevent non-classroom module edits from racing and overwriting live classroom allocations & event dates.
-                await set(dbRef(db, 'raihaan'), raihaanData);
-                await set(dbRef(db, 'notifications'), portalNotificationsData);
-            } catch (err) {
-                console.error("Error saving to cloud:", err);
-            }
-        }
+      window.saveCloudData = async function() {
+    try {
+        await set(dbRef(db, 'portalData'), {
+            estates: estatesData,
+            classrooms: classroomsData,
+            raihaan: raihaanData,
+            notifications: portalNotificationsData,
+            keys: keysInventoryData,
+            faculty: facultyData,
+            societies: societiesData,
+            docs: societyDocs,
+            maint: maintLogs,
+            bills: vacantBills,
+            socBills: societyBillsData,
+            users: usersList,
+            watiConfig: watiConfig,
+            estate_assets: estateAssetsData
+        });
+        await Promise.allSettled([
+            set(dbRef(db, 'classrooms'), classroomsData),
+            set(dbRef(db, 'estate_assets'), estateAssetsData),
+            set(dbRef(db, 'raihaan'), raihaanData),
+            set(dbRef(db, 'notifications'), portalNotificationsData)
+        ]);
+    } catch (err) {
+        console.error("Error saving to cloud:", err);
+    }
+};
 
         function applyAccessLevelEnforcement() {
             const viewOnly = isCurrentUserViewOnly();
@@ -7936,16 +7938,19 @@ window.renderSocieties = function() {
             document.getElementById('scheduleEditAllocId').value = String(alloc.id);
             document.getElementById('scheduleEventNameInput').value = alloc.standardEventName || '';
             if (allocCat === 'event') {
-                const todayStr = getLocalTodayDateString();
-                if (document.getElementById('scheduleEventFromDateInput')) {
-                    document.getElementById('scheduleEventFromDateInput').value = alloc.fromDate || todayStr;
-                    document.getElementById('scheduleEventFromDateInput').readOnly = isReadOnly;
-                }
-                if (document.getElementById('scheduleEventToDateInput')) {
-                    document.getElementById('scheduleEventToDateInput').value = alloc.toDate || todayStr;
-                    document.getElementById('scheduleEventToDateInput').readOnly = isReadOnly;
-                }
-            }
+    const todayStr = getLocalTodayDateString();
+    const eventFrom = (alloc.fromDate && alloc.fromDate.trim() !== '') ? alloc.fromDate.trim() : todayStr;
+    const eventTo = (alloc.toDate && alloc.toDate.trim() !== '') ? alloc.toDate.trim() : eventFrom;
+
+    if (document.getElementById('scheduleEventFromDateInput')) {
+        document.getElementById('scheduleEventFromDateInput').value = eventFrom;
+        document.getElementById('scheduleEventFromDateInput').readOnly = isReadOnly;
+    }
+    if (document.getElementById('scheduleEventToDateInput')) {
+        document.getElementById('scheduleEventToDateInput').value = eventTo;
+        document.getElementById('scheduleEventToDateInput').readOnly = isReadOnly;
+    }
+}
             document.getElementById('btnSaveClassroomScheduleText').innerText = allocCat === 'event' ? 'Update Other Event' : 'Update Allocated Class';
             if (!isReadOnly) {
                 document.getElementById('cancelEditScheduleAllocBtn')?.classList.remove('hidden');

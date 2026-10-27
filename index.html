@@ -2049,7 +2049,7 @@
     </div>
 
     <!-- Modal: Add Std / Event Schedule Timetable Popup -->
-    <div id="modalClassroomSchedule" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+    <div id="modalClassroomSchedule" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-[70]">
         <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full p-5 sm:p-6 space-y-4 max-h-[94vh] flex flex-col">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
                 <div>
@@ -2308,7 +2308,7 @@
     </div>
 
     <!-- Modal: Integrated Classroom Timetable (Full Master View) -->
-    <div id="modalIntegratedClassroomTimetable" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+    <div id="modalIntegratedClassroomTimetable" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-[70]">
         <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full p-5 sm:p-6 space-y-4 max-h-[94vh] flex flex-col">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
                 <div>
@@ -2357,7 +2357,7 @@
     </div>
 
     <!-- Modal: All Male / Female Classes Joined Timetable Popup -->
-    <div id="modalAllClassesTimetable" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+    <div id="modalAllClassesTimetable" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-[70]">
         <div class="bg-white rounded-xl shadow-2xl max-w-7xl w-full p-5 sm:p-6 space-y-4 max-h-[94vh] flex flex-col">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-3">
                 <div>
@@ -3038,7 +3038,10 @@
             const arr = Array.isArray(rawClassrooms)
                 ? rawClassrooms
                 : (typeof rawClassrooms === 'object' ? Object.values(rawClassrooms) : []);
-            return arr.filter(Boolean).map(item => {
+            return arr.filter(Boolean).map((item, itemIdx) => {
+                const roomNumClean = String(item.classroomNumber || item.number || '').trim();
+                const stableRoomId = String(item.id || item.classroomId || (roomNumClean ? `cls_${roomNumClean.replace(/\s+/g, '_')}` : `cls_${itemIdx}`));
+
                 let allocations = [];
                 if (Array.isArray(item.allocations)) {
                     allocations = item.allocations.filter(Boolean);
@@ -3064,12 +3067,13 @@
                             allocType = item.isAllocated ? 'class' : 'event';
                         }
                     }
+                    const stableAllocId = String(a.id || a.allocId || (`alloc_${stableRoomId}_${idx}_${String(a.standardEventName || '').trim().replace(/\s+/g, '_')}`));
                     return {
-                        id: String(a.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
-                        standardEventName: a.standardEventName || a.name || '',
+                        id: stableAllocId,
+                        standardEventName: String(a.standardEventName || a.name || '').trim(),
                         allocationType: allocType,
-                        fromDate: String(a.fromDate || '').trim(),
-                        toDate: String(a.toDate || '').trim(),
+                        fromDate: String(a.fromDate || a.startDate || '').trim(),
+                        toDate: String(a.toDate || a.endDate || '').trim(),
                         slots: migratedSlots,
                         customTimings: (a.customTimings && typeof a.customTimings === 'object') ? { ...a.customTimings } : {},
                         raihaanTemporarySlots: (a.raihaanTemporarySlots && typeof a.raihaanTemporarySlots === 'object') ? { ...a.raihaanTemporarySlots } : {},
@@ -3082,19 +3086,19 @@
                     const rawEntries = Array.isArray(item.extraChairEntries)
                         ? item.extraChairEntries
                         : (item.extraChairEntries && typeof item.extraChairEntries === 'object' ? Object.values(item.extraChairEntries) : []);
-                    extraChairEntries = rawEntries.filter(Boolean).map(ec => ({
-                        id: String(ec.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
+                    extraChairEntries = rawEntries.filter(Boolean).map((ec, ecIdx) => ({
+                        id: String(ec.id || `ec_${stableRoomId}_${ecIdx}`),
                         count: Math.max(0, Number(ec.count) || 0),
-                        fromDate: String(ec.fromDate || ''),
-                        toDate: String(ec.toDate || ''),
+                        fromDate: String(ec.fromDate || '').trim(),
+                        toDate: String(ec.toDate || '').trim(),
                         createdAt: String(ec.createdAt || '')
                     })).filter(ec => ec.count > 0);
                 } else if (item.extraChair !== undefined && item.extraChair !== null && item.extraChair !== '' && Number(item.extraChair) > 0) {
                     extraChairEntries = [{
-                        id: 'ec_init_' + String(item.id || Date.now()),
+                        id: `ec_init_${stableRoomId}`,
                         count: Math.max(0, Number(item.extraChair) || 0),
-                        fromDate: String(item.extraChairFromDate || ''),
-                        toDate: String(item.extraChairToDate || ''),
+                        fromDate: String(item.extraChairFromDate || '').trim(),
+                        toDate: String(item.extraChairToDate || '').trim(),
                         createdAt: String(item.updatedAt || '')
                     }];
                 }
@@ -3104,8 +3108,8 @@
                     .filter(ec => !ec.toDate || ec.toDate >= todayIso)
                     .reduce((acc, ec) => acc + (Number(ec.count) || 0), 0);
                 return {
-                    id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
-                    classroomNumber: String(item.classroomNumber || item.number || ''),
+                    id: stableRoomId,
+                    classroomNumber: roomNumClean,
                     location: String(item.location || ''),
                     type: String(item.type || '').trim().toLowerCase() === 'female' ? 'Female' : 'Male',
                     isAllocated: hasAllocatedClass,
@@ -3485,9 +3489,8 @@
                         populateWatiConfigInputs();
                     }
                     keysInventoryData = Array.isArray(data.keys) ? data.keys : (data.keys && typeof data.keys === 'object' ? Object.values(data.keys) : []);
-                    if (!isSavingClassrooms && data.classrooms !== undefined) {
-                        classroomsData = normalizeClassroomsList(data.classrooms);
-                    }
+                    // Note: classroomsData is exclusively managed by the dedicated /classrooms realtime listener below
+                    // to prevent extraneous portalData writes from causing race-condition state overwrites.
                     if (data.raihaan !== undefined) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
                     }
@@ -3511,6 +3514,9 @@
                     if (!isSavingClassrooms && snapshot.exists()) {
                         classroomsData = normalizeClassroomsList(snapshot.val());
                         renderClassroomsTables();
+                        if (typeof renderEventsArchiveList === 'function' && !document.getElementById('modalEventsArchive')?.classList.contains('hidden')) {
+                            renderEventsArchiveList();
+                        }
                     }
                 });
 
@@ -7373,7 +7379,7 @@ window.renderSocieties = function() {
                 showAssetToast("Admin Privileges Required: Only Administrators can edit classroom details.", true);
                 return;
             }
-            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            const room = classroomsData.find(c => String(c.id) === String(classroomId) || (classroomId && String(c.classroomNumber).trim().toLowerCase() === String(classroomId).trim().toLowerCase()));
             if (!room) return;
             document.getElementById('editClassroomId').value = String(room.id);
             document.getElementById('classroomNumberInput').value = room.classroomNumber || '';
@@ -7809,7 +7815,7 @@ window.renderSocieties = function() {
 
         // Clicking an Allocated Class or Other Event name (or the + Add button in either column) opens its full timetable
         window.openClassroomScheduleModal = function(classroomId, allocId = '', category = 'class') {
-            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            const room = classroomsData.find(c => String(c.id) === String(classroomId) || (classroomId && String(c.classroomNumber).trim().toLowerCase() === String(classroomId).trim().toLowerCase()));
             if (!room) return;
 
             let targetCat = category === 'event' ? 'event' : 'class';
@@ -7951,7 +7957,7 @@ window.renderSocieties = function() {
         }
 
         window.deleteClassroomScheduleAllocation = async function(classroomId, allocId) {
-            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            const room = classroomsData.find(c => String(c.id) === String(classroomId) || (classroomId && String(c.classroomNumber).trim().toLowerCase() === String(classroomId).trim().toLowerCase()));
             if (!room || !Array.isArray(room.allocations)) return;
             const targetAlloc = room.allocations.find(a => String(a.id) === String(allocId));
             if (!targetAlloc) return;
@@ -7962,6 +7968,14 @@ window.renderSocieties = function() {
             }
             room.allocations = room.allocations.filter(a => String(a.id) !== String(allocId));
             syncRoomAllocatedStatusFromClasses(room);
+
+            renderExistingClassroomAllocationsInModal(room);
+            renderClassroomsTables();
+            if (typeof renderEventsArchiveList === 'function') {
+                renderEventsArchiveList();
+            }
+            showAssetToast("Removed schedule allocation");
+
             await saveClassroomsToCloud();
 
             const currentEditAllocId = document.getElementById('scheduleEditAllocId')?.value || '';
@@ -7970,9 +7984,6 @@ window.renderSocieties = function() {
             } else {
                 buildTimetableGridTemplate(room, currentEditAllocId, false);
             }
-            renderExistingClassroomAllocationsInModal(room);
-            renderClassroomsTables();
-            showAssetToast("Removed schedule allocation");
         };
 
         function renderExistingClassroomAllocationsInModal(room) {
@@ -8157,6 +8168,21 @@ window.renderSocieties = function() {
             } else {
                 schedNotifDetail = `Added ${catTitle} "${standardEventName}"${eventDatesNotice} in Classroom ${room.classroomNumber} (${room.type})`;
             }
+            // Immediately update local UI so the new/edited event appears on the main page table & archive instantly
+            isSavingClassrooms = true;
+            renderExistingClassroomAllocationsInModal(room);
+            renderClassroomsTables();
+            if (typeof renderEventsArchiveList === 'function') {
+                renderEventsArchiveList();
+            }
+            resetScheduleModalFormForNew(allocationCategory);
+            closeModal('modalClassroomSchedule');
+            showAssetToast(`Saved ${allocationCategory === 'event' ? 'Other Event' : 'Allocated Class'} "${standardEventName}" in Classroom ${room.classroomNumber}`);
+
+            // Persist classroom schedule changes to cloud first
+            await saveClassroomsToCloud();
+
+            // Record notification and dispatch WATI WhatsApp alert to subscribed users
             await recordClassroomChangeNotification(
                 permKey,
                 editAllocId ? `edit-${allocationCategory}` : `add-${allocationCategory}`,
@@ -8169,13 +8195,6 @@ window.renderSocieties = function() {
                     waClassName: allocationCategory === 'class' ? standardEventName : ''
                 }
             );
-
-            await saveClassroomsToCloud();
-            renderExistingClassroomAllocationsInModal(room);
-            renderClassroomsTables();
-            resetScheduleModalFormForNew(allocationCategory);
-            closeModal('modalClassroomSchedule');
-            showAssetToast(`Saved ${allocationCategory === 'event' ? 'Other Event' : 'Allocated Class'} "${standardEventName}" in Classroom ${room.classroomNumber}`);
         };
 
         let selectedClassroomCardFilter = 'all'; // 'all' | 'allocated' | 'vacant' | 'raihaan'
@@ -8794,17 +8813,17 @@ window.renderSocieties = function() {
                 showAssetToast("View Only: You do not have permission to delete events.", true);
                 return;
             }
-            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+            const room = classroomsData.find(c => String(c.id) === String(classroomId) || (classroomId && String(c.classroomNumber).trim().toLowerCase() === String(classroomId).trim().toLowerCase()));
             if (!room || !Array.isArray(room.allocations)) return;
             const targetAlloc = room.allocations.find(a => String(a.id) === String(allocId));
             if (!targetAlloc) return;
 
             if (confirm(`Are you sure you want to permanently delete event "${targetAlloc.standardEventName}" from Classroom ${room.classroomNumber}?`)) {
                 room.allocations = room.allocations.filter(a => String(a.id) !== String(allocId));
-                await saveClassroomsToCloud();
                 renderClassroomsTables();
                 renderEventsArchiveList();
                 showAssetToast(`Deleted event "${targetAlloc.standardEventName}"`);
+                await saveClassroomsToCloud();
             }
         };
 

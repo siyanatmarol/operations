@@ -2457,6 +2457,7 @@
 
         let estatesData = [];
         let classroomsData = [];
+        let isSavingClassrooms = false;
         let raihaanData = [];
         let portalNotificationsData = [];
         let notificationsRealtimeListenerAttached = false;
@@ -3067,6 +3068,8 @@
                         id: String(a.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
                         standardEventName: a.standardEventName || a.name || '',
                         allocationType: allocType,
+                        fromDate: String(a.fromDate || '').trim(),
+                        toDate: String(a.toDate || '').trim(),
                         slots: migratedSlots,
                         customTimings: (a.customTimings && typeof a.customTimings === 'object') ? { ...a.customTimings } : {},
                         raihaanTemporarySlots: (a.raihaanTemporarySlots && typeof a.raihaanTemporarySlots === 'object') ? { ...a.raihaanTemporarySlots } : {},
@@ -3104,7 +3107,7 @@
                     id: String(item.id || Date.now().toString() + Math.random().toString().slice(2, 6)),
                     classroomNumber: String(item.classroomNumber || item.number || ''),
                     location: String(item.location || ''),
-                    type: item.type === 'Female' ? 'Female' : 'Male',
+                    type: String(item.type || '').trim().toLowerCase() === 'female' ? 'Female' : 'Male',
                     isAllocated: hasAllocatedClass,
                     studentCount: (item.studentCount !== undefined && item.studentCount !== null && item.studentCount !== '') ? Number(item.studentCount) : null,
                     extraChair: activeExtraChairSum > 0 ? activeExtraChairSum : null,
@@ -3350,6 +3353,7 @@
 
         // Firestore / Firebase Cloud Database Read/Write Helpers for Classroom Allocation & Permissions
         window.saveClassroomsToCloud = async function() {
+            isSavingClassrooms = true;
             try {
                 await Promise.all([
                     set(dbRef(db, 'classrooms'), classroomsData),
@@ -3362,6 +3366,10 @@
             } catch (err) {
                 console.error("Error saving classrooms to cloud:", err);
                 await saveCloudData();
+            } finally {
+                setTimeout(() => {
+                    isSavingClassrooms = false;
+                }, 1200);
             }
         };
 
@@ -3477,7 +3485,7 @@
                         populateWatiConfigInputs();
                     }
                     keysInventoryData = Array.isArray(data.keys) ? data.keys : (data.keys && typeof data.keys === 'object' ? Object.values(data.keys) : []);
-                    if (data.classrooms !== undefined) {
+                    if (!isSavingClassrooms && data.classrooms !== undefined) {
                         classroomsData = normalizeClassroomsList(data.classrooms);
                     }
                     if (data.raihaan !== undefined) {
@@ -3500,7 +3508,7 @@
 
                 // Dedicated listener on /classrooms for instant Classroom Allocation table updates
                 onValue(dbRef(db, 'classrooms'), (snapshot) => {
-                    if (snapshot.exists()) {
+                    if (!isSavingClassrooms && snapshot.exists()) {
                         classroomsData = normalizeClassroomsList(snapshot.val());
                         renderClassroomsTables();
                     }
@@ -7757,6 +7765,12 @@ window.renderSocieties = function() {
 
             const waChairDetails = `${numVal} Chair${Number(numVal) === 1 ? '' : 's'} (Total Extra Chairs: ${newActiveTotal})`;
             const waChairDates = `${fromDate} to ${toDate}`;
+            closeModal('modalClassroomMetric');
+            renderClassroomsTables();
+            showAssetToast(`Saved Extra Chair (${numVal} from ${fromDate} to ${toDate}) — Active Total: ${newActiveTotal}`);
+
+            await saveClassroomsToCloud();
+
             await recordClassroomChangeNotification(
                 'extra-chair',
                 editEntryId ? 'edit-extra-chair' : 'add-extra-chair',
@@ -7768,11 +7782,6 @@ window.renderSocieties = function() {
                     waSchedule: waChairDates
                 }
             );
-
-            await saveClassroomsToCloud();
-            closeModal('modalClassroomMetric');
-            renderClassroomsTables();
-            showAssetToast(`Saved Extra Chair (${numVal} from ${fromDate} to ${toDate}) — Active Total: ${newActiveTotal}`);
         };
 
         function applyScheduleModalCategoryUI(category) {

@@ -3056,15 +3056,15 @@
                         return s;
                     });
                     let allocType = a.allocationType || a.category || '';
-                    if (allocType !== 'class' && allocType !== 'event') {
-                        // Legacy migration: if room was marked isAllocated and this is the primary allocation (or has Darajah in name), treat as 'class'
+                    if (a.fromDate || a.toDate) {
+                        allocType = 'event';
+                    } else if (allocType !== 'class' && allocType !== 'event') {
                         const nameLower = String(a.standardEventName || a.name || '').toLowerCase();
-                        if (item.isAllocated && idx === 0) {
-                            allocType = 'class';
-                        } else if (nameLower.includes('darajah') || nameLower.includes('std') || nameLower.includes('class')) {
+                        const isDarajah = nameLower.includes('darajah') || /^std\s*\d/i.test(nameLower) || /^darajah\s*\d/i.test(nameLower);
+                        if (isDarajah) {
                             allocType = 'class';
                         } else {
-                            allocType = item.isAllocated ? 'class' : 'event';
+                            allocType = 'event';
                         }
                     }
                     const stableAllocId = String(a.id || a.allocId || (`alloc_${stableRoomId}_${idx}_${String(a.standardEventName || '').trim().replace(/\s+/g, '_')}`));
@@ -3310,11 +3310,20 @@
                         watiConfig = normalizeWatiConfig(data.watiConfig);
                     }
                     keysInventoryData = data.keys || [];
-                    if (data.classrooms) {
-                        classroomsData = normalizeClassroomsList(data.classrooms);
-                    } else {
+                    try {
                         const clsSnap = await get(child(dbRef(db), 'classrooms'));
-                        classroomsData = clsSnap.exists() ? normalizeClassroomsList(clsSnap.val()) : [];
+                        if (clsSnap && clsSnap.exists()) {
+                            classroomsData = normalizeClassroomsList(clsSnap.val());
+                        } else if (data.classrooms) {
+                            classroomsData = normalizeClassroomsList(data.classrooms);
+                        } else {
+                            classroomsData = [];
+                        }
+                    } catch (eCls) {
+                        console.warn("Could not load classrooms from root:", eCls);
+                        if (data.classrooms) {
+                            classroomsData = normalizeClassroomsList(data.classrooms);
+                        }
                     }
                     if (data.raihaan) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
@@ -3369,11 +3378,15 @@
                 ]);
             } catch (err) {
                 console.error("Error saving classrooms to cloud:", err);
-                await saveCloudData();
+                try {
+                    await set(dbRef(db, 'classrooms'), classroomsData);
+                } catch (e2) {
+                    console.error("Direct fallback classrooms save failed:", e2);
+                }
             } finally {
                 setTimeout(() => {
                     isSavingClassrooms = false;
-                }, 1200);
+                }, 2000);
             }
         };
 
@@ -4216,7 +4229,8 @@
                     estate_assets: estateAssetsData
                 });
                 await set(dbRef(db, 'estate_assets'), estateAssetsData);
-                await set(dbRef(db, 'classrooms'), classroomsData);
+                // Do NOT overwrite /classrooms from saveCloudData — /classrooms is exclusively managed by saveClassroomsToCloud
+                // to prevent non-classroom module edits from racing and overwriting live classroom allocations & event dates.
                 await set(dbRef(db, 'raihaan'), raihaanData);
                 await set(dbRef(db, 'notifications'), portalNotificationsData);
             } catch (err) {
@@ -7822,7 +7836,11 @@ window.renderSocieties = function() {
             if (allocId && Array.isArray(room.allocations)) {
                 const existingAlloc = room.allocations.find(a => String(a.id) === String(allocId));
                 if (existingAlloc) {
-                    targetCat = existingAlloc.allocationType === 'event' ? 'event' : 'class';
+                    if (existingAlloc.fromDate || existingAlloc.toDate) {
+                        targetCat = 'event';
+                    } else if (existingAlloc.allocationType) {
+                        targetCat = existingAlloc.allocationType === 'event' ? 'event' : 'class';
+                    }
                 }
             }
             const permKey = targetCat === 'event' ? 'event' : 'allotted-class';
@@ -7843,7 +7861,7 @@ window.renderSocieties = function() {
             if (saveBtn) saveBtn.classList.toggle('hidden', !canEdit);
 
             if (allocId) {
-                editScheduleAllocationInModal(room.id, allocId, !canEdit);
+                editScheduleAllocationInModal(room.id, allocId, !canEdit, targetCat);
             } else {
                 applyScheduleModalCategoryUI(targetCat);
                 const catLabel = targetCat === 'event' ? 'Other Event' : 'Allocated Class';
@@ -7890,13 +7908,16 @@ window.renderSocieties = function() {
             updateScheduleSelectAllState();
         };
 
-        window.editScheduleAllocationInModal = function(classroomId, allocId, forceReadOnly = false) {
-            const room = classroomsData.find(c => String(c.id) === String(classroomId));
+        window.editScheduleAllocationInModal = function(classroomId, allocId, forceReadOnly = false, categoryHint = '') {
+            const room = classroomsData.find(c => String(c.id) === String(classroomId) || (classroomId && String(c.classroomNumber).trim().toLowerCase() === String(classroomId).trim().toLowerCase()));
             if (!room || !Array.isArray(room.allocations)) return;
             const alloc = room.allocations.find(a => String(a.id) === String(allocId));
             if (!alloc) return;
 
-            const allocCat = alloc.allocationType === 'event' ? 'event' : 'class';
+            let allocCat = alloc.allocationType === 'event' ? 'event' : (alloc.allocationType === 'class' ? 'class' : (categoryHint === 'event' ? 'event' : 'class'));
+            if (alloc.fromDate || alloc.toDate) {
+                allocCat = 'event';
+            }
             const permKey = allocCat === 'event' ? 'event' : 'allotted-class';
             applyScheduleModalCategoryUI(allocCat);
 
@@ -8014,7 +8035,7 @@ window.renderSocieties = function() {
                 item.innerHTML = `
                     <div>
                         <div class="flex items-center space-x-1.5">
-                            <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="font-bold text-emerald-900 hover:underline text-left flex items-center space-x-1">
+                            <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}', false, '${isEvent ? 'event' : 'class'}')" class="font-bold text-emerald-900 hover:underline text-left flex items-center space-x-1">
                                 <i class="fa-solid fa-calendar-days text-emerald-600 text-[11px]"></i>
                                 <span>${alloc.standardEventName}</span>
                             </button>
@@ -8025,7 +8046,7 @@ window.renderSocieties = function() {
                     </div>
                     ${canEditThisAlloc ? `
                     <div class="flex items-center space-x-1.5 whitespace-nowrap">
-                        <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50 font-bold" title="Edit Allocation">
+                        <button type="button" onclick="editScheduleAllocationInModal('${safeRoomId}', '${safeAllocId}', false, '${isEvent ? 'event' : 'class'}')" class="text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50 font-bold" title="Edit Allocation">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                         <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-600 hover:text-red-800 px-1.5 py-0.5 rounded hover:bg-red-50 font-bold" title="Delete Allocation">
@@ -9127,7 +9148,7 @@ window.renderSocieties = function() {
                             : '';
                         const editDeleteBtns = canEditThisCol ? `
                             <div class="flex items-center space-x-1 pl-1.5 border-l ${isEventCol ? 'border-amber-200' : 'border-emerald-200'}">
-                                <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')" class="text-blue-600 hover:text-blue-800 px-0.5" title="Edit Timetable">
+                                <button type="button" onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}', '${categoryKey}')" class="text-blue-600 hover:text-blue-800 px-0.5" title="Edit Timetable">
                                     <i class="fa-solid fa-pen-to-square text-[11px]"></i>
                                 </button>
                                 <button type="button" onclick="deleteClassroomScheduleAllocation('${safeRoomId}', '${safeAllocId}')" class="text-red-500 hover:text-red-700 px-0.5" title="Remove">
@@ -9157,7 +9178,7 @@ window.renderSocieties = function() {
                                 <div>
                                     <button
                                         type="button"
-                                        onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}')"
+                                        onclick="openClassroomScheduleModal('${safeRoomId}', '${safeAllocId}', '${categoryKey}')"
                                         class="font-bold ${textTheme} hover:underline text-left flex items-center space-x-1"
                                         title="Click to view timetable for ${alloc.standardEventName}"
                                     >

@@ -2472,6 +2472,7 @@
         let vacantBills = {};
         let societyBillsData = {};
         let estateAssetsData = [];
+        let isSavingAssets = false;
         let expandedAssetFlats = new Set();
         let selectedExportFlatIds = new Set();
         let currentSummarySocName = '';
@@ -3345,11 +3346,29 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                         console.warn("Could not read root notifications:", eSnap);
                     }
                     portalNotificationsData = mergeNotificationsArrays(cloudNotifs, portalNotificationsData);
+                    let cloudAssets = [];
                     if (data.estate_assets) {
-                        estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
-                    } else {
+                        cloudAssets = normalizeEstateAssetsList(data.estate_assets);
+                    }
+                    try {
                         const assetsSnap = await get(child(dbRef(db), 'estate_assets'));
-                        estateAssetsData = assetsSnap.exists() ? normalizeEstateAssetsList(assetsSnap.val()) : [];
+                        if (assetsSnap && assetsSnap.exists()) {
+                            const rootAssets = normalizeEstateAssetsList(assetsSnap.val());
+                            if (rootAssets.length >= cloudAssets.length) {
+                                cloudAssets = rootAssets;
+                            } else if (cloudAssets.length > 0) {
+                                const rootIds = new Set(rootAssets.map(a => String(a.id)));
+                                cloudAssets.forEach(ca => {
+                                    if (!rootIds.has(String(ca.id))) rootAssets.push(ca);
+                                });
+                                cloudAssets = rootAssets;
+                            }
+                        }
+                    } catch (eAssets) {
+                        console.warn("Could not read root estate_assets:", eAssets);
+                    }
+                    if (cloudAssets.length > 0 || estateAssetsData.length === 0) {
+                        estateAssetsData = cloudAssets;
                     }
                 } else {
                     estatesData = [
@@ -3363,6 +3382,50 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                 console.error("Error loading cloud data:", err);
             }
         }
+
+        // Firestore / Firebase Cloud Database Read/Write Helpers for Estate Assets
+        window.saveAssetsToCloud = async function() {
+            isSavingAssets = true;
+            try {
+                await Promise.allSettled([
+                    set(dbRef(db, 'estate_assets'), estateAssetsData),
+                    set(dbRef(db, 'portalData/estate_assets'), estateAssetsData)
+                ]);
+            } catch (err) {
+                console.error("Error saving estate assets to cloud:", err);
+            } finally {
+                setTimeout(() => {
+                    isSavingAssets = false;
+                }, 2000);
+            }
+        };
+
+        window.loadAssetsFromCloud = async function() {
+            try {
+                let cloudAssets = [];
+                const assetsSnap = await get(child(dbRef(db), 'estate_assets')).catch(() => null);
+                if (assetsSnap && assetsSnap.exists()) {
+                    cloudAssets = normalizeEstateAssetsList(assetsSnap.val());
+                }
+                const pSnap = await get(child(dbRef(db), 'portalData/estate_assets')).catch(() => null);
+                if (pSnap && pSnap.exists()) {
+                    const pAssets = normalizeEstateAssetsList(pSnap.val());
+                    if (pAssets.length > cloudAssets.length) {
+                        const rootIds = new Set(cloudAssets.map(a => String(a.id)));
+                        pAssets.forEach(pa => {
+                            if (!rootIds.has(String(pa.id))) cloudAssets.push(pa);
+                        });
+                    }
+                }
+                if (cloudAssets.length > 0 || estateAssetsData.length === 0) {
+                    estateAssetsData = cloudAssets;
+                }
+                return estateAssetsData;
+            } catch (err) {
+                console.error("Error reading estate assets from cloud:", err);
+                return estateAssetsData;
+            }
+        };
 
         // Firestore / Firebase Cloud Database Read/Write Helpers for Classroom Allocation & Permissions
        window.saveClassroomsToCloud = async function() {
@@ -3514,8 +3577,12 @@ window.loadClassroomsFromCloud = async function() {
                             portalNotificationsData = mergeNotificationsArrays(incoming, portalNotificationsData);
                         }
                     }
-                    if (data.estate_assets !== undefined) {
-                        estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
+                    // Note: estateAssetsData is managed by dedicated /estate_assets listener to prevent notification/portalData writes from causing race-condition state clobbering
+                    if (!isSavingAssets && data.estate_assets !== undefined) {
+                        const incomingAssets = normalizeEstateAssetsList(data.estate_assets);
+                        if (incomingAssets.length >= estateAssetsData.length && incomingAssets.length > 0) {
+                            estateAssetsData = incomingAssets;
+                        }
                     }
 
                     syncCurrentUserLivePermissions();
@@ -3547,11 +3614,14 @@ window.loadClassroomsFromCloud = async function() {
 
                 // Dedicated listener on /estate_assets for instant Asset Details updates
                 onValue(dbRef(db, 'estate_assets'), (snapshot) => {
-                    if (snapshot.exists()) {
-                        estateAssetsData = normalizeEstateAssetsList(snapshot.val());
-                        renderAssetDetailsTable();
-                        if (document.getElementById('integratedFlatSelect')?.value) {
-                            renderIntegratedView();
+                    if (!isSavingAssets && snapshot.exists()) {
+                        const incoming = normalizeEstateAssetsList(snapshot.val());
+                        if (incoming.length >= estateAssetsData.length || estateAssetsData.length === 0) {
+                            estateAssetsData = incoming;
+                            renderAssetDetailsTable();
+                            if (document.getElementById('integratedFlatSelect')?.value) {
+                                renderIntegratedView();
+                            }
                         }
                     }
                 });
@@ -10116,18 +10186,53 @@ window.renderSocieties = function() {
             };
         }
 
+        function resolveFlatForAsset(asset) {
+            if (!asset) return null;
+            if (asset.flatId) {
+                const byId = estatesData.find(e => String(e.id).trim() === String(asset.flatId).trim());
+                if (byId) return byId;
+            }
+            if (asset.flatLabel) {
+                const aLbl = String(asset.flatLabel).toLowerCase().trim();
+                const matched = estatesData.find(e => {
+                    const l1 = formatFlatDisplayLabel(e).toLowerCase().trim();
+                    const wingP = e.wing ? ` (${e.wing})` : '';
+                    const l2 = `${e.building}${wingP} - ${e.flatNo}`.toLowerCase().trim();
+                    const l3 = `${e.building} - Flat ${e.flatNo}`.toLowerCase().trim();
+                    const l4 = `${e.building} - ${e.flatNo}`.toLowerCase().trim();
+                    if (aLbl === l1 || aLbl === l2 || aLbl === l3 || aLbl === l4) return true;
+                    const bN = String(e.building || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const fN = String(e.flatNo || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const aN = aLbl.replace(/[^a-z0-9]/g, '');
+                    return bN && fN && aN.includes(bN) && aN.includes(fN);
+                });
+                if (matched) return matched;
+            }
+            return null;
+        }
+
         function getAssetsForFlat(flat) {
             if (!flat) return [];
-            const targetId = String(flat.id);
-            const targetLabel = formatFlatDisplayLabel(flat).toLowerCase();
+            const targetId = String(flat.id).trim();
+            const targetLabel = formatFlatDisplayLabel(flat).toLowerCase().trim();
             const wingPart = flat.wing ? ` (${flat.wing})` : '';
-            const altLabel = `${flat.building}${wingPart} - ${flat.flatNo}`.toLowerCase();
+            const altLabel1 = `${flat.building}${wingPart} - ${flat.flatNo}`.toLowerCase().trim();
+            const altLabel2 = `${flat.building} - Flat ${flat.flatNo}`.toLowerCase().trim();
+            const altLabel3 = `${flat.building} - ${flat.flatNo}`.toLowerCase().trim();
+
+            const bNorm = String(flat.building || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const fNorm = String(flat.flatNo || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const wNorm = String(flat.wing || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
             return estateAssetsData.filter(a => {
-                if (a.flatId && String(a.flatId) === targetId) return true;
+                if (a.flatId && String(a.flatId).trim() === targetId) return true;
                 if (a.flatLabel) {
                     const lbl = String(a.flatLabel).trim().toLowerCase();
-                    if (lbl === targetLabel || lbl === altLabel) return true;
+                    if (lbl === targetLabel || lbl === altLabel1 || lbl === altLabel2 || lbl === altLabel3) return true;
+                    const lblNorm = lbl.replace(/[^a-z0-9]/g, '');
+                    if (bNorm && fNorm && lblNorm.includes(bNorm) && lblNorm.includes(fNorm)) {
+                        if (!wNorm || lblNorm.includes(wNorm)) return true;
+                    }
                 }
                 return false;
             });
@@ -10518,7 +10623,7 @@ window.renderSocieties = function() {
             document.getElementById('assetModalTitle').innerText = 'Edit Asset Details';
             document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
 
-            const flat = estatesData.find(e => String(e.id) === String(asset.flatId));
+            const flat = resolveFlatForAsset(asset);
             document.getElementById('assetSelectedFlatId').value = flat ? String(flat.id) : String(asset.flatId || '');
             document.getElementById('assetFlatSearchInput').value = flat ? formatFlatDisplayLabel(flat) : (asset.flatLabel || '');
 
@@ -10566,7 +10671,7 @@ window.renderSocieties = function() {
             document.getElementById('assetModalTitle').innerText = 'Clone Asset';
             document.getElementById('assetFlatValidationMsg')?.classList.add('hidden');
 
-            const flat = estatesData.find(e => String(e.id) === String(asset.flatId));
+            const flat = resolveFlatForAsset(asset);
             document.getElementById('assetSelectedFlatId').value = flat ? String(flat.id) : String(asset.flatId || '');
             document.getElementById('assetFlatSearchInput').value = flat ? formatFlatDisplayLabel(flat) : (asset.flatLabel || '');
 
@@ -10605,10 +10710,10 @@ window.renderSocieties = function() {
             let selectedFlatId = document.getElementById('assetSelectedFlatId').value.trim();
             const flatSearchText = document.getElementById('assetFlatSearchInput').value.trim();
 
-            // Resolve flat if user typed exact flat label without clicking option
-            let flatObj = estatesData.find(f => String(f.id) === String(selectedFlatId));
+            // Resolve flat by selected ID or flexible label matching
+            let flatObj = estatesData.find(f => String(f.id).trim() === String(selectedFlatId).trim());
             if (!flatObj && flatSearchText) {
-                flatObj = estatesData.find(f => formatFlatDisplayLabel(f).toLowerCase() === flatSearchText.toLowerCase());
+                flatObj = resolveFlatForAsset({ flatLabel: flatSearchText });
                 if (flatObj) selectedFlatId = String(flatObj.id);
             }
 
@@ -10676,26 +10781,44 @@ window.renderSocieties = function() {
                 updatedAt: new Date().toISOString().split('T')[0]
             };
 
-            if (editId) {
-                const idx = estateAssetsData.findIndex(a => String(a.id) === String(editId));
-                if (idx !== -1) estateAssetsData[idx] = record;
-            } else {
-                estateAssetsData.push(record);
+            isSavingAssets = true;
+            try {
+                if (editId) {
+                    const idx = estateAssetsData.findIndex(a => String(a.id) === String(editId));
+                    if (idx !== -1) estateAssetsData[idx] = record;
+                    else estateAssetsData.push(record);
+                } else {
+                    estateAssetsData.push(record);
+                }
+
+                // Expand the flat drawer so the user immediately sees the saved asset
+                expandedAssetFlats.add(String(flatObj.id));
+
+                // Persist asset updates to cloud immediately to prevent stale listener reads
+                await Promise.allSettled([
+                    set(dbRef(db, 'estate_assets'), estateAssetsData),
+                    set(dbRef(db, 'portalData/estate_assets'), estateAssetsData)
+                ]);
+
+                const assetActionVerb = editId ? 'Edited' : (cloneSourceId ? 'Cloned & added' : 'Added');
+                const assetDetailMsg = `${assetActionVerb} asset "${assetName}" (${location || 'General'}${brand ? ', Brand: ' + brand : ''}) in "${record.flatLabel}"`;
+                const targetAssetSubHeader = (currentActiveDawatSubHeader === 'integrated') ? 'integrated' : 'asset-details';
+                await recordDawatEstatesNotification(
+                    targetAssetSubHeader,
+                    editId ? 'edit-asset' : 'add-asset',
+                    assetDetailMsg,
+                    modelNumber || capacity ? `Model: ${modelNumber || '-'} | Capacity: ${capacity || '-'}` : ''
+                );
+
+                await saveCloudData();
+            } catch (err) {
+                console.error("Error saving asset record:", err);
+            } finally {
+                setTimeout(() => {
+                    isSavingAssets = false;
+                }, 2000);
             }
 
-            // Expand the flat drawer so the user immediately sees the saved asset
-            expandedAssetFlats.add(String(flatObj.id));
-
-            const assetActionVerb = editId ? 'Edited' : (cloneSourceId ? 'Cloned & added' : 'Added');
-            const assetDetailMsg = `${assetActionVerb} asset "${assetName}" (${location || 'General'}${brand ? ', Brand: ' + brand : ''}) in "${record.flatLabel}"`;
-            const targetAssetSubHeader = (currentActiveDawatSubHeader === 'integrated') ? 'integrated' : 'asset-details';
-            await recordDawatEstatesNotification(
-                targetAssetSubHeader,
-                editId ? 'edit-asset' : 'add-asset',
-                assetDetailMsg,
-                modelNumber || capacity ? `Model: ${modelNumber || '-'} | Capacity: ${capacity || '-'}` : ''
-            );
-            await saveCloudData();
             closeModal('modalAddAsset');
             renderAssetDetailsTable();
             if (document.getElementById('cloneSourceAssetId')) {
@@ -10721,8 +10844,19 @@ window.renderSocieties = function() {
         window.confirmDeleteAssetRecord = async function() {
             const targetId = document.getElementById('deleteAssetTargetId').value;
             if (!targetId) return;
-            estateAssetsData = estateAssetsData.filter(a => String(a.id) !== String(targetId));
-            await saveCloudData();
+            isSavingAssets = true;
+            try {
+                estateAssetsData = estateAssetsData.filter(a => String(a.id) !== String(targetId));
+                await Promise.allSettled([
+                    set(dbRef(db, 'estate_assets'), estateAssetsData),
+                    set(dbRef(db, 'portalData/estate_assets'), estateAssetsData)
+                ]);
+                await saveCloudData();
+            } finally {
+                setTimeout(() => {
+                    isSavingAssets = false;
+                }, 2000);
+            }
             closeModal('modalDeleteAssetConfirm');
             renderAssetDetailsTable();
             if (document.getElementById('integratedFlatSelect')?.value) {

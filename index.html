@@ -240,6 +240,58 @@
             white-space: nowrap !important;
         }
 
+        /* Dynamic PWA Bottom Nav Visibility & Spacing based on Granted Module Permissions */
+        body.pwa-mode.no-bottom-nav .pwa-bottom-nav,
+        body.pwa-mode .pwa-bottom-nav.pwa-nav-hidden {
+            display: none !important;
+        }
+        body.pwa-mode.no-bottom-nav main,
+        body.pwa-mode main.no-bottom-nav {
+            padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+        }
+
+        /* Faculty Directory Action Bar in PWA Mode: Balanced 2x2 grid, rounded pill buttons, fully visible */
+        body.pwa-mode #module-faculty-dir > div:first-child {
+            padding: 0.75rem 0.65rem !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.5rem !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        body.pwa-mode #module-faculty-dir > div:first-child h2 {
+            font-size: 0.95rem !important;
+            line-height: 1.25 !important;
+        }
+        body.pwa-mode #module-faculty-dir > div:first-child p {
+            font-size: 0.65rem !important;
+            line-height: 1.2 !important;
+        }
+        body.pwa-mode #module-faculty-dir .faculty-action-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 0.45rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+        body.pwa-mode #module-faculty-dir .faculty-action-btn {
+            width: 100% !important;
+            min-height: 2.35rem !important;
+            padding: 0.45rem 0.35rem !important;
+            font-size: 0.74rem !important;
+            font-weight: 600 !important;
+            border-radius: 0.55rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+            line-height: 1.15 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+        }
+
         /* Dawat Estates Sub-Headers: Smooth horizontal swipeable pill bar */
         body.pwa-mode #module-dawat-estates > div.bg-white.rounded-lg.shadow.p-2.flex.flex-wrap.gap-2.border {
             width: 100% !important;
@@ -1362,22 +1414,31 @@
 
         <!-- MODULE: FACULTY DIRECTORY -->
         <div id="module-faculty-dir" class="hidden space-y-4">
-            <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow border">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                 <div>
-                    <h2 class="text-xl font-bold text-gray-800">Faculty Master Directory</h2>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-id-card text-emerald-700"></i>
+                        <span>Faculty Master Directory</span>
+                    </h2>
                     <p class="text-xs text-gray-500">Maintain faculty records, ITS numbers, and contact information for auto-completion.</p>
                 </div>
-                <div class="flex space-x-2">
-                    <button onclick="openImportModal('faculty')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition">Import CSV/Excel List</button>
-                    <button onclick="exportData('faculty', 'excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
-                        <i class="fa-solid fa-file-excel"></i>
+                <div class="faculty-action-grid grid grid-cols-2 sm:flex sm:items-center sm:space-x-2 gap-2 w-full sm:w-auto">
+                    <button type="button" onclick="openImportModal('faculty')" class="faculty-action-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-import text-xs"></i>
+                        <span>Import List</span>
+                    </button>
+                    <button type="button" onclick="exportData('faculty', 'excel')" class="faculty-action-btn bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-excel text-xs"></i>
                         <span>Export Excel</span>
                     </button>
-                    <button onclick="exportData('faculty', 'pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center space-x-1">
-                        <i class="fa-solid fa-file-pdf"></i>
+                    <button type="button" onclick="exportData('faculty', 'pdf')" class="faculty-action-btn bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-pdf text-xs"></i>
                         <span>Export PDF</span>
                     </button>
-                    <button onclick="openAddFacultyModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition">+ Add Faculty Member</button>
+                    <button type="button" onclick="openAddFacultyModal()" class="faculty-action-btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-user-plus text-xs"></i>
+                        <span>+ Add Faculty</span>
+                    </button>
                 </div>
             </div>
 
@@ -3564,7 +3625,7 @@
                 isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
                 document.getElementById('currentUserRole').innerText = isUserAdmin ? 'Administrator' : 'Standard User';
                 
-                if (isUserAdmin) {
+                if (effectiveIsAdmin) {
                     currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
                     currentUserModules = [...ALL_PORTAL_MODULES];
                     currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
@@ -4073,7 +4134,7 @@ window.loadClassroomsFromCloud = async function() {
             const dbUser = usersList.find(u => u.email.trim().toLowerCase() === userEmailLower);
             isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
 
-            if (isUserAdmin) {
+            if (effectiveIsAdmin) {
                 currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
                 currentUserModules = [...ALL_PORTAL_MODULES];
                 currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
@@ -4100,6 +4161,7 @@ window.loadClassroomsFromCloud = async function() {
                     : 'text-[11px] bg-teal-800 text-teal-100 px-2 py-0.5 rounded-full font-semibold border border-teal-600';
             }
             applyAccessLevelEnforcement();
+            applyModuleAndSubHeaderPermissions();
         }
 
         function refreshAllPortalViews() {
@@ -4933,13 +4995,85 @@ window.loadClassroomsFromCloud = async function() {
             });
         }
 
-        function applyModuleAndSubHeaderPermissions() {
+        window.updatePwaBottomNavPermissions = function() {
+            const pwaBottomNav = document.getElementById('pwaBottomNav');
+            const effectiveIsAdmin = (typeof window.isUserAdmin !== 'undefined') ? window.isUserAdmin : isUserAdmin;
+            const effectiveModules = (typeof window.currentUserModules !== 'undefined') ? window.currentUserModules : currentUserModules;
+            const mainEl = document.querySelector('main');
+            if (!pwaBottomNav) return;
+
+            const pwaNavMap = [
+                { key: 'dawat-estates', btnId: 'pwa-nav-dawat-estates' },
+                { key: 'classroom-allocation', btnId: 'pwa-nav-classroom-allocation' },
+                { key: 'inventory', btnId: 'pwa-nav-inventory' },
+                { key: 'faculty-dir', btnId: 'pwa-nav-faculty-dir' },
+                { key: 'admin-access', btnId: 'pwa-nav-admin-access' }
+            ];
+
+            let allowedPwaCount = 0;
+            pwaNavMap.forEach(item => {
+                const btn = document.getElementById(item.btnId);
+                let isAllowed = false;
+                if (effectiveIsAdmin) {
+                    isAllowed = true;
+                } else if (item.key === 'admin-access') {
+                    isAllowed = false;
+                } else {
+                    isAllowed = Array.isArray(effectiveModules) && effectiveModules.includes(item.key);
+                }
+
+                if (btn) {
+                    if (isAllowed) {
+                        btn.classList.remove('hidden');
+                        allowedPwaCount++;
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                }
+            });
+
+            const navContainer = pwaBottomNav.querySelector('div');
+
+            // Permission rule:
+            // 1. If user is granted access for only 1 module, the bottom drawer is not needed (hidden).
+            // 2. If user is granted access to 2 or more, bottom drawer is available showing only permitted modules.
+            if (allowedPwaCount <= 1) {
+                pwaBottomNav.classList.add('pwa-nav-hidden');
+                document.body.classList.add('no-bottom-nav');
+                if (mainEl) mainEl.classList.add('no-bottom-nav');
+            } else {
+                pwaBottomNav.classList.remove('pwa-nav-hidden');
+                document.body.classList.remove('no-bottom-nav');
+                if (mainEl) mainEl.classList.remove('no-bottom-nav');
+
+                if (navContainer) {
+                    navContainer.style.display = 'grid';
+                    navContainer.style.gridTemplateColumns = `repeat(${allowedPwaCount}, minmax(0, 1fr))`;
+                }
+            }
+        };
+
+        window.pwaUpdateActiveNav = function(modName) {
+            document.querySelectorAll('.pwa-nav-btn').forEach(btn => {
+                btn.classList.remove('text-emerald-400');
+                btn.classList.add('text-emerald-300');
+            });
+            const activeBtn = document.getElementById('pwa-nav-' + modName);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-emerald-300');
+                activeBtn.classList.add('text-emerald-400');
+            }
+        };
+
+        window.applyModuleAndSubHeaderPermissions = function applyModuleAndSubHeaderPermissions() {
             const modOrder = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
             let firstAllowedMod = null;
 
             modOrder.forEach(modKey => {
                 const modBtn = document.getElementById('mod-' + modKey);
-                const allowed = isUserAdmin || currentUserModules.includes(modKey);
+                const effectiveIsAdmin = (typeof window.isUserAdmin !== 'undefined') ? window.isUserAdmin : isUserAdmin;
+                const effectiveModules = (typeof window.currentUserModules !== 'undefined') ? window.currentUserModules : currentUserModules;
+                const allowed = effectiveIsAdmin || (Array.isArray(effectiveModules) && effectiveModules.includes(modKey));
                 if (modBtn) {
                     if (allowed) {
                         modBtn.classList.remove('hidden');
@@ -4949,6 +5083,21 @@ window.loadClassroomsFromCloud = async function() {
                     }
                 }
             });
+
+            const adminBtn = document.getElementById('mod-admin-access');
+            if (adminBtn) {
+                if (effectiveIsAdmin) {
+                    adminBtn.classList.remove('hidden');
+                    if (!firstAllowedMod) firstAllowedMod = 'admin-access';
+                } else {
+                    adminBtn.classList.add('hidden');
+                }
+            }
+
+            // Sync PWA bottom navigation bar according to current module permissions
+            if (typeof window.updatePwaBottomNavPermissions === 'function') {
+                window.updatePwaBottomNavPermissions();
+            }
 
             const secMapping = {
                 1: 'estate-details',
@@ -4984,8 +5133,26 @@ window.loadClassroomsFromCloud = async function() {
                 });
             }
 
-            if (firstAllowedMod) {
+            // Check if currently active module is allowed
+            const allModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'admin-access'];
+            let currentlyVisibleMod = null;
+            for (const m of allModules) {
+                const modEl = document.getElementById('module-' + m);
+                if (modEl && !modEl.classList.contains('hidden')) {
+                    currentlyVisibleMod = m;
+                    break;
+                }
+            }
+
+            const isCurrentModAllowed = currentlyVisibleMod && (
+                isUserAdmin || (currentlyVisibleMod !== 'admin-access' && Array.isArray(currentUserModules) && currentUserModules.includes(currentlyVisibleMod))
+            );
+
+            if (isCurrentModAllowed) {
+                window.pwaUpdateActiveNav(currentlyVisibleMod);
+            } else if (firstAllowedMod) {
                 switchModule(firstAllowedMod);
+                window.pwaUpdateActiveNav(firstAllowedMod);
             }
         }
 
@@ -5032,6 +5199,9 @@ window.loadClassroomsFromCloud = async function() {
 
             document.getElementById('module-' + modName)?.classList.remove('hidden');
             document.getElementById('mod-' + modName)?.classList.add('active-tab');
+            if (typeof window.pwaUpdateActiveNav === 'function') {
+                window.pwaUpdateActiveNav(modName);
+            }
 
             if (modName === 'classroom-allocation') {
                 renderClassroomsTables();
@@ -11762,6 +11932,9 @@ window.renderSocieties = function() {
                     const btn = document.getElementById('btnPwaInstall');
                     if (btn) btn.classList.remove('hidden');
                 }
+            }
+            if (typeof window.updatePwaBottomNavPermissions === 'function') {
+                window.updatePwaBottomNavPermissions();
             }
         };
 

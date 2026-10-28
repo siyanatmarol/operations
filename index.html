@@ -28,6 +28,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
+        .hidden { display: none !important; }
         html { font-size: 17px; }
         .active-tab { border-bottom: 3px solid #10B981; color: #ffffff; font-weight: 600; }
         .sub-tab-active { background-color: #065F46 !important; color: #ffffff !important; font-weight: 600; }
@@ -58,15 +59,24 @@
         /* (Active ONLY in standalone PWA app mode or when body has .pwa-mode)       */
         /* ========================================================================= */
         
-        /* Standalone App Body Rules: Absolute viewport bounding & lock */
-        html.pwa-mode, body.pwa-mode {
+        /* Standalone App Body Rules: Natural full vertical page scroll with strict horizontal clip */
+        html.pwa-mode {
             width: 100% !important;
-            max-width: 100vw !important;
-            overflow-x: hidden !important;
-            position: relative !important;
-            touch-action: pan-y !important;
+            max-width: 100% !important;
+            overflow-x: clip !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body.pwa-mode {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: clip !important;
+            overflow-y: visible !important;
+            min-height: 100vh !important;
+            position: static !important;
             -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none;
             background-color: #f8fafc !important;
         }
 
@@ -184,15 +194,16 @@
             display: none !important;
         }
 
-        /* Main Container in PWA mode: Strict 100% width, no horizontal bleed */
+        /* Main Container in PWA mode: Natural vertical flow, no horizontal bleed */
         body.pwa-mode main {
-            padding-top: 0.5rem !important;
+            margin-top: 0 !important;
+            padding-top: 0.35rem !important;
             padding-bottom: calc(5.2rem + env(safe-area-inset-bottom, 0px)) !important;
             padding-left: 0.5rem !important;
             padding-right: 0.5rem !important;
             width: 100% !important;
-            max-width: 100vw !important;
-            overflow-x: hidden !important;
+            max-width: 100% !important;
+            overflow: visible !important;
             box-sizing: border-box !important;
         }
 
@@ -236,17 +247,17 @@
             box-sizing: border-box !important;
             flex-wrap: nowrap !important;
             overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch !important;
             scrollbar-width: none;
             padding: 0.35rem 0.25rem !important;
             gap: 0.35rem !important;
-            position: sticky;
-            top: calc(4.2rem + env(safe-area-inset-top, 0px));
-            z-index: 30;
-            background: rgba(255, 255, 255, 0.96) !important;
-            backdrop-filter: blur(8px);
+            position: relative !important;
+            top: auto !important;
+            margin-top: 0 !important;
+            margin-bottom: 0.45rem !important;
+            background: #ffffff !important;
             border-radius: 0.75rem !important;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         body.pwa-mode #module-dawat-estates > div.bg-white.rounded-lg.shadow.p-2.flex.flex-wrap.gap-2.border::-webkit-scrollbar {
             display: none;

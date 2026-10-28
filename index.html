@@ -3078,7 +3078,7 @@
     <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
         import { getDatabase, ref as dbRef, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -3095,6 +3095,11 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+
+        // Process any redirect login result (fallback for mobile/PWA if popup blocked)
+        getRedirectResult(auth).catch(err => {
+            console.warn("[Auth] getRedirectResult info:", err);
+        });
 
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
         let currentUser = null;
@@ -3283,6 +3288,17 @@
                 await signInWithPopup(auth, provider);
             } catch (error) {
                 console.error("Auth error:", error);
+                // If popup is blocked by browser or PWA standalone environment, seamlessly fallback to redirect
+                if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+                    try {
+                        const provider = new GoogleAuthProvider();
+                        provider.setCustomParameters({ prompt: 'select_account' });
+                        await signInWithRedirect(auth, provider);
+                        return;
+                    } catch (redirErr) {
+                        console.error("Redirect auth fallback error:", redirErr);
+                    }
+                }
                 if (errEl) {
                     errEl.innerText = error.message || "Failed to sign in. Please try again.";
                     errEl.classList.remove('hidden');
@@ -3625,7 +3641,7 @@
                 isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
                 document.getElementById('currentUserRole').innerText = isUserAdmin ? 'Administrator' : 'Standard User';
                 
-                if (effectiveIsAdmin) {
+                if (isUserAdmin) {
                     currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
                     currentUserModules = [...ALL_PORTAL_MODULES];
                     currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
@@ -4134,7 +4150,7 @@ window.loadClassroomsFromCloud = async function() {
             const dbUser = usersList.find(u => u.email.trim().toLowerCase() === userEmailLower);
             isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
 
-            if (effectiveIsAdmin) {
+            if (isUserAdmin) {
                 currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
                 currentUserModules = [...ALL_PORTAL_MODULES];
                 currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
@@ -5068,11 +5084,11 @@ window.loadClassroomsFromCloud = async function() {
         window.applyModuleAndSubHeaderPermissions = function applyModuleAndSubHeaderPermissions() {
             const modOrder = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
             let firstAllowedMod = null;
+            const effectiveIsAdmin = (typeof window.isUserAdmin !== 'undefined') ? window.isUserAdmin : isUserAdmin;
+            const effectiveModules = (typeof window.currentUserModules !== 'undefined') ? window.currentUserModules : currentUserModules;
 
             modOrder.forEach(modKey => {
                 const modBtn = document.getElementById('mod-' + modKey);
-                const effectiveIsAdmin = (typeof window.isUserAdmin !== 'undefined') ? window.isUserAdmin : isUserAdmin;
-                const effectiveModules = (typeof window.currentUserModules !== 'undefined') ? window.currentUserModules : currentUserModules;
                 const allowed = effectiveIsAdmin || (Array.isArray(effectiveModules) && effectiveModules.includes(modKey));
                 if (modBtn) {
                     if (allowed) {
@@ -5182,7 +5198,7 @@ window.loadClassroomsFromCloud = async function() {
             checkAndTriggerActiveModuleNotifications();
         }
 
-        window.switchModule = function(modName) {
+        function switchModule(modName) {
             if (modName === 'admin-access' && !isUserAdmin) {
                 showAssetToast("Access Denied: Admin privileges required.", true);
                 return;
@@ -5213,7 +5229,9 @@ window.loadClassroomsFromCloud = async function() {
             }
         };
 
-        window.switchSubHeader = function(secName) {
+        window.switchModule = switchModule;
+
+        function switchSubHeader(secName) {
             const secMappingInv = {
                 'estate-details': 1,
                 'allocation': 2,
@@ -5266,6 +5284,8 @@ window.loadClassroomsFromCloud = async function() {
                 openModuleNotificationsPopupIfAny('dawat-estates', secName);
             }
         };
+
+        window.switchSubHeader = switchSubHeader;
 
         window.exportData = function(section, format) {
             let data = [];
@@ -11865,7 +11885,7 @@ window.renderSocieties = function() {
             return window.matchMedia('(display-mode: standalone)').matches ||
                    window.matchMedia('(display-mode: fullscreen)').matches ||
                    window.navigator.standalone === true ||
-                   document.referrer.includes('android-app://') ||
+                   (document.referrer && document.referrer.includes('android-app://')) ||
                    sessionStorage.getItem('pwa_mode_manual') === 'true' ||
                    new URLSearchParams(window.location.search).get('app') === '1';
         };

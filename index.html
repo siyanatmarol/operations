@@ -3,6 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA & Mobile Web App Manifest & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#064e3b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Siyanat Marol">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Siyanat Marol">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+
     <title>Siyanat - Operations</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +52,169 @@
         .timetable-grid th, .timetable-grid td {
             border: 1px solid #d1d5db;
         }
+    
+        /* ========================================================================= */
+        /* PWA MOBILE APP SPECIFIC STYLES                                            */
+        /* (Active ONLY in standalone PWA app mode or when body has .pwa-mode)       */
+        /* ========================================================================= */
+        
+        /* Standalone App Body Rules */
+        html.pwa-mode, body.pwa-mode {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            background-color: #f8fafc !important;
+        }
+
+        /* Top Header in PWA Standalone Mode: Compact Native App Bar */
+        body.pwa-mode header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 40 !important;
+            box-shadow: 0 4px 14px rgba(2, 44, 34, 0.3) !important;
+            padding-top: env(safe-area-inset-top, 0px) !important;
+        }
+        body.pwa-mode header > div:first-child {
+            padding-top: 0.65rem !important;
+            padding-bottom: 0.65rem !important;
+            padding-left: 0.85rem !important;
+            padding-right: 0.85rem !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+        }
+        body.pwa-mode header h1 {
+            font-size: 1.05rem !important;
+            line-height: 1.25 !important;
+            letter-spacing: -0.01em !important;
+        }
+        body.pwa-mode header p.text-xs {
+            font-size: 0.68rem !important;
+            margin-top: 0.1rem !important;
+        }
+        /* In PWA mode, hide the top desktop module buttons row because the bottom app nav handles it! */
+        body.pwa-mode header .bg-emerald-950.border-t {
+            display: none !important;
+        }
+
+        /* Main Container in PWA mode */
+        body.pwa-mode main {
+            padding-top: 0.75rem !important;
+            padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            max-width: 100% !important;
+        }
+
+        /* PWA Bottom Navigation Bar */
+        .pwa-bottom-nav {
+            display: none;
+        }
+        body.pwa-mode .pwa-bottom-nav {
+            display: block !important;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Dawat Estates Sub-Headers in PWA mode: Compact horizontal swipeable pill bar */
+        body.pwa-mode #module-dawat-estates > div.bg-white.rounded-lg.shadow.p-2.flex.flex-wrap.gap-2.border {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 0.4rem 0.3rem !important;
+            gap: 0.4rem !important;
+            position: sticky;
+            top: calc(3.8rem + env(safe-area-inset-top, 0px));
+            z-index: 30;
+            background: rgba(255, 255, 255, 0.96) !important;
+            backdrop-filter: blur(8px);
+            border-radius: 0.75rem !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+        body.pwa-mode #module-dawat-estates > div.bg-white.rounded-lg.shadow.p-2.flex.flex-wrap.gap-2.border::-webkit-scrollbar {
+            display: none;
+        }
+        body.pwa-mode #module-dawat-estates > div.bg-white.rounded-lg.shadow.p-2.flex.flex-wrap.gap-2.border button {
+            flex-shrink: 0 !important;
+            white-space: nowrap !important;
+            padding: 0.45rem 0.85rem !important;
+            font-size: 0.78rem !important;
+            border-radius: 9999px !important;
+        }
+
+        /* Overview Metric Cards in PWA mode: Compact 2-column touch cards */
+        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4,
+        body.pwa-mode #module-classroom-allocation .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 0.5rem !important;
+        }
+        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button,
+        body.pwa-mode #module-classroom-allocation .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 button,
+        body.pwa-mode #module-classroom-allocation #cardBtnClassroomsRaihaan {
+            padding: 0.65rem 0.75rem !important;
+            border-radius: 0.75rem !important;
+        }
+        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button span:first-child {
+            font-size: 0.65rem !important;
+        }
+        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button span:last-child {
+            font-size: 1.4rem !important;
+            margin-top: 0.2rem !important;
+        }
+
+        /* Mobile Segmented Toggle for Classroom Allocation (Male vs Female) */
+        .pwa-classroom-gender-toggle {
+            display: none;
+        }
+        body.pwa-mode .pwa-classroom-gender-toggle {
+            display: flex !important;
+        }
+
+        /* Sticky first column in wide tables for easy scrolling on mobile */
+        body.pwa-mode .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            border-radius: 0.75rem;
+        }
+        body.pwa-mode #estateTableBody td:nth-child(2),
+        body.pwa-mode #allocationTableBody td:nth-child(1),
+        body.pwa-mode #maleClassroomsTableBody td:nth-child(1),
+        body.pwa-mode #femaleClassroomsTableBody td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            background: #ffffff;
+            z-index: 5;
+            box-shadow: 2px 0 6px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Mobile Bottom-sheet styling for Modals in PWA mode */
+        body.pwa-mode .fixed.inset-0 > div[class*="bg-white"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 92vh !important;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            border-top-left-radius: 1.25rem !important;
+            border-top-right-radius: 1.25rem !important;
+            margin-top: auto !important;
+            padding: 1.25rem 1rem !important;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25) !important;
+        }
+
+        /* Touch-friendly buttons in PWA mode */
+        body.pwa-mode button, 
+        body.pwa-mode input[type="button"], 
+        body.pwa-mode input[type="submit"] {
+            min-height: 38px;
+        }
+
+        /* Safe area footer spacer */
+        body.pwa-mode footer {
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col text-sm">
@@ -84,6 +261,17 @@
                         <span id="currentUserAccessBadge" class="text-[11px] bg-teal-800 text-teal-100 px-2 py-0.5 rounded-full font-semibold border border-teal-600">Editing Rights</span>
                     </div>
                 </div>
+                                <!-- PWA Install Button (Unhidden when installable on Android / iOS / Desktop) -->
+                <button id="btnPwaInstall" type="button" onclick="handlePwaInstallClick()" class="hidden bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-emerald-950 font-extrabold px-3 py-1.5 rounded-lg border border-amber-300 transition text-xs flex items-center space-x-1.5 shadow-md active:scale-95 animate-pulse" title="Install Siyanat Marol App on your device">
+                    <i class="fa-solid fa-mobile-screen-button text-sm"></i>
+                    <span class="whitespace-nowrap">Install App</span>
+                </button>
+                
+                <!-- PWA Mode Toggle Pill (Lets users preview app layout even in desktop/mobile browser) -->
+                <button id="btnPwaModeToggle" type="button" onclick="togglePwaModeManual()" class="bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1" title="Toggle Mobile App Layout View">
+                    <i class="fa-solid fa-mobile text-[11px]"></i>
+                    <span id="pwaModeToggleLabel" class="hidden sm:inline text-[11px]">App View</span>
+                </button>
                 <button onclick="handleSignOut()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Sign Out</span>
@@ -790,10 +978,23 @@
                 </div>
             </div>
 
+                        <!-- PWA Mobile Segmented Switcher: Male Classes vs Female Classes (Active in PWA mode to avoid extra vertical scrolling) -->
+            <div id="pwaClassroomGenderToggle" class="pwa-classroom-gender-toggle mb-3 bg-white p-1 rounded-xl shadow-sm border border-gray-200 flex items-center justify-center gap-1.5">
+                <button type="button" id="pwaBtnMaleClasses" onclick="setPwaClassroomGender('Male')" class="w-1/2 py-2 text-xs font-extrabold rounded-lg transition bg-blue-900 text-white shadow-sm flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-person text-sm text-blue-300"></i>
+                    <span>Male Classrooms</span>
+                    <span id="pwaMaleBadgeCount" class="bg-blue-800 text-blue-100 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+                <button type="button" id="pwaBtnFemaleClasses" onclick="setPwaClassroomGender('Female')" class="w-1/2 py-2 text-xs font-extrabold rounded-lg transition text-pink-900 hover:bg-pink-50 flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-person-dress text-sm text-pink-600"></i>
+                    <span>Female Classrooms</span>
+                    <span id="pwaFemaleBadgeCount" class="bg-pink-100 text-pink-900 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+            </div>
             <!-- Bifurcated Tables: Male Classes & Female Classes -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 xl:gap-5 items-start">
                 <!-- Male Classes Table -->
-                <div class="bg-white rounded-lg shadow border overflow-hidden">
+                <div id="containerMaleClassesTable" class="bg-white rounded-lg shadow border overflow-hidden">
                     <div class="max-h-[75vh] overflow-y-auto overflow-x-auto relative">
                         <table class="w-full text-left text-xs sm:text-sm table-auto border-collapse">
                             <thead class="sticky top-0 z-20 shadow-sm">
@@ -835,7 +1036,7 @@
                 </div>
 
                 <!-- Female Classes Table -->
-                <div class="bg-white rounded-lg shadow border overflow-hidden">
+                <div id="containerFemaleClassesTable" class="bg-white rounded-lg shadow border overflow-hidden">
                     <div class="max-h-[75vh] overflow-y-auto overflow-x-auto relative">
                         <table class="w-full text-left text-xs sm:text-sm table-auto border-collapse">
                             <thead class="sticky top-0 z-20 shadow-sm">
@@ -1187,6 +1388,121 @@
         <p>Aljamea-tus-Saifiyah Facilities Management Dept (Marol) &copy; 2026. All rights reserved.</p>
     </footer>
     
+    
+    <!-- PWA MOBILE BOTTOM APP NAVIGATION BAR (Active in PWA standalone app mode) -->
+    <nav id="pwaBottomNav" class="pwa-bottom-nav fixed bottom-0 left-0 right-0 bg-emerald-950/95 backdrop-blur-md border-t border-emerald-800 text-white z-40">
+        <div class="grid grid-cols-4 sm:grid-cols-5 max-w-lg mx-auto items-center text-center py-1.5 px-2">
+            <button type="button" onclick="pwaSwitchModule('dawat-estates')" id="pwa-nav-dawat-estates" class="pwa-nav-btn text-emerald-400 flex flex-col items-center justify-center space-y-0.5 relative py-1 focus:outline-none">
+                <i class="fa-solid fa-city text-base"></i>
+                <span class="text-[10px] font-bold">Estates</span>
+                <span id="pwaNotifBadgeDawatEstates" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
+            </button>
+            <button type="button" onclick="pwaSwitchModule('classroom-allocation')" id="pwa-nav-classroom-allocation" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 focus:outline-none">
+                <i class="fa-solid fa-chalkboard-user text-base"></i>
+                <span class="text-[10px] font-bold">Classrooms</span>
+                <span id="pwaNotifBadgeClassroomAllocation" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
+            </button>
+            <button type="button" onclick="pwaSwitchModule('inventory')" id="pwa-nav-inventory" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 focus:outline-none">
+                <i class="fa-solid fa-key text-base"></i>
+                <span class="text-[10px] font-bold">Keys</span>
+            </button>
+            <button type="button" onclick="pwaSwitchModule('faculty-dir')" id="pwa-nav-faculty-dir" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 focus:outline-none">
+                <i class="fa-solid fa-id-card text-base"></i>
+                <span class="text-[10px] font-bold">Faculty</span>
+            </button>
+            <button type="button" onclick="pwaSwitchModule('admin-access')" id="pwa-nav-admin-access" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 hidden focus:outline-none">
+                <i class="fa-solid fa-user-shield text-base"></i>
+                <span class="text-[10px] font-bold">Admin</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Modal: iOS PWA Installation Guide (iPhone / iPad Safari) -->
+    <div id="modalPwaIosInstall" class="fixed inset-0 bg-black/60 hidden flex items-end sm:items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 text-center">
+            <div class="flex justify-between items-center border-b pb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-emerald-100 text-emerald-800 p-2 rounded-xl text-lg">
+                        <i class="fa-brands fa-apple text-xl"></i>
+                    </span>
+                    <div class="text-left">
+                        <h3 class="text-base font-extrabold text-gray-900">Install Siyanat Marol App</h3>
+                        <p class="text-[11px] text-gray-500">For iPhone & iPad (Safari)</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modalPwaIosInstall')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            </div>
+            
+            <div class="space-y-3 text-left text-xs text-gray-700">
+                <div class="flex items-start space-x-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="bg-emerald-800 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+                    <div>
+                        <p class="font-bold text-gray-900">Tap the Share Button</p>
+                        <p class="text-gray-600 mt-0.5">At the bottom toolbar of Safari on iPhone (or top right on iPad), tap the Share icon <i class="fa-solid fa-arrow-up-from-bracket text-blue-600 mx-1 text-sm"></i>.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="bg-emerald-800 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+                    <div>
+                        <p class="font-bold text-gray-900">Tap "Add to Home Screen"</p>
+                        <p class="text-gray-600 mt-0.5">Scroll down in the share sheet menu and tap <strong class="text-emerald-900">Add to Home Screen</strong> <i class="fa-regular fa-square-plus text-emerald-700 mx-1 text-sm"></i>.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="bg-emerald-800 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+                    <div>
+                        <p class="font-bold text-gray-900">Confirm & Tap "Add"</p>
+                        <p class="text-gray-600 mt-0.5">Tap <strong class="text-emerald-900">Add</strong> in the top-right corner. The Siyanat app icon will appear directly on your Home Screen!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="button" onclick="closeModal('modalPwaIosInstall')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
+                    Got it, thanks!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Desktop / Android Installation Info -->
+    <div id="modalPwaDesktopInstall" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 text-center">
+            <div class="flex justify-between items-center border-b pb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-emerald-100 text-emerald-800 p-2 rounded-xl text-lg">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </span>
+                    <div class="text-left">
+                        <h3 class="text-base font-extrabold text-gray-900">Install Siyanat Marol App</h3>
+                        <p class="text-[11px] text-gray-500">Android & Desktop Chrome / Edge</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modalPwaDesktopInstall')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-3 text-left text-xs text-gray-700">
+                <div class="p-3 bg-blue-50 rounded-xl border border-blue-200 space-y-1">
+                    <p class="font-bold text-blue-950 flex items-center"><i class="fa-brands fa-android text-emerald-600 mr-1.5 text-sm"></i>On Android (Chrome / Samsung Internet):</p>
+                    <p class="text-gray-600">Tap the browser menu <strong class="text-gray-800">⋮</strong> (top-right) and select <strong class="text-emerald-800">"Install app"</strong> or <strong class="text-emerald-800">"Add to Home screen"</strong>.</p>
+                </div>
+
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-1">
+                    <p class="font-bold text-emerald-950 flex items-center"><i class="fa-solid fa-laptop text-emerald-700 mr-1.5 text-sm"></i>On Laptop / Desktop (Chrome / Edge):</p>
+                    <p class="text-gray-600">Click the <strong class="text-emerald-800">Install icon <i class="fa-solid fa-download mx-0.5"></i></strong> on the right side of your browser's address bar to install as a standalone desktop app.</p>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="button" onclick="closeModal('modalPwaDesktopInstall')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODALS -->
 
     <!-- Modal: Add / Edit Estate Flat -->
@@ -2981,7 +3297,7 @@
                     currentUserModules = [...ALL_PORTAL_MODULES];
                     currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
                     currentUserAccessLevel = 'Editing Rights';
-                    document.getElementById('mod-admin-access').classList.remove('hidden');
+                    document.getElementById('mod-admin-access').classList.remove('hidden'); document.getElementById('pwa-nav-admin-access')?.classList.remove('hidden');
                 } else {
                     const rawPerms = dbUser ? (Array.isArray(dbUser.permissions) ? [...dbUser.permissions] : []) : [];
                     currentUserPermissions = rawPerms;
@@ -2992,7 +3308,7 @@
                         ? [...dbUser.classroomPermissions]
                         : [...ALL_CLASSROOM_COL_PERMS];
                     currentUserAccessLevel = (dbUser && dbUser.accessLevel) ? dbUser.accessLevel : 'Editing Rights';
-                    document.getElementById('mod-admin-access').classList.add('hidden');
+                    document.getElementById('mod-admin-access').classList.add('hidden'); document.getElementById('pwa-nav-admin-access')?.classList.add('hidden');
                 }
 
                 const accessBadge = document.getElementById('currentUserAccessBadge');
@@ -11081,6 +11397,216 @@ window.renderSocieties = function() {
             await saveCloudData();
             renderUsersList();
         };
+
+        
+        // =========================================================================
+        // PWA REGISTRATION, INSTALL PROMPT, & MOBILE APP LAYOUT LOGIC
+        // =========================================================================
+
+        let deferredPwaPrompt = null;
+
+        // Register Service Worker for offline capability & PWA installability
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => {
+                        console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
+                    })
+                    .catch(err => {
+                        console.warn('[PWA] ServiceWorker registration failed:', err);
+                    });
+            });
+        }
+
+        // Detect if currently running as installed PWA in standalone window
+        window.isPwaStandalone = function() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.matchMedia('(display-mode: fullscreen)').matches ||
+                   window.navigator.standalone === true ||
+                   document.referrer.includes('android-app://') ||
+                   sessionStorage.getItem('pwa_mode_manual') === 'true' ||
+                   new URLSearchParams(window.location.search).get('app') === '1';
+        };
+
+        // Listen for browser's beforeinstallprompt event (Android / Chromium)
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPwaPrompt = e;
+            const btn = document.getElementById('btnPwaInstall');
+            if (btn && !window.isPwaStandalone()) {
+                btn.classList.remove('hidden');
+            }
+        });
+
+        // App successfully installed listener
+        window.addEventListener('appinstalled', () => {
+            deferredPwaPrompt = null;
+            const btn = document.getElementById('btnPwaInstall');
+            if (btn) btn.classList.add('hidden');
+            showAssetToast("Siyanat Marol App installed successfully! You can now launch it directly from your home screen.");
+        });
+
+        // Click handler for "Install App" button in Header
+        window.handlePwaInstallClick = async function() {
+            if (deferredPwaPrompt) {
+                // Android / Desktop Chromium prompt
+                deferredPwaPrompt.prompt();
+                const { outcome } = await deferredPwaPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    showAssetToast("Thank you for installing Siyanat Marol App!");
+                    deferredPwaPrompt = null;
+                    const btn = document.getElementById('btnPwaInstall');
+                    if (btn) btn.classList.add('hidden');
+                }
+            } else {
+                // Detect iOS Safari vs Desktop
+                const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+                if (isIos) {
+                    document.getElementById('modalPwaIosInstall')?.classList.remove('hidden');
+                } else {
+                    document.getElementById('modalPwaDesktopInstall')?.classList.remove('hidden');
+                }
+            }
+        };
+
+        // Apply PWA Mode (Mobile-friendly layout only for standalone app mode)
+        window.applyPwaModeLayout = function() {
+            const isStandalone = window.isPwaStandalone();
+            const toggleLabel = document.getElementById('pwaModeToggleLabel');
+
+            if (isStandalone) {
+                document.documentElement.classList.add('pwa-mode');
+                document.body.classList.add('pwa-mode');
+                if (toggleLabel) toggleLabel.innerText = "Web View";
+                const btn = document.getElementById('btnPwaInstall');
+                if (btn) btn.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('pwa-mode');
+                document.body.classList.remove('pwa-mode');
+                if (toggleLabel) toggleLabel.innerText = "App View";
+                // If on iOS and not standalone, show install button so iOS users know how to install!
+                const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+                if (isIos) {
+                    const btn = document.getElementById('btnPwaInstall');
+                    if (btn) btn.classList.remove('hidden');
+                }
+            }
+        };
+
+        // Manual toggle button so users/admins can preview the mobile app layout in any browser
+        window.togglePwaModeManual = function() {
+            const isCurrentlyPwa = document.body.classList.contains('pwa-mode');
+            if (isCurrentlyPwa) {
+                sessionStorage.removeItem('pwa_mode_manual');
+                document.documentElement.classList.remove('pwa-mode');
+                document.body.classList.remove('pwa-mode');
+                showAssetToast("Switched to Standard Webpage Layout");
+            } else {
+                sessionStorage.setItem('pwa_mode_manual', 'true');
+                document.documentElement.classList.add('pwa-mode');
+                document.body.classList.add('pwa-mode');
+                showAssetToast("Switched to Mobile App Layout (PWA Mode)");
+            }
+            window.applyPwaModeLayout();
+        };
+
+        // Bottom Navigation Bar Module Switcher in PWA mode
+        window.pwaSwitchModule = function(modName) {
+            window.switchModule(modName);
+            document.querySelectorAll('.pwa-nav-btn').forEach(btn => {
+                btn.classList.remove('text-emerald-400');
+                btn.classList.add('text-emerald-300');
+            });
+            const activeBtn = document.getElementById('pwa-nav-' + modName);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-emerald-300');
+                activeBtn.classList.add('text-emerald-400');
+            }
+        };
+
+        // Mobile Segmented Switcher for Classroom Allocation (Male vs Female)
+        let pwaActiveGender = 'Male';
+        window.setPwaClassroomGender = function(gender) {
+            pwaActiveGender = gender;
+            const btnMale = document.getElementById('pwaBtnMaleClasses');
+            const btnFemale = document.getElementById('pwaBtnFemaleClasses');
+            const maleTable = document.getElementById('containerMaleClassesTable');
+            const femaleTable = document.getElementById('containerFemaleClassesTable');
+
+            if (gender === 'Male') {
+                if (btnMale) {
+                    btnMale.className = "w-1/2 py-2 text-xs font-extrabold rounded-lg transition bg-blue-900 text-white shadow-sm flex items-center justify-center space-x-1.5";
+                }
+                if (btnFemale) {
+                    btnFemale.className = "w-1/2 py-2 text-xs font-extrabold rounded-lg transition text-pink-900 hover:bg-pink-50 flex items-center justify-center space-x-1.5";
+                }
+                if (maleTable) maleTable.classList.remove('hidden');
+                if (femaleTable && document.body.classList.contains('pwa-mode')) {
+                    femaleTable.classList.add('hidden');
+                }
+            } else {
+                if (btnFemale) {
+                    btnFemale.className = "w-1/2 py-2 text-xs font-extrabold rounded-lg transition bg-pink-900 text-white shadow-sm flex items-center justify-center space-x-1.5";
+                }
+                if (btnMale) {
+                    btnMale.className = "w-1/2 py-2 text-xs font-extrabold rounded-lg transition text-blue-900 hover:bg-blue-50 flex items-center justify-center space-x-1.5";
+                }
+                if (femaleTable) femaleTable.classList.remove('hidden');
+                if (maleTable && document.body.classList.contains('pwa-mode')) {
+                    maleTable.classList.add('hidden');
+                }
+            }
+        };
+
+        // Sync notification badges to PWA bottom navigation
+        const origUpdateModuleNotificationBadges = window.updateModuleNotificationBadges;
+        window.updateModuleNotificationBadges = function() {
+            if (typeof origUpdateModuleNotificationBadges === 'function') {
+                origUpdateModuleNotificationBadges();
+            }
+            // Sync to PWA bottom nav badges
+            const dawatBadge = document.getElementById('notifBadgeDawatEstates');
+            const pwaDawatBadge = document.getElementById('pwaNotifBadgeDawatEstates');
+            if (dawatBadge && pwaDawatBadge) {
+                if (!dawatBadge.classList.contains('hidden') && dawatBadge.innerText) {
+                    pwaDawatBadge.innerText = dawatBadge.innerText;
+                    pwaDawatBadge.classList.remove('hidden');
+                } else {
+                    pwaDawatBadge.innerText = '';
+                    pwaDawatBadge.classList.add('hidden');
+                }
+            }
+
+            const clsBadge = document.getElementById('notifBadgeClassroomAllocation');
+            const pwaClsBadge = document.getElementById('pwaNotifBadgeClassroomAllocation');
+            if (clsBadge && pwaClsBadge) {
+                if (!clsBadge.classList.contains('hidden') && clsBadge.innerText) {
+                    pwaClsBadge.innerText = clsBadge.innerText;
+                    pwaClsBadge.classList.remove('hidden');
+                } else {
+                    pwaClsBadge.innerText = '';
+                    pwaClsBadge.classList.add('hidden');
+                }
+            }
+
+            // Sync classroom male and female count badges in PWA switcher
+            const maleBadge = document.getElementById('maleClassesBadgeCount');
+            const pwaMaleBadge = document.getElementById('pwaMaleBadgeCount');
+            if (maleBadge && pwaMaleBadge) {
+                pwaMaleBadge.innerText = maleBadge.innerText.replace(' Rooms', '').replace(' Room', '');
+            }
+            const femaleBadge = document.getElementById('femaleClassesBadgeCount');
+            const pwaFemaleBadge = document.getElementById('pwaFemaleBadgeCount');
+            if (femaleBadge && pwaFemaleBadge) {
+                pwaFemaleBadge.innerText = femaleBadge.innerText.replace(' Rooms', '').replace(' Room', '');
+            }
+        };
+
+        // Initialize PWA layout on page startup
+        window.addEventListener('DOMContentLoaded', () => {
+            window.applyPwaModeLayout();
+        });
+        window.applyPwaModeLayout();
 
         window.closeModal = function(modalId) {
             document.getElementById(modalId).classList.add('hidden');

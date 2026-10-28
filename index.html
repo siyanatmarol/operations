@@ -58,74 +58,190 @@
         /* (Active ONLY in standalone PWA app mode or when body has .pwa-mode)       */
         /* ========================================================================= */
         
-        /* Standalone App Body Rules */
+        /* Standalone App Body Rules: Absolute viewport bounding & lock */
         html.pwa-mode, body.pwa-mode {
-            touch-action: manipulation;
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+            position: relative !important;
+            touch-action: pan-y !important;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
             background-color: #f8fafc !important;
         }
 
-        /* Top Header in PWA Standalone Mode: Compact Native App Bar */
+        body.pwa-mode * {
+            box-sizing: border-box;
+        }
+
+        /* Top Header in PWA Standalone Mode: Compact, Non-Overflowing Native App Bar */
         body.pwa-mode header {
             position: sticky !important;
             top: 0 !important;
             z-index: 40 !important;
             box-shadow: 0 4px 14px rgba(2, 44, 34, 0.3) !important;
             padding-top: env(safe-area-inset-top, 0px) !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
         }
         body.pwa-mode header > div:first-child {
-            padding-top: 0.65rem !important;
-            padding-bottom: 0.65rem !important;
-            padding-left: 0.85rem !important;
-            padding-right: 0.85rem !important;
-            flex-direction: row !important;
-            justify-content: space-between !important;
+            padding: 0.45rem 0.65rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.25rem !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Header Row 1: Logo + Department Title (Clipped cleanly, no side scroll) */
+        body.pwa-mode header > div:first-child > div:first-child {
+            display: flex !important;
             align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            margin-bottom: 0 !important;
+            gap: 0.4rem !important;
+        }
+        body.pwa-mode header > div:first-child > div:first-child > i {
+            font-size: 1.15rem !important;
+            flex-shrink: 0 !important;
+        }
+        body.pwa-mode header > div:first-child > div:first-child > div {
+            min-width: 0 !important;
+            flex: 1 !important;
+            overflow: hidden !important;
         }
         body.pwa-mode header h1 {
-            font-size: 1.05rem !important;
-            line-height: 1.25 !important;
+            font-size: 0.78rem !important;
+            line-height: 1.2 !important;
             letter-spacing: -0.01em !important;
+            font-weight: 700 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }
         body.pwa-mode header p.text-xs {
-            font-size: 0.68rem !important;
-            margin-top: 0.1rem !important;
+            font-size: 0.6rem !important;
+            margin-top: 0.05rem !important;
+            color: #6ee7b7 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }
+
+        /* Header Row 2: User email (truncated) + Role/Access badges + Action buttons */
+        body.pwa-mode header > div:first-child > div:last-child {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            gap: 0.35rem !important;
+            border-top: 1px solid rgba(16, 185, 129, 0.25) !important;
+            padding-top: 0.25rem !important;
+            flex-wrap: nowrap !important;
+        }
+        body.pwa-mode header > div:first-child > div:last-child > div:first-child {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.3rem !important;
+            min-width: 0 !important;
+            flex: 1 !important;
+            overflow: hidden !important;
+        }
+        body.pwa-mode header #currentUserEmail {
+            font-size: 0.65rem !important;
+            max-width: 125px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+        body.pwa-mode header #currentUserRole,
+        body.pwa-mode header #currentUserAccessBadge {
+            font-size: 0.55rem !important;
+            padding: 0.12rem 0.35rem !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+        }
+        body.pwa-mode header #btnPwaModeToggle,
+        body.pwa-mode header button[onclick*="handleSignOut"],
+        body.pwa-mode header #btnPwaInstall {
+            padding: 0.2rem 0.45rem !important;
+            font-size: 0.62rem !important;
+            min-height: auto !important;
+            height: 24px !important;
+            flex-shrink: 0 !important;
+        }
+
         /* In PWA mode, hide the top desktop module buttons row because the bottom app nav handles it! */
         body.pwa-mode header .bg-emerald-950.border-t {
             display: none !important;
         }
 
-        /* Main Container in PWA mode */
+        /* Main Container in PWA mode: Strict 100% width, no horizontal bleed */
         body.pwa-mode main {
-            padding-top: 0.75rem !important;
-            padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
-            max-width: 100% !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: calc(5.2rem + env(safe-area-inset-bottom, 0px)) !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
         }
 
-        /* PWA Bottom Navigation Bar */
+        /* PWA Bottom Navigation Bar: Locked to viewport bottom, no horizontal scroll */
         .pwa-bottom-nav {
             display: none;
         }
         body.pwa-mode .pwa-bottom-nav {
             display: block !important;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+            z-index: 45 !important;
             padding-bottom: env(safe-area-inset-bottom, 0px);
             box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.2);
         }
+        body.pwa-mode .pwa-bottom-nav > div {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0.35rem 0.5rem !important;
+            box-sizing: border-box !important;
+        }
+        body.pwa-mode .pwa-nav-btn {
+            min-width: 0 !important;
+            padding: 0.2rem 0 !important;
+        }
+        body.pwa-mode .pwa-nav-btn span {
+            font-size: 0.65rem !important;
+            white-space: nowrap !important;
+        }
 
-        /* Dawat Estates Sub-Headers in PWA mode: Compact horizontal swipeable pill bar */
+        /* Dawat Estates Sub-Headers: Smooth horizontal swipeable pill bar */
         body.pwa-mode #module-dawat-estates > div.bg-white.rounded-lg.shadow.p-2.flex.flex-wrap.gap-2.border {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
             flex-wrap: nowrap !important;
             overflow-x: auto !important;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding: 0.4rem 0.3rem !important;
-            gap: 0.4rem !important;
+            padding: 0.35rem 0.25rem !important;
+            gap: 0.35rem !important;
             position: sticky;
-            top: calc(3.8rem + env(safe-area-inset-top, 0px));
+            top: calc(4.2rem + env(safe-area-inset-top, 0px));
             z-index: 30;
             background: rgba(255, 255, 255, 0.96) !important;
             backdrop-filter: blur(8px);
@@ -138,30 +254,82 @@
         body.pwa-mode #module-dawat-estates > div.bg-white.rounded-lg.shadow.p-2.flex.flex-wrap.gap-2.border button {
             flex-shrink: 0 !important;
             white-space: nowrap !important;
-            padding: 0.45rem 0.85rem !important;
-            font-size: 0.78rem !important;
+            padding: 0.35rem 0.65rem !important;
+            font-size: 0.72rem !important;
             border-radius: 9999px !important;
+        }
+
+        /* Section Card Headers in PWA mode: Compact, stacked for phone view */
+        body.pwa-mode #sec-estate-details > div:first-child,
+        body.pwa-mode #sec-allocation > div:first-child,
+        body.pwa-mode #sec-maintenance > div:first-child,
+        body.pwa-mode #sec-bachelor > div:first-child,
+        body.pwa-mode #sec-vacant-bills > div:first-child,
+        body.pwa-mode #sec-society > div:nth-child(2),
+        body.pwa-mode #sec-integrated > div:first-child,
+        body.pwa-mode #sec-asset-details > div:first-child,
+        body.pwa-mode #module-classroom-allocation > div:first-child,
+        body.pwa-mode #module-faculty-dir > div:first-child {
+            padding: 0.75rem 0.65rem !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.45rem !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        body.pwa-mode #sec-estate-details > div:first-child h2,
+        body.pwa-mode #sec-allocation > div:first-child h2,
+        body.pwa-mode #sec-maintenance > div:first-child h2,
+        body.pwa-mode #sec-bachelor > div:first-child h2,
+        body.pwa-mode #sec-vacant-bills > div:first-child h2,
+        body.pwa-mode #sec-integrated h2,
+        body.pwa-mode #sec-asset-details > div:first-child h2,
+        body.pwa-mode #module-classroom-allocation > div:first-child h2,
+        body.pwa-mode #module-faculty-dir > div:first-child h2 {
+            font-size: 0.95rem !important;
+            line-height: 1.25 !important;
+        }
+        body.pwa-mode #sec-estate-details > div:first-child p,
+        body.pwa-mode #sec-allocation > div:first-child p,
+        body.pwa-mode #sec-asset-details > div:first-child p,
+        body.pwa-mode #module-classroom-allocation > div:first-child p {
+            font-size: 0.65rem !important;
+        }
+        body.pwa-mode #sec-estate-details > div:first-child button,
+        body.pwa-mode #sec-allocation > div:first-child button,
+        body.pwa-mode #sec-asset-details > div:first-child button,
+        body.pwa-mode #module-classroom-allocation > div:first-child button {
+            padding: 0.35rem 0.6rem !important;
+            font-size: 0.72rem !important;
         }
 
         /* Overview Metric Cards in PWA mode: Compact 2-column touch cards */
         body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4,
-        body.pwa-mode #module-classroom-allocation .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 {
+        body.pwa-mode #module-classroom-allocation .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4,
+        body.pwa-mode #sec-asset-details .grid.grid-cols-1.sm\:grid-cols-3 {
             display: grid !important;
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 0.5rem !important;
+            gap: 0.45rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
         }
         body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button,
         body.pwa-mode #module-classroom-allocation .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4 button,
-        body.pwa-mode #module-classroom-allocation #cardBtnClassroomsRaihaan {
-            padding: 0.65rem 0.75rem !important;
-            border-radius: 0.75rem !important;
+        body.pwa-mode #module-classroom-allocation #cardBtnClassroomsRaihaan,
+        body.pwa-mode #sec-asset-details .grid.grid-cols-1.sm\:grid-cols-3 > div {
+            padding: 0.55rem 0.65rem !important;
+            border-radius: 0.65rem !important;
         }
-        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button span:first-child {
-            font-size: 0.65rem !important;
+        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button span:first-child,
+        body.pwa-mode #sec-asset-details .grid.grid-cols-1.sm\:grid-cols-3 span[class*="uppercase"] {
+            font-size: 0.6rem !important;
         }
-        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button span:last-child {
-            font-size: 1.4rem !important;
-            margin-top: 0.2rem !important;
+        body.pwa-mode #sec-estate-details .grid.grid-cols-2.sm\:grid-cols-4 button span:last-child,
+        body.pwa-mode #sec-asset-details .grid.grid-cols-1.sm\:grid-cols-3 span[class*="text-3xl"],
+        body.pwa-mode #sec-asset-details .grid.grid-cols-1.sm\:grid-cols-3 span[class*="text-2xl"] {
+            font-size: 1.25rem !important;
+            margin-top: 0.15rem !important;
         }
 
         /* Mobile Segmented Toggle for Classroom Allocation (Male vs Female) */
@@ -170,13 +338,27 @@
         }
         body.pwa-mode .pwa-classroom-gender-toggle {
             display: flex !important;
+            width: 100% !important;
+            max-width: 100% !important;
         }
 
-        /* Sticky first column in wide tables for easy scrolling on mobile */
+        /* TABLES IN PWA MODE: Only individual tables scroll horizontally */
         body.pwa-mode .overflow-x-auto {
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior-x: contain;
-            border-radius: 0.75rem;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior-x: contain !important;
+            border-radius: 0.75rem !important;
+            box-sizing: border-box !important;
+        }
+        body.pwa-mode .overflow-x-auto table {
+            max-width: none !important;
+            font-size: 0.72rem !important;
+        }
+        body.pwa-mode .overflow-x-auto th,
+        body.pwa-mode .overflow-x-auto td {
+            padding: 0.4rem 0.35rem !important;
         }
         body.pwa-mode #estateTableBody td:nth-child(2),
         body.pwa-mode #allocationTableBody td:nth-child(1),
@@ -189,32 +371,111 @@
             box-shadow: 2px 0 6px -2px rgba(0, 0, 0, 0.1);
         }
 
-        /* Mobile Bottom-sheet styling for Modals in PWA mode */
-        body.pwa-mode .fixed.inset-0 > div[class*="bg-white"] {
+        /* POP-UP NOTIFICATIONS MODAL (Asset Details & Classrooms) in PWA mode */
+        body.pwa-mode #modalClassroomNotifications {
+            padding: 0.4rem !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+        }
+        body.pwa-mode #modalClassroomNotifications > div {
+            width: 100% !important;
+            max-width: calc(100vw - 0.8rem) !important;
+            max-height: 85vh !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+        }
+        body.pwa-mode #modalClassroomNotifications [data-actor-key] {
             width: 100% !important;
             max-width: 100% !important;
-            max-height: 92vh !important;
-            border-bottom-left-radius: 0 !important;
-            border-bottom-right-radius: 0 !important;
-            border-top-left-radius: 1.25rem !important;
-            border-top-right-radius: 1.25rem !important;
-            margin-top: auto !important;
-            padding: 1.25rem 1rem !important;
-            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.25) !important;
+            overflow-x: hidden !important;
+            border-radius: 0.85rem !important;
+        }
+        body.pwa-mode #modalClassroomNotifications [data-actor-key] > div:first-child {
+            padding: 0.5rem 0.65rem !important;
+            flex-wrap: wrap !important;
+            gap: 0.3rem !important;
+        }
+        body.pwa-mode #modalClassroomNotifications [data-actor-key] h3 {
+            font-size: 0.75rem !important;
+            line-height: 1.2 !important;
+            word-break: break-word !important;
+        }
+        body.pwa-mode #modalClassroomNotifications [data-actor-key] p {
+            font-size: 0.62rem !important;
+        }
+        body.pwa-mode #modalClassroomNotifications [data-actor-key] span[class*="bg-red-600"] {
+            font-size: 0.62rem !important;
+            padding: 0.15rem 0.4rem !important;
+        }
+        body.pwa-mode #modalClassroomNotifications [data-actor-key] > div:last-child {
+            padding: 0.65rem 0.55rem !important;
+            gap: 0.4rem !important;
+        }
+        body.pwa-mode #modalClassroomNotifications [data-actor-key] p[class*="bg-amber-50"] {
+            font-size: 0.68rem !important;
+            padding: 0.35rem 0.45rem !important;
+            line-height: 1.25 !important;
+            word-break: break-word !important;
+        }
+        body.pwa-mode #modalClassroomNotifications ul {
+            max-height: 52vh !important;
+            overflow-x: hidden !important;
+            padding-right: 0 !important;
+        }
+        body.pwa-mode #modalClassroomNotifications li {
+            padding: 0.35rem 0.45rem !important;
+            font-size: 0.68rem !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+        }
+        body.pwa-mode #modalClassroomNotifications li > div {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.15rem !important;
+        }
+        body.pwa-mode #modalClassroomNotifications li > div > div:first-child {
+            font-size: 0.68rem !important;
+            line-height: 1.25 !important;
+            word-break: break-word !important;
+        }
+        body.pwa-mode #modalClassroomNotifications li span[class*="text-gray-400 font-mono"] {
+            font-size: 0.56rem !important;
+            align-self: flex-end !important;
+        }
+
+        /* Mobile Bottom-sheet styling for general Modals in PWA mode */
+        body.pwa-mode .fixed.inset-0 > div[class*="bg-white"] {
+            width: 100% !important;
+            max-width: calc(100vw - 0.8rem) !important;
+            max-height: 90vh !important;
+            border-bottom-left-radius: 0.85rem !important;
+            border-bottom-right-radius: 0.85rem !important;
+            border-top-left-radius: 0.85rem !important;
+            border-top-right-radius: 0.85rem !important;
+            margin: auto !important;
+            padding: 0.85rem 0.75rem !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25) !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
         }
 
         /* Touch-friendly buttons in PWA mode */
         body.pwa-mode button, 
         body.pwa-mode input[type="button"], 
         body.pwa-mode input[type="submit"] {
-            min-height: 38px;
+            min-height: 32px;
         }
 
         /* Safe area footer spacer */
         body.pwa-mode footer {
             padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
+            font-size: 0.65rem !important;
         }
-
+        
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col text-sm">

@@ -85,3 +85,57 @@ self.addEventListener('fetch', (event) => {
             })
     );
 });
+
+// -----------------------------------------------------------------------------
+// PUSH NOTIFICATIONS & APP BADGING EVENT HANDLERS
+// -----------------------------------------------------------------------------
+
+// Notification Click: Focus existing app window or open a new one and navigate to module
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const notifData = event.notification.data || {};
+    const targetUrl = notifData.url || './';
+
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            for (let client of windowClients) {
+                if (client.url.includes('siyanatmarol') || client.url.includes('index.html')) {
+                    client.focus();
+                    if (notifData.module) {
+                        client.postMessage({
+                            type: 'NAVIGATE_MODULE',
+                            module: notifData.module,
+                            subHeader: notifData.subHeader
+                        });
+                    }
+                    return;
+                }
+            }
+            if (self.clients.openWindow) {
+                return self.clients.openWindow(targetUrl);
+            }
+        })
+    );
+});
+
+// Push Event: Handle incoming push messages
+self.addEventListener('push', (event) => {
+    let payload = {};
+    if (event.data) {
+        try {
+            payload = event.data.json();
+        } catch (e) {
+            payload = { title: 'Siyanat Marol Alert', body: event.data.text() };
+        }
+    }
+    const title = payload.title || 'Siyanat Marol Portal Update';
+    const options = {
+        body: payload.body || 'A new update was made in your permitted modules.',
+        icon: './icon-192.png',
+        badge: './favicon.png',
+        tag: payload.tag || 'siyanat-update-' + Date.now(),
+        renotify: true,
+        data: payload.data || { url: './' }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+});

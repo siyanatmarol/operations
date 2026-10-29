@@ -870,7 +870,14 @@
                         <span id="currentUserAccessBadge" class="text-[11px] bg-teal-800 text-teal-100 px-2 py-0.5 rounded-full font-semibold border border-teal-600">Editing Rights</span>
                     </div>
                 </div>
-                                <!-- PWA Install Button (Unhidden when installable on Android / iOS / Desktop) -->
+                                <!-- Device Push Notifications Toggle Button -->
+                <button id="btnDeviceNotifications" type="button" onclick="requestDeviceNotificationPermission()" class="bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 px-2.5 py-1.5 rounded-lg border border-emerald-600 transition text-xs flex items-center space-x-1.5 shadow-sm" title="Device Notifications (Alerts & App Badge)">
+                    <i id="iconDeviceNotifications" class="fa-solid fa-bell text-xs"></i>
+                    <span id="textDeviceNotifications" class="hidden sm:inline text-xs font-semibold">Alerts</span>
+                    <span id="dotDeviceNotifications" class="w-2 h-2 rounded-full bg-emerald-400 hidden"></span>
+                </button>
+
+                <!-- PWA Install Button (Unhidden when installable on Android / iOS / Desktop) -->
                 <button id="btnPwaInstall" type="button" onclick="handlePwaInstallClick()" class="hidden bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-emerald-950 font-extrabold px-3 py-1.5 rounded-lg border border-amber-300 transition text-xs flex items-center space-x-1.5 shadow-md active:scale-95 animate-pulse" title="Install Siyanat Marol App on your device">
                     <i class="fa-solid fa-mobile-screen-button text-sm"></i>
                     <span class="whitespace-nowrap">Install App</span>
@@ -1561,28 +1568,28 @@
                 </button>
 
                 <!-- 4. Currently in Raihaan Card (Highlighted) -->
-                <div id="cardBtnClassroomsRaihaan" onclick="setClassroomAllocationFilter('raihaan')" class="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white p-4 rounded-xl shadow-lg border-2 border-purple-400 ring-2 ring-purple-400/50 flex flex-col justify-between text-left transition hover:shadow-xl hover:scale-[1.01] cursor-pointer">
-                    <div class="flex justify-between items-start gap-2 w-full">
-                        <div>
-                            <span class="text-xs text-purple-100 font-extrabold uppercase tracking-wider block leading-tight flex items-center space-x-1.5">
-                                <span class="bg-amber-400 text-purple-950 p-1 rounded-md shadow-sm inline-flex items-center justify-center"><i class="fa-solid fa-route text-xs"></i></span>
-                                <span>Currently in Raihaan</span>
+                <div id="cardBtnClassroomsRaihaan" onclick="setClassroomAllocationFilter('raihaan')" class="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white p-3.5 sm:p-4 rounded-xl shadow-lg border-2 border-purple-400 ring-2 ring-purple-400/50 flex flex-col justify-between text-left transition hover:shadow-xl hover:scale-[1.01] cursor-pointer w-full box-border">
+                    <div class="w-full">
+                        <div class="flex items-center justify-between gap-1 flex-wrap">
+                            <span class="text-[11px] sm:text-xs text-purple-100 font-extrabold uppercase tracking-wider leading-tight flex items-center space-x-1 min-w-0">
+                                <span class="bg-amber-400 text-purple-950 p-1 rounded-md shadow-sm inline-flex items-center justify-center shrink-0"><i class="fa-solid fa-route text-[10px] sm:text-xs"></i></span>
+                                <span class="truncate">Currently in Raihaan</span>
                             </span>
-                            <span id="cardRaihaanActiveCountBadge" class="inline-block mt-1.5 text-xs bg-amber-400 text-purple-950 font-extrabold px-2.5 py-0.5 rounded-full shadow-sm">0 Active Classes</span>
+                            <span id="cardRaihaanActiveCountBadge" class="text-[10px] sm:text-xs bg-amber-400 text-purple-950 font-extrabold px-1.5 py-0.5 rounded-full shadow-sm shrink-0 whitespace-nowrap">0 Active Classes</span>
                         </div>
-                        <div class="flex flex-col items-end space-y-1.5 shrink-0" onclick="event.stopPropagation()">
-                            <button type="button" onclick="openAddRaihaanModal()" class="crud-action-btn bg-white hover:bg-purple-50 text-purple-950 text-[11px] font-extrabold px-2.5 py-1 rounded-md shadow transition flex items-center space-x-1 whitespace-nowrap border border-purple-200">
-                                <i class="fa-solid fa-plus text-[10px] text-purple-700"></i>
-                                <span>Add Details</span>
+                        <div class="grid grid-cols-2 gap-1.5 w-full mt-2" onclick="event.stopPropagation()">
+                            <button type="button" onclick="openAddRaihaanModal()" class="crud-action-btn bg-white hover:bg-purple-50 text-purple-950 text-[10px] sm:text-[11px] font-extrabold px-1 py-1 rounded-md shadow transition flex items-center justify-center space-x-1 border border-purple-200 w-full text-center">
+                                <i class="fa-solid fa-plus text-[9px] text-purple-700"></i>
+                                <span class="truncate">Add Details</span>
                             </button>
-                            <button type="button" onclick="openRaihaanArchiveModal()" class="bg-purple-950/80 hover:bg-purple-950 text-purple-100 border border-purple-400/60 text-[11px] font-bold px-2.5 py-1 rounded-md transition flex items-center space-x-1 whitespace-nowrap">
-                                <i class="fa-solid fa-box-archive text-[10px] text-amber-300"></i>
-                                <span>Archive</span>
+                            <button type="button" onclick="openRaihaanArchiveModal()" class="bg-purple-950/80 hover:bg-purple-950 text-purple-100 border border-purple-400/60 text-[10px] sm:text-[11px] font-bold px-1 py-1 rounded-md transition flex items-center justify-center space-x-1 w-full text-center">
+                                <i class="fa-solid fa-box-archive text-[9px] text-amber-300"></i>
+                                <span class="truncate">Archive</span>
                             </button>
                         </div>
                     </div>
-                    <div id="cardRaihaanSummaryContent" class="mt-2.5 pt-2 border-t border-purple-600/80 text-xs text-purple-100 space-y-1.5 max-h-28 overflow-y-auto">
-                        <p class="text-[11px] text-purple-200/80 italic">No classes currently in Raihaan.</p>
+                    <div id="cardRaihaanSummaryContent" class="mt-2 pt-1.5 border-t border-purple-600/80 text-[11px] text-purple-100 space-y-1 max-h-24 overflow-y-auto">
+                        <p class="text-[10px] text-purple-200/80 italic">No classes currently in Raihaan.</p>
                     </div>
                 </div>
             </div>
@@ -2079,6 +2086,52 @@
 
             <div class="pt-2">
                 <button type="button" onclick="closeModal('modalPwaIosInstall')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
+                    Got it, thanks!
+                </button>
+            </div>
+        </div>
+    </div>
+
+        <!-- Modal: Mac / Apple Desktop Installation Info -->
+    <div id="modalPwaMacInstall" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 text-center">
+            <div class="flex justify-between items-center border-b pb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-emerald-100 text-emerald-800 p-2 rounded-xl text-lg">
+                        <i class="fa-brands fa-apple text-xl"></i>
+                    </span>
+                    <div class="text-left">
+                        <h3 class="text-base font-extrabold text-gray-900">Install App on Mac (macOS)</h3>
+                        <p class="text-[11px] text-gray-500">Apple Desktop / MacBook PWA Setup</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modalPwaMacInstall')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-3 text-left text-xs text-gray-700">
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
+                    <p class="font-bold text-emerald-950 flex items-center text-xs">
+                        <i class="fa-brands fa-safari text-emerald-700 mr-1.5 text-sm"></i>In Safari (macOS Sonoma 14+):
+                    </p>
+                    <ol class="list-decimal list-inside space-y-1 text-gray-700 pl-1">
+                        <li>Click <strong class="text-emerald-900">File</strong> in the top menu bar (or click the <strong class="text-emerald-900">Share</strong> icon <i class="fa-solid fa-arrow-up-from-bracket text-blue-600 text-[11px] mx-0.5"></i>).</li>
+                        <li>Select <strong class="text-emerald-900">Add to Dock...</strong>.</li>
+                        <li>Click <strong class="text-emerald-900">Add</strong>. Siyanat Marol will be installed to your Mac Dock & Launchpad as a standalone app!</li>
+                    </ol>
+                </div>
+
+                <div class="p-3 bg-blue-50 rounded-xl border border-blue-200 space-y-2">
+                    <p class="font-bold text-blue-950 flex items-center text-xs">
+                        <i class="fa-brands fa-chrome text-blue-700 mr-1.5 text-sm"></i>In Google Chrome or Microsoft Edge on Mac:
+                    </p>
+                    <p class="text-gray-600 pl-1">
+                        Click the <strong class="text-blue-900">Install icon <i class="fa-solid fa-download mx-0.5"></i></strong> on the right side of the address bar, or click the <strong class="text-gray-800">⋮</strong> menu &gt; <strong class="text-blue-900">Save and share &gt; Install Siyanat Marol...</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="button" onclick="closeModal('modalPwaMacInstall')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
                     Got it, thanks!
                 </button>
             </div>
@@ -3142,58 +3195,55 @@
     </div>
 
     <!-- Modal: Classroom Events Archive (Active, Upcoming & Past Events) -->
-    <div id="modalEventsArchive" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-3 sm:p-4 z-50">
-        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
-                <div>
-                    <h3 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center space-x-2">
-                        <i class="fa-solid fa-box-archive text-purple-700"></i>
-                        <span>Classroom Events Archive & History</span>
-                    </h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Track and view active, upcoming, and past/completed events across all classrooms.</p>
-                </div>
-                <button type="button" onclick="closeModal('modalEventsArchive')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold self-end sm:self-auto">&times;</button>
+    <div id="modalEventsArchive" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-2.5 sm:p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full p-3.5 sm:p-5 space-y-2.5 sm:space-y-3.5 max-h-[94vh] flex flex-col">
+            <div class="border-b pb-2">
+                <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center space-x-2">
+                    <i class="fa-solid fa-box-archive text-purple-700"></i>
+                    <span>Classroom Events Archive & History</span>
+                </h3>
+                <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5">Track and view active, upcoming, and past/completed events across all classrooms.</p>
             </div>
 
             <!-- Top Filter Pills & Search -->
-            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 bg-gray-50 p-3 rounded-lg border">
-                <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" id="btnEventsArchiveFilterAll" onclick="setEventsArchiveFilter('all')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-purple-700 text-white shadow-sm transition">
+            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2 bg-gray-50 p-2 sm:p-2.5 rounded-lg border">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" id="btnEventsArchiveFilterAll" onclick="setEventsArchiveFilter('all')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-purple-700 text-white shadow-sm transition">
                         All (<span id="eventsArchiveCountAll">0</span>)
                     </button>
-                    <button type="button" id="btnEventsArchiveFilterActive" onclick="setEventsArchiveFilter('active')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-emerald-800 border border-emerald-300 hover:bg-emerald-50 transition">
+                    <button type="button" id="btnEventsArchiveFilterActive" onclick="setEventsArchiveFilter('active')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-white text-emerald-800 border border-emerald-300 hover:bg-emerald-50 transition">
                         Active (<span id="eventsArchiveCountActive">0</span>)
                     </button>
-                    <button type="button" id="btnEventsArchiveFilterUpcoming" onclick="setEventsArchiveFilter('upcoming')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-blue-800 border border-blue-300 hover:bg-blue-50 transition">
+                    <button type="button" id="btnEventsArchiveFilterUpcoming" onclick="setEventsArchiveFilter('upcoming')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-white text-blue-800 border border-blue-300 hover:bg-blue-50 transition">
                         Upcoming (<span id="eventsArchiveCountUpcoming">0</span>)
                     </button>
-                    <button type="button" id="btnEventsArchiveFilterPast" onclick="setEventsArchiveFilter('past')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 transition">
+                    <button type="button" id="btnEventsArchiveFilterPast" onclick="setEventsArchiveFilter('past')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100 transition">
                         Past / Completed (<span id="eventsArchiveCountPast">0</span>)
                     </button>
                 </div>
                 <div class="relative w-full md:w-64">
-                    <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                    <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
                     <input
                         type="text"
                         id="eventsArchiveSearchInput"
                         oninput="renderEventsArchiveList()"
                         placeholder="Search event name, classroom, dates..."
-                        class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        class="w-full pl-7 pr-3 py-1 border rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                     >
                 </div>
             </div>
 
-            <!-- Table of Events -->
-            <div class="flex-grow overflow-y-auto border rounded-lg">
+            <!-- Table of Events (Expanded vertical height) -->
+            <div class="flex-grow overflow-y-auto max-h-[66vh] sm:max-h-[72vh] border rounded-lg">
                 <table class="w-full text-left text-xs sm:text-sm">
-                    <thead class="bg-purple-900 text-white uppercase text-[11px] sticky top-0 z-10">
+                    <thead class="bg-purple-900 text-white uppercase text-[10.5px] sm:text-[11px] sticky top-0 z-10">
                         <tr>
-                            <th class="p-3">Event Name</th>
-                            <th class="p-3">Classroom & Location</th>
-                            <th class="p-3 whitespace-nowrap">Event Dates</th>
-                            <th class="p-3">Weekly Timetable Schedule</th>
-                            <th class="p-3 text-center whitespace-nowrap">Status</th>
-                            <th class="p-3 text-center whitespace-nowrap">Actions</th>
+                            <th class="p-2 sm:p-3">Event Name</th>
+                            <th class="p-2 sm:p-3">Classroom & Location</th>
+                            <th class="p-2 sm:p-3 whitespace-nowrap">Event Dates</th>
+                            <th class="p-2 sm:p-3">Weekly Timetable Schedule</th>
+                            <th class="p-2 sm:p-3 text-center whitespace-nowrap">Status</th>
+                            <th class="p-2 sm:p-3 text-center whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="eventsArchiveTableBody" class="divide-y bg-white"></tbody>
@@ -3201,7 +3251,7 @@
             </div>
 
             <div class="flex justify-end pt-2 border-t">
-                <button type="button" onclick="closeModal('modalEventsArchive')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-sm font-bold transition">Close</button>
+                <button type="button" onclick="closeModal('modalEventsArchive')" class="px-5 py-1.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs sm:text-sm font-bold transition">Close</button>
             </div>
         </div>
     </div>
@@ -4431,6 +4481,7 @@ window.loadClassroomsFromCloud = async function() {
         function syncCurrentUserLivePermissions() {
             if (!currentUser || !currentUser.email) return;
             const userEmailLower = currentUser.email.trim().toLowerCase();
+            updateNotificationButtonUI();
             const isSuper = superAdmins.map(e => e.trim().toLowerCase()).includes(userEmailLower);
             const dbUser = usersList.find(u => u.email.trim().toLowerCase() === userEmailLower);
             isUserAdmin = isSuper || (dbUser && dbUser.role === 'Admin');
@@ -4526,6 +4577,12 @@ window.loadClassroomsFromCloud = async function() {
                         const incoming = normalizeNotificationsList(data.notifications);
                         if (incoming.length > 0) {
                             portalNotificationsData = mergeNotificationsArrays(incoming, portalNotificationsData);
+                            // Trigger system notification for any newly arrived unseen notification strictly matching permissions
+                            incoming.forEach(notif => {
+                                if (canCurrentUserReceiveModuleNotification(notif)) {
+                                    triggerDeviceSystemNotification(notif);
+                                }
+                            });
                         }
                     }
                     // Note: estateAssetsData is managed by dedicated /estate_assets listener to prevent notification/portalData writes from causing race-condition state clobbering
@@ -4638,6 +4695,126 @@ window.loadClassroomsFromCloud = async function() {
         };
         let currentActiveDawatSubHeader = 'estate-details';
 
+        // -----------------------------------------------------------------------------
+        // DEVICE SYSTEM NOTIFICATIONS & APP BADGING (Cross-Platform)
+        // -----------------------------------------------------------------------------
+        let dispatchedDeviceNotificationIds = new Set();
+        try {
+            const savedNotifs = localStorage.getItem('siyanat_dispatched_device_notifs');
+            if (savedNotifs) {
+                dispatchedDeviceNotificationIds = new Set(JSON.parse(savedNotifs));
+            }
+        } catch (e) {}
+
+        function saveDispatchedNotifications() {
+            try {
+                const arr = Array.from(dispatchedDeviceNotificationIds).slice(-300);
+                localStorage.setItem('siyanat_dispatched_device_notifs', JSON.stringify(arr));
+            } catch (e) {}
+        }
+
+        window.requestDeviceNotificationPermission = async function() {
+            if (!('Notification' in window)) {
+                showAssetToast("Device notifications are not supported on this browser.", true);
+                return;
+            }
+            try {
+                const perm = await Notification.requestPermission();
+                updateNotificationButtonUI();
+                if (perm === 'granted') {
+                    showAssetToast("Device notifications enabled! You will receive system alerts for updates in your permitted modules.");
+                    updateAppIconBadge();
+                } else if (perm === 'denied') {
+                    showAssetToast("Notifications blocked. Enable notifications in browser/system settings to receive alerts.", true);
+                }
+            } catch (err) {
+                console.warn("Notification permission request error:", err);
+            }
+        };
+
+        function updateNotificationButtonUI() {
+            const btn = document.getElementById('btnDeviceNotifications');
+            const dot = document.getElementById('dotDeviceNotifications');
+            const icon = document.getElementById('iconDeviceNotifications');
+            if (!btn) return;
+            if (!('Notification' in window)) {
+                btn.classList.add('hidden');
+                return;
+            }
+            btn.classList.remove('hidden');
+            if (Notification.permission === 'granted') {
+                if (dot) dot.classList.remove('hidden');
+                if (icon) icon.className = 'fa-solid fa-bell text-emerald-300';
+                btn.title = "Device Notifications Active: You will receive OS alerts for permitted module changes";
+            } else {
+                if (dot) dot.classList.add('hidden');
+                if (icon) icon.className = 'fa-regular fa-bell text-gray-300';
+                btn.title = "Click to enable Device System Notifications & App Icon Badging";
+            }
+        }
+
+        window.updateAppIconBadge = function(customCount = null) {
+            if (!('setAppBadge' in navigator)) return;
+            try {
+                let count = customCount;
+                if (count === null) {
+                    count = portalNotificationsData.filter(n => canCurrentUserReceiveModuleNotification(n)).length;
+                }
+                if (count > 0) {
+                    navigator.setAppBadge(count).catch(err => console.debug('setAppBadge error:', err));
+                } else {
+                    navigator.clearAppBadge().catch(err => console.debug('clearAppBadge error:', err));
+                }
+            } catch (e) {
+                console.debug('Badge API error:', e);
+            }
+        };
+
+        window.triggerDeviceSystemNotification = function(notif) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            if (!notif || !notif.id) return;
+            if (!canCurrentUserReceiveModuleNotification(notif)) return;
+
+            if (dispatchedDeviceNotificationIds.has(notif.id)) return;
+            dispatchedDeviceNotificationIds.add(notif.id);
+            saveDispatchedNotifications();
+
+            let moduleLabel = 'Portal';
+            if (notif.module === 'classroom-allocation') moduleLabel = 'Classroom Allocation';
+            else if (notif.module === 'dawat-estates') {
+                const sub = notif.subHeader && DAWAT_SUBHEADER_META[notif.subHeader] ? DAWAT_SUBHEADER_META[notif.subHeader].label : 'Dawat Estates';
+                moduleLabel = `Dawat Estates (${sub})`;
+            } else if (notif.module === 'faculty-dir') moduleLabel = 'Faculty Directory';
+            else if (notif.module === 'inventory') moduleLabel = 'Keys Inventory';
+
+            const title = `Siyanat Marol — ${moduleLabel} Update`;
+            const actor = notif.actorName || notif.actorEmail || 'A user';
+            const body = `${actor}: ${notif.message || notif.action || 'New changes recorded'}`;
+
+            const options = {
+                body: body,
+                icon: './icon-192.png',
+                badge: './favicon.png',
+                tag: 'siyanat-' + notif.id,
+                renotify: true,
+                data: {
+                    url: window.location.href,
+                    module: notif.module || 'classroom-allocation',
+                    subHeader: notif.subHeader || ''
+                }
+            };
+
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(title, options);
+                }).catch(() => {
+                    try { new Notification(title, options); } catch (e) {}
+                });
+            } else {
+                try { new Notification(title, options); } catch (e) {}
+            }
+        };
+
         function canCurrentUserReceiveModuleNotification(notif) {
             if (!currentUser || !currentUser.email || !notif) return false;
             const myEmail = currentUser.email.trim().toLowerCase();
@@ -4701,6 +4878,9 @@ window.loadClassroomsFromCloud = async function() {
                 const unseenSub = getUnseenNotificationsForModule('dawat-estates', subKey);
                 setBadgeElementCount(subBadgeEl, unseenSub.length);
             });
+
+            // Sync OS App Icon Badge count with permitted unseen updates
+            updateAppIconBadge();
         };
 
         function extractTenantIdFromWatiToken(rawToken) {
@@ -12162,6 +12342,19 @@ window.renderSocieties = function() {
                     .catch(err => {
                         console.warn('[PWA] ServiceWorker registration failed:', err);
                     });
+
+                // Listen for navigation messages when user clicks a system push notification
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'NAVIGATE_MODULE') {
+                        const mod = event.data.module;
+                        if (typeof switchModule === 'function' && mod) {
+                            switchModule(mod);
+                            if (mod === 'dawat-estates' && event.data.subHeader && typeof switchDawatSubHeader === 'function') {
+                                switchDawatSubHeader(event.data.subHeader);
+                            }
+                        }
+                    }
+                });
             });
         }
 
@@ -12205,14 +12398,20 @@ window.renderSocieties = function() {
                     const btn = document.getElementById('btnPwaInstall');
                     if (btn) btn.classList.add('hidden');
                 }
+                return;
+            }
+
+            // Platform-specific installation guidance
+            const ua = (navigator.userAgent || '').toLowerCase();
+            const isMacDesktop = (ua.includes('macintosh') || ua.includes('mac os x')) && !ua.includes('iphone') && !ua.includes('ipad') && !ua.includes('ipod') && !(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isIos = /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (isMacDesktop) {
+                document.getElementById('modalPwaMacInstall')?.classList.remove('hidden');
+            } else if (isIos) {
+                document.getElementById('modalPwaIosInstall')?.classList.remove('hidden');
             } else {
-                // Detect iOS Safari vs Desktop
-                const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-                if (isIos) {
-                    document.getElementById('modalPwaIosInstall')?.classList.remove('hidden');
-                } else {
-                    document.getElementById('modalPwaDesktopInstall')?.classList.remove('hidden');
-                }
+                document.getElementById('modalPwaDesktopInstall')?.classList.remove('hidden');
             }
         };
 
@@ -12232,12 +12431,9 @@ window.renderSocieties = function() {
                 document.documentElement.classList.remove('pwa-mode');
                 document.body.classList.remove('pwa-mode');
                 if (toggleLabel) toggleLabel.innerText = "App View";
-                // If on iOS and not standalone, show install button so iOS users know how to install!
-                const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-                if (isIos) {
-                    const btn = document.getElementById('btnPwaInstall');
-                    if (btn) btn.classList.remove('hidden');
-                }
+                // Always unhide Install App button when opened in a browser on any device (Mac, Windows, iOS, Android)
+                const btn = document.getElementById('btnPwaInstall');
+                if (btn) btn.classList.remove('hidden');
             }
 
             // Sync classroom tables visibility according to device type

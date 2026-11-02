@@ -3551,6 +3551,7 @@
         let societyBillsData = {};
         let estateAssetsData = [];
         let isSavingAssets = false;
+        let isSavingPortalData = false;
         let expandedAssetFlats = new Set();
         let selectedExportFlatIds = new Set();
         let currentSummarySocName = '';
@@ -4642,6 +4643,7 @@ window.loadClassroomsFromCloud = async function() {
                 // Real-time listener on entire portalData so all edits by any user in any module immediately reflect for all users
                 onValue(dbRef(db, 'portalData'), (snapshot) => {
                     if (!snapshot.exists()) return;
+                    if (isSavingPortalData) return;
                     const data = snapshot.val() || {};
                     estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
                     facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
@@ -4739,14 +4741,14 @@ window.loadClassroomsFromCloud = async function() {
                 });
                 // Also refresh cloud data when tab regains focus or visibility
                 window.addEventListener('focus', async () => {
-                    if (!currentUser) return;
+                    if (!currentUser || isSavingPortalData) return;
                     await loadCloudData();
                     syncCurrentUserLivePermissions();
                     refreshAllPortalViews();
                     checkAndTriggerActiveModuleNotifications();
                 });
                 document.addEventListener('visibilitychange', async () => {
-                    if (document.visibilityState === 'visible' && currentUser) {
+                    if (document.visibilityState === 'visible' && currentUser && !isSavingPortalData) {
                         await loadCloudData();
                         syncCurrentUserLivePermissions();
                         refreshAllPortalViews();
@@ -5272,6 +5274,7 @@ window.loadClassroomsFromCloud = async function() {
 
         async function recordDawatEstatesNotification(subHeaderKey, actionType, detailText, scheduleSummary = '') {
             if (!currentUser || !currentUser.email) return;
+            isSavingPortalData = true;
             const actorEmail = currentUser.email.trim();
             const actorName = getUserDisplayNameByEmail(actorEmail, currentUser.displayName || '');
             const now = new Date();
@@ -5306,6 +5309,10 @@ window.loadClassroomsFromCloud = async function() {
                 ]);
             } catch (errPersist) {
                 console.error("Error persisting estate notification to cloud:", errPersist);
+            } finally {
+                setTimeout(() => {
+                    isSavingPortalData = false;
+                }, 1500);
             }
         }
 
@@ -5505,6 +5512,7 @@ window.loadClassroomsFromCloud = async function() {
         };
 
       window.saveCloudData = async function() {
+    isSavingPortalData = true;
     try {
         await set(dbRef(db, 'portalData'), {
             estates: estatesData,
@@ -5530,6 +5538,10 @@ window.loadClassroomsFromCloud = async function() {
         ]);
     } catch (err) {
         console.error("Error saving to cloud:", err);
+    } finally {
+        setTimeout(() => {
+            isSavingPortalData = false;
+        }, 1500);
     }
 };
 
@@ -5698,7 +5710,39 @@ window.loadClassroomsFromCloud = async function() {
                 }
             }
 
-            if (firstAllowedSec) {
+            const secInvMap = {
+                'estate-details': 1,
+                'allocation': 2,
+                'maintenance': 3,
+                'bachelor': 4,
+                'vacant-bills': 5,
+                'society': 6,
+                'integrated': 7,
+                'asset-details': 8
+            };
+            const activeSubPermNum = currentActiveDawatSubHeader ? secInvMap[currentActiveDawatSubHeader] : null;
+            const isCurrentSubAllowed = activeSubPermNum && (isUserAdmin || currentUserPermissions.includes(activeSubPermNum));
+
+            if (isCurrentSubAllowed) {
+                // Keep the user on their currently active Dawat Estates sub-header
+                ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated', 'asset-details'].forEach(s => {
+                    const secEl = document.getElementById('sec-' + s);
+                    const subBtn = document.getElementById('sub-' + s);
+                    if (s === currentActiveDawatSubHeader) {
+                        secEl?.classList.remove('hidden');
+                        if (subBtn) {
+                            subBtn.classList.remove('sub-tab-inactive');
+                            subBtn.classList.add('sub-tab-active');
+                        }
+                    } else {
+                        secEl?.classList.add('hidden');
+                        if (subBtn) {
+                            subBtn.classList.remove('sub-tab-active');
+                            subBtn.classList.add('sub-tab-inactive');
+                        }
+                    }
+                });
+            } else if (firstAllowedSec) {
                 switchSubHeader(firstAllowedSec);
             } else {
                 ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated', 'asset-details'].forEach(s => {
@@ -6027,12 +6071,13 @@ window.loadClassroomsFromCloud = async function() {
             } else {
                 estatesData.push(flatObj);
             }
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'estate-details',
                 id ? 'edit-flat' : 'add-flat',
                 `${id ? 'Edited' : 'Added'} flat "${flatDisplayLabel}" (${flatObj.type}, ${flatObj.sqft} SqFt, Owner: ${flatObj.owner}${flatObj.isBachelor ? ', Bachelor Flat' : ''})`
             );
-            await saveCloudData();
+
             closeModal('modalAddFlat');
             renderEstateTable();
             renderAllocationTable();
@@ -6128,17 +6173,19 @@ window.loadClassroomsFromCloud = async function() {
                 flat.contact = '';
                 flat.startDate = '';
 
-                await recordDawatEstatesNotification(
-                    'allocation',
-                    'mark-vacant',
-                    `Marked flat "${flatDisplayLabel}" as Vacant (moved ${prevOccupantName} to Past Allocation Archive)`
-                );
-                await saveCloudData();
+                isSavingPortalData = true;
                 closeModal('modalAllocation');
                 renderAllocationTable();
                 renderVacantBills();
                 renderAssetDetailsTable();
-                alert("Flat marked as vacant and occupant details moved to archive!");
+                showAssetToast(`Marked ${flatDisplayLabel} as vacant and archived ${prevOccupantName}`);
+                await saveCloudData();
+                await saveCloudData();
+await recordDawatEstatesNotification(
+                    'allocation',
+                    'mark-vacant',
+                    `Marked flat "${flatDisplayLabel}" as Vacant (moved ${prevOccupantName} to Past Allocation Archive)`
+                );
             }
         };
 
@@ -6171,7 +6218,7 @@ window.loadClassroomsFromCloud = async function() {
                     'mark-vacant',
                     `Cleared bachelor flat allocation for "${flatDisplayLabel}" (moved residents to archive)`
                 );
-                await saveCloudData();
+
                 renderAllocationTable();
                 renderBachelorGrid();
                 renderVacantBills();
@@ -6199,12 +6246,13 @@ window.loadClassroomsFromCloud = async function() {
             flat.contact = '';
             flat.startDate = '';
 
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'allocation',
                 'mark-vacant',
                 `Marked flat "${flatDisplayLabel}" as Vacant (moved ${prevOccupantName} to Past Allocation Archive)`
             );
-            await saveCloudData();
+
             renderAllocationTable();
             renderVacantBills();
             renderAssetDetailsTable();
@@ -6364,12 +6412,13 @@ window.loadClassroomsFromCloud = async function() {
             });
 
             const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'allocation',
                 'add-past-history',
                 `Added past allocation record for "${flatDisplayLabel}" — Resident: ${occupantName}`
             );
-            await saveCloudData();
+
             document.getElementById('manualPastForm').reset();
             renderModalArchiveList(flat);
             renderAllocationTable();
@@ -6392,14 +6441,29 @@ window.loadClassroomsFromCloud = async function() {
             const flat = estatesData.find(e => String(e.id) === String(flatId));
             if(!flat) return;
 
-            const facName = document.getElementById('allocFacultyInput').value;
-            const facIts = document.getElementById('allocIts').value;
-            const facContact = document.getElementById('allocContact').value;
+            let facName = (document.getElementById('allocFacultyInput').value || '').trim();
+            let facIts = (document.getElementById('allocIts').value || '').trim();
+            let facContact = (document.getElementById('allocContact').value || '').trim();
             const startDateVal = document.getElementById('allocStartDate').value;
 
-            if (!facName || facName.trim() === '') {
-                alert("Please select or enter a faculty member.");
+            if (!facName) {
+                showAssetToast("Please select or enter a directory member.", true);
                 return;
+            }
+
+            // Auto-resolve ITS and Contact from Directory if user typed a matching name or ITS
+            if (!facIts || !facContact) {
+                const matchedFac = facultyData.find(f =>
+                    f && (
+                        String(f.name || '').trim().toLowerCase() === facName.toLowerCase() ||
+                        String(f.its || '').trim() === facName
+                    )
+                );
+                if (matchedFac) {
+                    facName = String(matchedFac.name || facName).trim();
+                    if (!facIts && matchedFac.its) facIts = String(matchedFac.its).trim();
+                    if (!facContact && matchedFac.contact) facContact = String(matchedFac.contact).trim();
+                }
             }
 
             if(flat.occupant && flat.occupant.trim() !== '' && flat.occupant !== facName) {
@@ -6420,7 +6484,17 @@ window.loadClassroomsFromCloud = async function() {
             flat.contact = facContact;
             flat.startDate = startDateVal || new Date().toISOString().split('T')[0];
 
-            await recordDawatEstatesNotification(
+            isSavingPortalData = true;
+            closeModal('modalAllocation');
+            // Automatically shift view to Allocated Flats so the newly allotted flat & occupant details are immediately visible
+            setAllocCardFilter('allocated');
+            renderVacantBills();
+            renderAssetDetailsTable();
+            showAssetToast(`Allocated ${flatDisplayLabel} to ${facName}`);
+
+            await saveCloudData();
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'allocation',
                 prevOcc ? 'edit-allocation' : 'add-allocation',
                 prevOcc
@@ -6428,11 +6502,6 @@ window.loadClassroomsFromCloud = async function() {
                     : `Allocated flat "${flatDisplayLabel}" to ${facName} (ITS: ${facIts || 'N/A'})`,
                 `Allocated Since: ${flat.startDate}`
             );
-            await saveCloudData();
-            closeModal('modalAllocation');
-            renderAllocationTable();
-            renderAssetDetailsTable();
-            alert("Allocation updated successfully!");
         };
 
         window.renderBachelorGrid = function() {
@@ -6574,7 +6643,7 @@ window.loadClassroomsFromCloud = async function() {
                 `Added resident "${facName}" (ITS: ${facIts || 'N/A'}) to Bachelor Flat "${flatDisplayLabel}"`,
                 bachStartVal ? `Assigned Since: ${bachStartVal}` : ''
             );
-            await saveCloudData();
+
             closeModal('modalAddBachelorResident');
             renderBachelorGrid();
             renderAllocationTable();
@@ -6588,12 +6657,13 @@ window.loadClassroomsFromCloud = async function() {
                 const removedRes = flat.residents[resIndex];
                 const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
                 flat.residents.splice(resIndex, 1);
-                await recordDawatEstatesNotification(
+                await saveCloudData();
+await recordDawatEstatesNotification(
                     'bachelor',
                     'edit-bachelor-resident',
                     `Removed resident "${removedRes ? removedRes.name : 'Resident'}" from Bachelor Flat "${flatDisplayLabel}"`
                 );
-                await saveCloudData();
+
                 renderBachelorGrid();
                 renderAllocationTable();
                 renderVacantBills();
@@ -6649,12 +6719,13 @@ window.loadClassroomsFromCloud = async function() {
             const flatDisplayLabel = flat ? `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}` : billKey;
             const billTypeLabel = field === 'elecPaid' ? 'Electricity Bill' : 'Gas Bill';
             const statusLabel = vacantBills[billKey][field] ? 'Paid' : 'Missing';
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'vacant-bills',
                 'edit-vacant-bill',
                 `Updated ${billTypeLabel} status to "${statusLabel}" for "${flatDisplayLabel}"${monthVal ? ' (' + monthVal + ')' : ''}`
             );
-            await saveCloudData();
+
             renderVacantBills();
         };
 
@@ -6759,13 +6830,14 @@ window.loadClassroomsFromCloud = async function() {
                 maintLogs.push(logRecord);
             }
 
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'maintenance',
                 editId ? 'edit-maintenance' : 'add-maintenance',
                 `${editId ? 'Edited' : 'Added'} ${logRecord.type || 'Maintenance'} log for "${logRecord.flat}" — Cost: ₹${(parseFloat(logRecord.cost) || 0).toLocaleString('en-IN')}`,
                 `${logRecord.date ? 'Date: ' + logRecord.date + ' | ' : ''}${logRecord.desc || ''}`
             );
-            await saveCloudData();
+
             btn.innerText = "Upload & Save Log";
             btn.disabled = false;
             closeModal('modalAddMaintenance');
@@ -7044,12 +7116,13 @@ window.loadClassroomsFromCloud = async function() {
                 billSubmittedBy: document.getElementById('socBillSubmittedBy').value
             });
 
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'society',
                 'add-society',
                 `Added society "${socNameVal}" (${socFlatsVal} Flats, Billing Cycle: ${socCycleVal})`
             );
-            await saveCloudData();
+
             closeModal('modalAddSociety');
             renderSocieties();
             populateSocietyDropdowns();
@@ -7286,12 +7359,13 @@ window.renderSocieties = function() {
                 });
             }
 
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'society',
                 'edit-society',
                 `Edited society details for "${socName}" (Cycle: ${cycle}, Contact: ${contactPerson || 'N/A'}, Bill Responsible: ${billSubmittedBy || 'N/A'})`
             );
-            await saveCloudData();
+
             closeModal('modalEditSociety');
             renderSocieties();
         };
@@ -7431,12 +7505,13 @@ window.renderSocieties = function() {
             const fieldSummary = field === 'amount'
                 ? `Amount set to ₹${(parseFloat(value) || 0).toLocaleString('en-IN')}`
                 : `Date set to ${value || 'Cleared'}`;
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'society',
                 'edit-regular-bill',
                 `Updated regular maintenance bill (${periodKey}) for "${currentSummarySocName}" (${selYear}) — ${fieldSummary}`
             );
-            await saveCloudData();
+
             renderBillsSummaryModalContent();
             renderSocieties();
         };
@@ -7457,12 +7532,13 @@ window.renderSocieties = function() {
                 }
 
                 record.regular[periodKey].fileUrl = (res && (res.fileUrl || res.url || res.directImgUrl)) || '';
-                await recordDawatEstatesNotification(
+                await saveCloudData();
+await recordDawatEstatesNotification(
                     'society',
                     'upload-regular-bill',
                     `Uploaded regular maintenance bill receipt (${periodKey}) for "${targetSocName}" (${selYear})`
                 );
-                await saveCloudData();
+
                 renderBillsSummaryModalContent();
                 renderSocieties();
             } catch(err) {
@@ -7559,12 +7635,13 @@ window.renderSocieties = function() {
                     currentData.other.push(billEntry);
                 }
 
-                await recordDawatEstatesNotification(
+                await saveCloudData();
+await recordDawatEstatesNotification(
                     'society',
                     isEditingOther ? 'edit-other-bill' : 'add-other-bill',
                     `${isEditingOther ? 'Edited' : 'Added'} other society bill for "${targetSocName}" (${selYear}) — ${desc}: ₹${(parseFloat(amount) || 0).toLocaleString('en-IN')}`
                 );
-                await saveCloudData();
+
                 closeOtherBillInputBox();
                 renderBillsSummaryModalContent();
                 renderSocieties();
@@ -7748,13 +7825,14 @@ window.renderSocieties = function() {
                 date: new Date().toISOString().split('T')[0]
             });
 
-            await recordDawatEstatesNotification(
+            await saveCloudData();
+await recordDawatEstatesNotification(
                 'society',
                 'add-society-doc',
                 `Uploaded society document "${docTitleVal}" for "${docSocVal}"`,
                 docNotesVal ? `Notes: ${docNotesVal}` : ''
             );
-            await saveCloudData();
+
             btn.innerText = "Upload File";
             btn.disabled = false;
             closeModal('modalUploadDoc');
@@ -8072,12 +8150,13 @@ window.renderSocieties = function() {
                         });
                     });
 
-                    await recordDawatEstatesNotification(
+                    await saveCloudData();
+await recordDawatEstatesNotification(
                         'estate-details',
                         'import-flats',
                         `Imported ${jsonData.length} flat record${jsonData.length === 1 ? '' : 's'} into Estate Details via Excel`
                     );
-                    await saveCloudData();
+
                     renderEstateTable();
                     renderAllocationTable();
                     populateIntegratedFlatDropdown();
@@ -12456,14 +12535,15 @@ window.renderSocieties = function() {
                 const assetActionVerb = editId ? 'Edited' : (cloneSourceId ? 'Cloned & added' : 'Added');
                 const assetDetailMsg = `${assetActionVerb} asset "${assetName}" (${location || 'General'}${brand ? ', Brand: ' + brand : ''}) in "${record.flatLabel}"`;
                 const targetAssetSubHeader = (currentActiveDawatSubHeader === 'integrated') ? 'integrated' : 'asset-details';
-                await recordDawatEstatesNotification(
+                await saveCloudData();
+await recordDawatEstatesNotification(
                     targetAssetSubHeader,
                     editId ? 'edit-asset' : 'add-asset',
                     assetDetailMsg,
                     modelNumber || capacity ? `Model: ${modelNumber || '-'} | Capacity: ${capacity || '-'}` : ''
                 );
 
-                await saveCloudData();
+
             } catch (err) {
                 console.error("Error saving asset record:", err);
             } finally {

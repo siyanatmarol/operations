@@ -913,7 +913,7 @@
                 </button>
                 <button onclick="switchModule('faculty-dir')" id="mod-faculty-dir" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-id-card"></i>
-                    <span>Faculty Directory</span>
+                    <span>Directory</span>
                 </button>
                 <button onclick="switchModule('admin-access')" id="mod-admin-access" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 hidden">
                     <i class="fa-solid fa-user-shield"></i>
@@ -1704,15 +1704,15 @@
             </div>
         </div>
 
-        <!-- MODULE: FACULTY DIRECTORY -->
+        <!-- MODULE: DIRECTORY -->
         <div id="module-faculty-dir" class="hidden space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                 <div>
                     <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
                         <i class="fa-solid fa-id-card text-emerald-700"></i>
-                        <span>Faculty Master Directory</span>
+                        <span>Directory</span>
                     </h2>
-                    <p class="text-xs text-gray-500">Maintain faculty records, ITS numbers, and contact information for auto-completion.</p>
+                    <p class="text-xs text-gray-500">Maintain directory records, ITS numbers, categories, gender, and contact information for auto-completion.</p>
                 </div>
                 <div class="faculty-action-grid grid grid-cols-2 sm:flex sm:items-center sm:space-x-2 gap-2 w-full sm:w-auto">
                     <button type="button" onclick="openImportModal('faculty')" class="faculty-action-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm">
@@ -1729,19 +1729,86 @@
                     </button>
                     <button type="button" onclick="openAddFacultyModal()" class="faculty-action-btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm">
                         <i class="fa-solid fa-user-plus text-xs"></i>
-                        <span>+ Add Faculty</span>
+                        <span>+ Add Member</span>
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-lg shadow border">
-                <input type="text" id="facultySearch" oninput="renderFacultyTable()" placeholder="Search Faculty Name or ITS Number..." class="w-full p-2 border rounded text-sm mb-4">
+            <!-- Total Count Overview Card (Dynamically updates with Search, Category & Gender Filters) -->
+            <div class="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white p-5 rounded-xl shadow-md border border-emerald-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="space-y-1">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs uppercase tracking-wider font-extrabold text-emerald-200">Total Count Overview</span>
+                        <span id="cardDirectoryFilterActiveBadge" class="bg-emerald-700/90 text-emerald-100 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500">All Records</span>
+                    </div>
+                    <div class="flex items-baseline space-x-3">
+                        <span id="cardDirectoryTotalCount" class="text-4xl font-extrabold tracking-tight text-white">0</span>
+                        <span id="cardDirectoryOutOfTotal" class="text-xs text-emerald-200 font-semibold"></span>
+                    </div>
+                    <p id="cardDirectoryFilterSubtext" class="text-xs text-emerald-100/90">Showing count matching current search, category, and gender filters.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
+                    <div class="bg-emerald-950/70 border border-emerald-600/80 px-3.5 py-2 rounded-lg text-xs flex items-center space-x-2">
+                        <i class="fa-solid fa-person text-blue-300 text-sm"></i>
+                        <div>
+                            <span class="text-[10px] uppercase text-emerald-300 block font-bold">Male</span>
+                            <span id="cardDirectoryMaleCount" class="text-base font-extrabold text-white">0</span>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-950/70 border border-emerald-600/80 px-3.5 py-2 rounded-lg text-xs flex items-center space-x-2">
+                        <i class="fa-solid fa-person-dress text-pink-300 text-sm"></i>
+                        <div>
+                            <span class="text-[10px] uppercase text-emerald-300 block font-bold">Female</span>
+                            <span id="cardDirectoryFemaleCount" class="text-base font-extrabold text-white">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow border space-y-4">
+                <!-- Dynamic Search & Category / Gender Filter Bar -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div class="md:col-span-5 relative">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                        <input type="text" id="facultySearch" oninput="renderFacultyTable()" placeholder="Dynamic search by Name, ITS Number, Category, Gender, or Contact..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div class="md:col-span-3">
+                        <select id="facultyCategoryFilter" onchange="renderFacultyTable()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="">All Categories</option>
+                            <option value="Faculty - QA">Faculty - QA</option>
+                            <option value="Faculty - Sighat">Faculty - Sighat</option>
+                            <option value="Faculty">Faculty</option>
+                            <option value="Non Tayeen">Non Tayeen</option>
+                            <option value="Faculty - Teachers">Faculty - Teachers</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Faculty Family / Staff">Faculty Family / Staff</option>
+                            <option value="Faculty Family">Faculty Family</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <select id="facultyGenderFilter" onchange="renderFacultyTable()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="">All Genders</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="button" onclick="resetDirectoryFilters()" class="w-full px-3 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Reset Filters</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
                             <tr>
+                                <th class="p-3 w-16 text-center">Sr. No.</th>
                                 <th class="p-3">ITS Number</th>
-                                <th class="p-3">Faculty Name</th>
+                                <th class="p-3">Name</th>
+                                <th class="p-3">Category</th>
+                                <th class="p-3">Gender</th>
                                 <th class="p-3">Contact Number</th>
                                 <th class="p-3 text-center">Actions</th>
                             </tr>
@@ -1823,7 +1890,7 @@
                             </label>
                             <label class="flex items-center space-x-2 bg-white p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-sm">
                                 <input type="checkbox" id="mod-perm-faculty-dir" value="faculty-dir" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                                <span class="font-bold text-gray-800"><i class="fa-solid fa-id-card text-emerald-600 mr-1.5"></i>Faculty Directory</span>
+                                <span class="font-bold text-gray-800"><i class="fa-solid fa-id-card text-emerald-600 mr-1.5"></i>Directory</span>
                             </label>
                         </div>
 
@@ -2033,7 +2100,7 @@
             </button>
             <button type="button" onclick="pwaSwitchModule('faculty-dir')" id="pwa-nav-faculty-dir" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 focus:outline-none">
                 <i class="fa-solid fa-id-card text-base"></i>
-                <span class="text-[10px] font-bold">Faculty</span>
+                <span class="text-[10px] font-bold">Directory</span>
             </button>
             <button type="button" onclick="pwaSwitchModule('admin-access')" id="pwa-nav-admin-access" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 hidden focus:outline-none">
                 <i class="fa-solid fa-user-shield text-base"></i>
@@ -2637,11 +2704,11 @@
         </div>
     </div>
 
-    <!-- Modal: Add / Edit Faculty -->
+    <!-- Modal: Add / Edit Directory Member -->
     <div id="modalFaculty" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="text-lg font-bold text-gray-800" id="facultyModalTitle">Add Faculty Member</h3>
+                <h3 class="text-lg font-bold text-gray-800" id="facultyModalTitle">Add Directory Member</h3>
                 <button onclick="closeModal('modalFaculty')" class="text-gray-500 text-xl font-bold">&times;</button>
             </div>
             <form id="facultyForm" onsubmit="saveFacultyRecord(event)" class="space-y-3">
@@ -2650,8 +2717,30 @@
                     <input type="text" id="facultyIts" required class="w-full p-2 border rounded text-sm">
                 </div>
                 <div>
-                    <label class="text-xs font-semibold block mb-1">Full Name *</label>
+                    <label class="text-xs font-semibold block mb-1">Name *</label>
                     <input type="text" id="facultyName" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Category *</label>
+                        <select id="facultyCategory" required class="w-full p-2 border rounded text-sm bg-white">
+                            <option value="Faculty - QA">Faculty - QA</option>
+                            <option value="Faculty - Sighat">Faculty - Sighat</option>
+                            <option value="Faculty" selected>Faculty</option>
+                            <option value="Non Tayeen">Non Tayeen</option>
+                            <option value="Faculty - Teachers">Faculty - Teachers</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Faculty Family / Staff">Faculty Family / Staff</option>
+                            <option value="Faculty Family">Faculty Family</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold block mb-1">Gender *</label>
+                        <select id="facultyGender" required class="w-full p-2 border rounded text-sm bg-white">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="text-xs font-semibold block mb-1">Contact Number *</label>
@@ -2659,7 +2748,7 @@
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modalFaculty')" class="px-4 py-2 border rounded text-sm">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Faculty</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded text-sm font-medium hover:bg-emerald-700">Save Member</button>
                 </div>
             </form>
         </div>
@@ -3885,8 +3974,11 @@
                     <td class="p-3 text-xs">${e.startDate || '-'}</td>
                     <td class="p-3 text-xs font-bold text-emerald-800">${tenure}</td>
                     <td class="p-3 text-xs">${lastMaintStr}</td>
-                    <td class="p-3 text-center">
-                        <button data-crud="true" data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="crud-action-btn btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700">Manage</button>
+                    <td class="p-3 text-center whitespace-nowrap">
+                        <div class="inline-flex items-center justify-center flex-wrap gap-1.5">
+                            <button data-crud="true" type="button" data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="crud-action-btn btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700 font-medium transition">Manage</button>
+                            <button data-crud="true" type="button" onclick="sendFlatDetailsOnWhatsApp('${ String(e.id).replace(/'/g, "\\'") }', this)" class="crud-action-btn bg-green-600 hover:bg-green-700 text-white text-xs px-2.5 py-1 rounded font-semibold transition inline-flex items-center space-x-1 shadow-sm" title="Send Allotted Flat, Electricity & Gas CA Details on WhatsApp via WATI (elec_gas_details)"><i class="fa-brands fa-whatsapp"></i><span>Send Details on WhatsApp</span></button>
+                        </div>
                         ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
@@ -4784,7 +4876,7 @@ window.loadClassroomsFromCloud = async function() {
             else if (notif.module === 'dawat-estates') {
                 const sub = notif.subHeader && DAWAT_SUBHEADER_META[notif.subHeader] ? DAWAT_SUBHEADER_META[notif.subHeader].label : 'Dawat Estates';
                 moduleLabel = `Dawat Estates (${sub})`;
-            } else if (notif.module === 'faculty-dir') moduleLabel = 'Faculty Directory';
+            } else if (notif.module === 'faculty-dir') moduleLabel = 'Directory';
             else if (notif.module === 'inventory') moduleLabel = 'Keys Inventory';
 
             const title = `Siyanat Marol — ${moduleLabel} Update`;
@@ -4988,11 +5080,11 @@ window.loadClassroomsFromCloud = async function() {
             return 'Classroom Portal Update';
         }
 
-        async function dispatchWatiTemplateMessages(phoneNumbers, customParamsArray) {
+        async function dispatchWatiTemplateMessages(phoneNumbers, customParamsArray, templateNameOverride = '', broadcastPrefix = 'Classroom_Alert') {
             const cfg = normalizeWatiConfig(watiConfig);
             const rawToken = String(cfg.accessToken || DEFAULT_WATI_ACCESS_TOKEN).trim();
             const authHeader = /^Bearer\s+/i.test(rawToken) ? rawToken : `Bearer ${rawToken}`;
-            const templateName = String(cfg.templateName || 'classroom_portal_alert').trim();
+            const templateName = String(templateNameOverride || cfg.templateName || 'classroom_portal_alert').trim();
             const candidateBaseUrls = resolveWatiCandidateBaseUrls(cfg.apiEndpoint, rawToken);
 
             const cleanPhones = Array.from(new Set(phoneNumbers.map(normalizeWhatsAppPhone).filter(p => p.length >= 10)));
@@ -5007,7 +5099,7 @@ window.loadClassroomsFromCloud = async function() {
                     const bulkUrl = `${baseUrl}/api/v1/sendTemplateMessages`;
                     const bulkPayload = {
                         template_name: templateName,
-                        broadcast_name: `Classroom_Alert_${Date.now()}`,
+                        broadcast_name: `${broadcastPrefix}_${Date.now()}`,
                         receivers: cleanPhones.map(ph => ({
                             whatsappNumber: ph,
                             customParams: customParamsArray
@@ -5042,7 +5134,7 @@ window.loadClassroomsFromCloud = async function() {
                         const singleUrl = `${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${encodeURIComponent(ph)}`;
                         const singlePayload = {
                             template_name: templateName,
-                            broadcast_name: `Classroom_Alert_${Date.now()}`,
+                            broadcast_name: `${broadcastPrefix}_${Date.now()}`,
                             parameters: customParamsArray
                         };
                         const sRes = await fetch(singleUrl, {
@@ -5835,12 +5927,16 @@ window.loadClassroomsFromCloud = async function() {
                     }
                 });
             } else if (section === 'faculty') {
-                fileName = "Faculty_Master_Directory";
-                columns = ["ITS Number", "Faculty Name", "Contact Number"];
-                data = facultyData.map(f => [
-                    f.its,
-                    f.name,
-                    f.contact
+                fileName = "Directory_Records";
+                columns = ["Sr. No.", "ITS Number", "Name", "Category", "Gender", "Contact Number"];
+                const exportList = getFilteredDirectoryList();
+                data = exportList.map((f, idx) => [
+                    idx + 1,
+                    f.its || '-',
+                    f.name || '-',
+                    f.category || '-',
+                    f.gender || '-',
+                    f.contact || '-'
                 ]);
             }
 
@@ -6046,6 +6142,190 @@ window.loadClassroomsFromCloud = async function() {
             }
         };
 
+        window.deleteFlatAllocationRow = async function(flatId) {
+            if (!guardEditingRights()) return;
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if (!flat) return;
+
+            const flatDisplayLabel = `${flat.building}${flat.wing ? ' (' + flat.wing + ')' : ''} - Flat ${flat.flatNo}`;
+
+            if (flat.isBachelor) {
+                if (!flat.residents || flat.residents.length === 0) {
+                    showAssetToast("This bachelor flat already has no assigned residents.", true);
+                    return;
+                }
+                if (!flat.archive) flat.archive = [];
+                const todayIso = new Date().toISOString().split('T')[0];
+                flat.residents.forEach(r => {
+                    flat.archive.push({
+                        occupant: r.name || 'Resident',
+                        its: r.its || '',
+                        contact: r.contact || '',
+                        startDate: r.startDate || '',
+                        endDate: todayIso
+                    });
+                });
+                flat.residents = [];
+                await recordDawatEstatesNotification(
+                    'allocation',
+                    'mark-vacant',
+                    `Cleared bachelor flat allocation for "${flatDisplayLabel}" (moved residents to archive)`
+                );
+                await saveCloudData();
+                renderAllocationTable();
+                renderBachelorGrid();
+                renderVacantBills();
+                renderAssetDetailsTable();
+                showAssetToast(`Cleared allocation for ${flatDisplayLabel}`);
+                return;
+            }
+
+            if (!flat.occupant || flat.occupant.trim() === '') {
+                showAssetToast("This flat is already vacant.", true);
+                return;
+            }
+
+            if (!flat.archive) flat.archive = [];
+            flat.archive.push({
+                occupant: flat.occupant,
+                its: flat.its || '',
+                contact: flat.contact || '',
+                startDate: flat.startDate || '',
+                endDate: new Date().toISOString().split('T')[0]
+            });
+            const prevOccupantName = flat.occupant;
+            flat.occupant = '';
+            flat.its = '';
+            flat.contact = '';
+            flat.startDate = '';
+
+            await recordDawatEstatesNotification(
+                'allocation',
+                'mark-vacant',
+                `Marked flat "${flatDisplayLabel}" as Vacant (moved ${prevOccupantName} to Past Allocation Archive)`
+            );
+            await saveCloudData();
+            renderAllocationTable();
+            renderVacantBills();
+            renderAssetDetailsTable();
+            showAssetToast(`Vacated ${flatDisplayLabel} and archived ${prevOccupantName}`);
+        };
+
+        window.sendFlatDetailsOnWhatsApp = async function(flatId, btnEl = null, bachelorResIdx = null) {
+            const flat = estatesData.find(e => String(e.id) === String(flatId));
+            if (!flat) {
+                showAssetToast("Flat record not found.", true);
+                return;
+            }
+
+            const wingStr = flat.wing ? ` (${flat.wing})` : '';
+            const allottedFlatLabel = `${flat.building}${wingStr} - Flat ${flat.flatNo}`;
+            const elecCa = (flat.elec && String(flat.elec).trim() !== '') ? String(flat.elec).trim() : 'N/A';
+            const gasCa = (flat.gas && String(flat.gas).trim() !== '') ? String(flat.gas).trim() : 'N/A';
+
+            // Collect occupant(s) for this flat (supports both Regular Flats and Bachelor Flats)
+            const recipients = [];
+
+            const resolveFromDirectory = (rawName, rawIts, rawContact) => {
+                let name = String(rawName || '').trim();
+                let its = String(rawIts || '').trim();
+                let contact = String(rawContact || '').trim();
+
+                if (!its || !contact) {
+                    const matchedFac = facultyData.find(f => {
+                        if (!f) return false;
+                        if (its && String(f.its || '').trim() === its) return true;
+                        if (name && String(f.name || '').trim().toLowerCase() === name.toLowerCase()) return true;
+                        return false;
+                    });
+                    if (matchedFac) {
+                        if (!its && matchedFac.its) its = String(matchedFac.its).trim();
+                        if (!contact && matchedFac.contact) contact = String(matchedFac.contact).trim();
+                    }
+                }
+                return { name, its, contact, phone: normalizeWhatsAppPhone(contact) };
+            };
+
+            if (flat.isBachelor) {
+                const resList = Array.isArray(flat.residents) ? flat.residents : [];
+                if (resList.length === 0) {
+                    showAssetToast(`Cannot send WhatsApp: No bachelor residents are currently allotted to ${allottedFlatLabel}.`, true);
+                    return;
+                }
+                const targetResidents = (bachelorResIdx !== null && bachelorResIdx !== undefined && resList[bachelorResIdx])
+                    ? [resList[bachelorResIdx]]
+                    : resList;
+                targetResidents.forEach(r => {
+                    if (r && r.name) {
+                        recipients.push(resolveFromDirectory(r.name, r.its, r.contact));
+                    }
+                });
+            } else {
+                if (!flat.occupant || String(flat.occupant).trim() === '') {
+                    showAssetToast(`Cannot send WhatsApp: ${allottedFlatLabel} is currently vacant.`, true);
+                    return;
+                }
+                recipients.push(resolveFromDirectory(flat.occupant, flat.its, flat.contact));
+            }
+
+            const validRecipients = recipients.filter(r => r.phone && r.phone.length >= 10);
+            if (validRecipients.length === 0) {
+                const namesMissingPhone = recipients.map(r => r.name || 'Occupant').join(', ');
+                showAssetToast(`Cannot send WhatsApp: No valid contact number found for ${namesMissingPhone}. Please update their contact number in Directory or Allocation.`, true);
+                return;
+            }
+
+            const origBtnHtml = btnEl ? btnEl.innerHTML : '';
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Sending...</span>';
+            }
+
+            try {
+                let totalSent = 0;
+                let lastErr = '';
+                const sentNames = [];
+
+                for (const rec of validRecipients) {
+                    const nameConjoinedWithIts = rec.its ? `${rec.name} - ${rec.its}` : rec.name;
+                    const customParams = [
+                        { name: "1", value: sanitizeWatiParamValue(nameConjoinedWithIts, '-') },
+                        { name: "2", value: sanitizeWatiParamValue(allottedFlatLabel, '-') },
+                        { name: "3", value: sanitizeWatiParamValue(elecCa, 'N/A') },
+                        { name: "4", value: sanitizeWatiParamValue(gasCa, 'N/A') }
+                    ];
+
+                    const res = await dispatchWatiTemplateMessages(
+                        [rec.phone],
+                        customParams,
+                        'elec_gas_details',
+                        'Elec_Gas_Details'
+                    );
+
+                    if (res.ok) {
+                        totalSent += res.sentCount;
+                        sentNames.push(`${rec.name} (+${rec.phone})`);
+                    } else {
+                        lastErr = res.message || 'WATI API error';
+                    }
+                }
+
+                if (totalSent > 0) {
+                    showAssetToast(`WhatsApp details (elec_gas_details) sent to ${sentNames.join(', ')}`);
+                } else {
+                    showAssetToast(`Failed to send WhatsApp via WATI: ${lastErr}. Ensure template "elec_gas_details" is Approved in WATI.`, true);
+                }
+            } catch (err) {
+                console.error("Error sending flat details on WhatsApp:", err);
+                showAssetToast("Error sending WhatsApp message: " + (err.message || err), true);
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = origBtnHtml;
+                }
+            }
+        };
+
         function renderModalArchiveList(flat) {
             const archList = document.getElementById('allocArchiveList');
             archList.innerHTML = '';
@@ -6181,7 +6461,10 @@ window.loadClassroomsFromCloud = async function() {
                                     <strong class="text-emerald-900">${r.name}</strong> <span class="text-gray-500">(ITS: ${r.its})</span>
                                     <br/><span class="text-[10px] text-gray-400">Since: ${r.startDate || '-'} | ${r.contact || ''}</span>
                                 </div>
-                                <button data-crud="true" onclick="removeBachelorResident('${safeId}', ${rIdx})" class="crud-action-btn text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
+                                <div class="flex items-center space-x-1.5">
+                                    <button data-crud="true" onclick="removeBachelorResident('${safeId}', ${rIdx})" class="crud-action-btn text-red-500 hover:text-red-700 text-xs px-1" title="Remove Resident"><i class="fa-solid fa-user-minus"></i></button>
+                                    <button data-crud="true" type="button" onclick="sendFlatDetailsOnWhatsApp('${safeId}', this, ${rIdx})" class="crud-action-btn bg-green-600 hover:bg-green-700 text-white text-[10px] px-2 py-0.5 rounded font-semibold transition inline-flex items-center space-x-1 shadow-sm" title="Send Details on WhatsApp"><i class="fa-brands fa-whatsapp"></i><span>Send Details on WhatsApp</span></button>
+                                </div>
                             </div>
                         `;
                     });
@@ -6545,22 +6828,122 @@ window.loadClassroomsFromCloud = async function() {
             });
         };
 
+        function getFilteredDirectoryList() {
+            const rawSearch = (document.getElementById('facultySearch')?.value || '').toLowerCase().trim();
+            const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
+            const selectedCat = (document.getElementById('facultyCategoryFilter')?.value || '').trim();
+            const selectedGender = (document.getElementById('facultyGenderFilter')?.value || '').trim();
+
+            return facultyData.filter(f => {
+                if (!f) return false;
+                const fCat = String(f.category || '').trim();
+                const fGender = String(f.gender || '').trim();
+
+                if (selectedCat && fCat.toLowerCase() !== selectedCat.toLowerCase()) {
+                    return false;
+                }
+                if (selectedGender && fGender.toLowerCase() !== selectedGender.toLowerCase()) {
+                    return false;
+                }
+                if (searchTokens.length > 0) {
+                    const corpus = `${f.name || ''} ${f.its || ''} ${fCat} ${fGender} ${f.contact || ''}`.toLowerCase();
+                    if (!searchTokens.every(tok => corpus.includes(tok))) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+
+        window.resetDirectoryFilters = function() {
+            const searchEl = document.getElementById('facultySearch');
+            const catEl = document.getElementById('facultyCategoryFilter');
+            const genderEl = document.getElementById('facultyGenderFilter');
+            if (searchEl) searchEl.value = '';
+            if (catEl) catEl.value = '';
+            if (genderEl) genderEl.value = '';
+            renderFacultyTable();
+        };
+
         window.renderFacultyTable = function() {
             const tbody = document.getElementById('facultyTableBody');
-            const search = document.getElementById('facultySearch').value.toLowerCase();
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            facultyData.filter(f => `${f.name} ${f.its}`.toLowerCase().includes(search)).forEach(f => {
+            const rawSearch = (document.getElementById('facultySearch')?.value || '').trim();
+            const selectedCat = (document.getElementById('facultyCategoryFilter')?.value || '').trim();
+            const selectedGender = (document.getElementById('facultyGenderFilter')?.value || '').trim();
+
+            const filteredList = getFilteredDirectoryList();
+
+            // Update Total Count Overview Card according to active filters & search bar
+            const totalCountEl = document.getElementById('cardDirectoryTotalCount');
+            const outOfTotalEl = document.getElementById('cardDirectoryOutOfTotal');
+            const activeBadgeEl = document.getElementById('cardDirectoryFilterActiveBadge');
+            const subtextEl = document.getElementById('cardDirectoryFilterSubtext');
+            const maleCountEl = document.getElementById('cardDirectoryMaleCount');
+            const femaleCountEl = document.getElementById('cardDirectoryFemaleCount');
+
+            if (totalCountEl) totalCountEl.innerText = filteredList.length;
+
+            const isFiltered = Boolean(rawSearch || selectedCat || selectedGender);
+            if (outOfTotalEl) {
+                outOfTotalEl.innerText = isFiltered ? `of ${facultyData.length} total records` : `total registered records`;
+            }
+
+            const activeFilterParts = [];
+            if (selectedCat) activeFilterParts.push(`Category: ${selectedCat}`);
+            if (selectedGender) activeFilterParts.push(`Gender: ${selectedGender}`);
+            if (rawSearch) activeFilterParts.push(`Search: "${rawSearch}"`);
+
+            if (activeBadgeEl) {
+                activeBadgeEl.innerText = activeFilterParts.length > 0 ? activeFilterParts.join(' • ') : 'All Records';
+            }
+            if (subtextEl) {
+                subtextEl.innerText = activeFilterParts.length > 0
+                    ? `Filtered by ${activeFilterParts.join(' | ')}`
+                    : 'Showing count matching current search, category, and gender filters.';
+            }
+
+            const filteredMaleCount = filteredList.filter(f => String(f.gender || '').trim().toLowerCase() === 'male').length;
+            const filteredFemaleCount = filteredList.filter(f => String(f.gender || '').trim().toLowerCase() === 'female').length;
+            if (maleCountEl) maleCountEl.innerText = filteredMaleCount;
+            if (femaleCountEl) femaleCountEl.innerText = filteredFemaleCount;
+
+            if (filteredList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400 text-xs italic">No directory records match your search or filter criteria.</td></tr>';
+                return;
+            }
+
+            filteredList.forEach((f, idx) => {
                 const safeId = String(f.id).replace(/'/g, "\\'");
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50";
+
+                const categoryBadge = f.category
+                    ? `<span class="bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap">${f.category}</span>`
+                    : `<span class="text-gray-400 text-xs italic">-</span>`;
+
+                const genderLower = String(f.gender || '').trim().toLowerCase();
+                let genderBadge = `<span class="text-gray-400 text-xs italic">-</span>`;
+                if (genderLower === 'male') {
+                    genderBadge = `<span class="bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-person mr-1"></i>Male</span>`;
+                } else if (genderLower === 'female') {
+                    genderBadge = `<span class="bg-pink-50 text-pink-800 border border-pink-200 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap"><i class="fa-solid fa-person-dress mr-1"></i>Female</span>`;
+                } else if (f.gender) {
+                    genderBadge = `<span class="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded-full">${f.gender}</span>`;
+                }
+
                 tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-emerald-800">${f.its}</td>
-                    <td class="p-3 font-medium text-gray-900">${f.name}</td>
-                    <td class="p-3 text-gray-600">${f.contact}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button data-crud="true" onclick="openEditFaculty('${safeId}')" class="crud-action-btn text-blue-600 hover:text-blue-800" title="Edit Faculty"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button data-crud="true" onclick="deleteFaculty('${safeId}')" class="crud-action-btn text-red-600 hover:text-red-800" title="Delete Faculty"><i class="fa-solid fa-trash"></i></button>
+                    <td class="p-3 text-center font-semibold text-gray-500">${idx + 1}</td>
+                    <td class="p-3 font-mono font-bold text-emerald-800">${f.its || '-'}</td>
+                    <td class="p-3 font-medium text-gray-900">${f.name || '-'}</td>
+                    <td class="p-3">${categoryBadge}</td>
+                    <td class="p-3">${genderBadge}</td>
+                    <td class="p-3 text-gray-600">${f.contact || '-'}</td>
+                    <td class="p-3 text-center space-x-2 whitespace-nowrap">
+                        <button data-crud="true" onclick="openEditFaculty('${safeId}')" class="crud-action-btn text-blue-600 hover:text-blue-800" title="Edit Member"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button data-crud="true" onclick="deleteFaculty('${safeId}')" class="crud-action-btn text-red-600 hover:text-red-800" title="Delete Member"><i class="fa-solid fa-trash"></i></button>
                         ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
@@ -6570,7 +6953,9 @@ window.loadClassroomsFromCloud = async function() {
 
         window.openAddFacultyModal = function() {
             document.getElementById('facultyForm').reset();
-            document.getElementById('facultyModalTitle').innerText = 'Add Faculty Member';
+            if (document.getElementById('facultyCategory')) document.getElementById('facultyCategory').value = 'Faculty';
+            if (document.getElementById('facultyGender')) document.getElementById('facultyGender').value = 'Male';
+            document.getElementById('facultyModalTitle').innerText = 'Add Directory Member';
             document.getElementById('facultyForm').dataset.editId = '';
             document.getElementById('modalFaculty').classList.remove('hidden');
         };
@@ -6581,8 +6966,14 @@ window.loadClassroomsFromCloud = async function() {
 
             document.getElementById('facultyIts').value = fac.its || '';
             document.getElementById('facultyName').value = fac.name || '';
+            if (document.getElementById('facultyCategory')) {
+                document.getElementById('facultyCategory').value = fac.category || 'Faculty';
+            }
+            if (document.getElementById('facultyGender')) {
+                document.getElementById('facultyGender').value = fac.gender || 'Male';
+            }
             document.getElementById('facultyContact').value = fac.contact || '';
-            document.getElementById('facultyModalTitle').innerText = 'Edit Faculty Member';
+            document.getElementById('facultyModalTitle').innerText = 'Edit Directory Member';
             document.getElementById('facultyForm').dataset.editId = fac.id;
             
             document.getElementById('modalFaculty').classList.remove('hidden');
@@ -6593,13 +6984,15 @@ window.loadClassroomsFromCloud = async function() {
             const editId = e.target.dataset.editId;
             const its = document.getElementById('facultyIts').value.trim();
             const name = document.getElementById('facultyName').value.trim();
+            const category = document.getElementById('facultyCategory') ? document.getElementById('facultyCategory').value : 'Faculty';
+            const gender = document.getElementById('facultyGender') ? document.getElementById('facultyGender').value : 'Male';
             const contact = document.getElementById('facultyContact').value.trim();
 
             if (editId) {
                 const idx = facultyData.findIndex(f => String(f.id) === String(editId));
                 if (idx !== -1) {
                     const oldName = facultyData[idx].name;
-                    facultyData[idx] = { ...facultyData[idx], its, name, contact };
+                    facultyData[idx] = { ...facultyData[idx], its, name, category, gender, contact };
 
                     estatesData.forEach(e => {
                         if (e.occupant === oldName) {
@@ -6614,6 +7007,8 @@ window.loadClassroomsFromCloud = async function() {
                     id: Date.now().toString(),
                     its,
                     name,
+                    category,
+                    gender,
                     contact
                 });
             }
@@ -7688,11 +8083,26 @@ window.renderSocieties = function() {
                     populateIntegratedFlatDropdown();
                 } else if(target === 'faculty') {
                     jsonData.forEach(row => {
+                        const getVal = (keys) => {
+                            for (let k of Object.keys(row)) {
+                                if (keys.some(key => k.trim().toLowerCase() === key.toLowerCase())) {
+                                    return row[k];
+                                }
+                            }
+                            return '';
+                        };
+                        const itsVal = String(getVal(['ITS', 'ITS Number', 'ITS No']) || '00000000').trim();
+                        const nameVal = String(getVal(['Name', 'Faculty Name', 'Full Name', 'Member Name']) || 'Directory Member').trim();
+                        const catVal = String(getVal(['Category', 'Role', 'Designation']) || 'Faculty').trim();
+                        const genderVal = String(getVal(['Gender', 'Sex']) || 'Male').trim();
+                        const contactVal = String(getVal(['Contact', 'Contact Number', 'Mobile', 'Phone', 'Mobile Number']) || '-').trim();
                         facultyData.push({
                             id: Date.now().toString() + Math.random().toString().slice(2,5),
-                            its: row['ITS'] || row['ITS Number'] || '00000000',
-                            name: row['Name'] || row['Faculty Name'] || 'Faculty Member',
-                            contact: row['Contact'] || row['Mobile'] || '-'
+                            its: itsVal,
+                            name: nameVal,
+                            category: catVal,
+                            gender: genderVal,
+                            contact: contactVal
                         });
                     });
                     renderFacultyTable();
@@ -7713,7 +8123,7 @@ window.renderSocieties = function() {
             'dawat-estates': 'Dawat Estates',
             'classroom-allocation': 'Classroom Allocation',
             'inventory': 'Keys Inventory',
-            'faculty-dir': 'Faculty Directory'
+            'faculty-dir': 'Directory'
         };
 
         const CLASSROOM_COL_LABELS_MAP = {

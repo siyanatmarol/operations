@@ -1,5 +1,5 @@
 // Siyanat Marol Operations Portal - Service Worker
-const CACHE_NAME = 'siyanat-pwa-v2';
+const CACHE_NAME = 'siyanat-pwa-v3';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -12,7 +12,8 @@ const STATIC_ASSETS = [
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js'
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'
 ];
 
 // Install: Cache critical static shell assets

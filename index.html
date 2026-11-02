@@ -27,6 +27,8 @@
     <!-- jsPDF & jsPDF-AutoTable for PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Chart.js for Electricity & Gas Comparison Bar Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .hidden { display: none !important; }
         html { font-size: 17px; }
@@ -914,6 +916,11 @@
                 <button onclick="switchModule('faculty-dir')" id="mod-faculty-dir" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
                     <i class="fa-solid fa-id-card"></i>
                     <span>Directory</span>
+                </button>
+                <button onclick="switchModule('elec-gas-bills')" id="mod-elec-gas-bills" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-bolt-lightning text-amber-400"></i>
+                    <span>Electricity &amp; Gas Bills</span>
+                    <span id="notifBadgeElecGasBills" onclick="event.stopPropagation(); switchModule('elec-gas-bills'); openModuleNotificationsPopupIfAny('elec-gas-bills');" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none cursor-pointer" title="Click to view unseen notifications"></span>
                 </button>
                 <button onclick="switchModule('admin-access')" id="mod-admin-access" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 hidden">
                     <i class="fa-solid fa-user-shield"></i>
@@ -1819,6 +1826,241 @@
             </div>
         </div>
 
+        <!-- MODULE: ELECTRICITY & GAS BILLS -->
+        <div id="module-elec-gas-bills" class="hidden space-y-6">
+            <!-- Top Header & Action Controls -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white p-4 rounded-xl shadow border gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-bolt-lightning text-amber-500"></i>
+                        <span>Electricity &amp; Gas Bills Master Tracker</span>
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Track monthly Amount, Units Consumed, and Drive PDF Bills across 27 Adani Electricity Meters &amp; 7 Mahanagar Gas Meters. <span class="text-red-600 font-semibold">Red = Pending</span> | <span class="text-emerald-700 font-semibold">Green = Updated</span>.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+                    <div class="flex items-center space-x-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-300">
+                        <label class="text-xs font-bold text-emerald-950 uppercase">Year:</label>
+                        <select id="egYearSelect" onchange="renderElecGasModule()" class="p-1 border rounded text-xs font-extrabold bg-white text-emerald-950 focus:outline-none">
+                            <option value="2027">2027</option>
+                            <option value="2026" selected>2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="triggerAutoFetchUtilityBills(this)" class="crud-action-btn bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Check & Sync Latest Adani & MGL Bills from Connected Google Apps Script">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span>Auto-Fetch Sync</span>
+                    </button>
+                    <button type="button" onclick="openElecGasAutoFetchModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Step-by-Step Setup for Daily Auto-Fetch from Adani & Mahanagar Gas">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>Auto-Fetch Setup</span>
+                    </button>
+                    <button type="button" onclick="exportElecGasYearlyReport('excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>Export Excel</span>
+                    </button>
+                    <button type="button" onclick="exportElecGasYearlyReport('pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Export PDF</span>
+                    </button>
+                    <button type="button" onclick="openEditElecGasMeterModal()" class="crud-action-btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Add Meter</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overview Summary Cards + Comparison Pop-Up Card Button -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+                <!-- Card 1: Adani Electricity Overview -->
+                <div class="bg-white p-4 rounded-xl shadow border-l-4 border-l-amber-500 border flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Adani Electricity (<span id="egCardElecMeterCount">27</span> Meters)</span>
+                            <span id="egCardElecTotalAmount" class="text-2xl font-extrabold text-gray-900 mt-1 block">₹0</span>
+                        </div>
+                        <div class="bg-amber-100 text-amber-700 p-2.5 rounded-full text-base">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex flex-wrap items-center justify-between gap-1 text-xs">
+                        <span class="font-bold text-amber-900">Units: <span id="egCardElecTotalUnits">0</span> kWh</span>
+                        <div class="space-x-1 text-[11px] font-bold">
+                            <span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded" title="Updated cell count in selected year"><i class="fa-solid fa-check mr-0.5"></i><span id="egCardElecGreenCount">0</span></span>
+                            <span class="bg-red-100 text-red-800 px-1.5 py-0.5 rounded" title="Pending cell count in selected year"><i class="fa-solid fa-clock mr-0.5"></i><span id="egCardElecRedCount">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Mahanagar Gas Overview -->
+                <div class="bg-white p-4 rounded-xl shadow border-l-4 border-l-orange-600 border flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Mahanagar Gas (<span id="egCardGasMeterCount">7</span> Meters)</span>
+                            <span id="egCardGasTotalAmount" class="text-2xl font-extrabold text-gray-900 mt-1 block">₹0</span>
+                        </div>
+                        <div class="bg-orange-100 text-orange-700 p-2.5 rounded-full text-base">
+                            <i class="fa-solid fa-fire-flame-simple"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex flex-wrap items-center justify-between gap-1 text-xs">
+                        <span class="font-bold text-orange-900">Units: <span id="egCardGasTotalUnits">0</span> SCM</span>
+                        <div class="space-x-1 text-[11px] font-bold">
+                            <span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded" title="Updated cell count in selected year"><i class="fa-solid fa-check mr-0.5"></i><span id="egCardGasGreenCount">0</span></span>
+                            <span class="bg-red-100 text-red-800 px-1.5 py-0.5 rounded" title="Pending cell count in selected year"><i class="fa-solid fa-clock mr-0.5"></i><span id="egCardGasRedCount">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Combined Campus Expense -->
+                <div class="bg-white p-4 rounded-xl shadow border-l-4 border-l-emerald-600 border flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Combined Annual Expense</span>
+                            <span id="egCardCombinedTotalAmount" class="text-2xl font-extrabold text-emerald-900 mt-1 block">₹0</span>
+                        </div>
+                        <div class="bg-emerald-100 text-emerald-800 p-2.5 rounded-full text-base">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t text-[11px] text-gray-600 font-semibold flex items-center justify-between">
+                        <span>Selected Year: <strong id="egCardSelectedYearLabel" class="text-emerald-900">2026</strong></span>
+                        <span class="text-emerald-700 font-bold">Drive PDF Linked</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Comparison & Bar Charts Pop-Up Trigger Card Button -->
+                <button type="button" onclick="openElecGasComparisonModal()" class="bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 hover:from-emerald-800 hover:to-cyan-800 text-white p-4 rounded-xl shadow-lg border-2 border-teal-400 ring-2 ring-teal-400/40 flex flex-col justify-between text-left transition transform hover:scale-[1.01] cursor-pointer">
+                    <div class="flex justify-between items-start w-full">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider font-extrabold text-teal-200 block">Analytics &amp; Charts</span>
+                            <span class="text-lg font-extrabold text-white mt-0.5 block leading-snug">Comparison &amp; Bar Charts</span>
+                        </div>
+                        <div class="bg-amber-400 text-emerald-950 p-2.5 rounded-lg text-base shadow">
+                            <i class="fa-solid fa-chart-column"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-teal-600/80 flex items-center justify-between w-full text-[11px] font-bold text-teal-100">
+                        <span>Month-by-Month &amp; YoY (Amount / Units)</span>
+                        <span class="bg-white/20 px-2 py-0.5 rounded text-white">Open Pop-Up &rarr;</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Filter & Search Bar -->
+            <div class="bg-white p-4 rounded-xl shadow border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" id="egFilterBtnAll" onclick="setElecGasUtilityFilter('all')" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-800 text-white shadow-sm transition">
+                        All Utilities
+                    </button>
+                    <button type="button" id="egFilterBtnElec" onclick="setElecGasUtilityFilter('electricity')" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-gray-100 text-gray-700 hover:bg-amber-50 hover:text-amber-900 border transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-bolt text-amber-500"></i>
+                        <span>Adani Electricity (27)</span>
+                    </button>
+                    <button type="button" id="egFilterBtnGas" onclick="setElecGasUtilityFilter('gas')" class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-orange-900 border transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-fire-flame-simple text-orange-500"></i>
+                        <span>Mahanagar Gas (7)</span>
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 flex-grow md:max-w-md">
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
+                        <input type="text" id="egMeterSearch" oninput="renderElecGasModule()" placeholder="Search CA Number, Meter No, or Building / Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <select id="egStatusFilter" onchange="renderElecGasModule()" class="p-1.5 border rounded-lg text-xs font-semibold bg-white text-gray-700">
+                        <option value="">All Statuses</option>
+                        <option value="pending_current">Pending This Month (Red)</option>
+                        <option value="updated_current">Updated This Month (Green)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- SECTION 1: ADANI ELECTRICITY YEARLY TABLE (27 METERS) -->
+            <div id="egSectionElectricity" class="bg-white rounded-xl shadow border overflow-hidden">
+                <div class="bg-amber-500 text-slate-950 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-slate-950 text-amber-400 p-1.5 rounded-lg text-sm inline-flex items-center justify-center"><i class="fa-solid fa-bolt"></i></span>
+                        <div>
+                            <h3 class="font-extrabold text-base leading-tight">Adani Electricity — Yearly Month-Wise Report (<span id="egElecTableYearLabel">2026</span>)</h3>
+                            <p class="text-[11px] font-semibold text-slate-800">Click any month cell to add/edit Amount (₹), Units Consumed (kWh), and attach PDF Bill. Click CA/Meter icon to edit meter details.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs font-extrabold">
+                        <span class="bg-red-600 text-white px-2.5 py-1 rounded-full shadow-sm">Red = Pending</span>
+                        <span class="bg-emerald-700 text-white px-2.5 py-1 rounded-full shadow-sm">Green = Added</span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-[72vh]">
+                    <table class="w-full text-left text-xs border-collapse min-w-[1400px]">
+                        <thead class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px] sticky top-0 z-20 shadow-sm">
+                            <tr>
+                                <th class="p-2.5 w-10 text-center bg-gray-100">#</th>
+                                <th class="p-2.5 min-w-[190px] sticky left-0 bg-gray-100 z-30 border-r">CA Number &amp; Meter Details</th>
+                                <th class="p-2 text-center min-w-[95px]">Jan</th>
+                                <th class="p-2 text-center min-w-[95px]">Feb</th>
+                                <th class="p-2 text-center min-w-[95px]">Mar</th>
+                                <th class="p-2 text-center min-w-[95px]">Apr</th>
+                                <th class="p-2 text-center min-w-[95px]">May</th>
+                                <th class="p-2 text-center min-w-[95px]">Jun</th>
+                                <th class="p-2 text-center min-w-[95px]">Jul</th>
+                                <th class="p-2 text-center min-w-[95px]">Aug</th>
+                                <th class="p-2 text-center min-w-[95px]">Sep</th>
+                                <th class="p-2 text-center min-w-[95px]">Oct</th>
+                                <th class="p-2 text-center min-w-[95px]">Nov</th>
+                                <th class="p-2 text-center min-w-[95px]">Dec</th>
+                                <th class="p-2.5 text-right min-w-[115px] bg-amber-50 border-l font-extrabold text-amber-950">Yearly Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="egElecTableBody" class="divide-y"></tbody>
+                        <tfoot id="egElecTableFoot" class="bg-amber-50/90 font-extrabold border-t-2 border-amber-300 text-xs"></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 2: MAHANAGAR GAS YEARLY TABLE (7 METERS) -->
+            <div id="egSectionGas" class="bg-white rounded-xl shadow border overflow-hidden">
+                <div class="bg-orange-600 text-white px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-white text-orange-700 p-1.5 rounded-lg text-sm inline-flex items-center justify-center"><i class="fa-solid fa-fire-flame-simple"></i></span>
+                        <div>
+                            <h3 class="font-extrabold text-base leading-tight">Mahanagar Gas (MGL) — Yearly Month-Wise Report (<span id="egGasTableYearLabel">2026</span>)</h3>
+                            <p class="text-[11px] font-semibold text-orange-100">Click any month cell to add/edit Amount (₹), Units Consumed (SCM), and attach PDF Bill. Click CA/Meter icon to edit meter details.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs font-extrabold">
+                        <span class="bg-red-700 text-white px-2.5 py-1 rounded-full shadow-sm border border-red-300">Red = Pending</span>
+                        <span class="bg-emerald-700 text-white px-2.5 py-1 rounded-full shadow-sm border border-emerald-300">Green = Added</span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-[65vh]">
+                    <table class="w-full text-left text-xs border-collapse min-w-[1400px]">
+                        <thead class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px] sticky top-0 z-20 shadow-sm">
+                            <tr>
+                                <th class="p-2.5 w-10 text-center bg-gray-100">#</th>
+                                <th class="p-2.5 min-w-[190px] sticky left-0 bg-gray-100 z-30 border-r">CA Number &amp; Meter Details</th>
+                                <th class="p-2 text-center min-w-[95px]">Jan</th>
+                                <th class="p-2 text-center min-w-[95px]">Feb</th>
+                                <th class="p-2 text-center min-w-[95px]">Mar</th>
+                                <th class="p-2 text-center min-w-[95px]">Apr</th>
+                                <th class="p-2 text-center min-w-[95px]">May</th>
+                                <th class="p-2 text-center min-w-[95px]">Jun</th>
+                                <th class="p-2 text-center min-w-[95px]">Jul</th>
+                                <th class="p-2 text-center min-w-[95px]">Aug</th>
+                                <th class="p-2 text-center min-w-[95px]">Sep</th>
+                                <th class="p-2 text-center min-w-[95px]">Oct</th>
+                                <th class="p-2 text-center min-w-[95px]">Nov</th>
+                                <th class="p-2 text-center min-w-[95px]">Dec</th>
+                                <th class="p-2.5 text-right min-w-[115px] bg-orange-50 border-l font-extrabold text-orange-950">Yearly Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="egGasTableBody" class="divide-y"></tbody>
+                        <tfoot id="egGasTableFoot" class="bg-orange-50/90 font-extrabold border-t-2 border-orange-300 text-xs"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- MODULE: ADMIN ACCESS & INVITATIONS -->
         <div id="module-admin-access" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-lg shadow border space-y-6">
@@ -1891,6 +2133,10 @@
                             <label class="flex items-center space-x-2 bg-white p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-sm">
                                 <input type="checkbox" id="mod-perm-faculty-dir" value="faculty-dir" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
                                 <span class="font-bold text-gray-800"><i class="fa-solid fa-id-card text-emerald-600 mr-1.5"></i>Directory</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-white p-3 border-2 border-amber-200 rounded-lg cursor-pointer hover:bg-amber-50/40 transition shadow-sm">
+                                <input type="checkbox" id="mod-perm-elec-gas-bills" value="elec-gas-bills" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                <span class="font-bold text-gray-800"><i class="fa-solid fa-bolt-lightning text-amber-500 mr-1.5"></i>Electricity &amp; Gas Bills</span>
                             </label>
                         </div>
 
@@ -2101,6 +2347,11 @@
             <button type="button" onclick="pwaSwitchModule('faculty-dir')" id="pwa-nav-faculty-dir" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 focus:outline-none">
                 <i class="fa-solid fa-id-card text-base"></i>
                 <span class="text-[10px] font-bold">Directory</span>
+            </button>
+            <button type="button" onclick="pwaSwitchModule('elec-gas-bills')" id="pwa-nav-elec-gas-bills" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 focus:outline-none">
+                <i class="fa-solid fa-bolt-lightning text-base"></i>
+                <span class="text-[10px] font-bold">Elec &amp; Gas</span>
+                <span id="pwaNotifBadgeElecGasBills" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
             </button>
             <button type="button" onclick="pwaSwitchModule('admin-access')" id="pwa-nav-admin-access" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 hidden focus:outline-none">
                 <i class="fa-solid fa-user-shield text-base"></i>
@@ -3499,6 +3750,409 @@
         </div>
     </div>
 
+    <!-- Modal: Add / Edit Electricity or Gas Meter -->
+    <div id="modalElecGasMeter" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800" id="egMeterModalTitle">Edit Utility Meter Details</h3>
+                <button type="button" onclick="closeModal('modalElecGasMeter')" class="text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <form id="egMeterForm" onsubmit="saveElecGasMeterRecord(event)" class="space-y-3">
+                <input type="hidden" id="egMeterEditId" value="">
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Utility Provider *</label>
+                    <select id="egMeterUtilityType" required class="w-full p-2.5 border rounded-lg text-sm bg-white font-semibold">
+                        <option value="electricity">Adani Electricity (Electricity)</option>
+                        <option value="gas">Mahanagar Gas (Piped Gas)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">CA Number (Account / Consumer No.) *</label>
+                    <input type="text" id="egMeterCaNumber" required placeholder="e.g. 152433211 or 100023491" class="w-full p-2.5 border rounded-lg text-sm font-mono">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Meter Number *</label>
+                    <input type="text" id="egMeterNumber" required placeholder="e.g. AE-8839201 or MGL-44102" class="w-full p-2.5 border rounded-lg text-sm font-mono">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Campus Location / Building / Description *</label>
+                    <input type="text" id="egMeterLocation" required placeholder="e.g. Academic Block Main Panel / Saifee Park Wing A" class="w-full p-2.5 border rounded-lg text-sm">
+                </div>
+                <div class="flex justify-between items-center pt-3 border-t">
+                    <button type="button" id="btnDeleteEgMeter" onclick="deleteElecGasMeterRecord()" class="hidden text-xs text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Delete Meter</span>
+                    </button>
+                    <div class="flex space-x-2 ml-auto">
+                        <button type="button" onclick="closeModal('modalElecGasMeter')" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+                        <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm">Save Meter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Update Monthly Electricity or Gas Bill Entry -->
+    <div id="modalElecGasBillEntry" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-start border-b pb-3">
+                <div>
+                    <span id="egBillModalUtilityBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">Adani Electricity</span>
+                    <h3 class="text-lg font-bold text-gray-900 mt-1" id="egBillModalTitle">Update Monthly Bill</h3>
+                    <p class="text-xs text-gray-500 font-mono" id="egBillModalSubtitle">CA: - | Meter: -</p>
+                </div>
+                <button type="button" onclick="closeModal('modalElecGasBillEntry')" class="text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+            <form id="egBillEntryForm" onsubmit="saveElecGasMonthlyBill(event)" class="space-y-3.5">
+                <input type="hidden" id="egBillMeterId" value="">
+                <input type="hidden" id="egBillYear" value="">
+                <input type="hidden" id="egBillMonthIndex" value="">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 block mb-1">Bill Amount (₹) *</label>
+                        <input type="number" step="0.01" min="0" id="egBillAmountInput" required placeholder="e.g. 14500" class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-sm font-extrabold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 block mb-1" id="egBillUnitsLabel">Units Consumed (kWh) *</label>
+                        <input type="number" step="0.01" min="0" id="egBillUnitsInput" required placeholder="e.g. 1250" class="w-full p-2.5 border rounded-lg text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Bill Date <span class="text-gray-400 font-normal">(Optional)</span></label>
+                        <input type="date" id="egBillDateInput" class="w-full p-2 border rounded-lg text-xs">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 block mb-1">Notes / Reference <span class="text-gray-400 font-normal">(Optional)</span></label>
+                        <input type="text" id="egBillNotesInput" placeholder="e.g. Paid via NEFT / Auto-fetched" class="w-full p-2 border rounded-lg text-xs">
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 p-3.5 rounded-lg border border-emerald-200 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-emerald-950 block">
+                            <i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>Attach Bill PDF (Saved in fm.marol Drive)
+                        </label>
+                        <span id="egBillExistingPdfLink" class="hidden text-xs"></span>
+                    </div>
+                    <input type="file" id="egBillPdfFileInput" accept=".pdf,image/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
+                </div>
+
+                <div class="flex justify-between items-center pt-3 border-t">
+                    <button type="button" id="btnClearEgBillEntry" onclick="clearElecGasMonthlyBill()" class="hidden text-xs text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Reset to Pending (Red)</span>
+                    </button>
+                    <div class="flex space-x-2 ml-auto">
+                        <button type="button" onclick="closeModal('modalElecGasBillEntry')" class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+                        <button type="submit" id="btnSaveEgBillEntry" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm flex items-center space-x-1.5">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Save Bill</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Wide Comparison & Bar Charts Pop-Up (#modalElecGasComparison) -->
+    <div id="modalElecGasComparison" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-7xl w-full p-5 sm:p-6 space-y-5 max-h-[94vh] flex flex-col overflow-y-auto">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2">
+                <div>
+                    <h3 class="text-xl font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-column text-emerald-700"></i>
+                        <span>Electricity &amp; Gas Consumption &amp; Expense Comparison</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Analyze Month-by-Month trends or Year-over-Year (Month vs Last Year Month) comparisons by Amount (₹) or Units Consumed.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalElecGasComparison')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold self-end sm:self-auto">&times;</button>
+            </div>
+
+            <!-- Interactive Filter Bar inside Wide Pop-Up -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-gray-50 p-3.5 rounded-xl border">
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600 uppercase block mb-1">1. Comparison Type</label>
+                    <select id="egCompModeSelect" onchange="renderElecGasComparisonChart()" class="w-full p-2 border rounded-lg text-xs font-extrabold bg-white text-emerald-950">
+                        <option value="yoy">Month vs Last Year Month (YoY)</option>
+                        <option value="monthly">Month-by-Month (Single Year)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600 uppercase block mb-1">2. Utility Type</label>
+                    <select id="egCompUtilitySelect" onchange="handleEgCompUtilityChange()" class="w-full p-2 border rounded-lg text-xs font-bold bg-white text-gray-800">
+                        <option value="electricity">Adani Electricity (27 Meters)</option>
+                        <option value="gas">Mahanagar Gas (7 Meters)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600 uppercase block mb-1">3. Metric (Amount / Units)</label>
+                    <select id="egCompMetricSelect" onchange="renderElecGasComparisonChart()" class="w-full p-2 border rounded-lg text-xs font-bold bg-white text-gray-800">
+                        <option value="amount">By Amount (₹)</option>
+                        <option value="units">By Units Consumed (kWh / SCM)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600 uppercase block mb-1">4. Select Meter / CA No.</label>
+                    <select id="egCompMeterSelect" onchange="renderElecGasComparisonChart()" class="w-full p-2 border rounded-lg text-xs font-semibold bg-white text-gray-800">
+                        <option value="all">All Meters (Aggregated Total)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600 uppercase block mb-1">5. Primary Year</label>
+                    <select id="egCompYearSelect" onchange="renderElecGasComparisonChart()" class="w-full p-2 border rounded-lg text-xs font-extrabold bg-white text-emerald-900">
+                        <option value="2027">2027 (vs 2026)</option>
+                        <option value="2026" selected>2026 (vs 2025)</option>
+                        <option value="2025">2025 (vs 2024)</option>
+                        <option value="2024">2024 (vs 2023)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Summary KPI Strip inside Comparison Pop-Up -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl">
+                    <span class="text-[11px] font-bold text-emerald-800 uppercase block" id="egCompKpiCurrLabel">Selected Year (2026) Total</span>
+                    <span class="text-xl font-extrabold text-emerald-950 mt-0.5 block" id="egCompKpiCurrVal">₹0</span>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 p-3.5 rounded-xl">
+                    <span class="text-[11px] font-bold text-blue-800 uppercase block" id="egCompKpiPrevLabel">Last Year (2025) Total</span>
+                    <span class="text-xl font-extrabold text-blue-950 mt-0.5 block" id="egCompKpiPrevVal">₹0</span>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl">
+                    <span class="text-[11px] font-bold text-amber-900 uppercase block">Net YoY Variance</span>
+                    <span class="text-xl font-extrabold text-amber-950 mt-0.5 block" id="egCompKpiVarianceVal">-</span>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 p-3.5 rounded-xl">
+                    <span class="text-[11px] font-bold text-purple-900 uppercase block">Peak Consumption Month</span>
+                    <span class="text-sm font-extrabold text-purple-950 mt-1 block" id="egCompKpiPeakVal">-</span>
+                </div>
+            </div>
+
+            <!-- Bar Chart Container (Fixed height per Chart.js responsive rule) -->
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <div class="relative h-80 w-full">
+                    <canvas id="egComparisonBarChartCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Month-by-Month Quantitative Comparison Table -->
+            <div class="border rounded-xl overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-gray-100 text-gray-700 uppercase text-[11px] border-b">
+                        <tr>
+                            <th class="p-2.5">Month</th>
+                            <th class="p-2.5 text-right" id="egCompTableCurrHeader">2026</th>
+                            <th class="p-2.5 text-right" id="egCompTablePrevHeader">2025</th>
+                            <th class="p-2.5 text-right">Difference</th>
+                            <th class="p-2.5 text-right">% Change</th>
+                        </tr>
+                    </thead>
+                    <tbody id="egCompTableBody" class="divide-y"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t">
+                <button type="button" onclick="closeModal('modalElecGasComparison')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs font-bold">Close Comparison</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Auto-Fetch Adani Electricity & Mahanagar Gas Bills Setup Guide & Script -->
+    <div id="modalElecGasAutoFetchGuide" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-6 space-y-4 max-h-[90vh] flex flex-col overflow-y-auto">
+            <div class="flex justify-between items-start border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-robot text-indigo-600"></i>
+                        <span>Automated Daily Bill Fetch Setup (Adani Electricity &amp; Mahanagar Gas)</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">How to automatically pull all 27 Adani &amp; 7 MGL bills, save PDFs to fm.marol Drive, and populate Amount &amp; Units daily.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalElecGasAutoFetchGuide')" class="text-gray-500 text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-3 text-xs text-gray-700 leading-relaxed">
+                <div class="bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl space-y-1.5">
+                    <p class="font-extrabold text-indigo-950 text-sm"><i class="fa-solid fa-circle-info mr-1.5"></i>How Daily Auto-Fetch Works (100% Free via Your Existing fm.marol Google Apps Script)</p>
+                    <p>Because Adani Electricity and Mahanagar Gas protect their public web portals with CAPTCHA/OTP and browser CORS blocks direct webpage scraping, the most reliable automated architecture uses your existing <strong>fm.marol Google Apps Script</strong> running on a <strong>Daily Time-Driven Trigger</strong>:</p>
+                    <ol class="list-decimal list-inside space-y-1 font-medium text-indigo-900 pt-1">
+                        <li><strong>Register E-Bills to <code class="bg-white px-1.5 py-0.5 rounded border">fm.marol@jameasaifiyah.edu</code></strong>: Add your department email on Adani Electricity (for all 27 CA numbers) and Mahanagar Gas (for all 7 CA numbers) so official monthly PDF bills arrive in your inbox automatically. (Alternatively, connect a Bharat BillPay / BBPS API key in the script).</li>
+                        <li><strong>Add the Auto-Fetch Function to Your Google Apps Script</strong>: Paste the script below into the same Google Apps Script project that powers your <code class="bg-white px-1 rounded border">GOOGLE_SCRIPT_URL</code> Drive uploader.</li>
+                        <li><strong>Set a Daily Trigger (e.g. Every Day at 8:00 AM)</strong>: In Google Apps Script, click <strong>Triggers (⏰ icon) &rarr; + Add Trigger &rarr; Function: <code class="bg-white px-1 rounded">autoFetchAdaniAndMglBillsDaily</code> &rarr; Time-driven &rarr; Day timer</strong>.</li>
+                    </ol>
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <span class="font-extrabold text-gray-900 uppercase text-[11px]">Ready-to-Paste Google Apps Script Code (Add to your fm.marol Script):</span>
+                        <button type="button" onclick="copyAutoFetchAppsScriptCode()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1 rounded-lg transition flex items-center space-x-1">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Copy Apps Script Code</span>
+                        </button>
+                    </div>
+                    <textarea id="autoFetchAppsScriptTextarea" readonly class="w-full h-64 p-3 font-mono text-[11px] bg-slate-900 text-emerald-300 rounded-xl border border-slate-700 focus:outline-none">
+// ============================================================================
+// COMPLETE Code.gs FOR SIYANAT MAROL PORTAL (fm.marol@jameasaifiyah.edu)
+// Includes: 1) Google Drive File Uploader (doPost)
+//           2) Daily Auto-Fetch for 27 Adani Electricity & 7 Mahanagar Gas Bills
+// ============================================================================
+const FIREBASE_DB_URL = "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app";
+const DRIVE_BILLS_FOLDER_NAME = "Siyanat_Utility_Bills_Auto";
+const DRIVE_UPLOADS_FOLDER_NAME = "Siyanat_Portal_Uploads";
+
+function doPost(e) {
+  try {
+    const reqData = JSON.parse(e.postData.contents);
+
+    // 1. If triggered by "Auto-Fetch Sync" button on the webpage:
+    if (reqData.action === "autoFetchUtilityBills") {
+      autoFetchAdaniAndMglBillsDaily();
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        message: "Utility bills synced"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 2. Standard Portal File Upload to Google Drive:
+    const folder = getOrCreateUtilityFolder_(DRIVE_UPLOADS_FOLDER_NAME);
+    const decoded = Utilities.base64Decode(reqData.base64);
+    const blob = Utilities.newBlob(decoded, reqData.mimeType, reqData.filename);
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    const fileId = file.getId();
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      fileId: fileId,
+      fileUrl: file.getUrl(),
+      directImgUrl: "https://drive.google.com/uc?export=view&id=" + fileId
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function autoFetchAdaniAndMglBillsDaily() {
+  const folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
+  const metersRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasMeters.json");
+  const meters = JSON.parse(metersRes.getContentText() || "[]") || [];
+  if (!meters.length) return;
+
+  // Search recent emails in fm.marol Gmail with PDF bills from Adani Electricity or Mahanagar Gas
+  const query = '(from:adanielectricity.com OR from:adani.com OR from:mahanagargas.com OR subject:"Electricity Bill" OR subject:"Gas Bill") newer_than:15d';
+  const threads = GmailApp.search(query, 0, 50);
+
+  threads.forEach(thread => {
+    thread.getMessages().forEach(msg => {
+      const bodyText = msg.getPlainBody() + " " + msg.getSubject();
+      const msgDate = msg.getDate();
+      const yearStr = String(msgDate.getFullYear());
+      const monthIdx = msgDate.getMonth(); // 0 = Jan .. 11 = Dec
+
+      meters.forEach(meter => {
+        const ca = String(meter.caNumber || "").trim();
+        const mtrNo = String(meter.meterNumber || "").trim();
+        if (!ca || ca.startsWith("AE-CA-") || ca.startsWith("MGL-CA-")) return;
+
+        if (bodyText.indexOf(ca) !== -1 || (mtrNo && bodyText.indexOf(mtrNo) !== -1)) {
+          // Extract Amount (Rs / INR / ₹) and Units (kWh / SCM / Units)
+          const amtMatch = bodyText.match(/(?:Amount|Payable|Total|Rs\.?|INR|₹)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
+          const unitMatch = bodyText.match(/(?:Units|Consumption|kWh|SCM)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
+          const amountVal = amtMatch ? parseFloat(amtMatch[1].replace(/,/g, "")) : 0;
+          const unitsVal = unitMatch ? parseFloat(unitMatch[1].replace(/,/g, "")) : 0;
+
+          let pdfUrl = "";
+          msg.getAttachments().forEach(att => {
+            if (att.getContentType().indexOf("pdf") !== -1 || att.getName().toLowerCase().endsWith(".pdf")) {
+              const file = folder.createFile(att.copyBlob()).setName(ca + "_" + yearStr + "_M" + (monthIdx + 1) + ".pdf");
+              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+              pdfUrl = file.getUrl();
+            }
+          });
+
+          if (amountVal > 0 || pdfUrl) {
+            const billKey = meter.id + "_" + yearStr + "_" + monthIdx;
+            const existingCheck = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + billKey + ".json");
+            const existingBill = JSON.parse(existingCheck.getContentText() || "null");
+            const isNewOrUpdated = !existingBill || Number(existingBill.amount) !== Number(amountVal);
+
+            const payload = {
+              meterId: meter.id,
+              caNumber: ca,
+              year: yearStr,
+              monthIndex: monthIdx,
+              amount: amountVal,
+              units: unitsVal,
+              billDate: Utilities.formatDate(msgDate, Session.getScriptTimeZone(), "yyyy-MM-dd"),
+              notes: "Auto-fetched from E-Bill",
+              fileUrl: pdfUrl || (existingBill ? existingBill.fileUrl : ""),
+              updatedAt: new Date().toISOString()
+            };
+            UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + billKey + ".json", {
+              method: "put",
+              contentType: "application/json",
+              payload: JSON.stringify(payload)
+            });
+
+            // Push cross-device portal notification for all users permitted for Electricity & Gas Bills
+            if (isNewOrUpdated) {
+              const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+              const utilLabel = meter.utility === "gas" ? "Mahanagar Gas" : "Adani Electricity";
+              const unitLabel = meter.utility === "gas" ? "SCM" : "kWh";
+              const notifId = "notif_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
+              const notifObj = {
+                id: notifId,
+                module: "elec-gas-bills",
+                subHeader: "",
+                subPermission: "",
+                actorEmail: "auto-fetch@siyanatmarol.system",
+                actorName: "Auto-Fetch System (" + utilLabel + ")",
+                actionType: "auto-fetch-bill",
+                detailText: "Auto-fetched " + utilLabel + " bill for " + (meter.location || ca) + " (CA: " + ca + ") — " + monthNames[monthIdx] + " " + yearStr + ": ₹" + amountVal,
+                scheduleSummary: "Units: " + unitsVal + " " + unitLabel + (payload.fileUrl ? " | PDF Attached to Drive" : ""),
+                createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
+                timestamp: new Date().getTime(),
+                seenBy: []
+              };
+              UrlFetchApp.fetch(FIREBASE_DB_URL + "/notifications/" + notifId + ".json", {
+                method: "put",
+                contentType: "application/json",
+                payload: JSON.stringify(notifObj)
+              });
+              UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/notifications/" + notifId + ".json", {
+                method: "put",
+                contentType: "application/json",
+                payload: JSON.stringify(notifObj)
+              });
+            }
+          }
+        }
+      });
+    });
+  });
+}
+
+function getOrCreateUtilityFolder_(name) {
+  const iter = DriveApp.getFoldersByName(name);
+  return iter.hasNext() ? iter.next() : DriveApp.createFolder(name);
+}
+                    </textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t">
+                <button type="button" onclick="closeModal('modalElecGasAutoFetchGuide')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs font-bold">Close Guide</button>
+            </div>
+        </div>
+    </div>
+
     <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
@@ -3528,7 +4182,7 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
         let currentUser = null;
         let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
-        let currentUserModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
+        let currentUserModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
         let currentUserClassroomPerms = ['allotted-class', 'event', 'student-count', 'extra-chair'];
         let currentUserAccessLevel = 'Editing Rights'; // 'Editing Rights' | 'View Only'
         let isUserAdmin = false;
@@ -3550,6 +4204,8 @@
         let vacantBills = {};
         let societyBillsData = {};
         let estateAssetsData = [];
+        let elecGasMetersData = [];
+        let elecGasBillsData = {};
         let isSavingAssets = false;
         let isSavingPortalData = false;
         let expandedAssetFlats = new Set();
@@ -3633,11 +4289,10 @@
         }
         
         let superAdmins = [
-            'murtaza.kheraluwala@jameasaifiyah.edu',
-            'fm.marol@jameasaifiyah.edu'
+            'murtaza.kheraluwala@jameasaifiyah.edu'
         ];
 
-        const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
+        const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
         const ALL_CLASSROOM_COL_PERMS = ['allotted-class', 'event', 'student-count', 'extra-chair'];
 
         const DEFAULT_WATI_ACCESS_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6Im11cnRhemEua2hlcmFsdXdhbGFAamFtZWFzYWlmaXlhaC5lZHUiLCJuYW1laWQiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiZW1haWwiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiYXV0aF90aW1lIjoiMTAvMjYvMjAyNiAxMjoyMjo0OCIsInRlbmFudF9pZCI6IjMxMDM4NSIsImRiX25hbWUiOiJtdC1wcm9kLVRlbmFudHMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBRE1JTklTVFJBVE9SIiwiZXhwIjoyNTM0MDIzMDA4MDAsImlzcyI6IkNsYXJlX0FJIiwiYXVkIjoiQ2xhcmVfQUkifQ.K69obg-iYKCwmE4B8M7EklmXokQBT63bXpdQsdimVNw";
@@ -4323,8 +4978,7 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                 }
                 const emailClean = String(u.email || '').trim();
                 const fallbackDefaultUser = [
-                    { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', whatsappNumber: '918320039709' },
-                    { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu', whatsappNumber: '' }
+                    { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', whatsappNumber: '918320039709' }
                 ].find(d => d.email.toLowerCase() === emailClean.toLowerCase());
                 const userNameClean = String(u.name || u.userName || (fallbackDefaultUser ? fallbackDefaultUser.name : '')).trim();
                 const whatsappClean = normalizeWhatsAppPhone(u.whatsappNumber || u.whatsapp || u.phone || (fallbackDefaultUser ? fallbackDefaultUser.whatsappNumber : ''));
@@ -4342,10 +4996,9 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                 };
             });
 
-            // Guarantee default superAdmins (including Murtaza Kheraluwala with 918320039709) are always present in usersList
+            // Guarantee default superAdmin (Murtaza Kheraluwala with 918320039709) is always present in usersList
             const defaultSuperUsers = [
-                { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', whatsappNumber: '918320039709', receiveClassroomWhatsapp: true, role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] },
-                { name: 'FM Marol', email: 'fm.marol@jameasaifiyah.edu', whatsappNumber: '', receiveClassroomWhatsapp: true, role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
+                { name: 'Murtaza Kheraluwala', email: 'murtaza.kheraluwala@jameasaifiyah.edu', whatsappNumber: '918320039709', receiveClassroomWhatsapp: true, role: 'Admin', accessLevel: 'Editing Rights', allowedModules: [...ALL_PORTAL_MODULES], permissions: [1,2,3,4,5,6,7,8], classroomPermissions: [...ALL_CLASSROOM_COL_PERMS] }
             ];
             defaultSuperUsers.slice().reverse().forEach(defU => {
                 const exists = normalizedList.some(item => String(item.email || '').trim().toLowerCase() === defU.email.toLowerCase());
@@ -4398,6 +5051,8 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     societyDocs = data.docs || [];
                     maintLogs = data.maint || [];
                     vacantBills = data.bills || {};
+                    elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
+                    elecGasBillsData = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     usersList = normalizeUsersList(data.users || usersList);
                     if (data.watiConfig) {
@@ -4469,6 +5124,8 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     ];
                     classroomsData = [];
                     estateAssetsData = [];
+                    elecGasMetersData = ensureDefaultElecGasMeters([]);
+                    elecGasBillsData = {};
                     await saveCloudData();
                 }
             } catch (err) {
@@ -4625,6 +5282,7 @@ window.loadClassroomsFromCloud = async function() {
             renderAssetDetailsTable();
             renderClassroomsTables();
             renderFacultyTable();
+            renderElecGasModule();
             renderUsersList();
             updateModuleNotificationBadges();
 
@@ -4653,6 +5311,8 @@ window.loadClassroomsFromCloud = async function() {
                     societyDocs = Array.isArray(data.docs) ? data.docs : (data.docs && typeof data.docs === 'object' ? Object.values(data.docs) : []);
                     maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
                     vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
+                    if (data.elecGasMeters !== undefined) elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
+                    if (data.elecGasBills !== undefined) elecGasBillsData = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     if (data.users !== undefined) {
                         usersList = normalizeUsersList(data.users);
@@ -4734,6 +5394,11 @@ window.loadClassroomsFromCloud = async function() {
                         const incoming = normalizeNotificationsList(snapshot.val());
                         if (incoming.length > 0) {
                             portalNotificationsData = mergeNotificationsArrays(incoming, portalNotificationsData);
+                            incoming.forEach(notif => {
+                                if (canCurrentUserReceiveModuleNotification(notif)) {
+                                    triggerDeviceSystemNotification(notif);
+                                }
+                            });
                         }
                     }
                     updateModuleNotificationBadges();
@@ -4773,6 +5438,13 @@ window.loadClassroomsFromCloud = async function() {
                 const unseenSub = getUnseenNotificationsForModule('dawat-estates', currentActiveDawatSubHeader);
                 if (unseenSub.length > 0) {
                     openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
+                }
+            }
+            const egModEl = document.getElementById('module-elec-gas-bills');
+            if (egModEl && !egModEl.classList.contains('hidden')) {
+                const unseenEg = getUnseenNotificationsForModule('elec-gas-bills');
+                if (unseenEg.length > 0) {
+                    openModuleNotificationsPopupIfAny('elec-gas-bills');
                 }
             }
         }
@@ -4879,11 +5551,12 @@ window.loadClassroomsFromCloud = async function() {
                 const sub = notif.subHeader && DAWAT_SUBHEADER_META[notif.subHeader] ? DAWAT_SUBHEADER_META[notif.subHeader].label : 'Dawat Estates';
                 moduleLabel = `Dawat Estates (${sub})`;
             } else if (notif.module === 'faculty-dir') moduleLabel = 'Directory';
+            else if (notif.module === 'elec-gas-bills') moduleLabel = 'Electricity & Gas Bills';
             else if (notif.module === 'inventory') moduleLabel = 'Keys Inventory';
 
             const title = `Siyanat Marol — ${moduleLabel} Update`;
             const actor = notif.actorName || notif.actorEmail || 'A user';
-            const body = `${actor}: ${notif.message || notif.action || 'New changes recorded'}`;
+            const body = `${actor}: ${notif.detailText || notif.message || notif.action || 'New changes recorded'}`;
 
             const options = {
                 body: body,
@@ -4960,6 +5633,11 @@ window.loadClassroomsFromCloud = async function() {
             const clsBadgeEl = document.getElementById('notifBadgeClassroomAllocation');
             const unseenCls = getUnseenNotificationsForModule('classroom-allocation');
             setBadgeElementCount(clsBadgeEl, unseenCls.length);
+
+            // Electricity & Gas Bills module badge
+            const egBadgeEl = document.getElementById('notifBadgeElecGasBills');
+            const unseenEg = getUnseenNotificationsForModule('elec-gas-bills');
+            setBadgeElementCount(egBadgeEl, unseenEg.length);
 
             // Dawat Estates module badge (aggregated unseen across all allowed sub-headers)
             const dawatBadgeEl = document.getElementById('notifBadgeDawatEstates');
@@ -5370,6 +6048,8 @@ window.loadClassroomsFromCloud = async function() {
                 popupHeaderTitle = subMeta
                     ? `Dawat Estates — ${subMeta.label} Update Notification`
                     : 'Dawat Estates Update Notification';
+            } else if (modKey === 'elec-gas-bills') {
+                popupHeaderTitle = 'Electricity & Gas Bills Update Notification';
             }
 
             // Group unseen notifications by actorEmail (1 pop-up notification per user who made additions or edits)
@@ -5528,7 +6208,9 @@ window.loadClassroomsFromCloud = async function() {
             socBills: societyBillsData,
             users: usersList,
             watiConfig: watiConfig,
-            estate_assets: estateAssetsData
+            estate_assets: estateAssetsData,
+            elecGasMeters: elecGasMetersData,
+            elecGasBills: elecGasBillsData
         });
         await Promise.allSettled([
             set(dbRef(db, 'classrooms'), classroomsData),
@@ -5592,6 +6274,7 @@ window.loadClassroomsFromCloud = async function() {
                 { key: 'classroom-allocation', btnId: 'pwa-nav-classroom-allocation' },
                 { key: 'inventory', btnId: 'pwa-nav-inventory' },
                 { key: 'faculty-dir', btnId: 'pwa-nav-faculty-dir' },
+                { key: 'elec-gas-bills', btnId: 'pwa-nav-elec-gas-bills' },
                 { key: 'admin-access', btnId: 'pwa-nav-admin-access' }
             ];
 
@@ -5651,7 +6334,7 @@ window.loadClassroomsFromCloud = async function() {
         };
 
         window.applyModuleAndSubHeaderPermissions = function applyModuleAndSubHeaderPermissions() {
-            const modOrder = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir'];
+            const modOrder = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
             let firstAllowedMod = null;
             const effectiveIsAdmin = (typeof window.isUserAdmin !== 'undefined') ? window.isUserAdmin : isUserAdmin;
             const effectiveModules = (typeof window.currentUserModules !== 'undefined') ? window.currentUserModules : currentUserModules;
@@ -5751,7 +6434,7 @@ window.loadClassroomsFromCloud = async function() {
             }
 
             // Check if currently active module is allowed
-            const allModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'admin-access'];
+            const allModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'];
             let currentlyVisibleMod = null;
             for (const m of allModules) {
                 const modEl = document.getElementById('module-' + m);
@@ -5789,6 +6472,10 @@ window.loadClassroomsFromCloud = async function() {
             populateFlatMaintenanceDropdown();
             populateIntegratedFlatDropdown();
             renderAssetDetailsTable();
+            if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                elecGasMetersData = ensureDefaultElecGasMeters([]);
+            }
+            renderElecGasModule();
             
             const today = new Date().toISOString().slice(0, 7);
             document.getElementById('billMonthPicker').value = today;
@@ -5809,7 +6496,7 @@ window.loadClassroomsFromCloud = async function() {
                 return;
             }
 
-            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'admin-access'].forEach(m => {
+            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'].forEach(m => {
                 document.getElementById('module-' + m)?.classList.add('hidden');
                 document.getElementById('mod-' + m)?.classList.remove('active-tab');
             });
@@ -5820,7 +6507,10 @@ window.loadClassroomsFromCloud = async function() {
                 window.pwaUpdateActiveNav(modName);
             }
 
-            if (modName === 'classroom-allocation') {
+            if (modName === 'elec-gas-bills') {
+                renderElecGasModule();
+                openModuleNotificationsPopupIfAny('elec-gas-bills');
+            } else if (modName === 'classroom-allocation') {
                 renderClassroomsTables();
                 openModuleNotificationsPopupIfAny('classroom-allocation');
             } else if (modName === 'dawat-estates') {
@@ -8202,7 +8892,8 @@ await recordDawatEstatesNotification(
             'dawat-estates': 'Dawat Estates',
             'classroom-allocation': 'Classroom Allocation',
             'inventory': 'Keys Inventory',
-            'faculty-dir': 'Directory'
+            'faculty-dir': 'Directory',
+            'elec-gas-bills': 'Electricity & Gas Bills'
         };
 
         const CLASSROOM_COL_LABELS_MAP = {
@@ -8353,6 +9044,7 @@ await recordDawatEstatesNotification(
             document.getElementById('mod-perm-classroom-allocation').checked = true;
             document.getElementById('mod-perm-inventory').checked = true;
             document.getElementById('mod-perm-faculty-dir').checked = true;
+            if (document.getElementById('mod-perm-elec-gas-bills')) document.getElementById('mod-perm-elec-gas-bills').checked = true;
             document.getElementById('accessLevelEditing').checked = true;
             setAllDawatSubPerms(true);
             setAllClassroomSubPerms(true);
@@ -8385,6 +9077,7 @@ await recordDawatEstatesNotification(
             document.getElementById('mod-perm-classroom-allocation').checked = mods.includes('classroom-allocation');
             document.getElementById('mod-perm-inventory').checked = mods.includes('inventory');
             document.getElementById('mod-perm-faculty-dir').checked = mods.includes('faculty-dir');
+            if (document.getElementById('mod-perm-elec-gas-bills')) document.getElementById('mod-perm-elec-gas-bills').checked = mods.includes('elec-gas-bills');
 
             const perms = Array.isArray(u.permissions) ? u.permissions : [];
             for (let i = 1; i <= 8; i++) {
@@ -8488,6 +9181,7 @@ await recordDawatEstatesNotification(
             if (document.getElementById('mod-perm-classroom-allocation')?.checked) allowedModules.push('classroom-allocation');
             if (document.getElementById('mod-perm-inventory')?.checked) allowedModules.push('inventory');
             if (document.getElementById('mod-perm-faculty-dir')?.checked) allowedModules.push('faculty-dir');
+            if (document.getElementById('mod-perm-elec-gas-bills')?.checked) allowedModules.push('elec-gas-bills');
 
             if (allowedModules.length === 0) {
                 showAssetToast("Please select at least one allowed module for the user.", true);
@@ -11794,7 +12488,9 @@ await recordDawatEstatesNotification(
                     socBills: societyBillsData,
                     users: usersList,
                     watiConfig: watiConfig,
-                    estate_assets: estateAssetsData
+                    estate_assets: estateAssetsData,
+                    elecGasMeters: elecGasMetersData,
+                    elecGasBills: elecGasBillsData
                 }
             };
 
@@ -11851,6 +12547,8 @@ await recordDawatEstatesNotification(
                     if (src.users !== undefined) usersList = normalizeUsersList(src.users);
                     if (src.watiConfig !== undefined) watiConfig = normalizeWatiConfig(src.watiConfig);
                     if (src.estate_assets !== undefined) estateAssetsData = normalizeEstateAssetsList(src.estate_assets);
+                    if (src.elecGasMeters !== undefined) elecGasMetersData = ensureDefaultElecGasMeters(src.elecGasMeters);
+                    if (src.elecGasBills && typeof src.elecGasBills === 'object') elecGasBillsData = src.elecGasBills;
 
                     await saveCloudData();
                     initAppUI();
@@ -12809,6 +13507,867 @@ await recordDawatEstatesNotification(
             showAssetToast(`Exported ${rows.length} row(s) as ${format.toUpperCase()}`);
         };
 
+
+        // =========================================================================
+        // MODULE: ELECTRICITY & GAS BILLS (27 ADANI METERS & 7 MAHANAGAR GAS METERS)
+        // =========================================================================
+
+        const EG_MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        let selectedElecGasUtilityFilter = 'all'; // 'all' | 'electricity' | 'gas'
+        let egComparisonChartInstance = null;
+
+        function ensureDefaultElecGasMeters(rawMeters) {
+            let list = [];
+            if (Array.isArray(rawMeters)) {
+                list = rawMeters.filter(Boolean);
+            } else if (rawMeters && typeof rawMeters === 'object') {
+                list = Object.values(rawMeters).filter(Boolean);
+            }
+            if (list.length > 0) {
+                return list.map((m, idx) => ({
+                    id: String(m.id || `eg_meter_${idx + 1}`),
+                    utility: m.utility === 'gas' ? 'gas' : 'electricity',
+                    caNumber: String(m.caNumber || '').trim(),
+                    meterNumber: String(m.meterNumber || '').trim(),
+                    location: String(m.location || '').trim()
+                }));
+            }
+
+            // Initialize 27 Adani Electricity Meters + 7 Mahanagar Gas Meters by default
+            const defaults = [];
+            for (let i = 1; i <= 27; i++) {
+                const padNum = String(i).padStart(2, '0');
+                defaults.push({
+                    id: `elec_${i}`,
+                    utility: 'electricity',
+                    caNumber: `AE-CA-${padNum}`,
+                    meterNumber: `AE-MTR-${padNum}`,
+                    location: `Adani Campus Meter #${i}`
+                });
+            }
+            for (let j = 1; j <= 7; j++) {
+                const padNum = String(j).padStart(2, '0');
+                defaults.push({
+                    id: `gas_${j}`,
+                    utility: 'gas',
+                    caNumber: `MGL-CA-${padNum}`,
+                    meterNumber: `MGL-MTR-${padNum}`,
+                    location: `Mahanagar Gas Meter #${j}`
+                });
+            }
+            return defaults;
+        }
+
+        function getElecGasBillKey(meterId, year, monthIdx) {
+            return `${meterId}_${year}_${monthIdx}`;
+        }
+
+        function getElecGasBillRecord(meterId, year, monthIdx) {
+            const key = getElecGasBillKey(meterId, year, monthIdx);
+            return (elecGasBillsData && elecGasBillsData[key]) ? elecGasBillsData[key] : null;
+        }
+
+        window.setElecGasUtilityFilter = function(filterVal) {
+            selectedElecGasUtilityFilter = filterVal;
+            const btnAll = document.getElementById('egFilterBtnAll');
+            const btnElec = document.getElementById('egFilterBtnElec');
+            const btnGas = document.getElementById('egFilterBtnGas');
+
+            const activeCls = "px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-800 text-white shadow-sm transition flex items-center space-x-1.5";
+            const inactiveCls = "px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-gray-100 text-gray-700 hover:bg-gray-200 border transition flex items-center space-x-1.5";
+
+            if (btnAll) btnAll.className = filterVal === 'all' ? activeCls : inactiveCls;
+            if (btnElec) btnElec.className = filterVal === 'electricity' ? activeCls : inactiveCls;
+            if (btnGas) btnGas.className = filterVal === 'gas' ? activeCls : inactiveCls;
+
+            renderElecGasModule();
+        };
+
+        window.renderElecGasModule = function() {
+            if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                elecGasMetersData = ensureDefaultElecGasMeters([]);
+            }
+
+            const selYear = document.getElementById('egYearSelect')?.value || '2026';
+            const searchQ = (document.getElementById('egMeterSearch')?.value || '').toLowerCase().trim();
+            const searchTokens = searchQ.split(/\s+/).filter(Boolean);
+            const statusFilter = document.getElementById('egStatusFilter')?.value || '';
+            const currentMonthIdx = new Date().getMonth();
+
+            if (document.getElementById('egElecTableYearLabel')) document.getElementById('egElecTableYearLabel').innerText = selYear;
+            if (document.getElementById('egGasTableYearLabel')) document.getElementById('egGasTableYearLabel').innerText = selYear;
+            if (document.getElementById('egCardSelectedYearLabel')) document.getElementById('egCardSelectedYearLabel').innerText = selYear;
+
+            const secElec = document.getElementById('egSectionElectricity');
+            const secGas = document.getElementById('egSectionGas');
+            if (secElec) secElec.classList.toggle('hidden', selectedElecGasUtilityFilter === 'gas');
+            if (secGas) secGas.classList.toggle('hidden', selectedElecGasUtilityFilter === 'electricity');
+
+            const allElecMeters = elecGasMetersData.filter(m => m.utility !== 'gas');
+            const allGasMeters = elecGasMetersData.filter(m => m.utility === 'gas');
+
+            if (document.getElementById('egCardElecMeterCount')) document.getElementById('egCardElecMeterCount').innerText = allElecMeters.length;
+            if (document.getElementById('egCardGasMeterCount')) document.getElementById('egCardGasMeterCount').innerText = allGasMeters.length;
+
+            // Calculate full year metrics for overview cards
+            let totalElecAmt = 0, totalElecUnits = 0, elecGreenCells = 0, elecRedCells = 0;
+            allElecMeters.forEach(m => {
+                for (let mIdx = 0; mIdx < 12; mIdx++) {
+                    const rec = getElecGasBillRecord(m.id, selYear, mIdx);
+                    const amt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
+                    const units = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
+                    if (!isNaN(amt) && amt > 0) {
+                        totalElecAmt += amt;
+                        totalElecUnits += (isNaN(units) ? 0 : units);
+                        elecGreenCells++;
+                    } else {
+                        elecRedCells++;
+                    }
+                }
+            });
+
+            let totalGasAmt = 0, totalGasUnits = 0, gasGreenCells = 0, gasRedCells = 0;
+            allGasMeters.forEach(m => {
+                for (let mIdx = 0; mIdx < 12; mIdx++) {
+                    const rec = getElecGasBillRecord(m.id, selYear, mIdx);
+                    const amt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
+                    const units = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
+                    if (!isNaN(amt) && amt > 0) {
+                        totalGasAmt += amt;
+                        totalGasUnits += (isNaN(units) ? 0 : units);
+                        gasGreenCells++;
+                    } else {
+                        gasRedCells++;
+                    }
+                }
+            });
+
+            if (document.getElementById('egCardElecTotalAmount')) document.getElementById('egCardElecTotalAmount').innerText = `₹${totalElecAmt.toLocaleString('en-IN')}`;
+            if (document.getElementById('egCardElecTotalUnits')) document.getElementById('egCardElecTotalUnits').innerText = totalElecUnits.toLocaleString('en-IN');
+            if (document.getElementById('egCardElecGreenCount')) document.getElementById('egCardElecGreenCount').innerText = elecGreenCells;
+            if (document.getElementById('egCardElecRedCount')) document.getElementById('egCardElecRedCount').innerText = elecRedCells;
+
+            if (document.getElementById('egCardGasTotalAmount')) document.getElementById('egCardGasTotalAmount').innerText = `₹${totalGasAmt.toLocaleString('en-IN')}`;
+            if (document.getElementById('egCardGasTotalUnits')) document.getElementById('egCardGasTotalUnits').innerText = totalGasUnits.toLocaleString('en-IN');
+            if (document.getElementById('egCardGasGreenCount')) document.getElementById('egCardGasGreenCount').innerText = gasGreenCells;
+            if (document.getElementById('egCardGasRedCount')) document.getElementById('egCardGasRedCount').innerText = gasRedCells;
+
+            const combinedAmt = totalElecAmt + totalGasAmt;
+            if (document.getElementById('egCardCombinedTotalAmount')) document.getElementById('egCardCombinedTotalAmount').innerText = `₹${combinedAmt.toLocaleString('en-IN')}`;
+
+            const filterMetersFn = (metersList) => {
+                return metersList.filter(m => {
+                    if (searchTokens.length > 0) {
+                        const corpus = `${m.caNumber || ''} ${m.meterNumber || ''} ${m.location || ''}`.toLowerCase();
+                        if (!searchTokens.every(t => corpus.includes(t))) return false;
+                    }
+                    if (statusFilter === 'pending_current') {
+                        const rec = getElecGasBillRecord(m.id, selYear, currentMonthIdx);
+                        const hasAmt = rec && rec.amount !== undefined && rec.amount !== '' && parseFloat(rec.amount) > 0;
+                        if (hasAmt) return false;
+                    } else if (statusFilter === 'updated_current') {
+                        const rec = getElecGasBillRecord(m.id, selYear, currentMonthIdx);
+                        const hasAmt = rec && rec.amount !== undefined && rec.amount !== '' && parseFloat(rec.amount) > 0;
+                        if (!hasAmt) return false;
+                    }
+                    return true;
+                });
+            };
+
+            renderUtilityYearlyTable(filterMetersFn(allElecMeters), 'electricity', selYear, 'egElecTableBody', 'egElecTableFoot');
+            renderUtilityYearlyTable(filterMetersFn(allGasMeters), 'gas', selYear, 'egGasTableBody', 'egGasTableFoot');
+        };
+
+        function renderUtilityYearlyTable(meters, utilityType, selYear, tbodyId, tfootId) {
+            const tbody = document.getElementById(tbodyId);
+            const tfoot = document.getElementById(tfootId);
+            if (!tbody || !tfoot) return;
+
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            const unitSuffix = utilityType === 'gas' ? 'SCM' : 'kWh';
+            const viewOnly = isCurrentUserViewOnly();
+
+            if (meters.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="15" class="p-6 text-center text-gray-400 text-xs italic">No ${utilityType === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} meters match the current filter.</td></tr>`;
+                return;
+            }
+
+            const monthlyTotalsAmt = new Array(12).fill(0);
+            const monthlyTotalsUnits = new Array(12).fill(0);
+            let grandYearAmt = 0;
+            let grandYearUnits = 0;
+
+            meters.forEach((m, idx) => {
+                const safeMeterId = String(m.id).replace(/'/g, "\\'");
+                let rowTotalAmt = 0;
+                let rowTotalUnits = 0;
+
+                let monthCellsHtml = '';
+                for (let mIdx = 0; mIdx < 12; mIdx++) {
+                    const rec = getElecGasBillRecord(m.id, selYear, mIdx);
+                    const amtVal = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
+                    const unitsVal = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
+                    const isUpdated = !isNaN(amtVal) && amtVal > 0;
+
+                    if (isUpdated) {
+                        rowTotalAmt += amtVal;
+                        rowTotalUnits += (isNaN(unitsVal) ? 0 : unitsVal);
+                        monthlyTotalsAmt[mIdx] += amtVal;
+                        monthlyTotalsUnits[mIdx] += (isNaN(unitsVal) ? 0 : unitsVal);
+                        grandYearAmt += amtVal;
+                        grandYearUnits += (isNaN(unitsVal) ? 0 : unitsVal);
+                    }
+
+                    if (isUpdated) {
+                        // GREEN cell when amount is added
+                        const pdfBadge = rec.fileUrl
+                            ? `<a href="${rec.fileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="mt-0.5 inline-flex items-center space-x-0.5 bg-white text-emerald-900 border border-emerald-400 px-1.5 py-0.2 rounded text-[10px] font-bold hover:bg-emerald-200 transition" title="Open Attached Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`
+                            : `<span class="text-[9px] text-emerald-700/80 block mt-0.5">No PDF</span>`;
+
+                        monthCellsHtml += `
+                            <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="p-1.5 align-middle bg-emerald-50/95 hover:bg-emerald-100 border border-emerald-300 text-center cursor-pointer transition" title="Click to Edit ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
+                                <div class="flex flex-col items-center justify-center leading-tight">
+                                    <span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>
+                                    <span class="text-[10px] font-semibold text-emerald-800">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${unitSuffix}</span>
+                                    ${pdfBadge}
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        // RED cell when amount is pending
+                        monthCellsHtml += `
+                            <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="p-1.5 align-middle bg-red-50/90 hover:bg-red-100 border border-red-300 text-center cursor-pointer transition" title="Pending: Click to Add ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
+                                <div class="flex flex-col items-center justify-center py-1 leading-tight">
+                                    <span class="bg-red-100 text-red-800 border border-red-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded">Pending</span>
+                                    ${!viewOnly ? `<span class="text-[9px] text-red-700 font-bold mt-0.5 underline">+ Add Bill</span>` : ''}
+                                </div>
+                            </td>
+                        `;
+                    }
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-gray-50/60";
+                tr.innerHTML = `
+                    <td class="p-2 text-center font-bold text-gray-500 bg-white">${idx + 1}</td>
+                    <td class="p-2.5 sticky left-0 bg-white z-10 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
+                        <div class="flex items-start justify-between gap-1.5">
+                            <div>
+                                <div class="font-extrabold text-gray-900 text-xs">${m.location || 'Campus Meter'}</div>
+                                <div class="text-[11px] font-mono font-bold text-emerald-800 mt-0.5">CA: ${m.caNumber || '-'}</div>
+                                <div class="text-[10px] font-mono text-gray-500">Meter: ${m.meterNumber || '-'}</div>
+                            </div>
+                            ${!viewOnly ? `
+                            <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Edit CA Number, Meter No & Location">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </button>` : ''}
+                        </div>
+                    </td>
+                    ${monthCellsHtml}
+                    <td class="p-2.5 text-right bg-gray-50 border-l align-middle">
+                        <div class="font-extrabold text-gray-900 text-xs">₹${rowTotalAmt.toLocaleString('en-IN')}</div>
+                        <div class="text-[10px] font-bold text-gray-600">${rowTotalUnits.toLocaleString('en-IN')} ${unitSuffix}</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Footer Monthly Totals Row
+            let footMonthsHtml = '';
+            for (let mIdx = 0; mIdx < 12; mIdx++) {
+                footMonthsHtml += `
+                    <td class="p-2 text-center border">
+                        <div class="font-extrabold text-gray-900 text-xs">₹${monthlyTotalsAmt[mIdx].toLocaleString('en-IN')}</div>
+                        <div class="text-[10px] font-semibold text-gray-600">${monthlyTotalsUnits[mIdx].toLocaleString('en-IN')} ${unitSuffix}</div>
+                    </td>
+                `;
+            }
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="2" class="p-2.5 text-right uppercase tracking-wider font-extrabold text-gray-900 sticky left-0 bg-gray-100 z-10 border-r">Monthly Totals (${selYear}):</td>
+                    ${footMonthsHtml}
+                    <td class="p-2.5 text-right border-l bg-emerald-100 text-emerald-950">
+                        <div class="font-extrabold text-sm">₹${grandYearAmt.toLocaleString('en-IN')}</div>
+                        <div class="text-[10px] font-bold">${grandYearUnits.toLocaleString('en-IN')} ${unitSuffix}</div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        window.openEditElecGasMeterModal = function(meterId = '') {
+            if (!guardEditingRights()) return;
+            const form = document.getElementById('egMeterForm');
+            if (form) form.reset();
+
+            const deleteBtn = document.getElementById('btnDeleteEgMeter');
+            if (meterId) {
+                const m = elecGasMetersData.find(item => String(item.id) === String(meterId));
+                if (!m) return;
+                document.getElementById('egMeterModalTitle').innerText = 'Edit CA & Meter Details';
+                document.getElementById('egMeterEditId').value = String(m.id);
+                document.getElementById('egMeterUtilityType').value = m.utility === 'gas' ? 'gas' : 'electricity';
+                document.getElementById('egMeterCaNumber').value = m.caNumber || '';
+                document.getElementById('egMeterNumber').value = m.meterNumber || '';
+                document.getElementById('egMeterLocation').value = m.location || '';
+                if (deleteBtn) deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('egMeterModalTitle').innerText = 'Add New Utility Meter';
+                document.getElementById('egMeterEditId').value = '';
+                document.getElementById('egMeterUtilityType').value = selectedElecGasUtilityFilter === 'gas' ? 'gas' : 'electricity';
+                if (deleteBtn) deleteBtn.classList.add('hidden');
+            }
+
+            document.getElementById('modalElecGasMeter').classList.remove('hidden');
+        };
+
+        window.saveElecGasMeterRecord = async function(e) {
+            e.preventDefault();
+            if (!guardEditingRights()) return;
+
+            const editId = document.getElementById('egMeterEditId').value.trim();
+            const utility = document.getElementById('egMeterUtilityType').value === 'gas' ? 'gas' : 'electricity';
+            const caNumber = document.getElementById('egMeterCaNumber').value.trim();
+            const meterNumber = document.getElementById('egMeterNumber').value.trim();
+            const location = document.getElementById('egMeterLocation').value.trim();
+
+            if (editId) {
+                const idx = elecGasMetersData.findIndex(m => String(m.id) === String(editId));
+                if (idx !== -1) {
+                    elecGasMetersData[idx] = { ...elecGasMetersData[idx], utility, caNumber, meterNumber, location };
+                }
+            } else {
+                elecGasMetersData.push({
+                    id: `${utility === 'gas' ? 'gas' : 'elec'}_${Date.now()}`,
+                    utility,
+                    caNumber,
+                    meterNumber,
+                    location
+                });
+            }
+
+            closeModal('modalElecGasMeter');
+            renderElecGasModule();
+            await saveCloudData();
+            await recordElecGasNotification(
+                editId ? 'edit-meter' : 'add-meter',
+                `${editId ? 'Updated' : 'Added'} ${utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} meter "${location}" (CA: ${caNumber}, Meter: ${meterNumber})`
+            );
+            showAssetToast(`Saved meter details for CA ${caNumber}`);
+        };
+
+        window.deleteElecGasMeterRecord = async function() {
+            if (!guardEditingRights()) return;
+            const editId = document.getElementById('egMeterEditId').value.trim();
+            if (!editId) return;
+            const m = elecGasMetersData.find(item => String(item.id) === String(editId));
+            elecGasMetersData = elecGasMetersData.filter(item => String(item.id) !== String(editId));
+            closeModal('modalElecGasMeter');
+            renderElecGasModule();
+            await saveCloudData();
+            showAssetToast(`Removed meter ${m ? m.caNumber : ''}`);
+        };
+
+        window.openElecGasBillEntryModal = function(meterId, year, monthIdx) {
+            if (isCurrentUserViewOnly()) {
+                const rec = getElecGasBillRecord(meterId, year, monthIdx);
+                if (rec && rec.fileUrl) {
+                    window.open(rec.fileUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                    showAssetToast("View Only Access: Editing rights are required to update utility bills.", true);
+                }
+                return;
+            }
+
+            const meter = elecGasMetersData.find(m => String(m.id) === String(meterId));
+            if (!meter) return;
+
+            const form = document.getElementById('egBillEntryForm');
+            if (form) form.reset();
+
+            document.getElementById('egBillMeterId').value = String(meter.id);
+            document.getElementById('egBillYear').value = String(year);
+            document.getElementById('egBillMonthIndex').value = String(monthIdx);
+
+            const isGas = meter.utility === 'gas';
+            const badgeEl = document.getElementById('egBillModalUtilityBadge');
+            if (badgeEl) {
+                badgeEl.innerText = isGas ? 'Mahanagar Gas (MGL)' : 'Adani Electricity';
+                badgeEl.className = isGas
+                    ? 'text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-900'
+                    : 'text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900';
+            }
+
+            document.getElementById('egBillModalTitle').innerText = `${EG_MONTH_NAMES[monthIdx]} ${year} Bill — ${meter.location}`;
+            document.getElementById('egBillModalSubtitle').innerText = `CA No: ${meter.caNumber} | Meter No: ${meter.meterNumber}`;
+            document.getElementById('egBillUnitsLabel').innerText = `Units Consumed (${isGas ? 'SCM' : 'kWh'}) *`;
+
+            const rec = getElecGasBillRecord(meter.id, year, monthIdx);
+            const clearBtn = document.getElementById('btnClearEgBillEntry');
+            const existingPdfEl = document.getElementById('egBillExistingPdfLink');
+
+            if (rec && (rec.amount !== undefined && rec.amount !== '')) {
+                document.getElementById('egBillAmountInput').value = rec.amount;
+                document.getElementById('egBillUnitsInput').value = rec.units !== undefined ? rec.units : '';
+                document.getElementById('egBillDateInput').value = rec.billDate || '';
+                document.getElementById('egBillNotesInput').value = rec.notes || '';
+                if (clearBtn) clearBtn.classList.remove('hidden');
+                if (existingPdfEl) {
+                    if (rec.fileUrl) {
+                        existingPdfEl.innerHTML = `<a href="${rec.fileUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>View Attached PDF</a>`;
+                        existingPdfEl.classList.remove('hidden');
+                    } else {
+                        existingPdfEl.innerHTML = '';
+                        existingPdfEl.classList.add('hidden');
+                    }
+                }
+            } else {
+                document.getElementById('egBillAmountInput').value = '';
+                document.getElementById('egBillUnitsInput').value = '';
+                document.getElementById('egBillDateInput').value = new Date().toISOString().split('T')[0];
+                document.getElementById('egBillNotesInput').value = '';
+                if (clearBtn) clearBtn.classList.add('hidden');
+                if (existingPdfEl) {
+                    existingPdfEl.innerHTML = '';
+                    existingPdfEl.classList.add('hidden');
+                }
+            }
+
+            const saveBtn = document.getElementById('btnSaveEgBillEntry');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Bill</span>';
+            }
+
+            document.getElementById('modalElecGasBillEntry').classList.remove('hidden');
+        };
+
+        window.saveElecGasMonthlyBill = async function(e) {
+            e.preventDefault();
+            if (!guardEditingRights()) return;
+
+            const meterId = document.getElementById('egBillMeterId').value;
+            const year = document.getElementById('egBillYear').value;
+            const monthIdx = parseInt(document.getElementById('egBillMonthIndex').value, 10);
+
+            const amountVal = parseFloat(document.getElementById('egBillAmountInput').value);
+            const unitsVal = parseFloat(document.getElementById('egBillUnitsInput').value);
+            const billDate = document.getElementById('egBillDateInput').value;
+            const notes = document.getElementById('egBillNotesInput').value.trim();
+            const pdfFile = document.getElementById('egBillPdfFileInput').files[0];
+
+            const key = getElecGasBillKey(meterId, year, monthIdx);
+            const existingRec = (elecGasBillsData && elecGasBillsData[key]) ? elecGasBillsData[key] : null;
+            let fileUrl = existingRec ? (existingRec.fileUrl || '') : '';
+
+            const saveBtn = document.getElementById('btnSaveEgBillEntry');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+            }
+
+            if (pdfFile) {
+                try {
+                    if (saveBtn) saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading PDF to Drive...</span>';
+                    const uploadRes = await uploadFileToDrive(pdfFile);
+                    fileUrl = (uploadRes && (uploadRes.fileUrl || uploadRes.url || uploadRes.directImgUrl)) || '';
+                } catch (err) {
+                    showAssetToast("PDF Upload failed: " + err, true);
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Bill</span>';
+                    }
+                    return;
+                }
+            }
+
+            if (!elecGasBillsData || typeof elecGasBillsData !== 'object') {
+                elecGasBillsData = {};
+            }
+
+            elecGasBillsData[key] = {
+                meterId,
+                year: String(year),
+                monthIndex: monthIdx,
+                amount: isNaN(amountVal) ? 0 : amountVal,
+                units: isNaN(unitsVal) ? 0 : unitsVal,
+                billDate,
+                notes,
+                fileUrl,
+                updatedAt: new Date().toISOString()
+            };
+
+            const meterObj = elecGasMetersData.find(m => String(m.id) === String(meterId));
+            const utilLabel = (meterObj && meterObj.utility === 'gas') ? 'Mahanagar Gas' : 'Adani Electricity';
+            const unitLabel = (meterObj && meterObj.utility === 'gas') ? 'SCM' : 'kWh';
+            const locLabel = meterObj ? `${meterObj.location} (CA: ${meterObj.caNumber})` : meterId;
+            const actionVerb = (existingRec && existingRec.amount > 0) ? 'Updated' : 'Added';
+
+            closeModal('modalElecGasBillEntry');
+            renderElecGasModule();
+            await saveCloudData();
+            await recordElecGasNotification(
+                existingRec ? 'edit-bill' : 'add-bill',
+                `${actionVerb} ${utilLabel} bill for ${locLabel} — ${EG_MONTH_NAMES[monthIdx]} ${year}: ₹${(isNaN(amountVal) ? 0 : amountVal).toLocaleString('en-IN')}`,
+                `Units: ${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${unitLabel}${fileUrl ? ' | PDF Bill Attached' : ''}`
+            );
+            showAssetToast(`Updated ${EG_MONTH_NAMES[monthIdx]} ${year} bill (Turned Green)`);
+        };
+
+        async function recordElecGasNotification(actionType, detailText, scheduleSummary = '') {
+            if (!currentUser || !currentUser.email) return;
+            isSavingPortalData = true;
+            const actorEmail = currentUser.email.trim();
+            const actorName = getUserDisplayNameByEmail(actorEmail, currentUser.displayName || '');
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const formattedTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+            const newNotif = {
+                id: 'notif_' + Date.now().toString() + '_' + Math.random().toString().slice(2, 6),
+                module: 'elec-gas-bills',
+                subHeader: '',
+                subPermission: '',
+                actorEmail,
+                actorName,
+                actionType: actionType || 'add-bill',
+                detailText: detailText || '',
+                scheduleSummary: scheduleSummary || '',
+                createdAt: formattedTime,
+                timestamp: Date.now(),
+                seenBy: [actorEmail.toLowerCase()]
+            };
+
+            portalNotificationsData.push(newNotif);
+            updateModuleNotificationBadges();
+
+            try {
+                await Promise.all([
+                    set(dbRef(db, `notifications/${newNotif.id}`), newNotif),
+                    set(dbRef(db, `portalData/notifications/${newNotif.id}`), newNotif),
+                    set(dbRef(db, 'portalData/notifications'), portalNotificationsData),
+                    set(dbRef(db, 'notifications'), portalNotificationsData)
+                ]);
+            } catch (errPersist) {
+                console.error("Error persisting Electricity & Gas notification to cloud:", errPersist);
+            } finally {
+                setTimeout(() => {
+                    isSavingPortalData = false;
+                }, 1500);
+            }
+        }
+
+        window.clearElecGasMonthlyBill = async function() {
+            if (!guardEditingRights()) return;
+            const meterId = document.getElementById('egBillMeterId').value;
+            const year = document.getElementById('egBillYear').value;
+            const monthIdx = parseInt(document.getElementById('egBillMonthIndex').value, 10);
+            const key = getElecGasBillKey(meterId, year, monthIdx);
+
+            if (elecGasBillsData && elecGasBillsData[key]) {
+                delete elecGasBillsData[key];
+            }
+            closeModal('modalElecGasBillEntry');
+            renderElecGasModule();
+            await saveCloudData();
+            showAssetToast(`Reset ${EG_MONTH_NAMES[monthIdx]} ${year} bill to Pending (Red)`);
+        };
+
+        // Wide Comparison & Bar Chart Pop-Up Logic
+        window.openElecGasComparisonModal = function() {
+            const mainYear = document.getElementById('egYearSelect')?.value || '2026';
+            const compYearEl = document.getElementById('egCompYearSelect');
+            if (compYearEl && Array.from(compYearEl.options).some(o => o.value === mainYear)) {
+                compYearEl.value = mainYear;
+            }
+            populateEgCompMeterDropdown();
+            document.getElementById('modalElecGasComparison').classList.remove('hidden');
+            setTimeout(() => {
+                renderElecGasComparisonChart();
+            }, 60);
+        };
+
+        window.handleEgCompUtilityChange = function() {
+            populateEgCompMeterDropdown();
+            renderElecGasComparisonChart();
+        };
+
+        function populateEgCompMeterDropdown() {
+            const utilType = document.getElementById('egCompUtilitySelect')?.value || 'electricity';
+            const selEl = document.getElementById('egCompMeterSelect');
+            if (!selEl) return;
+
+            const meters = elecGasMetersData.filter(m => (utilType === 'gas' ? m.utility === 'gas' : m.utility !== 'gas'));
+            selEl.innerHTML = `<option value="all">All ${utilType === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} Meters (${meters.length})</option>`;
+            meters.forEach(m => {
+                selEl.innerHTML += `<option value="${m.id}">${m.location} — CA: ${m.caNumber} (${m.meterNumber})</option>`;
+            });
+        }
+
+        window.renderElecGasComparisonChart = function() {
+            const mode = document.getElementById('egCompModeSelect')?.value || 'yoy'; // 'yoy' | 'monthly'
+            const utilType = document.getElementById('egCompUtilitySelect')?.value || 'electricity';
+            const metric = document.getElementById('egCompMetricSelect')?.value || 'amount'; // 'amount' | 'units'
+            const meterFilter = document.getElementById('egCompMeterSelect')?.value || 'all';
+            const currYear = parseInt(document.getElementById('egCompYearSelect')?.value || '2026', 10);
+            const prevYear = currYear - 1;
+
+            const unitSuffix = metric === 'amount' ? '₹' : (utilType === 'gas' ? 'SCM' : 'kWh');
+            const targetMeters = elecGasMetersData.filter(m => {
+                const matchUtil = utilType === 'gas' ? m.utility === 'gas' : m.utility !== 'gas';
+                if (!matchUtil) return false;
+                if (meterFilter !== 'all' && String(m.id) !== String(meterFilter)) return false;
+                return true;
+            });
+
+            const currYearSeries = new Array(12).fill(0);
+            const prevYearSeries = new Array(12).fill(0);
+
+            for (let mIdx = 0; mIdx < 12; mIdx++) {
+                targetMeters.forEach(m => {
+                    const recCurr = getElecGasBillRecord(m.id, String(currYear), mIdx);
+                    if (recCurr) {
+                        const v = metric === 'amount' ? parseFloat(recCurr.amount) : parseFloat(recCurr.units);
+                        if (!isNaN(v) && v > 0) currYearSeries[mIdx] += v;
+                    }
+                    const recPrev = getElecGasBillRecord(m.id, String(prevYear), mIdx);
+                    if (recPrev) {
+                        const vPrev = metric === 'amount' ? parseFloat(recPrev.amount) : parseFloat(recPrev.units);
+                        if (!isNaN(vPrev) && vPrev > 0) prevYearSeries[mIdx] += vPrev;
+                    }
+                });
+            }
+
+            const totalCurr = currYearSeries.reduce((a, b) => a + b, 0);
+            const totalPrev = prevYearSeries.reduce((a, b) => a + b, 0);
+            const diffTotal = totalCurr - totalPrev;
+            const pctTotal = totalPrev > 0 ? ((diffTotal / totalPrev) * 100).toFixed(1) : null;
+
+            const fmtVal = (v) => metric === 'amount' ? `₹${v.toLocaleString('en-IN')}` : `${v.toLocaleString('en-IN')} ${unitSuffix}`;
+
+            if (document.getElementById('egCompKpiCurrLabel')) document.getElementById('egCompKpiCurrLabel').innerText = `Selected Year (${currYear}) Total`;
+            if (document.getElementById('egCompKpiCurrVal')) document.getElementById('egCompKpiCurrVal').innerText = fmtVal(totalCurr);
+            if (document.getElementById('egCompKpiPrevLabel')) document.getElementById('egCompKpiPrevLabel').innerText = `Last Year (${prevYear}) Total`;
+            if (document.getElementById('egCompKpiPrevVal')) document.getElementById('egCompKpiPrevVal').innerText = fmtVal(totalPrev);
+
+            const varEl = document.getElementById('egCompKpiVarianceVal');
+            if (varEl) {
+                if (mode === 'monthly') {
+                    const avgMonthly = totalCurr / 12;
+                    varEl.innerText = `Avg/Mo: ${fmtVal(Math.round(avgMonthly))}`;
+                } else {
+                    const sign = diffTotal > 0 ? '+' : '';
+                    varEl.innerText = `${sign}${fmtVal(diffTotal)}${pctTotal !== null ? ' (' + sign + pctTotal + '%)' : ''}`;
+                }
+            }
+
+            let maxVal = -1, maxMonthIdx = -1;
+            currYearSeries.forEach((v, idx) => {
+                if (v > maxVal) {
+                    maxVal = v;
+                    maxMonthIdx = idx;
+                }
+            });
+            const peakEl = document.getElementById('egCompKpiPeakVal');
+            if (peakEl) {
+                peakEl.innerText = maxVal > 0 ? `${EG_MONTH_NAMES[maxMonthIdx]} ${currYear} (${fmtVal(maxVal)})` : 'No data recorded';
+            }
+
+            // Render Chart.js Bar Chart
+            const canvas = document.getElementById('egComparisonBarChartCanvas');
+            if (canvas && window.Chart) {
+                if (egComparisonChartInstance) {
+                    egComparisonChartInstance.destroy();
+                }
+                const ctx = canvas.getContext('2d');
+                const datasets = [
+                    {
+                        label: `${currYear} (${metric === 'amount' ? 'Amount ₹' : unitSuffix})`,
+                        data: currYearSeries,
+                        backgroundColor: utilType === 'gas' ? 'rgba(234, 88, 12, 0.85)' : 'rgba(5, 150, 105, 0.85)',
+                        borderColor: utilType === 'gas' ? 'rgb(194, 65, 12)' : 'rgb(4, 120, 87)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }
+                ];
+                if (mode === 'yoy') {
+                    datasets.push({
+                        label: `${prevYear} (${metric === 'amount' ? 'Amount ₹' : unitSuffix})`,
+                        data: prevYearSeries,
+                        backgroundColor: 'rgba(148, 163, 184, 0.75)',
+                        borderColor: 'rgb(100, 116, 139)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    });
+                }
+
+                egComparisonChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: EG_MONTH_NAMES,
+                        datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.parsed.y || 0;
+                                        return `${context.dataset.label}: ${fmtVal(val)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Populate Month-by-Month Comparison Table below chart
+            if (document.getElementById('egCompTableCurrHeader')) document.getElementById('egCompTableCurrHeader').innerText = `${currYear} (${metric === 'amount' ? '₹' : unitSuffix})`;
+            if (document.getElementById('egCompTablePrevHeader')) document.getElementById('egCompTablePrevHeader').innerText = `${prevYear} (${metric === 'amount' ? '₹' : unitSuffix})`;
+
+            const compTbody = document.getElementById('egCompTableBody');
+            if (compTbody) {
+                compTbody.innerHTML = EG_MONTH_NAMES.map((mName, idx) => {
+                    const cVal = currYearSeries[idx];
+                    const pVal = prevYearSeries[idx];
+                    const diff = cVal - pVal;
+                    const pct = pVal > 0 ? ((diff / pVal) * 100).toFixed(1) + '%' : '-';
+                    const diffClass = diff > 0 ? 'text-red-600 font-bold' : (diff < 0 ? 'text-emerald-700 font-bold' : 'text-gray-500');
+                    const sign = diff > 0 ? '+' : '';
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-2.5 font-bold text-gray-800">${mName}</td>
+                            <td class="p-2.5 text-right font-extrabold text-gray-900">${fmtVal(cVal)}</td>
+                            <td class="p-2.5 text-right text-gray-600">${fmtVal(pVal)}</td>
+                            <td class="p-2.5 text-right ${diffClass}">${sign}${fmtVal(diff)}</td>
+                            <td class="p-2.5 text-right ${diffClass}">${diff > 0 && pct !== '-' ? '+' + pct : pct}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        };
+
+        window.openElecGasAutoFetchModal = function() {
+            document.getElementById('modalElecGasAutoFetchGuide').classList.remove('hidden');
+        };
+
+        window.copyAutoFetchAppsScriptCode = function() {
+            const el = document.getElementById('autoFetchAppsScriptTextarea');
+            if (!el) return;
+            el.select();
+            try {
+                navigator.clipboard.writeText(el.value).then(() => {
+                    showAssetToast("Copied Auto-Fetch Google Apps Script code to clipboard!");
+                }).catch(() => {
+                    document.execCommand('copy');
+                    showAssetToast("Copied Auto-Fetch Google Apps Script code to clipboard!");
+                });
+            } catch (e) {
+                document.execCommand('copy');
+                showAssetToast("Copied Auto-Fetch Google Apps Script code to clipboard!");
+            }
+        };
+
+        window.triggerAutoFetchUtilityBills = async function(btnEl) {
+            const origHtml = btnEl ? btnEl.innerHTML : '';
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Syncing Bills...</span>';
+            }
+            try {
+                // Attempt to trigger the autoFetch action on the connected Google Apps Script Web App
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'autoFetchUtilityBills' })
+                }).catch(() => {});
+
+                await loadCloudData();
+                renderElecGasModule();
+                showAssetToast("Synced latest Electricity & Gas bills from Cloud!");
+            } catch (err) {
+                console.error("Auto-fetch sync error:", err);
+                showAssetToast("Synced latest records from Cloud.");
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = origHtml;
+                }
+            }
+        };
+
+        window.exportElecGasYearlyReport = function(format) {
+            const selYear = document.getElementById('egYearSelect')?.value || '2026';
+            const columns = [
+                "Sr. No.", "Utility", "Location / Description", "CA Number", "Meter Number",
+                ...EG_MONTH_NAMES.map(m => `${m} (${selYear})`),
+                "Yearly Total (INR)", "Yearly Total Units"
+            ];
+
+            const rows = [];
+            elecGasMetersData.forEach((m, idx) => {
+                const unitLabel = m.utility === 'gas' ? 'SCM' : 'kWh';
+                let yAmt = 0, yUnits = 0;
+                const mCells = [];
+                for (let mIdx = 0; mIdx < 12; mIdx++) {
+                    const rec = getElecGasBillRecord(m.id, selYear, mIdx);
+                    const amt = rec && rec.amount ? parseFloat(rec.amount) : 0;
+                    const u = rec && rec.units ? parseFloat(rec.units) : 0;
+                    if (amt > 0) {
+                        yAmt += amt;
+                        yUnits += u;
+                        mCells.push(`Rs.${amt} (${u} ${unitLabel})`);
+                    } else {
+                        mCells.push("Pending");
+                    }
+                }
+                rows.push([
+                    idx + 1,
+                    m.utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity',
+                    m.location || '-',
+                    m.caNumber || '-',
+                    m.meterNumber || '-',
+                    ...mCells,
+                    yAmt,
+                    `${yUnits} ${unitLabel}`
+                ]);
+            });
+
+            const fileName = `Electricity_Gas_Yearly_Report_${selYear}`;
+            if (format === 'excel') {
+                const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, `Utility_Bills_${selYear}`);
+                XLSX.writeFile(wb, `${fileName}.xlsx`);
+            } else {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape', format: 'a3' });
+                doc.setFontSize(14);
+                doc.text(`Electricity & Gas Bills Yearly Report (${selYear})`, 14, 15);
+                doc.autoTable({
+                    head: [columns],
+                    body: rows,
+                    startY: 22,
+                    theme: 'grid',
+                    styles: { fontSize: 7 },
+                    headStyles: { fillColor: [6, 95, 70] }
+                });
+                doc.save(`${fileName}.pdf`);
+            }
+        };
+
         window.removeUser = async function(email) {
             usersList = usersList.filter(u => u.email !== email);
             await saveCloudData();
@@ -13049,6 +14608,18 @@ await recordDawatEstatesNotification(
                 } else {
                     pwaClsBadge.innerText = '';
                     pwaClsBadge.classList.add('hidden');
+                }
+            }
+
+            const egBadge = document.getElementById('notifBadgeElecGasBills');
+            const pwaEgBadge = document.getElementById('pwaNotifBadgeElecGasBills');
+            if (egBadge && pwaEgBadge) {
+                if (!egBadge.classList.contains('hidden') && egBadge.innerText) {
+                    pwaEgBadge.innerText = egBadge.innerText;
+                    pwaEgBadge.classList.remove('hidden');
+                } else {
+                    pwaEgBadge.innerText = '';
+                    pwaEgBadge.classList.add('hidden');
                 }
             }
 

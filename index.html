@@ -436,6 +436,46 @@
                 box-shadow: 2px 0 6px -2px rgba(0, 0, 0, 0.1);
             }
 
+            /* Compact Electricity & Gas Main Column in Mobile App View so more Monthly columns fit on screen */
+            body.pwa-mode #module-elec-gas-bills table {
+                min-width: 0 !important;
+            }
+            body.pwa-mode #module-elec-gas-bills .eg-sr-col {
+                width: 24px !important;
+                min-width: 24px !important;
+                max-width: 28px !important;
+                padding: 0.2rem 0.15rem !important;
+                font-size: 0.62rem !important;
+            }
+            body.pwa-mode #module-elec-gas-bills .eg-main-col {
+                min-width: 104px !important;
+                max-width: 116px !important;
+                width: 110px !important;
+                padding: 0.25rem 0.3rem !important;
+                white-space: normal !important;
+                word-break: break-word !important;
+            }
+            body.pwa-mode #module-elec-gas-bills .eg-main-col .eg-loc-text {
+                font-size: 0.64rem !important;
+                line-height: 1.15 !important;
+            }
+            body.pwa-mode #module-elec-gas-bills .eg-main-col .eg-ca-text {
+                font-size: 0.66rem !important;
+                line-height: 1.15 !important;
+            }
+            body.pwa-mode #module-elec-gas-bills .eg-main-col .eg-mtr-text {
+                font-size: 0.60rem !important;
+                line-height: 1.1 !important;
+            }
+            body.pwa-mode #module-elec-gas-bills .eg-month-col {
+                min-width: 68px !important;
+                padding: 0.25rem 0.2rem !important;
+            }
+            body.pwa-mode #module-elec-gas-bills .eg-total-col {
+                min-width: 76px !important;
+                padding: 0.25rem 0.25rem !important;
+            }
+
             /* Pop-Up Notifications Modal on Mobile */
             body.pwa-mode #modalClassroomNotifications {
                 padding: 0.4rem !important;
@@ -1509,6 +1549,10 @@
                         <i class="fa-solid fa-file-excel"></i>
                         <span>Export Excel</span>
                     </button>
+                    <button type="button" id="btnMassEventsHeader" onclick="openMassEventsModal()" class="hidden bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Add Mass Event Across Multiple Classrooms & Classes">
+                        <i class="fa-solid fa-calendar-plus text-white"></i>
+                        <span>Mass Events</span>
+                    </button>
                     <button type="button" id="btnEventsArchiveHeader" onclick="openEventsArchiveModal()" class="bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="View Active, Upcoming & Past Events Details">
                         <i class="fa-solid fa-box-archive text-amber-300"></i>
                         <span>Events Archive</span>
@@ -1584,12 +1628,12 @@
                             </span>
                             <span id="cardRaihaanActiveCountBadge" class="text-[10px] sm:text-xs bg-amber-400 text-purple-950 font-extrabold px-1.5 py-0.5 rounded-full shadow-sm shrink-0 whitespace-nowrap">0 Active Classes</span>
                         </div>
-                        <div class="grid grid-cols-2 gap-1.5 w-full mt-2" onclick="event.stopPropagation()">
-                            <button type="button" onclick="openAddRaihaanModal()" class="crud-action-btn bg-white hover:bg-purple-50 text-purple-950 text-[10px] sm:text-[11px] font-extrabold px-1 py-1 rounded-md shadow transition flex items-center justify-center space-x-1 border border-purple-200 w-full text-center">
+                        <div id="raihaanCardActionsGrid" class="grid grid-cols-2 gap-1.5 w-full mt-2" onclick="event.stopPropagation()">
+                            <button type="button" id="btnRaihaanAddDetails" onclick="openAddRaihaanModal()" class="crud-action-btn bg-white hover:bg-purple-50 text-purple-950 text-[10px] sm:text-[11px] font-extrabold px-1 py-1 rounded-md shadow transition flex items-center justify-center space-x-1 border border-purple-200 w-full text-center">
                                 <i class="fa-solid fa-plus text-[9px] text-purple-700"></i>
                                 <span class="truncate">Add Details</span>
                             </button>
-                            <button type="button" onclick="openRaihaanArchiveModal()" class="bg-purple-950/80 hover:bg-purple-950 text-purple-100 border border-purple-400/60 text-[10px] sm:text-[11px] font-bold px-1 py-1 rounded-md transition flex items-center justify-center space-x-1 w-full text-center">
+                            <button type="button" id="btnRaihaanArchive" onclick="openRaihaanArchiveModal()" class="bg-purple-950/80 hover:bg-purple-950 text-purple-100 border border-purple-400/60 text-[10px] sm:text-[11px] font-bold px-1 py-1 rounded-md transition flex items-center justify-center space-x-1 w-full text-center">
                                 <i class="fa-solid fa-box-archive text-[9px] text-amber-300"></i>
                                 <span class="truncate">Archive</span>
                             </button>
@@ -1829,17 +1873,43 @@
         <!-- MODULE: ELECTRICITY & GAS BILLS -->
         <div id="module-elec-gas-bills" class="hidden space-y-6">
             <!-- Top Header & Action Controls -->
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white p-4 rounded-xl shadow border gap-4">
+            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white p-4 rounded-xl shadow border gap-4">
                 <div>
                     <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
                         <i class="fa-solid fa-bolt-lightning text-amber-500"></i>
                         <span>Electricity &amp; Gas Bills Master Tracker</span>
                     </h2>
-                    <p class="text-xs text-gray-500 mt-0.5">Track monthly Amount, Units Consumed, and Drive PDF Bills across 27 Adani Electricity Meters &amp; 7 Mahanagar Gas Meters. <span class="text-red-600 font-semibold">Red = Pending</span> | <span class="text-emerald-700 font-semibold">Green = Updated</span>.</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Track monthly Amount, Units Consumed (Meter #1 HT in <strong>kVAh</strong>, Meters #2–27 in <strong>kWh</strong>, Gas in <strong>SCM</strong>), and Drive PDF Bills. <span class="text-red-600 font-semibold">Red = Pending</span> | <span class="text-emerald-700 font-extrabold">Green = Added</span>.</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-                    <div class="flex items-center space-x-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-300">
-                        <label class="text-xs font-bold text-emerald-950 uppercase">Year:</label>
+                <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto justify-start xl:justify-end">
+                    <!-- Filtered View Options: Monthly, Quarterly (Default to Ongoing Quarter), or Yearly -->
+                    <div class="flex flex-wrap items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-300">
+                        <label class="text-xs font-bold text-emerald-950 uppercase">View:</label>
+                        <select id="egPeriodModeSelect" onchange="handleEgPeriodModeChange()" class="p-1 border rounded text-xs font-extrabold bg-white text-emerald-950 focus:outline-none">
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly" selected>Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                        <select id="egQuarterSelect" onchange="renderElecGasModule()" class="p-1 border rounded text-xs font-extrabold bg-white text-emerald-900 focus:outline-none">
+                            <option value="1">Q1 (Jan – Mar)</option>
+                            <option value="2">Q2 (Apr – Jun)</option>
+                            <option value="3">Q3 (Jul – Sep)</option>
+                            <option value="4">Q4 (Oct – Dec)</option>
+                        </select>
+                        <select id="egMonthSelect" onchange="renderElecGasModule()" class="hidden p-1 border rounded text-xs font-extrabold bg-white text-emerald-900 focus:outline-none">
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
                         <select id="egYearSelect" onchange="renderElecGasModule()" class="p-1 border rounded text-xs font-extrabold bg-white text-emerald-950 focus:outline-none">
                             <option value="2027">2027</option>
                             <option value="2026" selected>2026</option>
@@ -1885,10 +1955,10 @@
                         </div>
                     </div>
                     <div class="mt-3 pt-2 border-t flex flex-wrap items-center justify-between gap-1 text-xs">
-                        <span class="font-bold text-amber-900">Units: <span id="egCardElecTotalUnits">0</span> kWh</span>
+                        <span class="font-bold text-amber-900">Units: <span id="egCardElecTotalUnits">0</span></span>
                         <div class="space-x-1 text-[11px] font-bold">
-                            <span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded" title="Updated cell count in selected year"><i class="fa-solid fa-check mr-0.5"></i><span id="egCardElecGreenCount">0</span></span>
-                            <span class="bg-red-100 text-red-800 px-1.5 py-0.5 rounded" title="Pending cell count in selected year"><i class="fa-solid fa-clock mr-0.5"></i><span id="egCardElecRedCount">0</span></span>
+                            <span class="bg-emerald-200 text-emerald-950 border border-emerald-500 px-1.5 py-0.5 rounded" title="Updated cell count in selected view"><i class="fa-solid fa-check mr-0.5"></i><span id="egCardElecGreenCount">0</span></span>
+                            <span class="bg-red-100 text-red-800 border border-red-300 px-1.5 py-0.5 rounded" title="Pending cell count in selected view"><i class="fa-solid fa-clock mr-0.5"></i><span id="egCardElecRedCount">0</span></span>
                         </div>
                     </div>
                 </div>
@@ -1907,8 +1977,8 @@
                     <div class="mt-3 pt-2 border-t flex flex-wrap items-center justify-between gap-1 text-xs">
                         <span class="font-bold text-orange-900">Units: <span id="egCardGasTotalUnits">0</span> SCM</span>
                         <div class="space-x-1 text-[11px] font-bold">
-                            <span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded" title="Updated cell count in selected year"><i class="fa-solid fa-check mr-0.5"></i><span id="egCardGasGreenCount">0</span></span>
-                            <span class="bg-red-100 text-red-800 px-1.5 py-0.5 rounded" title="Pending cell count in selected year"><i class="fa-solid fa-clock mr-0.5"></i><span id="egCardGasRedCount">0</span></span>
+                            <span class="bg-emerald-200 text-emerald-950 border border-emerald-500 px-1.5 py-0.5 rounded" title="Updated cell count in selected view"><i class="fa-solid fa-check mr-0.5"></i><span id="egCardGasGreenCount">0</span></span>
+                            <span class="bg-red-100 text-red-800 border border-red-300 px-1.5 py-0.5 rounded" title="Pending cell count in selected view"><i class="fa-solid fa-clock mr-0.5"></i><span id="egCardGasRedCount">0</span></span>
                         </div>
                     </div>
                 </div>
@@ -1917,7 +1987,7 @@
                 <div class="bg-white p-4 rounded-xl shadow border-l-4 border-l-emerald-600 border flex flex-col justify-between">
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Combined Annual Expense</span>
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block">Combined Period Expense</span>
                             <span id="egCardCombinedTotalAmount" class="text-2xl font-extrabold text-emerald-900 mt-1 block">₹0</span>
                         </div>
                         <div class="bg-emerald-100 text-emerald-800 p-2.5 rounded-full text-base">
@@ -1925,7 +1995,7 @@
                         </div>
                     </div>
                     <div class="mt-3 pt-2 border-t text-[11px] text-gray-600 font-semibold flex items-center justify-between">
-                        <span>Selected Year: <strong id="egCardSelectedYearLabel" class="text-emerald-900">2026</strong></span>
+                        <span>Active Period: <strong id="egCardSelectedYearLabel" class="text-emerald-900">Q4 2026</strong></span>
                         <span class="text-emerald-700 font-bold">Drive PDF Linked</span>
                     </div>
                 </div>
@@ -1970,20 +2040,20 @@
                     </div>
                     <select id="egStatusFilter" onchange="renderElecGasModule()" class="p-1.5 border rounded-lg text-xs font-semibold bg-white text-gray-700">
                         <option value="">All Statuses</option>
-                        <option value="pending_current">Pending This Month (Red)</option>
-                        <option value="updated_current">Updated This Month (Green)</option>
+                        <option value="pending_current">Pending in Active Period (Red)</option>
+                        <option value="updated_current">Updated in Active Period (Green)</option>
                     </select>
                 </div>
             </div>
 
-            <!-- SECTION 1: ADANI ELECTRICITY YEARLY TABLE (27 METERS) -->
+            <!-- SECTION 1: ADANI ELECTRICITY TABLE (27 METERS) -->
             <div id="egSectionElectricity" class="bg-white rounded-xl shadow border overflow-hidden">
                 <div class="bg-amber-500 text-slate-950 px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div class="flex items-center space-x-2">
                         <span class="bg-slate-950 text-amber-400 p-1.5 rounded-lg text-sm inline-flex items-center justify-center"><i class="fa-solid fa-bolt"></i></span>
                         <div>
-                            <h3 class="font-extrabold text-base leading-tight">Adani Electricity — Yearly Month-Wise Report (<span id="egElecTableYearLabel">2026</span>)</h3>
-                            <p class="text-[11px] font-semibold text-slate-800">Click any month cell to add/edit Amount (₹), Units Consumed (kWh), and attach PDF Bill. Click CA/Meter icon to edit meter details.</p>
+                            <h3 class="font-extrabold text-base leading-tight">Adani Electricity — <span id="egElecTableYearLabel">Q4 2026</span> Report</h3>
+                            <p class="text-[11px] font-semibold text-slate-800">Meter #1 (HT Line) measured in <strong>kVAh</strong>; Meters #2–27 measured in <strong>kWh</strong>. Click any month cell to add/edit bill &amp; PDF.</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2 text-xs font-extrabold">
@@ -1992,40 +2062,22 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto max-h-[72vh]">
-                    <table class="w-full text-left text-xs border-collapse min-w-[1400px]">
-                        <thead class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px] sticky top-0 z-20 shadow-sm">
-                            <tr>
-                                <th class="p-2.5 w-10 text-center bg-gray-100">#</th>
-                                <th class="p-2.5 min-w-[190px] sticky left-0 bg-gray-100 z-30 border-r">CA Number &amp; Meter Details</th>
-                                <th class="p-2 text-center min-w-[95px]">Jan</th>
-                                <th class="p-2 text-center min-w-[95px]">Feb</th>
-                                <th class="p-2 text-center min-w-[95px]">Mar</th>
-                                <th class="p-2 text-center min-w-[95px]">Apr</th>
-                                <th class="p-2 text-center min-w-[95px]">May</th>
-                                <th class="p-2 text-center min-w-[95px]">Jun</th>
-                                <th class="p-2 text-center min-w-[95px]">Jul</th>
-                                <th class="p-2 text-center min-w-[95px]">Aug</th>
-                                <th class="p-2 text-center min-w-[95px]">Sep</th>
-                                <th class="p-2 text-center min-w-[95px]">Oct</th>
-                                <th class="p-2 text-center min-w-[95px]">Nov</th>
-                                <th class="p-2 text-center min-w-[95px]">Dec</th>
-                                <th class="p-2.5 text-right min-w-[115px] bg-amber-50 border-l font-extrabold text-amber-950">Yearly Total</th>
-                            </tr>
-                        </thead>
+                    <table id="egElecTableEl" class="w-full text-left text-xs border-collapse">
+                        <thead id="egElecTableHead" class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px] sticky top-0 z-20 shadow-sm"></thead>
                         <tbody id="egElecTableBody" class="divide-y"></tbody>
                         <tfoot id="egElecTableFoot" class="bg-amber-50/90 font-extrabold border-t-2 border-amber-300 text-xs"></tfoot>
                     </table>
                 </div>
             </div>
 
-            <!-- SECTION 2: MAHANAGAR GAS YEARLY TABLE (7 METERS) -->
+            <!-- SECTION 2: MAHANAGAR GAS TABLE (7 METERS) -->
             <div id="egSectionGas" class="bg-white rounded-xl shadow border overflow-hidden">
                 <div class="bg-orange-600 text-white px-4 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div class="flex items-center space-x-2">
                         <span class="bg-white text-orange-700 p-1.5 rounded-lg text-sm inline-flex items-center justify-center"><i class="fa-solid fa-fire-flame-simple"></i></span>
                         <div>
-                            <h3 class="font-extrabold text-base leading-tight">Mahanagar Gas (MGL) — Yearly Month-Wise Report (<span id="egGasTableYearLabel">2026</span>)</h3>
-                            <p class="text-[11px] font-semibold text-orange-100">Click any month cell to add/edit Amount (₹), Units Consumed (SCM), and attach PDF Bill. Click CA/Meter icon to edit meter details.</p>
+                            <h3 class="font-extrabold text-base leading-tight">Mahanagar Gas (MGL) — <span id="egGasTableYearLabel">Q4 2026</span> Report</h3>
+                            <p class="text-[11px] font-semibold text-orange-100">Click any month cell to add/edit Amount (₹), Units Consumed (SCM), and attach PDF Bill.</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2 text-xs font-extrabold">
@@ -2034,26 +2086,8 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto max-h-[65vh]">
-                    <table class="w-full text-left text-xs border-collapse min-w-[1400px]">
-                        <thead class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px] sticky top-0 z-20 shadow-sm">
-                            <tr>
-                                <th class="p-2.5 w-10 text-center bg-gray-100">#</th>
-                                <th class="p-2.5 min-w-[190px] sticky left-0 bg-gray-100 z-30 border-r">CA Number &amp; Meter Details</th>
-                                <th class="p-2 text-center min-w-[95px]">Jan</th>
-                                <th class="p-2 text-center min-w-[95px]">Feb</th>
-                                <th class="p-2 text-center min-w-[95px]">Mar</th>
-                                <th class="p-2 text-center min-w-[95px]">Apr</th>
-                                <th class="p-2 text-center min-w-[95px]">May</th>
-                                <th class="p-2 text-center min-w-[95px]">Jun</th>
-                                <th class="p-2 text-center min-w-[95px]">Jul</th>
-                                <th class="p-2 text-center min-w-[95px]">Aug</th>
-                                <th class="p-2 text-center min-w-[95px]">Sep</th>
-                                <th class="p-2 text-center min-w-[95px]">Oct</th>
-                                <th class="p-2 text-center min-w-[95px]">Nov</th>
-                                <th class="p-2 text-center min-w-[95px]">Dec</th>
-                                <th class="p-2.5 text-right min-w-[115px] bg-orange-50 border-l font-extrabold text-orange-950">Yearly Total</th>
-                            </tr>
-                        </thead>
+                    <table id="egGasTableEl" class="w-full text-left text-xs border-collapse">
+                        <thead id="egGasTableHead" class="bg-gray-100 border-b-2 border-gray-300 text-gray-700 uppercase text-[11px] sticky top-0 z-20 shadow-sm"></thead>
                         <tbody id="egGasTableBody" class="divide-y"></tbody>
                         <tfoot id="egGasTableFoot" class="bg-orange-50/90 font-extrabold border-t-2 border-orange-300 text-xs"></tfoot>
                     </table>
@@ -2178,7 +2212,7 @@
                                     <button type="button" onclick="setAllClassroomSubPerms(false)" class="text-gray-600 font-semibold hover:underline">Clear All</button>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
                                 <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
                                     <input type="checkbox" id="cls-perm-allotted-class" value="allotted-class" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
                                     <span class="font-semibold text-gray-800"><i class="fa-solid fa-chalkboard text-emerald-600 mr-1"></i>Add Allotted Class</span>
@@ -2194,6 +2228,10 @@
                                 <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
                                     <input type="checkbox" id="cls-perm-extra-chair" value="extra-chair" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
                                     <span class="font-semibold text-gray-800"><i class="fa-solid fa-chair text-amber-600 mr-1"></i>Extra Chair</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-white p-2.5 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                                    <input type="checkbox" id="cls-perm-raihaan" value="raihaan" checked class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4">
+                                    <span class="font-semibold text-gray-800"><i class="fa-solid fa-route text-purple-600 mr-1"></i>Raihaan Add Details</span>
                                 </label>
                             </div>
                             <div class="pt-2.5 mt-1 border-t border-blue-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -3486,6 +3524,141 @@
         </div>
     </div>
 
+
+    <!-- Modal: Mass Events Full-Screen Popup -->
+    <div id="modalMassEvents" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-0 sm:p-2 z-[75]">
+        <div class="bg-white sm:rounded-2xl shadow-2xl w-screen h-screen sm:w-[98vw] sm:h-[96vh] max-w-none flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-amber-700 via-amber-600 to-orange-600 text-white px-4 py-3 sm:px-6 sm:py-3.5 flex flex-wrap justify-between items-center gap-2 shrink-0">
+                <div>
+                    <h3 class="text-base sm:text-xl font-extrabold flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-plus text-amber-200"></i>
+                        <span>Mass Events Allocation</span>
+                    </h3>
+                    <p class="text-[11px] sm:text-xs text-amber-100 mt-0.5">Enter event name &amp; date, tick which classes have the event, and select periods for the matched day.</p>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span id="massEventsSummaryPill" class="bg-amber-950/60 border border-amber-300/50 text-amber-100 text-xs font-extrabold px-3 py-1 rounded-full whitespace-nowrap">
+                        0 Classes Ticked • 0 Period Slots
+                    </span>
+                    <button type="button" onclick="closeModal('modalMassEvents')" class="bg-white/15 hover:bg-white/25 text-white rounded-lg w-8 h-8 flex items-center justify-center text-xl font-bold transition" title="Close">&times;</button>
+                </div>
+            </div>
+
+            <form id="massEventsForm" onsubmit="saveMassEventsAllocation(event)" class="flex flex-col flex-grow overflow-hidden">
+                <!-- Top Configuration Bar: Event Name + Event Date + Matched Weekday Display -->
+                <div class="bg-amber-50/90 border-b border-amber-200 px-4 py-3 sm:px-6 space-y-2.5 shrink-0">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                        <div class="md:col-span-5">
+                            <label class="text-xs font-extrabold text-amber-950 uppercase tracking-wider block mb-1">
+                                Event Name <span class="text-red-600">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="massEventNameInput"
+                                required
+                                placeholder="e.g. Term Exam, Deeni Majlis, Guest Lecture, Seminar..."
+                                class="w-full p-2.5 border-2 border-amber-400 rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
+                            >
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="text-xs font-extrabold text-amber-950 uppercase tracking-wider block mb-1">
+                                Select Event Date <span class="text-red-600">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                id="massEventDateInput"
+                                required
+                                onchange="handleMassEventDateChange(this.value)"
+                                class="w-full p-2.5 border-2 border-amber-400 rounded-lg text-sm font-bold font-mono bg-white focus:outline-none focus:ring-2 focus:ring-amber-600"
+                            >
+                        </div>
+                        <div class="md:col-span-4">
+                            <div id="massEventMatchedDayBox" class="bg-white border-2 border-emerald-500 rounded-lg px-3.5 py-2 flex items-center justify-between shadow-sm">
+                                <div>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Matched Timetable Day (Shown Below)</span>
+                                    <span id="massEventMatchedDayLabel" class="text-sm sm:text-base font-extrabold text-gray-900">Tuesday (يوم الثلاثاء)</span>
+                                </div>
+                                <span id="massEventMatchedDaySubBadge" class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-extrabold px-2.5 py-1 rounded-md">
+                                    Mon–Fri Schedule
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search, Filter & Quick Bulk Period Bar -->
+                    <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-2 pt-1">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <div class="relative w-full sm:w-64">
+                                <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
+                                <input
+                                    type="text"
+                                    id="massEventSearchInput"
+                                    oninput="renderMassEventsTable()"
+                                    placeholder="Search Classroom No., Std Name, Location..."
+                                    class="w-full pl-7 pr-3 py-1.5 border border-amber-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-amber-600"
+                                >
+                            </div>
+                            <button type="button" id="btnMassFilterAll" onclick="setMassEventsFilter('all')" class="px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-amber-700 text-white shadow-sm transition">
+                                All (<span id="massFilterCountAll">0</span>)
+                            </button>
+                            <button type="button" id="btnMassFilterMale" onclick="setMassEventsFilter('Male')" class="px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-white text-blue-900 border border-blue-300 hover:bg-blue-50 transition">
+                                <i class="fa-solid fa-person mr-0.5 text-blue-600"></i>Male (<span id="massFilterCountMale">0</span>)
+                            </button>
+                            <button type="button" id="btnMassFilterFemale" onclick="setMassEventsFilter('Female')" class="px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-white text-pink-900 border border-pink-300 hover:bg-pink-50 transition">
+                                <i class="fa-solid fa-person-dress mr-0.5 text-pink-600"></i>Female (<span id="massFilterCountFemale">0</span>)
+                            </button>
+                            <button type="button" id="btnMassFilterTicked" onclick="setMassEventsFilter('ticked')" class="px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-white text-emerald-900 border border-emerald-300 hover:bg-emerald-50 transition">
+                                <i class="fa-solid fa-square-check mr-0.5 text-emerald-600"></i>Ticked (<span id="massFilterCountTicked">0</span>)
+                            </button>
+                        </div>
+
+                        <!-- Bulk Quick Actions for Ticked Classes -->
+                        <div class="flex flex-wrap items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg border border-amber-300 text-xs">
+                            <span class="font-extrabold text-amber-950 text-[11px] mr-1"><i class="fa-solid fa-wand-magic-sparkles text-amber-600 mr-1"></i>For Ticked Classes:</span>
+                            <button type="button" onclick="applyMassEventPresetPeriodsToTicked('standard')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-1 rounded text-[11px] transition" title="Select Standard Class Periods for this Day on all Ticked Classrooms">
+                                Select Std Periods
+                            </button>
+                            <button type="button" onclick="applyMassEventPresetPeriodsToTicked('all')" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-1 rounded text-[11px] transition" title="Select P1/P2–P10 on all Ticked Classrooms">
+                                Select All P1–P10
+                            </button>
+                            <button type="button" onclick="applyMassEventPresetPeriodsToTicked('clear')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 font-semibold px-2 py-1 rounded text-[11px] transition">
+                                Clear Periods
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Full-Screen Table Container (Classrooms + Std Names + Matched Day's Periods) -->
+                <div class="flex-grow overflow-auto bg-gray-50 px-2 py-2 sm:px-4">
+                    <div class="bg-white border-2 border-gray-800 rounded-xl shadow-sm overflow-x-auto">
+                        <table class="w-full text-xs border-collapse min-w-[1050px]">
+                            <thead id="massEventsTableHead" class="sticky top-0 z-20 shadow-sm"></thead>
+                            <tbody id="massEventsTableBody" class="divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Footer Bar -->
+                <div class="bg-white border-t px-4 py-3 sm:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shrink-0">
+                    <p id="massEventsValidationError" class="text-xs text-red-600 font-extrabold hidden"></p>
+                    <div class="text-[11px] text-gray-500 font-medium">
+                        <i class="fa-solid fa-circle-info text-amber-600 mr-1"></i>Tip: Click any <strong>Period Column Header</strong> to toggle that period for all ticked classes, or tick periods row-by-row.
+                    </div>
+                    <div class="flex items-center space-x-2 ml-auto">
+                        <button type="button" onclick="closeModal('modalMassEvents')" class="px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-bold text-gray-700 hover:bg-gray-100 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" id="btnSaveMassEvents" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs sm:text-sm font-extrabold transition flex items-center space-x-1.5 shadow-md">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Save Mass Events</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal: Add Currently in Raihaan Details (5 Rows + From/To Date) -->
     <div id="modalAddRaihaan" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[92vh] flex flex-col">
@@ -3993,97 +4166,150 @@
                             <span>Copy Apps Script Code</span>
                         </button>
                     </div>
-                    <textarea id="autoFetchAppsScriptTextarea" readonly class="w-full h-64 p-3 font-mono text-[11px] bg-slate-900 text-emerald-300 rounded-xl border border-slate-700 focus:outline-none">
+                    <textarea id="autoFetchAppsScriptTextarea" readonly class="w-full h-72 p-3 font-mono text-[11px] bg-slate-900 text-emerald-300 rounded-xl border border-slate-700 focus:outline-none">
 // ============================================================================
 // COMPLETE Code.gs FOR SIYANAT MAROL PORTAL (fm.marol@jameasaifiyah.edu)
-// Includes: 1) Google Drive File Uploader (doPost)
-//           2) Daily Auto-Fetch for 27 Adani Electricity & 7 Mahanagar Gas Bills
+// 1) Preserves your exact original Siyanat_Marol_Uploads Drive Uploader (images, videos, PDFs)
+// 2) Auto-fetches Adani Electricity (ebill.mumbaielectricity@adanielectricity.co)
+//    & Mahanagar Gas (icpngbill@mahanagargas.com) bills:
+//    - First-time sync pulls last 365 days (without duplicating!)
+//    - Subsequent daily runs check last 15 days
 // ============================================================================
-const FIREBASE_DB_URL = "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app";
-const DRIVE_BILLS_FOLDER_NAME = "Siyanat_Utility_Bills_Auto";
-const DRIVE_UPLOADS_FOLDER_NAME = "Siyanat_Portal_Uploads";
+var FIREBASE_DB_URL = "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app";
+var DRIVE_BILLS_FOLDER_NAME = "Siyanat_Utility_Bills_Auto";
 
 function doPost(e) {
   try {
-    const reqData = JSON.parse(e.postData.contents);
+    var data = JSON.parse(e.postData.contents);
 
-    // 1. If triggered by "Auto-Fetch Sync" button on the webpage:
-    if (reqData.action === "autoFetchUtilityBills") {
-      autoFetchAdaniAndMglBillsDaily();
+    // If triggered by "Auto-Fetch Sync" button on the webpage:
+    if (data.action === "autoFetchUtilityBills") {
+      var syncedCount = autoFetchAdaniAndMglBillsDaily(data.lookbackDays);
       return ContentService.createTextOutput(JSON.stringify({
-        status: "success",
-        message: "Utility bills synced"
+        status: 'success',
+        syncedCount: syncedCount
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 2. Standard Portal File Upload to Google Drive:
-    const folder = getOrCreateUtilityFolder_(DRIVE_UPLOADS_FOLDER_NAME);
-    const decoded = Utilities.base64Decode(reqData.base64);
-    const blob = Utilities.newBlob(decoded, reqData.mimeType, reqData.filename);
-    const file = folder.createFile(blob);
+    // --- ORIGINAL SIYANAT MAROL DRIVE UPLOADER (Images, Videos, Documents) ---
+    var folderName = "Siyanat_Marol_Uploads";
+
+    // Check if the upload folder exists, otherwise create it
+    var folders = DriveApp.getFoldersByName(folderName);
+    var folder;
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+    }
+
+    // Decode base64 file data
+    var blob = Utilities.newBlob(
+      Utilities.base64Decode(data.base64),
+      data.mimeType,
+      data.filename
+    );
+
+    // Save file into folder
+    var file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-    const fileId = file.getId();
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "success",
-      fileId: fileId,
-      fileUrl: file.getUrl(),
-      directImgUrl: "https://drive.google.com/uc?export=view&id=" + fileId
-    })).setMimeType(ContentService.MimeType.JSON);
+    var fileUrl = file.getUrl();
+    var directImgUrl = "https://lh3.googleusercontent.com/d/" + file.getId();
+
+    var result = {
+      status: 'success',
+      fileUrl: fileUrl,
+      directImgUrl: directImgUrl,
+      fileId: file.getId()
+    };
+
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
+    var errResult = {
+      status: 'error',
       message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    };
+    return ContentService.createTextOutput(JSON.stringify(errResult))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-function autoFetchAdaniAndMglBillsDaily() {
-  const folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
-  const metersRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasMeters.json");
-  const meters = JSON.parse(metersRes.getContentText() || "[]") || [];
-  if (!meters.length) return;
+function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
+  var scriptProps = PropertiesService.getScriptProperties();
+  var isInitialSyncDone = scriptProps.getProperty("INITIAL_365D_SYNC_DONE") === "true";
 
-  // Search recent emails in fm.marol Gmail with PDF bills from Adani Electricity or Mahanagar Gas
-  const query = '(from:adanielectricity.com OR from:adani.com OR from:mahanagargas.com OR subject:"Electricity Bill" OR subject:"Gas Bill") newer_than:15d';
-  const threads = GmailApp.search(query, 0, 50);
+  // Pull last 365 days on the very first run, then last 15 days on daily runs
+  var lookbackDays = customLookbackDays ? Number(customLookbackDays) : (isInitialSyncDone ? 15 : 365);
 
-  threads.forEach(thread => {
-    thread.getMessages().forEach(msg => {
-      const bodyText = msg.getPlainBody() + " " + msg.getSubject();
-      const msgDate = msg.getDate();
-      const yearStr = String(msgDate.getFullYear());
-      const monthIdx = msgDate.getMonth(); // 0 = Jan .. 11 = Dec
+  var folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
+  var metersRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasMeters.json");
+  var metersRaw = JSON.parse(metersRes.getContentText() || "[]") || [];
+  var meters = Array.isArray(metersRaw) ? metersRaw : Object.keys(metersRaw).map(function(k) { return metersRaw[k]; });
+  if (!meters.length) return 0;
 
-      meters.forEach(meter => {
-        const ca = String(meter.caNumber || "").trim();
-        const mtrNo = String(meter.meterNumber || "").trim();
-        if (!ca || ca.startsWith("AE-CA-") || ca.startsWith("MGL-CA-")) return;
+  // Fetch existing bills once to prevent duplicate Drive uploads & duplicate notifications
+  var existingBillsRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills.json");
+  var existingBillsMap = JSON.parse(existingBillsRes.getContentText() || "{}") || {};
 
-        if (bodyText.indexOf(ca) !== -1 || (mtrNo && bodyText.indexOf(mtrNo) !== -1)) {
-          // Extract Amount (Rs / INR / ₹) and Units (kWh / SCM / Units)
-          const amtMatch = bodyText.match(/(?:Amount|Payable|Total|Rs\.?|INR|₹)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
-          const unitMatch = bodyText.match(/(?:Units|Consumption|kWh|SCM)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
-          const amountVal = amtMatch ? parseFloat(amtMatch[1].replace(/,/g, "")) : 0;
-          const unitsVal = unitMatch ? parseFloat(unitMatch[1].replace(/,/g, "")) : 0;
+  // Official sender addresses for Mahanagar Gas & Adani Electricity
+  var query = '(from:icpngbill@mahanagargas.com OR from:ebill.mumbaielectricity@adanielectricity.co OR from:ebill.mumbaielectricity@adanielectricity.com OR from:mahanagargas.com OR from:adanielectricity.com) newer_than:' + lookbackDays + 'd';
 
-          let pdfUrl = "";
-          msg.getAttachments().forEach(att => {
-            if (att.getContentType().indexOf("pdf") !== -1 || att.getName().toLowerCase().endsWith(".pdf")) {
-              const file = folder.createFile(att.copyBlob()).setName(ca + "_" + yearStr + "_M" + (monthIdx + 1) + ".pdf");
-              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-              pdfUrl = file.getUrl();
+  var maxThreads = lookbackDays > 30 ? 300 : 60;
+  var threads = GmailApp.search(query, 0, maxThreads);
+  var updatedCount = 0;
+
+  // Process oldest to newest so latest bill in a month wins without duplication
+  for (var t = threads.length - 1; t >= 0; t--) {
+    var messages = threads[t].getMessages();
+    for (var m = 0; m < messages.length; m++) {
+      var msg = messages[m];
+      var bodyText = (msg.getPlainBody() || "") + " " + (msg.getSubject() || "");
+      var msgDate = msg.getDate();
+      var yearStr = String(msgDate.getFullYear());
+      var monthIdx = msgDate.getMonth(); // 0 = Jan .. 11 = Dec
+
+      for (var i = 0; i < meters.length; i++) {
+        var meter = meters[i];
+        if (!meter) continue;
+        var ca = String(meter.caNumber || "").trim();
+        var mtrNo = String(meter.meterNumber || "").trim();
+        if (!ca || ca.indexOf("AE-CA-") === 0 || ca.indexOf("MGL-CA-") === 0) continue;
+
+        if (bodyText.indexOf(ca) !== -1 || (mtrNo && mtrNo.indexOf("AE-MTR-") !== 0 && mtrNo.indexOf("MGL-MTR-") !== 0 && bodyText.indexOf(mtrNo) !== -1)) {
+          var billKey = meter.id + "_" + yearStr + "_" + monthIdx;
+          var existingBill = existingBillsMap[billKey];
+
+          // Skip if this CA's bill for this month & year is already saved with an amount and PDF (no duplicates!)
+          if (existingBill && Number(existingBill.amount) > 0 && existingBill.fileUrl) {
+            continue;
+          }
+
+          var amtMatch = bodyText.match(/(?:Amount|Payable|Total|Rs\.?|INR|₹)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
+          var unitMatch = bodyText.match(/(?:Units|Consumption|kVAh|kWh|SCM)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
+          var amountVal = amtMatch ? parseFloat(amtMatch[1].replace(/,/g, "")) : (existingBill ? Number(existingBill.amount) || 0 : 0);
+          var unitsVal = unitMatch ? parseFloat(unitMatch[1].replace(/,/g, "")) : (existingBill ? Number(existingBill.units) || 0 : 0);
+
+          var pdfUrl = existingBill && existingBill.fileUrl ? existingBill.fileUrl : "";
+          if (!pdfUrl) {
+            var attachments = msg.getAttachments();
+            for (var a = 0; a < attachments.length; a++) {
+              var att = attachments[a];
+              if (att.getContentType().indexOf("pdf") !== -1 || att.getName().toLowerCase().slice(-4) === ".pdf") {
+                var desiredFileName = ca + "_" + yearStr + "_M" + (monthIdx + 1) + ".pdf";
+                var existingFiles = folder.getFilesByName(desiredFileName);
+                var file = existingFiles.hasNext() ? existingFiles.next() : folder.createFile(att.copyBlob()).setName(desiredFileName);
+                file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+                pdfUrl = file.getUrl();
+                break;
+              }
             }
-          });
+          }
 
           if (amountVal > 0 || pdfUrl) {
-            const billKey = meter.id + "_" + yearStr + "_" + monthIdx;
-            const existingCheck = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + billKey + ".json");
-            const existingBill = JSON.parse(existingCheck.getContentText() || "null");
-            const isNewOrUpdated = !existingBill || Number(existingBill.amount) !== Number(amountVal);
-
-            const payload = {
+            var payload = {
               meterId: meter.id,
               caNumber: ca,
               year: yearStr,
@@ -4092,55 +4318,63 @@ function autoFetchAdaniAndMglBillsDaily() {
               units: unitsVal,
               billDate: Utilities.formatDate(msgDate, Session.getScriptTimeZone(), "yyyy-MM-dd"),
               notes: "Auto-fetched from E-Bill",
-              fileUrl: pdfUrl || (existingBill ? existingBill.fileUrl : ""),
+              fileUrl: pdfUrl,
               updatedAt: new Date().toISOString()
             };
+
             UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + billKey + ".json", {
               method: "put",
               contentType: "application/json",
               payload: JSON.stringify(payload)
             });
 
+            existingBillsMap[billKey] = payload;
+            updatedCount++;
+
             // Push cross-device portal notification for all users permitted for Electricity & Gas Bills
-            if (isNewOrUpdated) {
-              const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-              const utilLabel = meter.utility === "gas" ? "Mahanagar Gas" : "Adani Electricity";
-              const unitLabel = meter.utility === "gas" ? "SCM" : "kWh";
-              const notifId = "notif_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
-              const notifObj = {
-                id: notifId,
-                module: "elec-gas-bills",
-                subHeader: "",
-                subPermission: "",
-                actorEmail: "auto-fetch@siyanatmarol.system",
-                actorName: "Auto-Fetch System (" + utilLabel + ")",
-                actionType: "auto-fetch-bill",
-                detailText: "Auto-fetched " + utilLabel + " bill for " + (meter.location || ca) + " (CA: " + ca + ") — " + monthNames[monthIdx] + " " + yearStr + ": ₹" + amountVal,
-                scheduleSummary: "Units: " + unitsVal + " " + unitLabel + (payload.fileUrl ? " | PDF Attached to Drive" : ""),
-                createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
-                timestamp: new Date().getTime(),
-                seenBy: []
-              };
-              UrlFetchApp.fetch(FIREBASE_DB_URL + "/notifications/" + notifId + ".json", {
-                method: "put",
-                contentType: "application/json",
-                payload: JSON.stringify(notifObj)
-              });
-              UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/notifications/" + notifId + ".json", {
-                method: "put",
-                contentType: "application/json",
-                payload: JSON.stringify(notifObj)
-              });
-            }
+            var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            var utilLabel = meter.utility === "gas" ? "Mahanagar Gas" : "Adani Electricity";
+            var isFirstElecHt = (meter.utility !== "gas") && (meter.id === "elec_1" || meter.unitType === "kVAh" || i === 0);
+            var unitLabel = meter.utility === "gas" ? "SCM" : (isFirstElecHt ? "kVAh" : "kWh");
+            var notifId = "notif_" + new Date().getTime() + "_" + Math.floor(Math.random() * 10000);
+            var notifObj = {
+              id: notifId,
+              module: "elec-gas-bills",
+              subHeader: "",
+              subPermission: "",
+              actorEmail: "auto-fetch@siyanatmarol.system",
+              actorName: "Auto-Fetch System (" + utilLabel + ")",
+              actionType: "auto-fetch-bill",
+              detailText: "Auto-fetched " + utilLabel + " bill for " + (meter.location || ca) + " (CA: " + ca + ") — " + monthNames[monthIdx] + " " + yearStr + ": ₹" + amountVal,
+              scheduleSummary: "Units: " + unitsVal + " " + unitLabel + (pdfUrl ? " | PDF Attached to Drive" : ""),
+              createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
+              timestamp: new Date().getTime(),
+              seenBy: []
+            };
+            UrlFetchApp.fetch(FIREBASE_DB_URL + "/notifications/" + notifId + ".json", {
+              method: "put",
+              contentType: "application/json",
+              payload: JSON.stringify(notifObj)
+            });
+            UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/notifications/" + notifId + ".json", {
+              method: "put",
+              contentType: "application/json",
+              payload: JSON.stringify(notifObj)
+            });
           }
         }
-      });
-    });
-  });
+      }
+    }
+  }
+
+  if (!isInitialSyncDone) {
+    scriptProps.setProperty("INITIAL_365D_SYNC_DONE", "true");
+  }
+  return updatedCount;
 }
 
 function getOrCreateUtilityFolder_(name) {
-  const iter = DriveApp.getFoldersByName(name);
+  var iter = DriveApp.getFoldersByName(name);
   return iter.hasNext() ? iter.next() : DriveApp.createFolder(name);
 }
                     </textarea>
@@ -4183,7 +4417,7 @@ function getOrCreateUtilityFolder_(name) {
         let currentUser = null;
         let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
         let currentUserModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
-        let currentUserClassroomPerms = ['allotted-class', 'event', 'student-count', 'extra-chair'];
+        let currentUserClassroomPerms = ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'];
         let currentUserAccessLevel = 'Editing Rights'; // 'Editing Rights' | 'View Only'
         let isUserAdmin = false;
 
@@ -4293,7 +4527,7 @@ function getOrCreateUtilityFolder_(name) {
         ];
 
         const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
-        const ALL_CLASSROOM_COL_PERMS = ['allotted-class', 'event', 'student-count', 'extra-chair'];
+        const ALL_CLASSROOM_COL_PERMS = ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'];
 
         const DEFAULT_WATI_ACCESS_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6Im11cnRhemEua2hlcmFsdXdhbGFAamFtZWFzYWlmaXlhaC5lZHUiLCJuYW1laWQiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiZW1haWwiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiYXV0aF90aW1lIjoiMTAvMjYvMjAyNiAxMjoyMjo0OCIsInRlbmFudF9pZCI6IjMxMDM4NSIsImRiX25hbWUiOiJtdC1wcm9kLVRlbmFudHMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBRE1JTklTVFJBVE9SIiwiZXhwIjoyNTM0MDIzMDA4MDAsImlzcyI6IkNsYXJlX0FJIiwiYXVkIjoiQ2xhcmVfQUkifQ.K69obg-iYKCwmE4B8M7EklmXokQBT63bXpdQsdimVNw";
         let watiConfig = {
@@ -4346,6 +4580,9 @@ function getOrCreateUtilityFolder_(name) {
             }
             if (colKey === 'event') {
                 return currentUserClassroomPerms.includes('event') || currentUserClassroomPerms.includes('darajah-event');
+            }
+            if (colKey === 'raihaan') {
+                return currentUserClassroomPerms.includes('raihaan');
             }
             return currentUserClassroomPerms.includes(colKey);
         }
@@ -5556,7 +5793,9 @@ window.loadClassroomsFromCloud = async function() {
 
             const title = `Siyanat Marol — ${moduleLabel} Update`;
             const actor = notif.actorName || notif.actorEmail || 'A user';
-            const body = `${actor}: ${notif.detailText || notif.message || notif.action || 'New changes recorded'}`;
+            const mainDetail = notif.detailText || notif.message || notif.action || 'New changes recorded';
+            const schedExtra = (notif.actionType === 'add-mass-event' && notif.scheduleSummary) ? ` | ${notif.scheduleSummary}` : '';
+            const body = `${actor}: ${mainDetail}${schedExtra}`;
 
             const options = {
                 body: body,
@@ -5744,8 +5983,10 @@ window.loadClassroomsFromCloud = async function() {
                 'edit-class': 'Edited Allotted Class',
                 'delete-class': 'Removed Allotted Class',
                 'add-event': 'Added Event',
+                'add-mass-event': 'Added Mass Event',
                 'edit-event': 'Edited Event',
                 'delete-event': 'Removed Event',
+                'add-raihaan': 'Added Raihaan Details',
                 'add-student-count': 'Added Student Count',
                 'edit-student-count': 'Updated Student Count',
                 'add-extra-chair': 'Added Extra Chair',
@@ -5845,7 +6086,7 @@ window.loadClassroomsFromCloud = async function() {
             return { ok: false, sentCount: 0, message: lastErrorMsg || 'Failed to reach WATI endpoint.' };
         }
 
-        async function sendClassroomWhatsAppAlert({ subPermission, actionType, detailText, scheduleSummary, roomObj, actorEmail, actorName, waDetails = '', waSchedule = '', waClassName = '' }) {
+        async function sendClassroomWhatsAppAlert({ subPermission, actionType, detailText, scheduleSummary, roomObj, actorEmail, actorName, waDetails = '', waSchedule = '', waClassName = '', waRoomLabel = '' }) {
             try {
                 const cfg = normalizeWatiConfig(watiConfig);
                 if (!cfg.enabled) return;
@@ -5873,8 +6114,10 @@ window.loadClassroomsFromCloud = async function() {
                 if (targetPhones.length === 0) return;
 
                 const actionLabel = getReadableClassroomActionLabel(actionType, subPermission);
-                // First mention the allotted class name if any, then dash, then classroom number followed by in brackets (Male or Female) - location
-                const roomLabel = formatClassroomWhatsAppRoomLabel(roomObj, detailText, waClassName);
+                // Allow explicit waRoomLabel override (e.g. for Mass Events: "1411 (Std 1 A M), 1412 (Std 2 A M)")
+                const roomLabel = String(waRoomLabel || '').trim()
+                    ? String(waRoomLabel).trim()
+                    : formatClassroomWhatsAppRoomLabel(roomObj, detailText, waClassName);
 
                 // Clean, non-repetitive Details ({{4}}) and Schedule / Dates ({{5}}) without repeating Action, Classroom, or Updated timestamp
                 const cleanDetails = String(waDetails || detailText || '').trim();
@@ -5946,7 +6189,8 @@ window.loadClassroomsFromCloud = async function() {
                 actorName,
                 waDetails: waOverrides.waDetails || '',
                 waSchedule: waOverrides.waSchedule || '',
-                waClassName: waOverrides.waClassName || ''
+                waClassName: waOverrides.waClassName || '',
+                waRoomLabel: waOverrides.waRoomLabel || ''
             });
         }
 
@@ -6242,6 +6486,20 @@ window.loadClassroomsFromCloud = async function() {
             if (exportClassroomBtn) {
                 exportClassroomBtn.classList.toggle('hidden', !isUserAdmin);
             }
+            const massEventsBtn = document.getElementById('btnMassEventsHeader');
+            if (massEventsBtn) {
+                massEventsBtn.classList.toggle('hidden', !canEditClassroomColumn('event'));
+            }
+            const canEditRaihaan = canEditClassroomColumn('raihaan');
+            const raihaanAddBtn = document.getElementById('btnRaihaanAddDetails');
+            const raihaanGridEl = document.getElementById('raihaanCardActionsGrid');
+            if (raihaanAddBtn) {
+                raihaanAddBtn.classList.toggle('hidden', !canEditRaihaan);
+            }
+            if (raihaanGridEl) {
+                raihaanGridEl.classList.toggle('grid-cols-2', canEditRaihaan);
+                raihaanGridEl.classList.toggle('grid-cols-1', !canEditRaihaan);
+            }
 
             // Tag static CRUD buttons and inputs inside main modules so View Only hides/disables them cleanly
             const crudButtonsSelectors = [
@@ -6475,6 +6733,7 @@ window.loadClassroomsFromCloud = async function() {
             if (!elecGasMetersData || elecGasMetersData.length === 0) {
                 elecGasMetersData = ensureDefaultElecGasMeters([]);
             }
+            resetElecGasPeriodToCurrentQuarter();
             renderElecGasModule();
             
             const today = new Date().toISOString().slice(0, 7);
@@ -6508,6 +6767,7 @@ window.loadClassroomsFromCloud = async function() {
             }
 
             if (modName === 'elec-gas-bills') {
+                resetElecGasPeriodToCurrentQuarter();
                 renderElecGasModule();
                 openModuleNotificationsPopupIfAny('elec-gas-bills');
             } else if (modName === 'classroom-allocation') {
@@ -8901,7 +9161,8 @@ await recordDawatEstatesNotification(
             'event': 'Add Event',
             'darajah-event': 'Add Allotted Class & Event',
             'student-count': 'Student Count',
-            'extra-chair': 'Extra Chair'
+            'extra-chair': 'Extra Chair',
+            'raihaan': 'Raihaan Add Details'
         };
 
         window.toggleNestedDawatEstatesPerms = function() {
@@ -8928,7 +9189,7 @@ await recordDawatEstatesNotification(
         };
 
         window.setAllClassroomSubPerms = function(checked) {
-            ['allotted-class', 'event', 'student-count', 'extra-chair'].forEach(k => {
+            ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'].forEach(k => {
                 const chk = document.getElementById(`cls-perm-${k}`);
                 if (chk) chk.checked = checked;
             });
@@ -9087,7 +9348,7 @@ await recordDawatEstatesNotification(
 
             const clsPerms = Array.isArray(u.classroomPermissions) ? u.classroomPermissions : [...ALL_CLASSROOM_COL_PERMS];
             const hasLegacyDarajahEvent = clsPerms.includes('darajah-event');
-            ['allotted-class', 'event', 'student-count', 'extra-chair'].forEach(k => {
+            ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'].forEach(k => {
                 const chk = document.getElementById(`cls-perm-${k}`);
                 if (!chk) return;
                 if ((k === 'allotted-class' || k === 'event') && hasLegacyDarajahEvent) {
@@ -9197,7 +9458,7 @@ await recordDawatEstatesNotification(
 
             const classroomPermissions = [];
             if (allowedModules.includes('classroom-allocation')) {
-                ['allotted-class', 'event', 'student-count', 'extra-chair'].forEach(k => {
+                ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'].forEach(k => {
                     if (document.getElementById(`cls-perm-${k}`)?.checked) classroomPermissions.push(k);
                 });
             }
@@ -9404,6 +9665,17 @@ await recordDawatEstatesNotification(
             if (!room || !Array.isArray(room.allocations)) return { bookedMap, raihaanOpenSlotInfo };
             const todayStr = getLocalTodayDateString();
 
+            const targetEditAlloc = excludeAllocId
+                ? room.allocations.find(a => a && String(a.id) === String(excludeAllocId))
+                : null;
+            const targetOwnSlots = new Set(
+                (targetEditAlloc && Array.isArray(targetEditAlloc.slots) ? targetEditAlloc.slots : []).map(rawSlot => {
+                    let s = rawSlot === 'Sat_PT' ? 'Sat_P1' : rawSlot;
+                    if (typeof s === 'string' && s.endsWith('_P11')) s = s.replace(/_P11$/, '_EX1');
+                    return s;
+                })
+            );
+
             // First pass: identify primary/existing allocations and check which of their slots are currently open due to active Raihaan
             room.allocations.forEach(alloc => {
                 if (!alloc || String(alloc.id) === String(excludeAllocId)) return;
@@ -9436,6 +9708,11 @@ await recordDawatEstatesNotification(
                             allocId: alloc.id,
                             darajahName: alloc.standardEventName || 'Darajah'
                         };
+                        return;
+                    }
+
+                    // If we are editing an existing Event that already owns this slot, do not lock it against its own Allocated Class
+                    if (targetEditAlloc && targetEditAlloc.allocationType === 'event' && (alloc.allocationType || 'class') === 'class' && targetOwnSlots.has(s)) {
                         return;
                     }
 
@@ -10817,6 +11094,10 @@ await recordDawatEstatesNotification(
 
         window.openAddRaihaanModal = function() {
             if (!guardEditingRights()) return;
+            if (!canEditClassroomColumn('raihaan')) {
+                showAssetToast("Access Denied: You do not have editing rights for Raihaan Add Details.", true);
+                return;
+            }
             const container = document.getElementById('raihaanRowsContainer');
             if (!container) return;
             container.innerHTML = '';
@@ -10960,6 +11241,10 @@ await recordDawatEstatesNotification(
         window.saveRaihaanDetails = async function(e) {
             e.preventDefault();
             if (!guardEditingRights()) return;
+            if (!canEditClassroomColumn('raihaan')) {
+                showAssetToast("Access Denied: You do not have editing rights for Raihaan Add Details.", true);
+                return;
+            }
 
             const errEl = document.getElementById('raihaanValidationError');
             if (errEl) errEl.classList.add('hidden');
@@ -11146,6 +11431,746 @@ await recordDawatEstatesNotification(
 
 
         // =========================================================================
+
+        // =========================================================================
+        // MASS EVENTS FULL-SCREEN POPUP LOGIC (Single Date -> Matched Weekday Periods)
+        // =========================================================================
+        let massEventsFilter = 'all'; // 'all' | 'Male' | 'Female' | 'ticked'
+        // State keyed by roomId: { ticked: boolean, periods: Set<periodKey>, customTimings: { EX1: '', EX2: '' } }
+        let massEventsSelectionMap = {};
+
+        function getMatchedTimetableDayFromDate(dateStr) {
+            if (!dateStr || typeof dateStr !== 'string') return null;
+            const parts = dateStr.split('-').map(Number);
+            if (parts.length !== 3 || parts.some(isNaN)) return null;
+            const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+            if (isNaN(dt.getTime())) return null;
+            const jsDay = dt.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+            const dayKeyMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dayKey = dayKeyMap[jsDay];
+            if (dayKey === 'Sun') {
+                return { key: 'Sun', arLabel: 'يوم الأحد', enLabel: 'Sunday', isSaturday: false, isSunday: true };
+            }
+            const found = TIMETABLE_DAYS.find(d => d.key === dayKey);
+            return found ? { ...found, isSunday: false } : null;
+        }
+
+        function getChronologicalPeriodsForDay(dayObj) {
+            if (!dayObj || dayObj.isSunday) return [];
+            // Chronological order left-to-right: P1 (Sat only), P2..P10, Extra 1, Extra 2
+            const cols = [...TIMETABLE_COLUMNS].reverse();
+            return cols.filter(c => !c.saturdayOnly || dayObj.isSaturday);
+        }
+
+        function getStandardPresetPeriodKeysForDay(dayObj) {
+            if (!dayObj || dayObj.isSunday) return [];
+            if (dayObj.key === 'Sat') return ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'];
+            if (dayObj.key === 'Fri') return ['P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9', 'P10'];
+            return ['P4', 'P5', 'P6', 'P7', 'P8', 'P9', 'P10'];
+        }
+
+        // Check if another Other Event is already booked in this classroom on the selected date & slotId
+        function getExistingEventConflictsForDateAndDay(room, selectedDate, dayKey) {
+            const eventConflictMap = {};
+            const stdClassPeriodSet = new Set();
+            if (!room || !Array.isArray(room.allocations) || !dayKey) {
+                return { eventConflictMap, stdClassPeriodSet };
+            }
+            room.allocations.forEach(alloc => {
+                if (!alloc) return;
+                const isEvent = alloc.allocationType === 'event';
+                const slots = Array.isArray(alloc.slots) ? alloc.slots : [];
+                if (isEvent) {
+                    const fromD = alloc.fromDate || '';
+                    const toD = alloc.toDate || fromD;
+                    if (fromD && toD && (selectedDate < fromD || selectedDate > toD)) {
+                        return; // Event does not overlap selectedDate
+                    }
+                    slots.forEach(rawSlot => {
+                        let s = rawSlot === 'Sat_PT' ? 'Sat_P1' : rawSlot;
+                        if (typeof s === 'string' && s.endsWith('_P11')) s = s.replace(/_P11$/, '_EX1');
+                        const [dK, pK] = String(s).split('_');
+                        if (dK === dayKey && pK && !eventConflictMap[pK]) {
+                            eventConflictMap[pK] = alloc.standardEventName || 'Booked Event';
+                        }
+                    });
+                } else {
+                    slots.forEach(rawSlot => {
+                        let s = rawSlot === 'Sat_PT' ? 'Sat_P1' : rawSlot;
+                        if (typeof s === 'string' && s.endsWith('_P11')) s = s.replace(/_P11$/, '_EX1');
+                        const [dK, pK] = String(s).split('_');
+                        if (dK === dayKey && pK) {
+                            stdClassPeriodSet.add(pK);
+                        }
+                    });
+                }
+            });
+            return { eventConflictMap, stdClassPeriodSet };
+        }
+
+        function ensureMassEventRoomState(roomId) {
+            const key = String(roomId);
+            if (!massEventsSelectionMap[key]) {
+                massEventsSelectionMap[key] = {
+                    ticked: false,
+                    periods: new Set(),
+                    customTimings: {}
+                };
+            }
+            return massEventsSelectionMap[key];
+        }
+
+        window.openMassEventsModal = function() {
+            if (!guardEditingRights()) return;
+            if (!canEditClassroomColumn('event')) {
+                showAssetToast("Access Denied: You do not have editing rights for Add Event.", true);
+                return;
+            }
+            massEventsFilter = 'all';
+            massEventsSelectionMap = {};
+            classroomsData.forEach(r => {
+                massEventsSelectionMap[String(r.id)] = {
+                    ticked: false,
+                    periods: new Set(),
+                    customTimings: {}
+                };
+            });
+
+            const todayStr = getLocalTodayDateString();
+            const nameInp = document.getElementById('massEventNameInput');
+            const dateInp = document.getElementById('massEventDateInput');
+            const searchInp = document.getElementById('massEventSearchInput');
+            const errEl = document.getElementById('massEventsValidationError');
+
+            if (nameInp) nameInp.value = '';
+            if (dateInp) dateInp.value = todayStr;
+            if (searchInp) searchInp.value = '';
+            if (errEl) errEl.classList.add('hidden');
+
+            updateMassEventsFilterButtonsUI();
+            renderMassEventsTable();
+            document.getElementById('modalMassEvents')?.classList.remove('hidden');
+            setTimeout(() => nameInp?.focus(), 60);
+        };
+
+        window.handleMassEventDateChange = function(newDateStr) {
+            const dayObj = getMatchedTimetableDayFromDate(newDateStr);
+            const validPeriodKeys = new Set(getChronologicalPeriodsForDay(dayObj).map(c => c.key));
+
+            // Sanitize selected periods for each room so only valid, non-conflicting periods on the new date remain
+            classroomsData.forEach(room => {
+                const st = ensureMassEventRoomState(room.id);
+                const { eventConflictMap } = getExistingEventConflictsForDateAndDay(room, newDateStr, dayObj ? dayObj.key : '');
+                const nextPeriods = new Set();
+                st.periods.forEach(pKey => {
+                    if (validPeriodKeys.has(pKey) && !eventConflictMap[pKey]) {
+                        nextPeriods.add(pKey);
+                    }
+                });
+                if (!nextPeriods.has('EX1') && !eventConflictMap['EX1']) {
+                    nextPeriods.delete('EX2');
+                }
+                st.periods = nextPeriods;
+            });
+
+            document.getElementById('massEventsValidationError')?.classList.add('hidden');
+            renderMassEventsTable();
+        };
+
+        window.setMassEventsFilter = function(filterVal) {
+            massEventsFilter = filterVal;
+            updateMassEventsFilterButtonsUI();
+            renderMassEventsTable();
+        };
+
+        function updateMassEventsFilterButtonsUI() {
+            const map = [
+                { key: 'all', id: 'btnMassFilterAll', active: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-amber-700 text-white shadow-sm transition', inactive: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-800 border border-gray-300 hover:bg-gray-100 transition' },
+                { key: 'Male', id: 'btnMassFilterMale', active: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-blue-800 text-white shadow-sm transition', inactive: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-white text-blue-900 border border-blue-300 hover:bg-blue-50 transition' },
+                { key: 'Female', id: 'btnMassFilterFemale', active: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-pink-800 text-white shadow-sm transition', inactive: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-white text-pink-900 border border-pink-300 hover:bg-pink-50 transition' },
+                { key: 'ticked', id: 'btnMassFilterTicked', active: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-700 text-white shadow-sm transition', inactive: 'px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-white text-emerald-900 border border-emerald-300 hover:bg-emerald-50 transition' }
+            ];
+            map.forEach(item => {
+                const el = document.getElementById(item.id);
+                if (el) el.className = (massEventsFilter === item.key) ? item.active : item.inactive;
+            });
+        }
+
+        function updateMassEventsTopSummaryCounters() {
+            let tickedCount = 0;
+            let totalSlotsCount = 0;
+            classroomsData.forEach(r => {
+                const st = ensureMassEventRoomState(r.id);
+                if (st.ticked) {
+                    tickedCount++;
+                    totalSlotsCount += st.periods.size;
+                }
+            });
+            const pill = document.getElementById('massEventsSummaryPill');
+            if (pill) {
+                pill.innerText = `${tickedCount} Class${tickedCount === 1 ? '' : 'es'} Ticked • ${totalSlotsCount} Period Slot${totalSlotsCount === 1 ? '' : 's'}`;
+            }
+            if (document.getElementById('massFilterCountAll')) document.getElementById('massFilterCountAll').innerText = classroomsData.length;
+            if (document.getElementById('massFilterCountMale')) document.getElementById('massFilterCountMale').innerText = classroomsData.filter(r => r.type !== 'Female').length;
+            if (document.getElementById('massFilterCountFemale')) document.getElementById('massFilterCountFemale').innerText = classroomsData.filter(r => r.type === 'Female').length;
+            if (document.getElementById('massFilterCountTicked')) document.getElementById('massFilterCountTicked').innerText = tickedCount;
+        }
+
+        function getFilteredMassEventsRooms() {
+            const q = (document.getElementById('massEventSearchInput')?.value || '').toLowerCase().trim();
+            const tokens = q.split(/\s+/).filter(Boolean);
+            const sortedRooms = [...classroomsData].sort((a, b) => compareClassroomsByAllocatedClass(a, b));
+
+            return sortedRooms.filter(room => {
+                const st = ensureMassEventRoomState(room.id);
+                if (massEventsFilter === 'Male' && room.type === 'Female') return false;
+                if (massEventsFilter === 'Female' && room.type !== 'Female') return false;
+                if (massEventsFilter === 'ticked' && !st.ticked) return false;
+
+                if (tokens.length === 0) return true;
+                const stdNames = getClassroomSortedAllocatedClassNames(room).join(' ');
+                const corpus = `${room.classroomNumber} ${room.location} ${room.type} ${stdNames}`.toLowerCase();
+                return tokens.every(t => corpus.includes(t));
+            });
+        }
+
+        window.renderMassEventsTable = function() {
+            const thead = document.getElementById('massEventsTableHead');
+            const tbody = document.getElementById('massEventsTableBody');
+            if (!thead || !tbody) return;
+
+            const selectedDate = (document.getElementById('massEventDateInput')?.value || getLocalTodayDateString()).trim();
+            const dayObj = getMatchedTimetableDayFromDate(selectedDate);
+            const dayBox = document.getElementById('massEventMatchedDayBox');
+            const dayLabelEl = document.getElementById('massEventMatchedDayLabel');
+            const daySubBadgeEl = document.getElementById('massEventMatchedDaySubBadge');
+
+            updateMassEventsTopSummaryCounters();
+
+            if (!dayObj) {
+                if (dayLabelEl) dayLabelEl.innerText = 'Select a Valid Date';
+                if (daySubBadgeEl) daySubBadgeEl.innerText = 'No Date';
+                thead.innerHTML = '';
+                tbody.innerHTML = '<tr><td class="p-8 text-center text-gray-400 italic">Please select a valid Event Date above to load the day periods.</td></tr>';
+                return;
+            }
+
+            if (dayObj.isSunday) {
+                if (dayBox) dayBox.className = "bg-red-50 border-2 border-red-400 rounded-lg px-3.5 py-2 flex items-center justify-between shadow-sm";
+                if (dayLabelEl) dayLabelEl.innerText = `${dayObj.enLabel} (${dayObj.arLabel}) — ${selectedDate}`;
+                if (daySubBadgeEl) {
+                    daySubBadgeEl.className = "bg-red-100 text-red-900 border border-red-300 text-[11px] font-extrabold px-2.5 py-1 rounded-md";
+                    daySubBadgeEl.innerText = "Sunday (Off Timetable)";
+                }
+                thead.innerHTML = '';
+                tbody.innerHTML = `<tr><td class="p-8 text-center text-red-700 font-bold bg-red-50/40"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i>${selectedDate} falls on Sunday (${dayObj.arLabel}). Weekly classroom timetable periods operate Monday to Saturday — please select a Monday–Saturday date.</td></tr>`;
+                return;
+            }
+
+            if (dayBox) dayBox.className = "bg-white border-2 border-emerald-500 rounded-lg px-3.5 py-2 flex items-center justify-between shadow-sm";
+            if (dayLabelEl) dayLabelEl.innerText = `${dayObj.enLabel} (${dayObj.arLabel}) — ${selectedDate}`;
+            if (daySubBadgeEl) {
+                daySubBadgeEl.className = dayObj.isSaturday
+                    ? "bg-amber-100 text-amber-950 border border-amber-300 text-[11px] font-extrabold px-2.5 py-1 rounded-md"
+                    : "bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-extrabold px-2.5 py-1 rounded-md";
+                daySubBadgeEl.innerText = dayObj.isSaturday ? "Saturday Timings" : "Mon–Fri Timings";
+            }
+
+            const dayColumns = getChronologicalPeriodsForDay(dayObj);
+            const filteredRooms = getFilteredMassEventsRooms();
+            const allVisibleTicked = filteredRooms.length > 0 && filteredRooms.every(r => ensureMassEventRoomState(r.id).ticked);
+
+            // Header Row 1: Sticky Class Info + Selected Day Banner spanning only that day's periods
+            let headHtml = `
+                <tr class="bg-gray-900 text-white">
+                    <th rowspan="2" class="p-2.5 w-11 text-center border-r border-gray-700 sticky left-0 z-30 bg-gray-900">
+                        <label class="flex flex-col items-center justify-center cursor-pointer" title="Tick / Untick All Visible Classrooms">
+                            <input
+                                type="checkbox"
+                                id="massEventTickAllVisibleCb"
+                                ${allVisibleTicked ? 'checked' : ''}
+                                onchange="toggleAllVisibleMassEventRooms(this.checked)"
+                                class="h-4 w-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
+                            >
+                            <span class="text-[9px] uppercase tracking-wider text-amber-300 mt-0.5 font-extrabold">Tick</span>
+                        </label>
+                    </th>
+                    <th rowspan="2" class="p-2.5 w-28 text-left border-r border-gray-700 sticky left-11 z-30 bg-gray-900">
+                        <div class="text-xs font-extrabold uppercase tracking-wider">Classroom No.</div>
+                        <div class="text-[10px] text-gray-300 font-normal">Gender &amp; Location</div>
+                    </th>
+                    <th rowspan="2" class="p-2.5 w-44 text-left border-r border-gray-700">
+                        <div class="text-xs font-extrabold uppercase tracking-wider text-emerald-300">Std Name</div>
+                        <div class="text-[10px] text-gray-300 font-normal">Allocated Class</div>
+                    </th>
+                    <th rowspan="2" class="p-2 w-20 text-center border-r border-gray-700 bg-gray-800">
+                        <div class="text-[10px] font-extrabold uppercase text-amber-300 leading-tight">Row<br>Periods</div>
+                    </th>
+                    <th colspan="${dayColumns.length}" class="py-2 px-3 text-center ${dayObj.isSaturday ? 'bg-amber-800' : 'bg-emerald-800'} text-white border-b border-gray-700">
+                        <div class="flex items-center justify-center space-x-2 text-xs sm:text-sm font-extrabold">
+                            <i class="fa-solid fa-calendar-day text-amber-300"></i>
+                            <span>Showing Only Selected Day: ${dayObj.enLabel} (<span dir="rtl">${dayObj.arLabel}</span>) — ${selectedDate}</span>
+                        </div>
+                    </th>
+                </tr>
+                <tr class="bg-gray-100 text-gray-900 border-b-2 border-gray-400">
+            `;
+
+            dayColumns.forEach(col => {
+                const timeStr = col.isExtra
+                    ? 'Custom Time'
+                    : (dayObj.isSaturday ? col.satTime : col.stdTime);
+                headHtml += `
+                    <th
+                        onclick="toggleMassEventColumnPeriodForTicked('${col.key}')"
+                        class="py-2 px-1.5 text-center border-r border-gray-300 cursor-pointer hover:bg-amber-100 transition select-none min-w-[78px]"
+                        title="Click to toggle ${col.label} across all Ticked Classrooms"
+                    >
+                        <div class="text-[11px] font-extrabold text-gray-900">${col.label}</div>
+                        <div class="text-[9.5px] font-mono ${col.isExtra ? 'text-teal-700 font-bold' : 'text-gray-600'} mt-0.5">${timeStr}</div>
+                    </th>
+                `;
+            });
+            headHtml += `</tr>`;
+            thead.innerHTML = headHtml;
+
+            if (filteredRooms.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${4 + dayColumns.length}" class="p-8 text-center text-gray-400 italic text-xs">No classrooms match the current filter/search.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredRooms.map(room => {
+                const roomIdStr = String(room.id);
+                const safeRoomId = roomIdStr.replace(/'/g, "\'");
+                const st = ensureMassEventRoomState(room.id);
+                const stdNamesList = getClassroomSortedAllocatedClassNames(room);
+                const stdNameDisplay = stdNamesList.length > 0
+                    ? stdNamesList.map(n => `<span class="inline-block bg-emerald-50 text-emerald-950 border border-emerald-300 font-extrabold px-2 py-0.5 rounded text-xs mr-1 mb-0.5">${n}</span>`).join('')
+                    : `<span class="text-[11px] text-gray-400 italic">Vacant (No Std Allocated)</span>`;
+
+                const inRaihaanOnDate = isClassroomCurrentlyInRaihaan(room, selectedDate);
+                const raihaanPill = inRaihaanOnDate
+                    ? `<span class="inline-block bg-purple-100 text-purple-900 border border-purple-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded mt-0.5">In Raihaan</span>`
+                    : '';
+
+                const { eventConflictMap, stdClassPeriodSet } = getExistingEventConflictsForDateAndDay(room, selectedDate, dayObj.key);
+
+                // Standard selectable non-extra columns for "Row All" button
+                const selectableStdKeys = dayColumns
+                    .filter(c => !c.isExtra && !eventConflictMap[c.key] && !(dayObj.isSaturday && c.satTime === '00:00 - 00:00'))
+                    .map(c => c.key);
+                const allRowStdSelected = selectableStdKeys.length > 0 && selectableStdKeys.every(k => st.periods.has(k));
+
+                const genderBadge = room.type === 'Female'
+                    ? `<span class="bg-pink-100 text-pink-900 border border-pink-200 text-[9px] font-extrabold px-1.5 py-0.2 rounded">Female</span>`
+                    : `<span class="bg-blue-100 text-blue-900 border border-blue-200 text-[9px] font-extrabold px-1.5 py-0.2 rounded">Male</span>`;
+
+                const rowBgClass = st.ticked
+                    ? 'bg-amber-50/75 hover:bg-amber-100/70'
+                    : 'bg-white hover:bg-gray-50';
+                const stickyBgClass = st.ticked ? 'bg-amber-50' : 'bg-white';
+
+                const periodCellsHtml = dayColumns.map(col => {
+                    const pKey = col.key;
+                    const bookedByEventName = eventConflictMap[pKey];
+                    if (bookedByEventName) {
+                        return `
+                            <td class="p-1.5 text-center align-middle bg-red-50/90 border-r border-red-200 select-none" title="Already booked on ${selectedDate} by Event: ${bookedByEventName}">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="text-[9.5px] font-extrabold text-red-900 bg-red-100 border border-red-300 px-1.5 py-0.5 rounded leading-tight break-words max-w-[85px]">
+                                        <i class="fa-solid fa-lock text-[8px] mr-0.5"></i>${bookedByEventName}
+                                    </span>
+                                    <span class="text-[9px] text-red-500 font-mono mt-0.5">${col.shortLabel}</span>
+                                </div>
+                            </td>
+                        `;
+                    }
+
+                    const isChecked = st.periods.has(pKey);
+                    const ex1Satisfied = st.periods.has('EX1') || !!eventConflictMap['EX1'];
+                    const isEx2Locked = (pKey === 'EX2' && !ex1Satisfied);
+
+                    const isStdClassSlot = stdClassPeriodSet.has(pKey);
+                    const subTagHtml = inRaihaanOnDate && isStdClassSlot
+                        ? `<span class="text-[8.5px] text-purple-700 font-bold leading-none mt-0.5">Raihaan Open</span>`
+                        : (isStdClassSlot
+                            ? `<span class="text-[8.5px] text-teal-700 font-semibold leading-none mt-0.5">Std Slot</span>`
+                            : `<span class="text-[8.5px] text-gray-400 leading-none mt-0.5">Free</span>`);
+
+                    let extraTimeInputHtml = '';
+                    if (col.isExtra && isChecked) {
+                        const curTimeVal = (st.customTimings && st.customTimings[pKey]) ? st.customTimings[pKey] : '';
+                        extraTimeInputHtml = `
+                            <input
+                                type="text"
+                                value="${curTimeVal.replace(/"/g, '&quot;')}"
+                                placeholder="e.g. 16:00-16:45"
+                                oninput="handleMassEventExtraTimeChange('${safeRoomId}', '${pKey}', this.value)"
+                                onclick="event.stopPropagation()"
+                                class="mt-1 w-20 p-0.5 text-[9.5px] font-mono border border-teal-500 rounded text-center bg-white focus:outline-none focus:ring-1 focus:ring-teal-600"
+                            >
+                        `;
+                    }
+
+                    return `
+                        <td class="p-1.5 text-center align-middle border-r border-gray-200 ${isChecked ? 'bg-amber-100/90' : ''}">
+                            <div class="flex flex-col items-center justify-center">
+                                <label class="flex flex-col items-center justify-center ${isEx2Locked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} w-full py-0.5">
+                                    <input
+                                        type="checkbox"
+                                        ${isChecked ? 'checked' : ''}
+                                        ${isEx2Locked ? 'disabled title="Select Extra 1 first"' : ''}
+                                        onchange="toggleMassEventRoomPeriod('${safeRoomId}', '${pKey}', this.checked)"
+                                        class="h-4 w-4 rounded text-amber-600 focus:ring-amber-500 ${isEx2Locked ? 'cursor-not-allowed' : 'cursor-pointer'}"
+                                    >
+                                    <span class="text-[10px] font-mono ${isChecked ? 'font-extrabold text-amber-950' : 'text-gray-500'} mt-0.5">${col.shortLabel}</span>
+                                    ${isEx2Locked ? '<span class="text-[8px] text-gray-400 leading-none mt-0.5">Pick EX1 1st</span>' : subTagHtml}
+                                </label>
+                                ${extraTimeInputHtml}
+                            </div>
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="${rowBgClass} transition">
+                        <td class="p-2 text-center border-r border-gray-200 sticky left-0 z-10 ${stickyBgClass}">
+                            <input
+                                type="checkbox"
+                                ${st.ticked ? 'checked' : ''}
+                                onchange="toggleMassEventRoomTick('${safeRoomId}', this.checked)"
+                                class="h-4 w-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                title="Tick Classroom ${room.classroomNumber}"
+                            >
+                        </td>
+                        <td class="p-2 border-r border-gray-200 sticky left-11 z-10 ${stickyBgClass}">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="font-extrabold text-xs sm:text-sm ${room.type === 'Female' ? 'text-pink-900' : 'text-blue-900'}">${room.classroomNumber}</span>
+                                ${genderBadge}
+                            </div>
+                            <div class="text-[10px] text-gray-500 leading-tight mt-0.5 truncate max-w-[115px]" title="${room.location || ''}">${room.location || '-'}</div>
+                        </td>
+                        <td class="p-2 border-r border-gray-200">
+                            <div class="flex flex-col items-start">
+                                <div>${stdNameDisplay}</div>
+                                ${raihaanPill}
+                            </div>
+                        </td>
+                        <td class="p-1.5 text-center border-r border-gray-200">
+                            <button
+                                type="button"
+                                onclick="toggleMassEventRowAllPeriods('${safeRoomId}')"
+                                class="px-2 py-1 rounded text-[10px] font-extrabold border transition ${allRowStdSelected ? 'bg-amber-600 text-white border-amber-700' : 'bg-gray-100 hover:bg-amber-50 text-gray-800 border-gray-300'}"
+                                title="Select / Clear all standard periods on ${dayObj.enLabel} for Classroom ${room.classroomNumber}"
+                            >
+                                ${allRowStdSelected ? 'Clear Row' : 'Select All'}
+                            </button>
+                            ${st.periods.size > 0 ? `<span class="block text-[9.5px] font-extrabold text-amber-900 mt-0.5">${st.periods.size} picked</span>` : ''}
+                        </td>
+                        ${periodCellsHtml}
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.toggleMassEventRoomTick = function(roomId, isChecked) {
+            const st = ensureMassEventRoomState(roomId);
+            st.ticked = Boolean(isChecked);
+            if (!st.ticked) {
+                st.periods.clear();
+            }
+            document.getElementById('massEventsValidationError')?.classList.add('hidden');
+            renderMassEventsTable();
+        };
+
+        window.toggleAllVisibleMassEventRooms = function(isChecked) {
+            const visibleRooms = getFilteredMassEventsRooms();
+            visibleRooms.forEach(room => {
+                const st = ensureMassEventRoomState(room.id);
+                st.ticked = Boolean(isChecked);
+                if (!st.ticked) {
+                    st.periods.clear();
+                }
+            });
+            document.getElementById('massEventsValidationError')?.classList.add('hidden');
+            renderMassEventsTable();
+        };
+
+        window.toggleMassEventRoomPeriod = function(roomId, periodKey, isChecked) {
+            const st = ensureMassEventRoomState(roomId);
+            if (isChecked) {
+                st.ticked = true;
+                st.periods.add(periodKey);
+            } else {
+                st.periods.delete(periodKey);
+                if (periodKey === 'EX1') {
+                    st.periods.delete('EX2');
+                }
+            }
+            document.getElementById('massEventsValidationError')?.classList.add('hidden');
+            renderMassEventsTable();
+        };
+
+        window.handleMassEventExtraTimeChange = function(roomId, periodKey, val) {
+            const st = ensureMassEventRoomState(roomId);
+            const cleanVal = String(val || '').trim();
+            if (cleanVal) {
+                st.customTimings[periodKey] = cleanVal;
+            } else {
+                delete st.customTimings[periodKey];
+            }
+        };
+
+        window.toggleMassEventRowAllPeriods = function(roomId) {
+            const room = classroomsData.find(r => String(r.id) === String(roomId));
+            if (!room) return;
+            const selectedDate = (document.getElementById('massEventDateInput')?.value || getLocalTodayDateString()).trim();
+            const dayObj = getMatchedTimetableDayFromDate(selectedDate);
+            if (!dayObj || dayObj.isSunday) return;
+
+            const dayColumns = getChronologicalPeriodsForDay(dayObj);
+            const { eventConflictMap } = getExistingEventConflictsForDateAndDay(room, selectedDate, dayObj.key);
+            const selectableStdKeys = dayColumns
+                .filter(c => !c.isExtra && !eventConflictMap[c.key] && !(dayObj.isSaturday && c.satTime === '00:00 - 00:00'))
+                .map(c => c.key);
+
+            const st = ensureMassEventRoomState(room.id);
+            const allSelected = selectableStdKeys.length > 0 && selectableStdKeys.every(k => st.periods.has(k));
+            if (allSelected) {
+                selectableStdKeys.forEach(k => st.periods.delete(k));
+            } else {
+                st.ticked = true;
+                selectableStdKeys.forEach(k => st.periods.add(k));
+            }
+            document.getElementById('massEventsValidationError')?.classList.add('hidden');
+            renderMassEventsTable();
+        };
+
+        window.toggleMassEventColumnPeriodForTicked = function(periodKey) {
+            const selectedDate = (document.getElementById('massEventDateInput')?.value || getLocalTodayDateString()).trim();
+            const dayObj = getMatchedTimetableDayFromDate(selectedDate);
+            if (!dayObj || dayObj.isSunday) return;
+
+            const tickedRooms = classroomsData.filter(r => ensureMassEventRoomState(r.id).ticked);
+            if (tickedRooms.length === 0) {
+                showAssetToast("Please tick at least one classroom first (or tick individual period checkboxes in any row).", true);
+                return;
+            }
+
+            const eligibleRooms = tickedRooms.filter(room => {
+                const { eventConflictMap } = getExistingEventConflictsForDateAndDay(room, selectedDate, dayObj.key);
+                if (eventConflictMap[periodKey]) return false;
+                if (periodKey === 'EX2') {
+                    const st = ensureMassEventRoomState(room.id);
+                    return st.periods.has('EX1') || !!eventConflictMap['EX1'];
+                }
+                return true;
+            });
+
+            if (eligibleRooms.length === 0) {
+                showAssetToast(periodKey === 'EX2' ? "Select Extra 1 first before toggling Extra 2." : `No ticked classrooms have ${periodKey} free on ${selectedDate}.`, true);
+                return;
+            }
+
+            const allHavePeriod = eligibleRooms.every(r => ensureMassEventRoomState(r.id).periods.has(periodKey));
+            eligibleRooms.forEach(room => {
+                const st = ensureMassEventRoomState(room.id);
+                if (allHavePeriod) {
+                    st.periods.delete(periodKey);
+                    if (periodKey === 'EX1') st.periods.delete('EX2');
+                } else {
+                    st.periods.add(periodKey);
+                }
+            });
+            document.getElementById('massEventsValidationError')?.classList.add('hidden');
+            renderMassEventsTable();
+        };
+
+        window.applyMassEventPresetPeriodsToTicked = function(mode) {
+            const selectedDate = (document.getElementById('massEventDateInput')?.value || getLocalTodayDateString()).trim();
+            const dayObj = getMatchedTimetableDayFromDate(selectedDate);
+            if (!dayObj || dayObj.isSunday) return;
+
+            const tickedRooms = classroomsData.filter(r => ensureMassEventRoomState(r.id).ticked);
+            if (tickedRooms.length === 0) {
+                showAssetToast("Please tick at least one classroom first to apply periods in bulk.", true);
+                return;
+            }
+
+            const dayColumns = getChronologicalPeriodsForDay(dayObj);
+            const stdPresetKeys = getStandardPresetPeriodKeysForDay(dayObj);
+
+            tickedRooms.forEach(room => {
+                const st = ensureMassEventRoomState(room.id);
+                const { eventConflictMap } = getExistingEventConflictsForDateAndDay(room, selectedDate, dayObj.key);
+                if (mode === 'clear') {
+                    st.periods.clear();
+                } else if (mode === 'standard') {
+                    st.periods.clear();
+                    stdPresetKeys.forEach(k => {
+                        if (!eventConflictMap[k]) st.periods.add(k);
+                    });
+                } else if (mode === 'all') {
+                    st.periods.clear();
+                    dayColumns.forEach(c => {
+                        if (c.isExtra) return;
+                        if (dayObj.isSaturday && c.satTime === '00:00 - 00:00') return;
+                        if (!eventConflictMap[c.key]) st.periods.add(c.key);
+                    });
+                }
+            });
+            document.getElementById('massEventsValidationError')?.classList.add('hidden');
+            renderMassEventsTable();
+        };
+
+        window.saveMassEventsAllocation = async function(e) {
+            e.preventDefault();
+            if (!guardEditingRights()) return;
+            if (!canEditClassroomColumn('event')) {
+                showAssetToast("Access Denied: You do not have permission to add events.", true);
+                return;
+            }
+
+            const errEl = document.getElementById('massEventsValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
+            const eventName = (document.getElementById('massEventNameInput')?.value || '').trim();
+            const selectedDate = (document.getElementById('massEventDateInput')?.value || '').trim();
+
+            if (!eventName) {
+                if (errEl) {
+                    errEl.innerText = "Please enter an Event Name.";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const dayObj = getMatchedTimetableDayFromDate(selectedDate);
+            if (!dayObj || dayObj.isSunday) {
+                if (errEl) {
+                    errEl.innerText = "Please select a valid Monday–Saturday date for this event.";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const tickedRooms = classroomsData.filter(r => ensureMassEventRoomState(r.id).ticked);
+            if (tickedRooms.length === 0) {
+                if (errEl) {
+                    errEl.innerText = "Please tick at least one classroom / class that has this event.";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const roomsMissingPeriods = tickedRooms.filter(r => ensureMassEventRoomState(r.id).periods.size === 0);
+            if (roomsMissingPeriods.length > 0) {
+                const roomNums = roomsMissingPeriods.map(r => r.classroomNumber).join(', ');
+                if (errEl) {
+                    errEl.innerText = `Please select at least one period on ${dayObj.enLabel} for ticked Classroom(s): ${roomNums}`;
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const dayColumns = getChronologicalPeriodsForDay(dayObj);
+            const chronologicalOrder = dayColumns.map(c => c.key);
+            const uniquePeriodSet = new Set();
+            const mergedExtraTimings = {};
+            const formattedClassroomsList = [];
+
+            isSavingClassrooms = true;
+            tickedRooms.forEach((room, idx) => {
+                if (!Array.isArray(room.allocations)) room.allocations = [];
+                const st = ensureMassEventRoomState(room.id);
+                const orderedPeriodKeys = chronologicalOrder.filter(k => st.periods.has(k));
+                orderedPeriodKeys.forEach(pKey => uniquePeriodSet.add(pKey));
+                const slotIds = orderedPeriodKeys.map(pKey => `${dayObj.key}_${pKey}`);
+
+                const savedCustomTimings = {};
+                orderedPeriodKeys.forEach(pKey => {
+                    if ((pKey === 'EX1' || pKey === 'EX2') && st.customTimings[pKey]) {
+                        savedCustomTimings[`${dayObj.key}_${pKey}`] = st.customTimings[pKey];
+                        if (!mergedExtraTimings[pKey]) {
+                            mergedExtraTimings[pKey] = st.customTimings[pKey];
+                        }
+                    }
+                });
+
+                const { raihaanOpenSlotInfo } = getSupersededBookedSlotsMapForClassroom(room, '');
+                const raihaanTemporarySlots = {};
+                slotIds.forEach(s => {
+                    if (raihaanOpenSlotInfo[s]) {
+                        const activeRec = raihaanData.find(rec =>
+                            isRaihaanRecordActiveNow(rec, selectedDate) &&
+                            (rec.entries || []).some(ent => String(ent.classroomId) === String(room.id) || String(ent.classroomNumber).trim() === String(room.classroomNumber).trim())
+                        );
+                        if (activeRec) {
+                            raihaanTemporarySlots[s] = String(activeRec.id);
+                        }
+                    }
+                });
+
+                room.allocations.push({
+                    id: Date.now().toString() + '_' + idx + '_' + Math.random().toString().slice(2, 5),
+                    standardEventName: eventName,
+                    allocationType: 'event',
+                    fromDate: selectedDate,
+                    toDate: selectedDate,
+                    slots: slotIds,
+                    customTimings: savedCustomTimings,
+                    raihaanTemporarySlots,
+                    updatedAt: new Date().toISOString().split('T')[0]
+                });
+
+                // Format each classroom as: ClassroomNumber (Std Name)
+                const stdNames = getClassroomSortedAllocatedClassNames(room);
+                const roomWithStd = stdNames.length > 0
+                    ? `${room.classroomNumber} (${stdNames.join(' / ')})`
+                    : `${room.classroomNumber}`;
+                formattedClassroomsList.push(roomWithStd);
+            });
+
+            // Format periods and timings ONLY ONCE in chronological order
+            const oncePeriodsWithTimeStr = dayColumns
+                .filter(col => uniquePeriodSet.has(col.key))
+                .map(col => {
+                    if (col.isExtra) {
+                        const customT = mergedExtraTimings[col.key] || 'Custom Time';
+                        return `${col.shortLabel} (${customT})`;
+                    }
+                    const timeStr = dayObj.isSaturday ? col.satTime : col.stdTime;
+                    return `${col.shortLabel} (${timeStr})`;
+                })
+                .join(', ');
+
+            const classroomsCommaStr = formattedClassroomsList.join(', ');
+            const singleScheduleSummaryStr = `${selectedDate} (${dayObj.enLabel}) | ${oncePeriodsWithTimeStr}`;
+
+            renderClassroomsTables();
+            if (typeof renderEventsArchiveList === 'function') {
+                renderEventsArchiveList();
+            }
+            closeModal('modalMassEvents');
+            showAssetToast(`Saved Mass Event "${eventName}" across ${tickedRooms.length} classroom(s) for ${selectedDate} (${dayObj.enLabel})`);
+
+            await saveClassroomsToCloud();
+
+            const firstRoom = tickedRooms[0] || null;
+            await recordClassroomChangeNotification(
+                'event',
+                'add-mass-event',
+                `Added Mass Event "${eventName}" — Classrooms: ${classroomsCommaStr}`,
+                singleScheduleSummaryStr,
+                firstRoom,
+                {
+                    waRoomLabel: classroomsCommaStr,
+                    waDetails: eventName,
+                    waSchedule: singleScheduleSummaryStr
+                }
+            );
+        };
+
         // CLASSROOM EVENTS ARCHIVE & HISTORY (Active, Upcoming & Past Events)
         // =========================================================================
 
@@ -11576,6 +12601,24 @@ await recordDawatEstatesNotification(
             const canEditEvent = canEditClassroomColumn('event');
             const canEditStudentCount = canEditClassroomColumn('student-count');
             const canEditExtraChair = canEditClassroomColumn('extra-chair');
+            const canEditRaihaan = canEditClassroomColumn('raihaan');
+
+            // Show "Mass Events" button only to users who have editing rights for "Add Event"
+            const massEventsBtn = document.getElementById('btnMassEventsHeader');
+            if (massEventsBtn) {
+                massEventsBtn.classList.toggle('hidden', !canEditEvent);
+            }
+
+            // Show Raihaan "Add Details" button only to users who have editing rights for "Raihaan Add Details"
+            const raihaanAddBtn = document.getElementById('btnRaihaanAddDetails');
+            const raihaanGridEl = document.getElementById('raihaanCardActionsGrid');
+            if (raihaanAddBtn) {
+                raihaanAddBtn.classList.toggle('hidden', !canEditRaihaan);
+            }
+            if (raihaanGridEl) {
+                raihaanGridEl.classList.toggle('grid-cols-2', canEditRaihaan);
+                raihaanGridEl.classList.toggle('grid-cols-1', !canEditRaihaan);
+            }
 
             const todayStr = getLocalTodayDateString();
             renderRaihaanCardSummary(todayStr);
@@ -11903,13 +12946,27 @@ await recordDawatEstatesNotification(
                         return;
                     }
 
-                    // Allocated Class ('class') takes precedence or first active booking occupies the slot
-                    if (!slotOccupantMap[s] || !isEvent) {
+                    // Track both Allocated Class and any active Event on the same slot
+                    if (!slotOccupantMap[s]) {
                         slotOccupantMap[s] = {
                             name: alloc.standardEventName || 'Allocated',
                             isEvent,
-                            customTime: timings[s] || ''
+                            customTime: timings[s] || '',
+                            activeEventNames: isEvent ? [alloc.standardEventName || 'Event'] : []
                         };
+                    } else if (!isEvent) {
+                        const prevEvents = slotOccupantMap[s].activeEventNames || (slotOccupantMap[s].isEvent ? [slotOccupantMap[s].name] : []);
+                        slotOccupantMap[s] = {
+                            name: alloc.standardEventName || 'Allocated',
+                            isEvent: false,
+                            customTime: timings[s] || slotOccupantMap[s].customTime || '',
+                            activeEventNames: prevEvents
+                        };
+                    } else {
+                        if (!slotOccupantMap[s].activeEventNames) slotOccupantMap[s].activeEventNames = [];
+                        if (!slotOccupantMap[s].activeEventNames.includes(alloc.standardEventName || 'Event')) {
+                            slotOccupantMap[s].activeEventNames.push(alloc.standardEventName || 'Event');
+                        }
                     }
                 });
             });
@@ -11988,6 +13045,7 @@ await recordDawatEstatesNotification(
                                     <span class="text-[10px] font-extrabold ${badgeStyle} border px-1.5 py-0.5 rounded leading-tight break-words max-w-[100px] shadow-sm">
                                         ${occ.name}
                                     </span>
+                                    ${(!occ.isEvent && Array.isArray(occ.activeEventNames) && occ.activeEventNames.length > 0) ? `<span class="block text-[8.5px] font-bold bg-amber-100 text-amber-950 border border-amber-300 px-1 py-0.2 rounded mt-0.5 leading-tight">${occ.activeEventNames.join(', ')}</span>` : ''}
                                     ${customTimeHtml}
                                     ${raiSubNote}
                                     <span class="text-[9px] text-gray-500 mt-0.5 font-mono">${col.shortLabel}</span>
@@ -12065,12 +13123,26 @@ await recordDawatEstatesNotification(
                         return;
                     }
 
-                    if (!slotOccupantMap[s] || !isEvent) {
+                    if (!slotOccupantMap[s]) {
                         slotOccupantMap[s] = {
                             name: alloc.standardEventName || 'Allocated',
                             isEvent,
-                            customTime: timings[s] || ''
+                            customTime: timings[s] || '',
+                            activeEventNames: isEvent ? [alloc.standardEventName || 'Event'] : []
                         };
+                    } else if (!isEvent) {
+                        const prevEvents = slotOccupantMap[s].activeEventNames || (slotOccupantMap[s].isEvent ? [slotOccupantMap[s].name] : []);
+                        slotOccupantMap[s] = {
+                            name: alloc.standardEventName || 'Allocated',
+                            isEvent: false,
+                            customTime: timings[s] || slotOccupantMap[s].customTime || '',
+                            activeEventNames: prevEvents
+                        };
+                    } else {
+                        if (!slotOccupantMap[s].activeEventNames) slotOccupantMap[s].activeEventNames = [];
+                        if (!slotOccupantMap[s].activeEventNames.includes(alloc.standardEventName || 'Event')) {
+                            slotOccupantMap[s].activeEventNames.push(alloc.standardEventName || 'Event');
+                        }
                     }
                 });
             });
@@ -12152,6 +13224,7 @@ await recordDawatEstatesNotification(
                                     <span class="text-[10px] font-extrabold ${badgeStyle} border px-1.5 py-0.5 rounded leading-tight break-words max-w-[95px] shadow-sm">
                                         ${occ.name}
                                     </span>
+                                    ${(!occ.isEvent && Array.isArray(occ.activeEventNames) && occ.activeEventNames.length > 0) ? `<span class="block text-[8.5px] font-bold bg-amber-100 text-amber-950 border border-amber-300 px-1 py-0.2 rounded mt-0.5 leading-tight">${occ.activeEventNames.join(', ')}</span>` : ''}
                                     ${customTimeHtml}
                                     ${raiSubNote}
                                     <span class="text-[8px] text-gray-500 mt-0.5 font-mono">${col.shortLabel}</span>
@@ -13524,25 +14597,33 @@ await recordDawatEstatesNotification(
                 list = Object.values(rawMeters).filter(Boolean);
             }
             if (list.length > 0) {
-                return list.map((m, idx) => ({
-                    id: String(m.id || `eg_meter_${idx + 1}`),
-                    utility: m.utility === 'gas' ? 'gas' : 'electricity',
-                    caNumber: String(m.caNumber || '').trim(),
-                    meterNumber: String(m.meterNumber || '').trim(),
-                    location: String(m.location || '').trim()
-                }));
+                let elecIdx = 0;
+                return list.map((m, idx) => {
+                    const isGas = m.utility === 'gas';
+                    if (!isGas) elecIdx++;
+                    const isFirstElec = !isGas && (elecIdx === 1 || String(m.id) === 'elec_1');
+                    return {
+                        id: String(m.id || `eg_meter_${idx + 1}`),
+                        utility: isGas ? 'gas' : 'electricity',
+                        unitType: isGas ? 'SCM' : (isFirstElec ? 'kVAh' : (m.unitType || 'kWh')),
+                        caNumber: String(m.caNumber || '').trim(),
+                        meterNumber: String(m.meterNumber || '').trim(),
+                        location: String(m.location || '').trim()
+                    };
+                });
             }
 
-            // Initialize 27 Adani Electricity Meters + 7 Mahanagar Gas Meters by default
+            // Initialize 27 Adani Electricity Meters (#1 HT Line in kVAh, #2-27 in kWh) + 7 Mahanagar Gas Meters (SCM)
             const defaults = [];
             for (let i = 1; i <= 27; i++) {
                 const padNum = String(i).padStart(2, '0');
                 defaults.push({
                     id: `elec_${i}`,
                     utility: 'electricity',
+                    unitType: i === 1 ? 'kVAh' : 'kWh',
                     caNumber: `AE-CA-${padNum}`,
                     meterNumber: `AE-MTR-${padNum}`,
-                    location: `Adani Campus Meter #${i}`
+                    location: i === 1 ? `Adani HT Line Meter #1` : `Adani Campus Meter #${i}`
                 });
             }
             for (let j = 1; j <= 7; j++) {
@@ -13550,12 +14631,91 @@ await recordDawatEstatesNotification(
                 defaults.push({
                     id: `gas_${j}`,
                     utility: 'gas',
+                    unitType: 'SCM',
                     caNumber: `MGL-CA-${padNum}`,
                     meterNumber: `MGL-MTR-${padNum}`,
                     location: `Mahanagar Gas Meter #${j}`
                 });
             }
             return defaults;
+        }
+
+        // Helper: Determine unit label for any meter (1st Electricity meter = kVAh, remaining 26 = kWh, Gas = SCM)
+        function getMeterUnitLabel(meter, elecIndexInFullList = -1) {
+            if (!meter) return 'kWh';
+            if (meter.utility === 'gas') return 'SCM';
+            if (meter.unitType === 'kVAh' || String(meter.id) === 'elec_1' || elecIndexInFullList === 0) {
+                return 'kVAh';
+            }
+            const allElec = elecGasMetersData.filter(m => m.utility !== 'gas');
+            if (allElec.length > 0 && String(allElec[0].id) === String(meter.id)) {
+                return 'kVAh';
+            }
+            return 'kWh';
+        }
+
+        // Reset view mode to Quarterly set to the ongoing current quarter whenever a user opens the module
+        window.resetElecGasPeriodToCurrentQuarter = function() {
+            const now = new Date();
+            const currentQuarter = Math.floor(now.getMonth() / 3) + 1; // 1..4
+            const currentMonth = now.getMonth(); // 0..11
+            const currentYear = String(now.getFullYear());
+
+            const modeEl = document.getElementById('egPeriodModeSelect');
+            const qtrEl = document.getElementById('egQuarterSelect');
+            const monEl = document.getElementById('egMonthSelect');
+            const yrEl = document.getElementById('egYearSelect');
+
+            if (modeEl) modeEl.value = 'quarterly';
+            if (qtrEl) {
+                qtrEl.value = String(currentQuarter);
+                qtrEl.classList.remove('hidden');
+            }
+            if (monEl) {
+                monEl.value = String(currentMonth);
+                monEl.classList.add('hidden');
+            }
+            if (yrEl && Array.from(yrEl.options).some(o => o.value === currentYear)) {
+                yrEl.value = currentYear;
+            }
+        };
+
+        window.handleEgPeriodModeChange = function() {
+            const mode = document.getElementById('egPeriodModeSelect')?.value || 'quarterly';
+            const qtrEl = document.getElementById('egQuarterSelect');
+            const monEl = document.getElementById('egMonthSelect');
+
+            if (qtrEl) qtrEl.classList.toggle('hidden', mode !== 'quarterly');
+            if (monEl) monEl.classList.toggle('hidden', mode !== 'monthly');
+            renderElecGasModule();
+        };
+
+        function getActiveElecGasPeriodConfig() {
+            const mode = document.getElementById('egPeriodModeSelect')?.value || 'quarterly';
+            const selYear = document.getElementById('egYearSelect')?.value || '2026';
+            const selQuarter = parseInt(document.getElementById('egQuarterSelect')?.value || '1', 10);
+            const selMonth = parseInt(document.getElementById('egMonthSelect')?.value || '0', 10);
+
+            let monthIndices = [];
+            let periodLabel = `${selYear}`;
+            let totalColHeader = 'Yearly Total';
+
+            if (mode === 'monthly') {
+                monthIndices = [selMonth];
+                periodLabel = `${EG_MONTH_NAMES[selMonth]} ${selYear}`;
+                totalColHeader = `${EG_MONTH_NAMES[selMonth]} Total`;
+            } else if (mode === 'quarterly') {
+                const startM = (selQuarter - 1) * 3;
+                monthIndices = [startM, startM + 1, startM + 2];
+                periodLabel = `Q${selQuarter} (${EG_MONTH_NAMES[startM]}–${EG_MONTH_NAMES[startM + 2]}) ${selYear}`;
+                totalColHeader = `Q${selQuarter} Total`;
+            } else {
+                monthIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+                periodLabel = `Full Year ${selYear}`;
+                totalColHeader = `Yearly Total`;
+            }
+
+            return { mode, selYear, selQuarter, selMonth, monthIndices, periodLabel, totalColHeader };
         }
 
         function getElecGasBillKey(meterId, year, monthIdx) {
@@ -13588,15 +14748,16 @@ await recordDawatEstatesNotification(
                 elecGasMetersData = ensureDefaultElecGasMeters([]);
             }
 
-            const selYear = document.getElementById('egYearSelect')?.value || '2026';
+            const periodCfg = getActiveElecGasPeriodConfig();
+            const { selYear, monthIndices, periodLabel } = periodCfg;
+
             const searchQ = (document.getElementById('egMeterSearch')?.value || '').toLowerCase().trim();
             const searchTokens = searchQ.split(/\s+/).filter(Boolean);
             const statusFilter = document.getElementById('egStatusFilter')?.value || '';
-            const currentMonthIdx = new Date().getMonth();
 
-            if (document.getElementById('egElecTableYearLabel')) document.getElementById('egElecTableYearLabel').innerText = selYear;
-            if (document.getElementById('egGasTableYearLabel')) document.getElementById('egGasTableYearLabel').innerText = selYear;
-            if (document.getElementById('egCardSelectedYearLabel')) document.getElementById('egCardSelectedYearLabel').innerText = selYear;
+            if (document.getElementById('egElecTableYearLabel')) document.getElementById('egElecTableYearLabel').innerText = periodLabel;
+            if (document.getElementById('egGasTableYearLabel')) document.getElementById('egGasTableYearLabel').innerText = periodLabel;
+            if (document.getElementById('egCardSelectedYearLabel')) document.getElementById('egCardSelectedYearLabel').innerText = periodLabel;
 
             const secElec = document.getElementById('egSectionElectricity');
             const secGas = document.getElementById('egSectionGas');
@@ -13609,26 +14770,28 @@ await recordDawatEstatesNotification(
             if (document.getElementById('egCardElecMeterCount')) document.getElementById('egCardElecMeterCount').innerText = allElecMeters.length;
             if (document.getElementById('egCardGasMeterCount')) document.getElementById('egCardGasMeterCount').innerText = allGasMeters.length;
 
-            // Calculate full year metrics for overview cards
-            let totalElecAmt = 0, totalElecUnits = 0, elecGreenCells = 0, elecRedCells = 0;
-            allElecMeters.forEach(m => {
-                for (let mIdx = 0; mIdx < 12; mIdx++) {
+            // Calculate active period metrics for overview cards (separating kVAh on Meter #1 and kWh on Meters #2-27)
+            let totalElecAmt = 0, totalElecKvah = 0, totalElecKwh = 0, elecGreenCells = 0, elecRedCells = 0;
+            allElecMeters.forEach((m, eIdx) => {
+                const uLabel = getMeterUnitLabel(m, eIdx);
+                monthIndices.forEach(mIdx => {
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
                     const amt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
                     const units = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
                     if (!isNaN(amt) && amt > 0) {
                         totalElecAmt += amt;
-                        totalElecUnits += (isNaN(units) ? 0 : units);
+                        if (uLabel === 'kVAh') totalElecKvah += (isNaN(units) ? 0 : units);
+                        else totalElecKwh += (isNaN(units) ? 0 : units);
                         elecGreenCells++;
                     } else {
                         elecRedCells++;
                     }
-                }
+                });
             });
 
             let totalGasAmt = 0, totalGasUnits = 0, gasGreenCells = 0, gasRedCells = 0;
             allGasMeters.forEach(m => {
-                for (let mIdx = 0; mIdx < 12; mIdx++) {
+                monthIndices.forEach(mIdx => {
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
                     const amt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
                     const units = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
@@ -13639,11 +14802,15 @@ await recordDawatEstatesNotification(
                     } else {
                         gasRedCells++;
                     }
-                }
+                });
             });
 
             if (document.getElementById('egCardElecTotalAmount')) document.getElementById('egCardElecTotalAmount').innerText = `₹${totalElecAmt.toLocaleString('en-IN')}`;
-            if (document.getElementById('egCardElecTotalUnits')) document.getElementById('egCardElecTotalUnits').innerText = totalElecUnits.toLocaleString('en-IN');
+            if (document.getElementById('egCardElecTotalUnits')) {
+                document.getElementById('egCardElecTotalUnits').innerText = totalElecKvah > 0
+                    ? `${totalElecKvah.toLocaleString('en-IN')} kVAh + ${totalElecKwh.toLocaleString('en-IN')} kWh`
+                    : `${totalElecKwh.toLocaleString('en-IN')} kWh`;
+            }
             if (document.getElementById('egCardElecGreenCount')) document.getElementById('egCardElecGreenCount').innerText = elecGreenCells;
             if (document.getElementById('egCardElecRedCount')) document.getElementById('egCardElecRedCount').innerText = elecRedCells;
 
@@ -13662,50 +14829,79 @@ await recordDawatEstatesNotification(
                         if (!searchTokens.every(t => corpus.includes(t))) return false;
                     }
                     if (statusFilter === 'pending_current') {
-                        const rec = getElecGasBillRecord(m.id, selYear, currentMonthIdx);
-                        const hasAmt = rec && rec.amount !== undefined && rec.amount !== '' && parseFloat(rec.amount) > 0;
-                        if (hasAmt) return false;
+                        const hasAnyPending = monthIndices.some(mIdx => {
+                            const rec = getElecGasBillRecord(m.id, selYear, mIdx);
+                            return !(rec && rec.amount !== undefined && rec.amount !== '' && parseFloat(rec.amount) > 0);
+                        });
+                        if (!hasAnyPending) return false;
                     } else if (statusFilter === 'updated_current') {
-                        const rec = getElecGasBillRecord(m.id, selYear, currentMonthIdx);
-                        const hasAmt = rec && rec.amount !== undefined && rec.amount !== '' && parseFloat(rec.amount) > 0;
-                        if (!hasAmt) return false;
+                        const hasAllUpdated = monthIndices.every(mIdx => {
+                            const rec = getElecGasBillRecord(m.id, selYear, mIdx);
+                            return !!(rec && rec.amount !== undefined && rec.amount !== '' && parseFloat(rec.amount) > 0);
+                        });
+                        if (!hasAllUpdated) return false;
                     }
                     return true;
                 });
             };
 
-            renderUtilityYearlyTable(filterMetersFn(allElecMeters), 'electricity', selYear, 'egElecTableBody', 'egElecTableFoot');
-            renderUtilityYearlyTable(filterMetersFn(allGasMeters), 'gas', selYear, 'egGasTableBody', 'egGasTableFoot');
+            renderUtilityYearlyTable(filterMetersFn(allElecMeters), 'electricity', periodCfg, 'egElecTableHead', 'egElecTableBody', 'egElecTableFoot');
+            renderUtilityYearlyTable(filterMetersFn(allGasMeters), 'gas', periodCfg, 'egGasTableHead', 'egGasTableBody', 'egGasTableFoot');
         };
 
-        function renderUtilityYearlyTable(meters, utilityType, selYear, tbodyId, tfootId) {
+        function renderUtilityYearlyTable(meters, utilityType, periodCfg, theadId, tbodyId, tfootId) {
+            const thead = document.getElementById(theadId);
             const tbody = document.getElementById(tbodyId);
             const tfoot = document.getElementById(tfootId);
-            if (!tbody || !tfoot) return;
+            if (!thead || !tbody || !tfoot) return;
+
+            const { selYear, monthIndices, totalColHeader } = periodCfg;
+            const viewOnly = isCurrentUserViewOnly();
+            const isGas = utilityType === 'gas';
+            const totalHeaderTheme = isGas ? 'bg-orange-50 text-orange-950' : 'bg-amber-50 text-amber-950';
+
+            // Build Dynamic Table Header (1 month for Monthly, 3 months for Quarterly, 12 months for Yearly)
+            const monthHeadersHtml = monthIndices.map(mIdx =>
+                `<th class="eg-month-col p-2 text-center min-w-[100px]">${EG_MONTH_NAMES[mIdx]}</th>`
+            ).join('');
+
+            thead.innerHTML = `
+                <tr>
+                    <th class="eg-sr-col p-2.5 w-10 text-center bg-gray-100">#</th>
+                    <th class="eg-main-col p-2.5 min-w-[185px] sticky left-0 bg-gray-100 z-30 border-r">CA Number &amp; Meter Details</th>
+                    ${monthHeadersHtml}
+                    <th class="eg-total-col p-2.5 text-right min-w-[115px] ${totalHeaderTheme} border-l font-extrabold">${totalColHeader}</th>
+                </tr>
+            `;
 
             tbody.innerHTML = '';
             tfoot.innerHTML = '';
 
-            const unitSuffix = utilityType === 'gas' ? 'SCM' : 'kWh';
-            const viewOnly = isCurrentUserViewOnly();
-
             if (meters.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="15" class="p-6 text-center text-gray-400 text-xs italic">No ${utilityType === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} meters match the current filter.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${monthIndices.length + 3}" class="p-6 text-center text-gray-400 text-xs italic">No ${isGas ? 'Mahanagar Gas' : 'Adani Electricity'} meters match the current filter.</td></tr>`;
                 return;
             }
 
-            const monthlyTotalsAmt = new Array(12).fill(0);
-            const monthlyTotalsUnits = new Array(12).fill(0);
-            let grandYearAmt = 0;
-            let grandYearUnits = 0;
+            const allElecList = elecGasMetersData.filter(item => item.utility !== 'gas');
+            const monthlyTotalsAmt = {};
+            const monthlyTotalsUnits = {};
+            monthIndices.forEach(mIdx => {
+                monthlyTotalsAmt[mIdx] = 0;
+                monthlyTotalsUnits[mIdx] = 0;
+            });
+            let grandPeriodAmt = 0;
+            let grandPeriodUnits = 0;
 
             meters.forEach((m, idx) => {
                 const safeMeterId = String(m.id).replace(/'/g, "\\'");
+                const elecOriginalIdx = !isGas ? allElecList.findIndex(x => String(x.id) === String(m.id)) : -1;
+                const rowUnitSuffix = getMeterUnitLabel(m, elecOriginalIdx);
+
                 let rowTotalAmt = 0;
                 let rowTotalUnits = 0;
 
                 let monthCellsHtml = '';
-                for (let mIdx = 0; mIdx < 12; mIdx++) {
+                monthIndices.forEach(mIdx => {
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
                     const amtVal = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
                     const unitsVal = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
@@ -13716,21 +14912,22 @@ await recordDawatEstatesNotification(
                         rowTotalUnits += (isNaN(unitsVal) ? 0 : unitsVal);
                         monthlyTotalsAmt[mIdx] += amtVal;
                         monthlyTotalsUnits[mIdx] += (isNaN(unitsVal) ? 0 : unitsVal);
-                        grandYearAmt += amtVal;
-                        grandYearUnits += (isNaN(unitsVal) ? 0 : unitsVal);
+                        grandPeriodAmt += amtVal;
+                        grandPeriodUnits += (isNaN(unitsVal) ? 0 : unitsVal);
                     }
 
                     if (isUpdated) {
-                        // GREEN cell when amount is added
+                        // VIBRANT HIGHLIGHTED GREEN cell when bill amount is added
                         const pdfBadge = rec.fileUrl
-                            ? `<a href="${rec.fileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="mt-0.5 inline-flex items-center space-x-0.5 bg-white text-emerald-900 border border-emerald-400 px-1.5 py-0.2 rounded text-[10px] font-bold hover:bg-emerald-200 transition" title="Open Attached Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`
-                            : `<span class="text-[9px] text-emerald-700/80 block mt-0.5">No PDF</span>`;
+                            ? `<a href="${rec.fileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="mt-0.5 inline-flex items-center space-x-1 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open Attached Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`
+                            : `<span class="text-[9px] text-emerald-900 font-semibold block mt-0.5">No PDF</span>`;
 
                         monthCellsHtml += `
-                            <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="p-1.5 align-middle bg-emerald-50/95 hover:bg-emerald-100 border border-emerald-300 text-center cursor-pointer transition" title="Click to Edit ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
+                            <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="eg-month-col p-1.5 align-middle bg-emerald-300/90 hover:bg-emerald-400/90 border-2 border-emerald-600 text-center cursor-pointer transition shadow-inner" title="Click to Edit ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
                                 <div class="flex flex-col items-center justify-center leading-tight">
+                                    <span class="bg-emerald-800 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-0.5"><i class="fa-solid fa-circle-check text-[8px]"></i><span>Added</span></span>
                                     <span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>
-                                    <span class="text-[10px] font-semibold text-emerald-800">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${unitSuffix}</span>
+                                    <span class="text-[10.5px] font-extrabold text-emerald-900">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${rowUnitSuffix}</span>
                                     ${pdfBadge}
                                 </div>
                             </td>
@@ -13738,60 +14935,66 @@ await recordDawatEstatesNotification(
                     } else {
                         // RED cell when amount is pending
                         monthCellsHtml += `
-                            <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="p-1.5 align-middle bg-red-50/90 hover:bg-red-100 border border-red-300 text-center cursor-pointer transition" title="Pending: Click to Add ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
+                            <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="eg-month-col p-1.5 align-middle bg-red-100/85 hover:bg-red-200/80 border border-red-300 text-center cursor-pointer transition" title="Pending: Click to Add ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
                                 <div class="flex flex-col items-center justify-center py-1 leading-tight">
-                                    <span class="bg-red-100 text-red-800 border border-red-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded">Pending</span>
-                                    ${!viewOnly ? `<span class="text-[9px] text-red-700 font-bold mt-0.5 underline">+ Add Bill</span>` : ''}
+                                    <span class="bg-red-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-sm">Pending</span>
+                                    ${!viewOnly ? `<span class="text-[9.5px] text-red-800 font-bold mt-0.5 underline">+ Add Bill</span>` : ''}
                                 </div>
                             </td>
                         `;
                     }
-                }
+                });
 
+                const htBadge = (!isGas && rowUnitSuffix === 'kVAh')
+                    ? `<span class="ml-1 bg-amber-200 text-amber-950 border border-amber-400 text-[9.5px] font-extrabold px-1.5 py-0.2 rounded">HT • kVAh</span>`
+                    : '';
+
+                // CA & Meter Number font sizes increased by +1pt (text-[12.5px] and text-[11.5px])
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50/60";
                 tr.innerHTML = `
-                    <td class="p-2 text-center font-bold text-gray-500 bg-white">${idx + 1}</td>
-                    <td class="p-2.5 sticky left-0 bg-white z-10 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
-                        <div class="flex items-start justify-between gap-1.5">
-                            <div>
-                                <div class="font-extrabold text-gray-900 text-xs">${m.location || 'Campus Meter'}</div>
-                                <div class="text-[11px] font-mono font-bold text-emerald-800 mt-0.5">CA: ${m.caNumber || '-'}</div>
-                                <div class="text-[10px] font-mono text-gray-500">Meter: ${m.meterNumber || '-'}</div>
+                    <td class="eg-sr-col p-2 text-center font-bold text-gray-600 bg-white">${idx + 1}</td>
+                    <td class="eg-main-col p-2.5 sticky left-0 bg-white z-10 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
+                        <div class="flex items-start justify-between gap-1">
+                            <div class="min-w-0">
+                                <div class="eg-loc-text font-extrabold text-gray-900 text-xs flex items-center flex-wrap">${m.location || 'Campus Meter'}${htBadge}</div>
+                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 mt-0.5 leading-snug">CA: ${m.caNumber || '-'}</div>
+                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">Meter: ${m.meterNumber || '-'}</div>
                             </div>
                             ${!viewOnly ? `
-                            <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Edit CA Number, Meter No & Location">
+                            <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 shrink-0" title="Edit CA Number, Meter No & Location">
                                 <i class="fa-solid fa-pen-to-square text-xs"></i>
                             </button>` : ''}
                         </div>
                     </td>
                     ${monthCellsHtml}
-                    <td class="p-2.5 text-right bg-gray-50 border-l align-middle">
+                    <td class="eg-total-col p-2.5 text-right bg-gray-50 border-l align-middle">
                         <div class="font-extrabold text-gray-900 text-xs">₹${rowTotalAmt.toLocaleString('en-IN')}</div>
-                        <div class="text-[10px] font-bold text-gray-600">${rowTotalUnits.toLocaleString('en-IN')} ${unitSuffix}</div>
+                        <div class="text-[10.5px] font-bold text-gray-700">${rowTotalUnits.toLocaleString('en-IN')} ${rowUnitSuffix}</div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            // Footer Monthly Totals Row
+            // Footer Period Totals Row
+            const footUnitLabel = isGas ? 'SCM' : 'kVAh / kWh';
             let footMonthsHtml = '';
-            for (let mIdx = 0; mIdx < 12; mIdx++) {
+            monthIndices.forEach(mIdx => {
                 footMonthsHtml += `
-                    <td class="p-2 text-center border">
+                    <td class="eg-month-col p-2 text-center border">
                         <div class="font-extrabold text-gray-900 text-xs">₹${monthlyTotalsAmt[mIdx].toLocaleString('en-IN')}</div>
-                        <div class="text-[10px] font-semibold text-gray-600">${monthlyTotalsUnits[mIdx].toLocaleString('en-IN')} ${unitSuffix}</div>
+                        <div class="text-[10px] font-semibold text-gray-600">${monthlyTotalsUnits[mIdx].toLocaleString('en-IN')} ${footUnitLabel}</div>
                     </td>
                 `;
-            }
+            });
 
             tfoot.innerHTML = `
                 <tr>
-                    <td colspan="2" class="p-2.5 text-right uppercase tracking-wider font-extrabold text-gray-900 sticky left-0 bg-gray-100 z-10 border-r">Monthly Totals (${selYear}):</td>
+                    <td colspan="2" class="eg-main-col p-2.5 text-right uppercase tracking-wider font-extrabold text-gray-900 sticky left-0 bg-gray-100 z-10 border-r">Period Totals:</td>
                     ${footMonthsHtml}
-                    <td class="p-2.5 text-right border-l bg-emerald-100 text-emerald-950">
-                        <div class="font-extrabold text-sm">₹${grandYearAmt.toLocaleString('en-IN')}</div>
-                        <div class="text-[10px] font-bold">${grandYearUnits.toLocaleString('en-IN')} ${unitSuffix}</div>
+                    <td class="eg-total-col p-2.5 text-right border-l bg-emerald-200 text-emerald-950">
+                        <div class="font-extrabold text-sm">₹${grandPeriodAmt.toLocaleString('en-IN')}</div>
+                        <div class="text-[10px] font-bold">${grandPeriodUnits.toLocaleString('en-IN')} ${footUnitLabel}</div>
                     </td>
                 </tr>
             `;
@@ -13842,6 +15045,7 @@ await recordDawatEstatesNotification(
                 elecGasMetersData.push({
                     id: `${utility === 'gas' ? 'gas' : 'elec'}_${Date.now()}`,
                     utility,
+                    unitType: utility === 'gas' ? 'SCM' : 'kWh',
                     caNumber,
                     meterNumber,
                     location
@@ -13892,9 +15096,10 @@ await recordDawatEstatesNotification(
             document.getElementById('egBillMonthIndex').value = String(monthIdx);
 
             const isGas = meter.utility === 'gas';
+            const unitLabel = getMeterUnitLabel(meter);
             const badgeEl = document.getElementById('egBillModalUtilityBadge');
             if (badgeEl) {
-                badgeEl.innerText = isGas ? 'Mahanagar Gas (MGL)' : 'Adani Electricity';
+                badgeEl.innerText = isGas ? 'Mahanagar Gas (MGL)' : `Adani Electricity (${unitLabel})`;
                 badgeEl.className = isGas
                     ? 'text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-900'
                     : 'text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900';
@@ -13902,7 +15107,7 @@ await recordDawatEstatesNotification(
 
             document.getElementById('egBillModalTitle').innerText = `${EG_MONTH_NAMES[monthIdx]} ${year} Bill — ${meter.location}`;
             document.getElementById('egBillModalSubtitle').innerText = `CA No: ${meter.caNumber} | Meter No: ${meter.meterNumber}`;
-            document.getElementById('egBillUnitsLabel').innerText = `Units Consumed (${isGas ? 'SCM' : 'kWh'}) *`;
+            document.getElementById('egBillUnitsLabel').innerText = `Units Consumed (${unitLabel}) *`;
 
             const rec = getElecGasBillRecord(meter.id, year, monthIdx);
             const clearBtn = document.getElementById('btnClearEgBillEntry');
@@ -14001,7 +15206,7 @@ await recordDawatEstatesNotification(
 
             const meterObj = elecGasMetersData.find(m => String(m.id) === String(meterId));
             const utilLabel = (meterObj && meterObj.utility === 'gas') ? 'Mahanagar Gas' : 'Adani Electricity';
-            const unitLabel = (meterObj && meterObj.utility === 'gas') ? 'SCM' : 'kWh';
+            const unitLabel = getMeterUnitLabel(meterObj);
             const locLabel = meterObj ? `${meterObj.location} (CA: ${meterObj.caNumber})` : meterId;
             const actionVerb = (existingRec && existingRec.amount > 0) ? 'Updated' : 'Added';
 
@@ -14101,8 +15306,9 @@ await recordDawatEstatesNotification(
 
             const meters = elecGasMetersData.filter(m => (utilType === 'gas' ? m.utility === 'gas' : m.utility !== 'gas'));
             selEl.innerHTML = `<option value="all">All ${utilType === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} Meters (${meters.length})</option>`;
-            meters.forEach(m => {
-                selEl.innerHTML += `<option value="${m.id}">${m.location} — CA: ${m.caNumber} (${m.meterNumber})</option>`;
+            meters.forEach((m, idx) => {
+                const uLbl = getMeterUnitLabel(m, idx);
+                selEl.innerHTML += `<option value="${m.id}">${m.location} — CA: ${m.caNumber} (${uLbl})</option>`;
             });
         }
 
@@ -14114,13 +15320,23 @@ await recordDawatEstatesNotification(
             const currYear = parseInt(document.getElementById('egCompYearSelect')?.value || '2026', 10);
             const prevYear = currYear - 1;
 
-            const unitSuffix = metric === 'amount' ? '₹' : (utilType === 'gas' ? 'SCM' : 'kWh');
             const targetMeters = elecGasMetersData.filter(m => {
                 const matchUtil = utilType === 'gas' ? m.utility === 'gas' : m.utility !== 'gas';
                 if (!matchUtil) return false;
                 if (meterFilter !== 'all' && String(m.id) !== String(meterFilter)) return false;
                 return true;
             });
+
+            let unitSuffix = '₹';
+            if (metric !== 'amount') {
+                if (utilType === 'gas') {
+                    unitSuffix = 'SCM';
+                } else if (targetMeters.length === 1) {
+                    unitSuffix = getMeterUnitLabel(targetMeters[0]);
+                } else {
+                    unitSuffix = 'kVAh / kWh';
+                }
+            }
 
             const currYearSeries = new Array(12).fill(0);
             const prevYearSeries = new Array(12).fill(0);
@@ -14268,14 +15484,14 @@ await recordDawatEstatesNotification(
             el.select();
             try {
                 navigator.clipboard.writeText(el.value).then(() => {
-                    showAssetToast("Copied Auto-Fetch Google Apps Script code to clipboard!");
+                    showAssetToast("Copied complete Code.gs (with Drive Uploader + Auto-Fetch) to clipboard!");
                 }).catch(() => {
                     document.execCommand('copy');
-                    showAssetToast("Copied Auto-Fetch Google Apps Script code to clipboard!");
+                    showAssetToast("Copied complete Code.gs (with Drive Uploader + Auto-Fetch) to clipboard!");
                 });
             } catch (e) {
                 document.execCommand('copy');
-                showAssetToast("Copied Auto-Fetch Google Apps Script code to clipboard!");
+                showAssetToast("Copied complete Code.gs (with Drive Uploader + Auto-Fetch) to clipboard!");
             }
         };
 
@@ -14309,19 +15525,21 @@ await recordDawatEstatesNotification(
         };
 
         window.exportElecGasYearlyReport = function(format) {
-            const selYear = document.getElementById('egYearSelect')?.value || '2026';
+            const { selYear, monthIndices, periodLabel, totalColHeader } = getActiveElecGasPeriodConfig();
             const columns = [
                 "Sr. No.", "Utility", "Location / Description", "CA Number", "Meter Number",
-                ...EG_MONTH_NAMES.map(m => `${m} (${selYear})`),
-                "Yearly Total (INR)", "Yearly Total Units"
+                ...monthIndices.map(mIdx => `${EG_MONTH_NAMES[mIdx]} (${selYear})`),
+                `${totalColHeader} (INR)`, `${totalColHeader} Units`
             ];
 
+            const allElecList = elecGasMetersData.filter(item => item.utility !== 'gas');
             const rows = [];
             elecGasMetersData.forEach((m, idx) => {
-                const unitLabel = m.utility === 'gas' ? 'SCM' : 'kWh';
+                const elecIdx = m.utility !== 'gas' ? allElecList.findIndex(x => String(x.id) === String(m.id)) : -1;
+                const unitLabel = getMeterUnitLabel(m, elecIdx);
                 let yAmt = 0, yUnits = 0;
                 const mCells = [];
-                for (let mIdx = 0; mIdx < 12; mIdx++) {
+                monthIndices.forEach(mIdx => {
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
                     const amt = rec && rec.amount ? parseFloat(rec.amount) : 0;
                     const u = rec && rec.units ? parseFloat(rec.units) : 0;
@@ -14332,7 +15550,7 @@ await recordDawatEstatesNotification(
                     } else {
                         mCells.push("Pending");
                     }
-                }
+                });
                 rows.push([
                     idx + 1,
                     m.utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity',
@@ -14345,7 +15563,8 @@ await recordDawatEstatesNotification(
                 ]);
             });
 
-            const fileName = `Electricity_Gas_Yearly_Report_${selYear}`;
+            const safePeriodSlug = periodLabel.replace(/[^A-Za-z0-9_-]+/g, '_');
+            const fileName = `Electricity_Gas_Report_${safePeriodSlug}`;
             if (format === 'excel') {
                 const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
                 const wb = XLSX.utils.book_new();
@@ -14353,15 +15572,15 @@ await recordDawatEstatesNotification(
                 XLSX.writeFile(wb, `${fileName}.xlsx`);
             } else {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ orientation: 'landscape', format: 'a3' });
+                const doc = new jsPDF({ orientation: 'landscape', format: monthIndices.length > 4 ? 'a3' : 'a4' });
                 doc.setFontSize(14);
-                doc.text(`Electricity & Gas Bills Yearly Report (${selYear})`, 14, 15);
+                doc.text(`Electricity & Gas Bills Report — ${periodLabel}`, 14, 15);
                 doc.autoTable({
                     head: [columns],
                     body: rows,
                     startY: 22,
                     theme: 'grid',
-                    styles: { fontSize: 7 },
+                    styles: { fontSize: 7.5 },
                     headStyles: { fillColor: [6, 95, 70] }
                 });
                 doc.save(`${fileName}.pdf`);

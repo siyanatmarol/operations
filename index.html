@@ -4172,8 +4172,11 @@
 // 1) Preserves your exact original Siyanat_Marol_Uploads Drive Uploader (images, videos, PDFs)
 // 2) Auto-fetches Adani Electricity (ebill.mumbaielectricity@adanielectricity.co)
 //    & Mahanagar Gas (icpngbill@mahanagargas.com) bills:
-//    - First-time sync pulls last 365 days (without duplicating!)
-//    - Subsequent daily runs check last 15 days
+//    - Auto-discovers CA Numbers from email subjects, HTML bodies & PDF filenames
+//      (so even placeholder AE-CA-01 / MGL-CA-01 rows get populated automatically!)
+//    - Parses both HTML email tables and plain text + attaches PDF bills to Drive
+//    - First-time / manual sync pulls last 365 days without duplicating existing bills
+//    - Subsequent daily scheduled triggers check last 15 days
 // ============================================================================
 var FIREBASE_DB_URL = "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app";
 var DRIVE_BILLS_FOLDER_NAME = "Siyanat_Utility_Bills_Auto";
@@ -4184,10 +4187,13 @@ function doPost(e) {
 
     // If triggered by "Auto-Fetch Sync" button on the webpage:
     if (data.action === "autoFetchUtilityBills") {
-      var syncedCount = autoFetchAdaniAndMglBillsDaily(data.lookbackDays);
+      var syncResult = autoFetchAdaniAndMglBillsDaily(data.lookbackDays || 365);
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
-        syncedCount: syncedCount
+        syncedCount: syncResult.syncedCount,
+        threadsScanned: syncResult.threadsScanned,
+        discoveredCaCount: syncResult.discoveredCaCount,
+        message: syncResult.message
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -4239,145 +4245,523 @@ function doPost(e) {
 
 function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
   var scriptProps = PropertiesService.getScriptProperties();
-  var isInitialSyncDone = scriptProps.getProperty("INITIAL_365D_SYNC_DONE") === "true";
+  var isInitialSyncDone = scriptProps.getProperty("INITIAL_365D_SYNC_V2_DONE") === "true";
 
-  // Pull last 365 days on the very first run, then last 15 days on daily runs
+  // Pull last 365 days on manual sync or until first sync succeeds, then 15 days on daily trigger
   var lookbackDays = customLookbackDays ? Number(customLookbackDays) : (isInitialSyncDone ? 15 : 365);
 
   var folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
-  var metersRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasMeters.json");
-  var metersRaw = JSON.parse(metersRes.getContentText() || "[]") || [];
-  var meters = Array.isArray(metersRaw) ? metersRaw : Object.keys(metersRaw).map(function(k) { return metersRaw[k]; });
-  if (!meters.length) return 0;
 
-  // Fetch existing bills once to prevent duplicate Drive uploads & duplicate notifications
+  // 1. Load or initialize the 27 Adani + 7 MGL meters list from Firebase
+  var metersRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasMeters.json");
+  var metersRaw = JSON.parse(metersRes.getContentText() || "null");
+  var meters = [];
+  if (metersRaw) {
+    meters = Array.isArray(metersRaw) ? metersRaw : Object.keys(metersRaw).map(function(k) { return metersRaw[k]; });
+  }
+  meters = meters.filter(function(m) { return m && typeof m === "object"; });
+  if (meters.length === 0) {
+    meters = buildDefaultMetersList_();
+  }
+
+  // Also load Dawat Estates flats so any CA number already in Estate Details maps its location name
+  var estatesRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/estates.json");
+  var estatesRaw = JSON.parse(estatesRes.getContentText() || "null");
+  var estatesList = [];
+  if (estatesRaw) {
+    estatesList = Array.isArray(estatesRaw) ? estatesRaw : Object.keys(estatesRaw).map(function(k) { return estatesRaw[k]; });
+  }
+
+  var metersModified = false;
+  var discoveredCaCount = 0;
+
+  // Pre-populate any placeholder meter slots from Dawat Estates elecCA / gasCA if present
+  for (var eIdx = 0; eIdx < estatesList.length; eIdx++) {
+    var est = estatesList[eIdx];
+    if (!est) continue;
+    var flatLoc = ((est.bldgName || "") + (est.flatNo ? " - Flat " + est.flatNo : "")).trim();
+    if (est.elecCA && String(est.elecCA).trim().length >= 6) {
+      if (findOrAssignMeterForCa_(meters, String(est.elecCA).trim(), false, flatLoc, "")) {
+        metersModified = true;
+      }
+    }
+    if (est.gasCA && String(est.gasCA).trim().length >= 6) {
+      if (findOrAssignMeterForCa_(meters, String(est.gasCA).trim(), true, flatLoc, "")) {
+        metersModified = true;
+      }
+    }
+  }
+
+  // 2. Load existing bills map so we never duplicate Drive PDFs or overwrite completed cells
   var existingBillsRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills.json");
   var existingBillsMap = JSON.parse(existingBillsRes.getContentText() || "{}") || {};
 
-  // Official sender addresses for Mahanagar Gas & Adani Electricity
-  var query = '(from:icpngbill@mahanagargas.com OR from:ebill.mumbaielectricity@adanielectricity.co OR from:ebill.mumbaielectricity@adanielectricity.com OR from:mahanagargas.com OR from:adanielectricity.com) newer_than:' + lookbackDays + 'd';
+  // 3. Search Gmail for Adani Electricity & Mahanagar Gas bills
+  var query = '(from:icpngbill@mahanagargas.com OR from:ebill.mumbaielectricity@adanielectricity.co OR from:ebill.mumbaielectricity@adanielectricity.com OR from:mahanagargas.com OR from:adanielectricity.co OR from:adanielectricity.com OR subject:"Your bill details" OR subject:"Your PNG Ebill") newer_than:' + lookbackDays + 'd';
 
-  var maxThreads = lookbackDays > 30 ? 300 : 60;
+  var maxThreads = lookbackDays > 30 ? 350 : 80;
   var threads = GmailApp.search(query, 0, maxThreads);
   var updatedCount = 0;
 
-  // Process oldest to newest so latest bill in a month wins without duplication
+  // Process oldest to newest so the latest bill in a given month wins cleanly
   for (var t = threads.length - 1; t >= 0; t--) {
     var messages = threads[t].getMessages();
     for (var m = 0; m < messages.length; m++) {
       var msg = messages[m];
-      var bodyText = (msg.getPlainBody() || "") + " " + (msg.getSubject() || "");
+      var fromStr = String(msg.getFrom() || "").toLowerCase();
+      var subjectStr = String(msg.getSubject() || "");
+      var plainBody = String(msg.getPlainBody() || "");
+      var htmlBody = String(msg.getBody() || "");
+      var strippedHtml = htmlBody
+        .replace(/<(?:style|scr[i]pt)[\s\S]*?<\/(?:style|scr[i]pt)>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&#8377;|&amp;/gi, " ")
+        .replace(/\s+/g, " ");
+
+      var attachments = msg.getAttachments() || [];
+      var attNames = attachments.map(function(a) { return a.getName() || ""; }).join(" ");
+
+      // Skip internal reply/forward notes from our own address unless the message itself carries a PDF attachment
+      var hasPdfAttachment = false;
+      for (var aIdx = 0; aIdx < attachments.length; aIdx++) {
+        var attCheck = attachments[aIdx];
+        if (attCheck.getContentType().indexOf("pdf") !== -1 || attCheck.getName().toLowerCase().slice(-4) === ".pdf") {
+          hasPdfAttachment = true;
+          break;
+        }
+      }
+      if (fromStr.indexOf("fm.marol") !== -1 && !hasPdfAttachment) {
+        continue;
+      }
+
+      var fullText = subjectStr + " | " + plainBody + " | " + strippedHtml + " | " + attNames;
+      var isGasEmail = (fromStr.indexOf("mahanagargas") !== -1 || /PNG\s*Ebill|Mahanagar\s*Gas|icpngbill/i.test(fullText));
+      var isAdaniEmail = (fromStr.indexOf("adanielectricity") !== -1 || /Your\s*bill\s*details.*for\s*CA|Adani\s*Electricity/i.test(fullText));
+      if (!isGasEmail && !isAdaniEmail) continue;
+
+      // Determine Billing Month & Year (checks explicit month in subject/body first, then falls back to email date)
       var msgDate = msg.getDate();
-      var yearStr = String(msgDate.getFullYear());
-      var monthIdx = msgDate.getMonth(); // 0 = Jan .. 11 = Dec
+      var periodInfo = extractBillingMonthAndYear_(subjectStr, strippedHtml + " " + plainBody, msgDate);
+      var yearStr = periodInfo.yearStr;
+      var monthIdx = periodInfo.monthIdx;
 
-      for (var i = 0; i < meters.length; i++) {
-        var meter = meters[i];
-        if (!meter) continue;
-        var ca = String(meter.caNumber || "").trim();
-        var mtrNo = String(meter.meterNumber || "").trim();
-        if (!ca || ca.indexOf("AE-CA-") === 0 || ca.indexOf("MGL-CA-") === 0) continue;
-
-        if (bodyText.indexOf(ca) !== -1 || (mtrNo && mtrNo.indexOf("AE-MTR-") !== 0 && mtrNo.indexOf("MGL-MTR-") !== 0 && bodyText.indexOf(mtrNo) !== -1)) {
-          var billKey = meter.id + "_" + yearStr + "_" + monthIdx;
-          var existingBill = existingBillsMap[billKey];
-
-          // Skip if this CA's bill for this month & year is already saved with an amount and PDF (no duplicates!)
-          if (existingBill && Number(existingBill.amount) > 0 && existingBill.fileUrl) {
-            continue;
-          }
-
-          var amtMatch = bodyText.match(/(?:Amount|Payable|Total|Rs\.?|INR|₹)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
-          var unitMatch = bodyText.match(/(?:Units|Consumption|kVAh|kWh|SCM)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i);
-          var amountVal = amtMatch ? parseFloat(amtMatch[1].replace(/,/g, "")) : (existingBill ? Number(existingBill.amount) || 0 : 0);
-          var unitsVal = unitMatch ? parseFloat(unitMatch[1].replace(/,/g, "")) : (existingBill ? Number(existingBill.units) || 0 : 0);
-
-          var pdfUrl = existingBill && existingBill.fileUrl ? existingBill.fileUrl : "";
-          if (!pdfUrl) {
-            var attachments = msg.getAttachments();
-            for (var a = 0; a < attachments.length; a++) {
-              var att = attachments[a];
-              if (att.getContentType().indexOf("pdf") !== -1 || att.getName().toLowerCase().slice(-4) === ".pdf") {
-                var desiredFileName = ca + "_" + yearStr + "_M" + (monthIdx + 1) + ".pdf";
-                var existingFiles = folder.getFilesByName(desiredFileName);
-                var file = existingFiles.hasNext() ? existingFiles.next() : folder.createFile(att.copyBlob()).setName(desiredFileName);
-                file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-                pdfUrl = file.getUrl();
-                break;
-              }
+      // Match against configured meters OR auto-discover the CA number from the email
+      var matchedMeter = findMatchingMeterInText_(meters, fullText, isGasEmail);
+      if (!matchedMeter) {
+        var extractedCa = extractCaNumberFromEmail_(subjectStr, fullText, attNames, isGasEmail);
+        var extractedMtrNo = extractMeterNumberFromEmail_(fullText);
+        if (extractedCa) {
+          var assignRes = findOrAssignMeterForCa_(meters, extractedCa, isGasEmail, "", extractedMtrNo);
+          if (assignRes) {
+            matchedMeter = assignRes.meter;
+            if (assignRes.wasNew) {
+              metersModified = true;
+              discoveredCaCount++;
             }
           }
+        }
+      }
 
-          if (amountVal > 0 || pdfUrl) {
-            var payload = {
-              meterId: meter.id,
-              caNumber: ca,
-              year: yearStr,
-              monthIndex: monthIdx,
-              amount: amountVal,
-              units: unitsVal,
-              billDate: Utilities.formatDate(msgDate, Session.getScriptTimeZone(), "yyyy-MM-dd"),
-              notes: "Auto-fetched from E-Bill",
-              fileUrl: pdfUrl,
-              updatedAt: new Date().toISOString()
-            };
-
-            UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + billKey + ".json", {
-              method: "put",
-              contentType: "application/json",
-              payload: JSON.stringify(payload)
-            });
-
-            existingBillsMap[billKey] = payload;
-            updatedCount++;
-
-            // Push cross-device portal notification for all users permitted for Electricity & Gas Bills
-            var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            var utilLabel = meter.utility === "gas" ? "Mahanagar Gas" : "Adani Electricity";
-            var isFirstElecHt = (meter.utility !== "gas") && (meter.id === "elec_1" || meter.unitType === "kVAh" || i === 0);
-            var unitLabel = meter.utility === "gas" ? "SCM" : (isFirstElecHt ? "kVAh" : "kWh");
-            var notifId = "notif_" + new Date().getTime() + "_" + Math.floor(Math.random() * 10000);
-            var notifObj = {
-              id: notifId,
-              module: "elec-gas-bills",
-              subHeader: "",
-              subPermission: "",
-              actorEmail: "auto-fetch@siyanatmarol.system",
-              actorName: "Auto-Fetch System (" + utilLabel + ")",
-              actionType: "auto-fetch-bill",
-              detailText: "Auto-fetched " + utilLabel + " bill for " + (meter.location || ca) + " (CA: " + ca + ") — " + monthNames[monthIdx] + " " + yearStr + ": ₹" + amountVal,
-              scheduleSummary: "Units: " + unitsVal + " " + unitLabel + (pdfUrl ? " | PDF Attached to Drive" : ""),
-              createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
-              timestamp: new Date().getTime(),
-              seenBy: []
-            };
-            UrlFetchApp.fetch(FIREBASE_DB_URL + "/notifications/" + notifId + ".json", {
-              method: "put",
-              contentType: "application/json",
-              payload: JSON.stringify(notifObj)
-            });
-            UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/notifications/" + notifId + ".json", {
-              method: "put",
-              contentType: "application/json",
-              payload: JSON.stringify(notifObj)
-            });
+      // If a MGL email has a PDF attachment and still no CA number could be parsed from text,
+      // match to the next unassigned MGL meter or use filename identifier so the bill is never lost
+      if (!matchedMeter && isGasEmail && hasPdfAttachment) {
+        var fallbackCa = extractFallbackIdFromAttachments_(attachments);
+        if (fallbackCa) {
+          var fbRes = findOrAssignMeterForCa_(meters, fallbackCa, true, "", "");
+          if (fbRes) {
+            matchedMeter = fbRes.meter;
+            if (fbRes.wasNew) {
+              metersModified = true;
+              discoveredCaCount++;
+            }
           }
+        }
+      }
+
+      if (!matchedMeter) continue;
+
+      var ca = String(matchedMeter.caNumber || "").trim();
+      var billKey = matchedMeter.id + "_" + yearStr + "_" + monthIdx;
+      var existingBill = existingBillsMap[billKey];
+
+      // Skip if this CA's bill for this month & year already has BOTH an amount and PDF
+      if (existingBill && Number(existingBill.amount) > 0 && existingBill.fileUrl) {
+        continue;
+      }
+
+      var amountVal = extractBillAmountFromText_(fullText);
+      if (!(amountVal > 0) && existingBill && Number(existingBill.amount) > 0) {
+        amountVal = Number(existingBill.amount);
+      }
+
+      var unitsVal = extractUnitsFromText_(fullText);
+      if (!(unitsVal > 0) && existingBill && Number(existingBill.units) > 0) {
+        unitsVal = Number(existingBill.units);
+      }
+
+      var pdfUrl = (existingBill && existingBill.fileUrl) ? existingBill.fileUrl : "";
+      if (!pdfUrl && hasPdfAttachment) {
+        for (var a = 0; a < attachments.length; a++) {
+          var att = attachments[a];
+          if (att.getContentType().indexOf("pdf") !== -1 || att.getName().toLowerCase().slice(-4) === ".pdf") {
+            var desiredFileName = ca + "_" + yearStr + "_M" + (monthIdx + 1) + ".pdf";
+            var existingFiles = folder.getFilesByName(desiredFileName);
+            var file = existingFiles.hasNext() ? existingFiles.next() : folder.createFile(att.copyBlob()).setName(desiredFileName);
+            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            pdfUrl = file.getUrl();
+            break;
+          }
+        }
+      }
+
+      if (amountVal > 0 || pdfUrl) {
+        // Avoid re-writing if nothing new was added compared to existingBill
+        if (existingBill && Number(existingBill.amount || 0) === amountVal && String(existingBill.fileUrl || "") === pdfUrl) {
+          continue;
+        }
+
+        var payload = {
+          meterId: matchedMeter.id,
+          caNumber: ca,
+          year: yearStr,
+          monthIndex: monthIdx,
+          amount: amountVal,
+          units: unitsVal,
+          billDate: Utilities.formatDate(msgDate, Session.getScriptTimeZone(), "yyyy-MM-dd"),
+          notes: "Auto-fetched from E-Bill (" + subjectStr.slice(0, 60) + ")",
+          fileUrl: pdfUrl,
+          updatedAt: new Date().toISOString()
+        };
+
+        UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + billKey + ".json", {
+          method: "put",
+          contentType: "application/json",
+          payload: JSON.stringify(payload)
+        });
+
+        existingBillsMap[billKey] = payload;
+        updatedCount++;
+
+        // Push cross-device portal notification (capped during bulk 365-day backfill so we don't spam 100 individual alerts)
+        if (updatedCount <= 15) {
+          var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          var utilLabel = matchedMeter.utility === "gas" ? "Mahanagar Gas" : "Adani Electricity";
+          var isFirstElecHt = (matchedMeter.utility !== "gas") && (matchedMeter.id === "elec_1" || matchedMeter.unitType === "kVAh");
+          var unitLabel = matchedMeter.utility === "gas" ? "SCM" : (isFirstElecHt ? "kVAh" : "kWh");
+          var notifId = "notif_" + new Date().getTime() + "_" + updatedCount + "_" + Math.floor(Math.random() * 1000);
+          var notifObj = {
+            id: notifId,
+            module: "elec-gas-bills",
+            subHeader: "",
+            subPermission: "",
+            actorEmail: "auto-fetch@siyanatmarol.system",
+            actorName: "Auto-Fetch System (" + utilLabel + ")",
+            actionType: "auto-fetch-bill",
+            detailText: "Auto-fetched " + utilLabel + " bill for " + (matchedMeter.location || ca) + " (CA: " + ca + ") — " + monthNames[monthIdx] + " " + yearStr + (amountVal > 0 ? ": ₹" + amountVal : " (PDF Attached)"),
+            scheduleSummary: (unitsVal > 0 ? "Units: " + unitsVal + " " + unitLabel + " | " : "") + (pdfUrl ? "PDF Attached to Drive" : ""),
+            createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"),
+            timestamp: new Date().getTime(),
+            seenBy: []
+          };
+          UrlFetchApp.fetch(FIREBASE_DB_URL + "/notifications/" + notifId + ".json", {
+            method: "put",
+            contentType: "application/json",
+            payload: JSON.stringify(notifObj)
+          });
+          UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/notifications/" + notifId + ".json", {
+            method: "put",
+            contentType: "application/json",
+            payload: JSON.stringify(notifObj)
+          });
         }
       }
     }
   }
 
-  if (!isInitialSyncDone) {
-    scriptProps.setProperty("INITIAL_365D_SYNC_DONE", "true");
+  // Save updated meters array if any new CA numbers were auto-discovered from emails
+  if (metersModified) {
+    UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasMeters.json", {
+      method: "put",
+      contentType: "application/json",
+      payload: JSON.stringify(meters)
+    });
   }
-  return updatedCount;
+
+  if (updatedCount > 0 && !isInitialSyncDone) {
+    scriptProps.setProperty("INITIAL_365D_SYNC_V2_DONE", "true");
+  }
+
+  return {
+    syncedCount: updatedCount,
+    threadsScanned: threads.length,
+    discoveredCaCount: discoveredCaCount,
+    message: "Scanned " + threads.length + " email thread(s), synced " + updatedCount + " bill(s), auto-matched " + discoveredCaCount + " new CA number(s)."
+  };
+}
+
+function buildDefaultMetersList_() {
+  var list = [];
+  for (var i = 1; i <= 27; i++) {
+    var pad = i < 10 ? "0" + i : "" + i;
+    list.push({
+      id: "elec_" + i,
+      utility: "electricity",
+      unitType: i === 1 ? "kVAh" : "kWh",
+      caNumber: "AE-CA-" + pad,
+      meterNumber: "AE-MTR-" + pad,
+      location: i === 1 ? "Adani HT Line Meter #1" : "Adani Campus Meter #" + i
+    });
+  }
+  for (var j = 1; j <= 7; j++) {
+    var gPad = j < 10 ? "0" + j : "" + j;
+    list.push({
+      id: "gas_" + j,
+      utility: "gas",
+      unitType: "SCM",
+      caNumber: "MGL-CA-" + gPad,
+      meterNumber: "MGL-MTR-" + gPad,
+      location: "Mahanagar Gas Meter #" + j
+    });
+  }
+  return list;
+}
+
+function isPlaceholderCa_(ca) {
+  if (!ca) return true;
+  var s = String(ca).trim().toUpperCase();
+  return s === "" || s === "-" || s.indexOf("AE-CA-") === 0 || s.indexOf("MGL-CA-") === 0;
+}
+
+function isPlaceholderMeterNo_(mtr) {
+  if (!mtr) return true;
+  var s = String(mtr).trim().toUpperCase();
+  return s === "" || s === "-" || s.indexOf("AE-MTR-") === 0 || s.indexOf("MGL-MTR-") === 0;
+}
+
+function findMatchingMeterInText_(meters, fullText, isGasEmail) {
+  for (var i = 0; i < meters.length; i++) {
+    var m = meters[i];
+    if (!m) continue;
+    var mIsGas = (m.utility === "gas");
+    if (mIsGas !== isGasEmail) continue;
+    var ca = String(m.caNumber || "").trim();
+    var mtr = String(m.meterNumber || "").trim();
+    if (!isPlaceholderCa_(ca) && fullText.indexOf(ca) !== -1) {
+      return m;
+    }
+    if (!isPlaceholderMeterNo_(mtr) && fullText.indexOf(mtr) !== -1) {
+      return m;
+    }
+  }
+  return null;
+}
+
+function findOrAssignMeterForCa_(meters, caNumber, isGas, locationHint, meterNoHint) {
+  var cleanCa = String(caNumber || "").trim();
+  if (!cleanCa) return null;
+
+  // 1. Check if already exists
+  for (var i = 0; i < meters.length; i++) {
+    var m = meters[i];
+    if (!m) continue;
+    if (String(m.caNumber || "").trim() === cleanCa) {
+      var changed = false;
+      if (locationHint && (!m.location || m.location.indexOf("Adani Campus Meter") === 0 || m.location.indexOf("Mahanagar Gas Meter") === 0)) {
+        m.location = locationHint;
+        changed = true;
+      }
+      if (meterNoHint && isPlaceholderMeterNo_(m.meterNumber)) {
+        m.meterNumber = meterNoHint;
+        changed = true;
+      }
+      return { meter: m, wasNew: changed };
+    }
+  }
+
+  // 2. Assign to the first available placeholder row of the matching utility type
+  for (var j = 0; j < meters.length; j++) {
+    var slot = meters[j];
+    if (!slot) continue;
+    var slotIsGas = (slot.utility === "gas");
+    if (slotIsGas === Boolean(isGas) && isPlaceholderCa_(slot.caNumber)) {
+      slot.caNumber = cleanCa;
+      if (meterNoHint && isPlaceholderMeterNo_(slot.meterNumber)) {
+        slot.meterNumber = meterNoHint;
+      }
+      if (locationHint) {
+        slot.location = locationHint;
+      }
+      return { meter: slot, wasNew: true };
+    }
+  }
+
+  // 3. Otherwise append a new meter entry
+  var newId = (isGas ? "gas_" : "elec_") + (meters.length + 1) + "_" + cleanCa;
+  var newMeter = {
+    id: newId,
+    utility: isGas ? "gas" : "electricity",
+    unitType: isGas ? "SCM" : "kWh",
+    caNumber: cleanCa,
+    meterNumber: meterNoHint || "-",
+    location: locationHint || (isGas ? "Mahanagar Gas (" + cleanCa + ")" : "Adani Electricity (" + cleanCa + ")")
+  };
+  meters.push(newMeter);
+  return { meter: newMeter, wasNew: true };
+}
+
+function extractCaNumberFromEmail_(subjectStr, fullText, attNames, isGasEmail) {
+  // 1. Adani subject pattern: "Your bill details : 22-10-2026 for CA : 152377612"
+  var subjMatch = subjectStr.match(/CA\s*(?:No\.?|Number)?\s*[:\-]?\s*([0-9]{8,14})/i);
+  if (subjMatch) return subjMatch[1];
+
+  // 2. Explicit CA / BP / Contract Account / Consumer No in body
+  var bodyMatch = fullText.match(/(?:CA\s*(?:No\.?|Number)?|Contract\s*Account|BP\s*(?:No\.?|Number)?|Business\s*Partner|Consumer\s*(?:No\.?|Number)?|Account\s*(?:No\.?|Number)?|Connection\s*(?:No\.?|Number)?)\s*[:\-]?\s*([0-9]{8,14})/i);
+  if (bodyMatch) return bodyMatch[1];
+
+  // 3. Check PDF attachment filename for 8-14 digit account number
+  var attMatch = attNames.match(/(?:^|[^0-9])([0-9]{9,12})(?:[^0-9]|$)/);
+  if (attMatch) return attMatch[1];
+
+  // 4. For Adani emails, 9-digit number starting with 15 in body
+  if (!isGasEmail) {
+    var adaniCa = fullText.match(/(15[0-9]{7})/);
+    if (adaniCa) return adaniCa[1];
+  } else {
+    // For MGL emails, 10-12 digit CA/BP number starting with 4000, 1100, 1000, 2000, or 3000
+    var mglCa = fullText.match(/((?:4000|1100|1000|2000|3000)[0-9]{6,8})/);
+    if (mglCa) return mglCa[1];
+  }
+  return "";
+}
+
+function extractFallbackIdFromAttachments_(attachments) {
+  for (var i = 0; i < attachments.length; i++) {
+    var name = attachments[i].getName() || "";
+    var m = name.match(/([0-9]{7,14})/);
+    if (m) return m[1];
+    var clean = name.replace(/\.pdf$/i, "").replace(/[^A-Za-z0-9_-]/g, "").trim();
+    if (clean) return clean;
+  }
+  return "";
+}
+
+function extractMeterNumberFromEmail_(fullText) {
+  var m = fullText.match(/(?:Meter\s*(?:No\.?|Number)|Serial\s*(?:No\.?|Number))\s*[:\-]?\s*([A-Za-z0-9\-]{5,16})/i);
+  if (m && !/^(No|Number|Details|Reading)$/i.test(m[1])) return m[1];
+  return "";
+}
+
+function extractBillingMonthAndYear_(subjectStr, bodyText, msgDate) {
+  var monthMap = {
+    jan: 0, january: 0,
+    feb: 1, february: 1,
+    mar: 2, march: 2,
+    apr: 3, april: 3,
+    may: 4,
+    jun: 5, june: 5,
+    jul: 6, july: 6,
+    aug: 7, august: 7,
+    sep: 8, sept: 8, september: 8,
+    oct: 9, october: 9,
+    nov: 10, november: 10,
+    dec: 11, december: 11
+  };
+
+  var defaultYear = msgDate.getFullYear();
+  var defaultMonth = msgDate.getMonth();
+
+  // 1. Check MGL subject: "Your PNG Ebill for Month November"
+  var mglSubj = subjectStr.match(/for\s+Month\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i);
+  if (mglSubj) {
+    var mKey = mglSubj[1].toLowerCase();
+    if (monthMap[mKey] !== undefined) {
+      var targetM = monthMap[mKey];
+      var targetY = defaultYear;
+      if (defaultMonth === 0 && targetM === 11) targetY = defaultYear - 1;
+      return { monthIdx: targetM, yearStr: String(targetY) };
+    }
+  }
+
+  // 2. Check Adani body: "Your Electricity Bill for OCT-26" or "Bill for OCT-2026"
+  var adaniBodyM = (subjectStr + " " + bodyText).match(/Bill\s+for\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*[\s\-]+([0-9]{2,4})/i);
+  if (adaniBodyM) {
+    var mKey2 = adaniBodyM[1].toLowerCase();
+    var yrRaw = adaniBodyM[2];
+    var yrNum = yrRaw.length === 2 ? (2000 + parseInt(yrRaw, 10)) : parseInt(yrRaw, 10);
+    if (monthMap[mKey2] !== undefined && !isNaN(yrNum)) {
+      return { monthIdx: monthMap[mKey2], yearStr: String(yrNum) };
+    }
+  }
+
+  // 3. Check Adani subject date: "Your bill details : 22-10-2026 for CA : 152377612"
+  var subjDateM = subjectStr.match(/(\d{2})-(\d{2})-(\d{4})/);
+  if (subjDateM) {
+    var mm = parseInt(subjDateM[2], 10) - 1;
+    var yyyy = parseInt(subjDateM[3], 10);
+    if (mm >= 0 && mm <= 11 && yyyy >= 2020) {
+      return { monthIdx: mm, yearStr: String(yyyy) };
+    }
+  }
+
+  return { monthIdx: defaultMonth, yearStr: String(defaultYear) };
+}
+
+function extractBillAmountFromText_(fullText) {
+  var patterns = [
+    /(?:Bill\s*Amount|Net\s*Amount|Amount\s*Payable|Total\s*Amount\s*Payable|Total\s*Payable|Current\s*Bill\s*Amount|Net\s*Payable|Total\s*Bill)[^0-9₹]{0,40}(?:Rs\.?|INR|₹)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+    /(?:Rs\.?|INR|₹)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i,
+    /(?:Amount|Payable|Total)\s*[:\-]\s*([0-9,]+(?:\.[0-9]{1,2})?)/i
+  ];
+  for (var p = 0; p < patterns.length; p++) {
+    var m = fullText.match(patterns[p]);
+    if (m && m[1]) {
+      var val = parseFloat(m[1].replace(/,/g, ""));
+      // Avoid matching a 9-12 digit CA number as an amount
+      if (!isNaN(val) && val > 0 && val < 50000000 && String(Math.floor(val)).length <= 8) {
+        return val;
+      }
+    }
+  }
+  return 0;
+}
+
+function extractUnitsFromText_(fullText) {
+  var patterns = [
+    /(?:Units\s*Consumed|Billed\s*Units|Total\s*Units|Consumption|Units)\s*(?:\([A-Za-z]+\))?\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,3})?)/i,
+    /([0-9,]+(?:\.[0-9]{1,3})?)\s*(?:kVAh|kWh|SCM)/i
+  ];
+  for (var p = 0; p < patterns.length; p++) {
+    var m = fullText.match(patterns[p]);
+    if (m && m[1]) {
+      var val = parseFloat(m[1].replace(/,/g, ""));
+      if (!isNaN(val) && val > 0 && val < 10000000) {
+        return val;
+      }
+    }
+  }
+  return 0;
+}
+
+function setupDailyTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "autoFetchAdaniAndMglBillsDaily") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger("autoFetchAdaniAndMglBillsDaily")
+    .timeBased()
+    .everyDays(1)
+    .atHour(8)
+    .create();
 }
 
 function getOrCreateUtilityFolder_(name) {
   var iter = DriveApp.getFoldersByName(name);
   return iter.hasNext() ? iter.next() : DriveApp.createFolder(name);
 }
-                    </textarea>
+</textarea>
                 </div>
             </div>
 
@@ -14778,8 +15162,9 @@ await recordDawatEstatesNotification(
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
                     const amt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
                     const units = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
-                    if (!isNaN(amt) && amt > 0) {
-                        totalElecAmt += amt;
+                    const hasBillData = (!isNaN(amt) && amt > 0) || Boolean(rec && rec.fileUrl);
+                    if (hasBillData) {
+                        totalElecAmt += (isNaN(amt) ? 0 : amt);
                         if (uLabel === 'kVAh') totalElecKvah += (isNaN(units) ? 0 : units);
                         else totalElecKwh += (isNaN(units) ? 0 : units);
                         elecGreenCells++;
@@ -14795,8 +15180,9 @@ await recordDawatEstatesNotification(
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
                     const amt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
                     const units = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
-                    if (!isNaN(amt) && amt > 0) {
-                        totalGasAmt += amt;
+                    const hasBillData = (!isNaN(amt) && amt > 0) || Boolean(rec && rec.fileUrl);
+                    if (hasBillData) {
+                        totalGasAmt += (isNaN(amt) ? 0 : amt);
                         totalGasUnits += (isNaN(units) ? 0 : units);
                         gasGreenCells++;
                     } else {
@@ -14903,9 +15289,10 @@ await recordDawatEstatesNotification(
                 let monthCellsHtml = '';
                 monthIndices.forEach(mIdx => {
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
-                    const amtVal = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
+                    const rawAmt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
+                    const amtVal = !isNaN(rawAmt) && rawAmt > 0 ? rawAmt : 0;
                     const unitsVal = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
-                    const isUpdated = !isNaN(amtVal) && amtVal > 0;
+                    const isUpdated = amtVal > 0 || Boolean(rec && rec.fileUrl);
 
                     if (isUpdated) {
                         rowTotalAmt += amtVal;
@@ -14917,16 +15304,19 @@ await recordDawatEstatesNotification(
                     }
 
                     if (isUpdated) {
-                        // VIBRANT HIGHLIGHTED GREEN cell when bill amount is added
+                        // VIBRANT HIGHLIGHTED GREEN cell when bill amount or PDF is added
                         const pdfBadge = rec.fileUrl
                             ? `<a href="${rec.fileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="mt-0.5 inline-flex items-center space-x-1 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open Attached Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`
                             : `<span class="text-[9px] text-emerald-900 font-semibold block mt-0.5">No PDF</span>`;
+                        const amtDisplayHtml = amtVal > 0
+                            ? `<span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>`
+                            : `<span class="font-extrabold text-emerald-950 text-[10.5px]">PDF Bill Pulled</span>`;
 
                         monthCellsHtml += `
                             <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="eg-month-col p-1.5 align-middle bg-emerald-300/90 hover:bg-emerald-400/90 border-2 border-emerald-600 text-center cursor-pointer transition shadow-inner" title="Click to Edit ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
                                 <div class="flex flex-col items-center justify-center leading-tight">
                                     <span class="bg-emerald-800 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-0.5"><i class="fa-solid fa-circle-check text-[8px]"></i><span>Added</span></span>
-                                    <span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>
+                                    ${amtDisplayHtml}
                                     <span class="text-[10.5px] font-extrabold text-emerald-900">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${rowUnitSuffix}</span>
                                     ${pdfBadge}
                                 </div>
@@ -15499,23 +15889,53 @@ await recordDawatEstatesNotification(
             const origHtml = btnEl ? btnEl.innerHTML : '';
             if (btnEl) {
                 btnEl.disabled = true;
-                btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Syncing Bills...</span>';
+                btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Syncing 365d Bills...</span>';
             }
             try {
-                // Attempt to trigger the autoFetch action on the connected Google Apps Script Web App
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'autoFetchUtilityBills' })
-                }).catch(() => {});
+                // 1. Ensure default/current meters array is persisted in Firebase before Apps Script reads it
+                if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                    elecGasMetersData = ensureDefaultElecGasMeters([]);
+                }
+                await saveCloudData();
 
+                // 2. Call the Google Apps Script Web App using CORS so we can inspect the exact response
+                let scriptResult = null;
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'autoFetchUtilityBills', lookbackDays: 365 })
+                    });
+                    scriptResult = await response.json();
+                } catch (corsErr) {
+                    console.warn("CORS fetch fallback:", corsErr);
+                }
+
+                // 3. Reload updated bills & auto-discovered CA numbers from Firebase
                 await loadCloudData();
                 renderElecGasModule();
-                showAssetToast("Synced latest Electricity & Gas bills from Cloud!");
+
+                if (scriptResult && scriptResult.status === 'success') {
+                    const cnt = Number(scriptResult.syncedCount || 0);
+                    const threads = Number(scriptResult.threadsScanned || 0);
+                    const newCas = Number(scriptResult.discoveredCaCount || 0);
+                    showAssetToast(`Auto-Fetch Complete: ${cnt} bill(s) pulled from ${threads} email thread(s)${newCas > 0 ? ' (' + newCas + ' CA numbers auto-detected)' : ''}!`);
+                } else if (scriptResult && scriptResult.status === 'error') {
+                    const errMsg = String(scriptResult.message || '');
+                    if (errMsg.includes('base64') || errMsg.includes('null')) {
+                        showAssetToast("Apps Script is still running the OLD deployment! In Apps Script, click Deploy -> Manage deployments -> Edit -> Version: New version -> Deploy.", true);
+                    } else if (errMsg.includes('permission') || errMsg.includes('Authorization') || errMsg.includes('GmailApp')) {
+                        showAssetToast("Gmail Permission Needed: In Apps Script editor, select 'autoFetchAdaniAndMglBillsDaily' in the top bar and click Run once to Allow Gmail access.", true);
+                    } else {
+                        showAssetToast("Apps Script Error: " + errMsg, true);
+                    }
+                } else {
+                    showAssetToast("Synced latest Electricity & Gas bills from Cloud!");
+                }
             } catch (err) {
                 console.error("Auto-fetch sync error:", err);
-                showAssetToast("Synced latest records from Cloud.");
+                showAssetToast("Auto-fetch error: " + (err.message || err), true);
             } finally {
                 if (btnEl) {
                     btnEl.disabled = false;

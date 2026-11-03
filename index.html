@@ -22,14 +22,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS for Excel Import/Export -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- jsPDF & jsPDF-AutoTable for PDF Export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- Chart.js for Electricity & Gas Comparison Bar Charts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- SheetJS for Excel Import/Export (Deferred for fast initial load) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <!-- jsPDF & jsPDF-AutoTable for PDF Export (Deferred for fast initial load) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <!-- Chart.js for Electricity & Gas Comparison Bar Charts (Deferred for fast initial load) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
     <style>
         .hidden { display: none !important; }
         html { font-size: 17px; }
@@ -5470,7 +5470,8 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     }
                 }
             });
-            return Array.from(map.values()).sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+            const sorted = Array.from(map.values()).sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+            return sorted.length > 250 ? sorted.slice(-250) : sorted;
         }
 
         function normalizeRaihaanList(rawRaihaan) {
@@ -5826,24 +5827,99 @@ window.loadClassroomsFromCloud = async function() {
             applyModuleAndSubHeaderPermissions();
         }
 
-        function refreshAllPortalViews() {
-            renderEstateTable();
-            renderAllocationTable();
-            renderBachelorGrid();
-            renderMaintenanceGrid();
-            renderVacantBills();
-            renderSocieties();
-            renderSocietyDocs();
-            populateFlatMaintenanceDropdown();
-            populateIntegratedFlatDropdown();
-            if (document.getElementById('integratedFlatSelect')?.value) {
-                renderIntegratedView();
+        // Smart On-Demand View Rendering Tracker (renders only the visible module/sub-header and queues hidden tabs until clicked)
+        const dirtyPortalViewsSet = new Set();
+        let lastCloudSyncTimestamp = Date.now();
+
+        function getCurrentlyVisibleModuleName() {
+            const mods = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'];
+            for (const m of mods) {
+                const el = document.getElementById('module-' + m);
+                if (el && !el.classList.contains('hidden')) return m;
             }
-            renderAssetDetailsTable();
-            renderClassroomsTables();
-            renderFacultyTable();
-            renderElecGasModule();
-            renderUsersList();
+            return 'dawat-estates';
+        }
+
+        function renderSpecificDawatSubHeader(secName) {
+            if (secName === 'estate-details') {
+                renderEstateTable();
+            } else if (secName === 'allocation') {
+                renderAllocationTable();
+            } else if (secName === 'maintenance') {
+                populateFlatMaintenanceDropdown();
+                renderMaintenanceGrid();
+            } else if (secName === 'bachelor') {
+                renderBachelorGrid();
+            } else if (secName === 'vacant-bills') {
+                renderVacantBills();
+            } else if (secName === 'society') {
+                populateSocietyDropdowns();
+                renderSocieties();
+                renderSocietyDocs();
+            } else if (secName === 'integrated') {
+                const currentSel = document.getElementById('integratedFlatSelect')?.value;
+                populateIntegratedFlatDropdown();
+                if (currentSel) {
+                    document.getElementById('integratedFlatSelect').value = currentSel;
+                    renderIntegratedView();
+                }
+            } else if (secName === 'asset-details') {
+                renderAssetDetailsTable();
+            }
+            dirtyPortalViewsSet.delete('sub:' + secName);
+        }
+
+        function renderSpecificPortalModule(modName) {
+            if (modName === 'dawat-estates') {
+                const activeSub = currentActiveDawatSubHeader || 'estate-details';
+                renderSpecificDawatSubHeader(activeSub);
+            } else if (modName === 'classroom-allocation') {
+                renderClassroomsTables();
+            } else if (modName === 'inventory') {
+                if (typeof renderKeysInventory === 'function') renderKeysInventory();
+            } else if (modName === 'faculty-dir') {
+                renderFacultyTable();
+            } else if (modName === 'elec-gas-bills') {
+                renderElecGasModule();
+            } else if (modName === 'admin-access') {
+                renderUsersList();
+                populateWatiConfigInputs();
+            }
+            dirtyPortalViewsSet.delete('mod:' + modName);
+        }
+
+        function markAllPortalViewsDirty() {
+            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'].forEach(m => dirtyPortalViewsSet.add('mod:' + m));
+            ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated', 'asset-details'].forEach(s => dirtyPortalViewsSet.add('sub:' + s));
+        }
+
+        function refreshAllPortalViews(forceAll = false) {
+            if (forceAll) {
+                renderEstateTable();
+                renderAllocationTable();
+                renderBachelorGrid();
+                renderMaintenanceGrid();
+                renderVacantBills();
+                renderSocieties();
+                renderSocietyDocs();
+                populateFlatMaintenanceDropdown();
+                populateIntegratedFlatDropdown();
+                if (document.getElementById('integratedFlatSelect')?.value) {
+                    renderIntegratedView();
+                }
+                renderAssetDetailsTable();
+                renderClassroomsTables();
+                renderFacultyTable();
+                renderElecGasModule();
+                renderUsersList();
+                dirtyPortalViewsSet.clear();
+            } else {
+                // Mark all background modules & sub-headers dirty, and immediately render ONLY the active module on screen!
+                markAllPortalViewsDirty();
+                const visibleMod = getCurrentlyVisibleModuleName();
+                renderSpecificPortalModule(visibleMod);
+            }
+
             updateModuleNotificationBadges();
 
             if (!document.getElementById('modalRaihaanArchive')?.classList.contains('hidden')) {
@@ -5858,10 +5934,11 @@ window.loadClassroomsFromCloud = async function() {
             if (notificationsRealtimeListenerAttached) return;
             notificationsRealtimeListenerAttached = true;
             try {
-                // Real-time listener on entire portalData so all edits by any user in any module immediately reflect for all users
+                // Real-time listener on portalData
                 onValue(dbRef(db, 'portalData'), (snapshot) => {
                     if (!snapshot.exists()) return;
                     if (isSavingPortalData) return;
+                    lastCloudSyncTimestamp = Date.now();
                     const data = snapshot.val() || {};
                     estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
                     facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
@@ -5881,11 +5958,11 @@ window.loadClassroomsFromCloud = async function() {
                     }
                     if (data.watiConfig !== undefined) {
                         watiConfig = normalizeWatiConfig(data.watiConfig);
-                        populateWatiConfigInputs();
+                        if (getCurrentlyVisibleModuleName() === 'admin-access') {
+                            populateWatiConfigInputs();
+                        }
                     }
                     keysInventoryData = Array.isArray(data.keys) ? data.keys : (data.keys && typeof data.keys === 'object' ? Object.values(data.keys) : []);
-                    // Note: classroomsData is exclusively managed by the dedicated /classrooms realtime listener below
-                    // to prevent extraneous portalData writes from causing race-condition state overwrites.
                     if (data.raihaan !== undefined) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
                     }
@@ -5893,7 +5970,6 @@ window.loadClassroomsFromCloud = async function() {
                         const incoming = normalizeNotificationsList(data.notifications);
                         if (incoming.length > 0) {
                             portalNotificationsData = mergeNotificationsArrays(incoming, portalNotificationsData);
-                            // Trigger system notification for any newly arrived unseen notification strictly matching permissions
                             incoming.forEach(notif => {
                                 if (canCurrentUserReceiveModuleNotification(notif)) {
                                     triggerDeviceSystemNotification(notif);
@@ -5901,7 +5977,6 @@ window.loadClassroomsFromCloud = async function() {
                             });
                         }
                     }
-                    // Note: estateAssetsData is managed by dedicated /estate_assets listener to prevent notification/portalData writes from causing race-condition state clobbering
                     if (!isSavingAssets && data.estate_assets !== undefined) {
                         const incomingAssets = normalizeEstateAssetsList(data.estate_assets);
                         if (incomingAssets.length >= estateAssetsData.length && incomingAssets.length > 0) {
@@ -5910,7 +5985,7 @@ window.loadClassroomsFromCloud = async function() {
                     }
 
                     syncCurrentUserLivePermissions();
-                    refreshAllPortalViews();
+                    refreshAllPortalViews(false);
                     checkAndTriggerActiveModuleNotifications();
                 });
 
@@ -5918,7 +5993,11 @@ window.loadClassroomsFromCloud = async function() {
                 onValue(dbRef(db, 'classrooms'), (snapshot) => {
                     if (!isSavingClassrooms && snapshot.exists()) {
                         classroomsData = normalizeClassroomsList(snapshot.val());
-                        renderClassroomsTables();
+                        if (getCurrentlyVisibleModuleName() === 'classroom-allocation') {
+                            renderClassroomsTables();
+                        } else {
+                            dirtyPortalViewsSet.add('mod:classroom-allocation');
+                        }
                         if (typeof renderEventsArchiveList === 'function' && !document.getElementById('modalEventsArchive')?.classList.contains('hidden')) {
                             renderEventsArchiveList();
                         }
@@ -5929,7 +6008,11 @@ window.loadClassroomsFromCloud = async function() {
                 onValue(dbRef(db, 'raihaan'), (snapshot) => {
                     if (snapshot.exists()) {
                         raihaanData = normalizeRaihaanList(snapshot.val());
-                        renderClassroomsTables();
+                        if (getCurrentlyVisibleModuleName() === 'classroom-allocation') {
+                            renderClassroomsTables();
+                        } else {
+                            dirtyPortalViewsSet.add('mod:classroom-allocation');
+                        }
                         if (!document.getElementById('modalRaihaanArchive')?.classList.contains('hidden')) {
                             renderRaihaanArchiveTable();
                         }
@@ -5942,9 +6025,15 @@ window.loadClassroomsFromCloud = async function() {
                         const incoming = normalizeEstateAssetsList(snapshot.val());
                         if (incoming.length >= estateAssetsData.length || estateAssetsData.length === 0) {
                             estateAssetsData = incoming;
-                            renderAssetDetailsTable();
-                            if (document.getElementById('integratedFlatSelect')?.value) {
+                            if (getCurrentlyVisibleModuleName() === 'dawat-estates' && currentActiveDawatSubHeader === 'asset-details') {
+                                renderAssetDetailsTable();
+                            } else {
+                                dirtyPortalViewsSet.add('sub:asset-details');
+                            }
+                            if (getCurrentlyVisibleModuleName() === 'dawat-estates' && currentActiveDawatSubHeader === 'integrated' && document.getElementById('integratedFlatSelect')?.value) {
                                 renderIntegratedView();
+                            } else {
+                                dirtyPortalViewsSet.add('sub:integrated');
                             }
                         }
                     }
@@ -5966,21 +6055,24 @@ window.loadClassroomsFromCloud = async function() {
                     updateModuleNotificationBadges();
                     checkAndTriggerActiveModuleNotifications();
                 });
-                // Also refresh cloud data when tab regains focus or visibility
-                window.addEventListener('focus', async () => {
+
+                // Lightweight focus/visibility handler: Only re-fetch full cloud database if tab was inactive for >5 minutes
+                // (prevents 1-2s UI freeze when switching windows or closing a file upload dialog, since Firebase onValue WebSocket is already live)
+                const handleTabWakeUp = async () => {
                     if (!currentUser || isSavingPortalData) return;
-                    await loadCloudData();
-                    syncCurrentUserLivePermissions();
-                    refreshAllPortalViews();
-                    checkAndTriggerActiveModuleNotifications();
-                });
-                document.addEventListener('visibilitychange', async () => {
-                    if (document.visibilityState === 'visible' && currentUser && !isSavingPortalData) {
+                    const elapsedMs = Date.now() - lastCloudSyncTimestamp;
+                    if (elapsedMs > 5 * 60 * 1000) {
+                        lastCloudSyncTimestamp = Date.now();
                         await loadCloudData();
                         syncCurrentUserLivePermissions();
-                        refreshAllPortalViews();
-                        checkAndTriggerActiveModuleNotifications();
+                        refreshAllPortalViews(false);
                     }
+                    updateModuleNotificationBadges();
+                    checkAndTriggerActiveModuleNotifications();
+                };
+                window.addEventListener('focus', handleTabWakeUp);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') handleTabWakeUp();
                 });
             } catch (err) {
                 console.error("Error attaching realtime listeners:", err);
@@ -7086,31 +7178,21 @@ window.loadClassroomsFromCloud = async function() {
         function initAppUI() {
             applyAccessLevelEnforcement();
             buildTimetableGridTemplate();
-            renderEstateTable();
-            renderAllocationTable();
-            renderClassroomsTables();
-            renderFacultyTable();
-            renderSocieties();
-            renderSocietyDocs();
-            renderMaintenanceGrid();
-            renderUsersList();
-            populateWatiConfigInputs();
-            populateSocietyDropdowns();
-            populateFlatMaintenanceDropdown();
-            populateIntegratedFlatDropdown();
-            renderAssetDetailsTable();
             if (!elecGasMetersData || elecGasMetersData.length === 0) {
                 elecGasMetersData = ensureDefaultElecGasMeters([]);
             }
             resetElecGasPeriodToCurrentQuarter();
-            renderElecGasModule();
-            
             const today = new Date().toISOString().slice(0, 7);
-            document.getElementById('billMonthPicker').value = today;
-            renderVacantBills();
+            const bmp = document.getElementById('billMonthPicker');
+            if (bmp && !bmp.value) bmp.value = today;
+
+            // Mark all views dirty, apply user permissions to select the allowed active module, and render ONLY the active module on startup!
+            markAllPortalViewsDirty();
+            applyModuleAndSubHeaderPermissions();
+            renderSpecificPortalModule(getCurrentlyVisibleModuleName());
+
             attachNotificationsRealtimeListener();
             updateModuleNotificationBadges();
-            applyModuleAndSubHeaderPermissions();
             checkAndTriggerActiveModuleNotifications();
         }
 
@@ -7138,14 +7220,24 @@ window.loadClassroomsFromCloud = async function() {
             if (modName === 'elec-gas-bills') {
                 resetElecGasPeriodToCurrentQuarter();
                 renderElecGasModule();
+                dirtyPortalViewsSet.delete('mod:elec-gas-bills');
                 openModuleNotificationsPopupIfAny('elec-gas-bills');
             } else if (modName === 'classroom-allocation') {
                 renderClassroomsTables();
+                dirtyPortalViewsSet.delete('mod:classroom-allocation');
                 openModuleNotificationsPopupIfAny('classroom-allocation');
             } else if (modName === 'dawat-estates') {
+                const subToRender = currentActiveDawatSubHeader || 'estate-details';
+                if (dirtyPortalViewsSet.has('mod:dawat-estates') || dirtyPortalViewsSet.has('sub:' + subToRender)) {
+                    renderSpecificDawatSubHeader(subToRender);
+                }
+                dirtyPortalViewsSet.delete('mod:dawat-estates');
                 if (currentActiveDawatSubHeader) {
                     openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
                 }
+            } else {
+                // Render faculty-dir, inventory, or admin-access on demand when opened
+                renderSpecificPortalModule(modName);
             }
         };
 
@@ -7185,20 +7277,9 @@ window.loadClassroomsFromCloud = async function() {
                 activeBtn.classList.add('sub-tab-active');
             }
 
-            if(secName === 'bachelor') renderBachelorGrid();
-            if(secName === 'maintenance') renderMaintenanceGrid();
-            if(secName === 'vacant-bills') renderVacantBills();
-            if(secName === 'integrated') {
-                const currentSel = document.getElementById('integratedFlatSelect')?.value;
-                populateIntegratedFlatDropdown();
-                if (currentSel) {
-                    document.getElementById('integratedFlatSelect').value = currentSel;
-                    renderIntegratedView();
-                }
-            }
-            if(secName === 'asset-details') renderAssetDetailsTable();
-
             currentActiveDawatSubHeader = secName;
+            renderSpecificDawatSubHeader(secName);
+
             const dawatModEl = document.getElementById('module-dawat-estates');
             if (dawatModEl && !dawatModEl.classList.contains('hidden')) {
                 openModuleNotificationsPopupIfAny('dawat-estates', secName);

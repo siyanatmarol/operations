@@ -1939,6 +1939,10 @@
                         <i class="fa-solid fa-broom"></i>
                         <span>Clean Extra Meters</span>
                     </button>
+                    <button type="button" onclick="openManualAddElecGasBillModal()" class="crud-action-btn bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm" title="Manually Add or Edit Any Monthly Electricity or Gas Bill">
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        <span>+ Add / Edit Bill</span>
+                    </button>
                     <button type="button" onclick="openEditElecGasMeterModal()" class="crud-action-btn bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
                         <i class="fa-solid fa-plus"></i>
                         <span>+ Add Meter</span>
@@ -3970,12 +3974,15 @@
         </div>
     </div>
 
-    <!-- Modal: Add / Update Monthly Electricity or Gas Bill Entry (Supports 1 or 2 Bills per Month for MGL Gas) -->
+    <!-- Modal: Add / Update Monthly Electricity or Gas Bill Entry (Supports Manual Add/Edit, Delete/Replace PDF, Lock Details, and 1 or 2 Bills per Month) -->
     <div id="modalElecGasBillEntry" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto">
             <div class="flex justify-between items-start border-b pb-3">
                 <div>
-                    <span id="egBillModalUtilityBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">Adani Electricity</span>
+                    <div class="flex items-center space-x-2">
+                        <span id="egBillModalUtilityBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">Adani Electricity</span>
+                        <span id="egBillModalLockStatusBadge" class="hidden text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-300"><i class="fa-solid fa-lock mr-1"></i>Locked</span>
+                    </div>
                     <h3 class="text-lg font-bold text-gray-900 mt-1" id="egBillModalTitle">Update Monthly Bill</h3>
                     <p class="text-xs text-gray-500 font-mono" id="egBillModalSubtitle">CA: - | Meter: -</p>
                 </div>
@@ -3985,61 +3992,103 @@
                 <input type="hidden" id="egBillMeterId" value="">
                 <input type="hidden" id="egBillYear" value="">
                 <input type="hidden" id="egBillMonthIndex" value="">
+                <input type="hidden" id="egBillDeletePdf1Flag" value="0">
+                <input type="hidden" id="egBillDeletePdf2Flag" value="0">
+
+                <!-- QUICK METER, MONTH & YEAR SELECTOR (Allows switching Meter/Month/Year directly inside the modal) -->
+                <div class="bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200 grid grid-cols-1 sm:grid-cols-12 gap-2">
+                    <div class="sm:col-span-6">
+                        <label class="text-[10px] font-extrabold text-emerald-950 uppercase block mb-0.5">Meter / CA Number</label>
+                        <select id="egBillModalMeterSelect" onchange="handleEgBillModalTargetChange()" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-white text-gray-900"></select>
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="text-[10px] font-extrabold text-emerald-950 uppercase block mb-0.5">Month</label>
+                        <select id="egBillModalMonthSelect" onchange="handleEgBillModalTargetChange()" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-white text-gray-900">
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="text-[10px] font-extrabold text-emerald-950 uppercase block mb-0.5">Year</label>
+                        <select id="egBillModalYearSelect" onchange="handleEgBillModalTargetChange()" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-white text-gray-900">
+                            <option value="2027">2027</option>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                        </select>
+                    </div>
+                </div>
 
                 <!-- BILL 1 SECTION -->
                 <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-3">
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-wrap justify-between items-center gap-1">
                         <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wider" id="egBill1SectionHeading">Bill #1 Details</span>
-                        <span id="egBillExistingPdfLink" class="hidden text-xs"></span>
+                        <div id="egBillExistingPdfLink" class="hidden flex items-center space-x-2 text-xs"></div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="text-xs font-bold text-gray-700 block mb-1">Bill #1 Amount (₹) *</label>
-                            <input type="number" step="0.01" min="0" id="egBillAmountInput" required oninput="updateEgBillModalCombinedPreview()" placeholder="e.g. 14500" class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-sm font-extrabold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                            <input type="number" step="0.01" min="0" id="egBillAmountInput" required oninput="updateEgBillModalCombinedPreview(); autoCheckLockOnManualEdit();" placeholder="e.g. 14500" class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-sm font-extrabold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-gray-700 block mb-1" id="egBillUnitsLabel">Units Consumed (kWh) *</label>
-                            <input type="number" step="0.01" min="0" id="egBillUnitsInput" required oninput="updateEgBillModalCombinedPreview()" placeholder="e.g. 1250" class="w-full p-2.5 border rounded-lg text-sm font-bold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                            <label class="text-xs font-bold text-gray-700 block mb-1" id="egBillUnitsLabel">Bill #1 Units (kWh)</label>
+                            <input type="number" step="0.01" min="0" id="egBillUnitsInput" oninput="updateEgBillModalCombinedPreview(); autoCheckLockOnManualEdit();" placeholder="e.g. 1250" class="w-full p-2.5 border rounded-lg text-sm font-bold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">Bill #1 Date <span class="text-gray-400 font-normal">(Optional)</span></label>
-                            <input type="date" id="egBillDateInput" class="w-full p-2 border rounded-lg text-xs bg-white">
+                            <input type="date" id="egBillDateInput" onchange="autoCheckLockOnManualEdit()" class="w-full p-2 border rounded-lg text-xs bg-white">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-600 block mb-1">Attach Bill #1 PDF</label>
-                            <input type="file" id="egBillPdfFileInput" accept=".pdf,image/*,application/pdf" class="w-full text-[11px] border p-1.5 rounded bg-white">
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Upload / Replace Bill #1 PDF</label>
+                            <input type="file" id="egBillPdfFileInput" onchange="handleNewEgBillPdfSelected(1)" accept=".pdf,image/*,application/pdf" class="w-full text-[11px] border p-1.5 rounded bg-white">
                         </div>
                     </div>
                 </div>
 
                 <!-- BILL 2 SECTION (For Mahanagar Gas 2nd Bill in Same Month, e.g. 1st & 17th) -->
                 <div id="egBill2SectionBox" class="bg-orange-50/70 p-3.5 rounded-xl border border-orange-200 space-y-3">
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-wrap justify-between items-center gap-1">
                         <span class="text-xs font-extrabold text-orange-950 uppercase tracking-wider">
-                            <i class="fa-solid fa-file-circle-plus text-orange-600 mr-1"></i>2nd Bill in Same Month <span class="text-[10px] font-semibold text-orange-800 normal-case">(e.g. MGL 1st &amp; 17th Bills — Optional)</span>
+                            <i class="fa-solid fa-file-circle-plus text-orange-600 mr-1"></i>2nd Bill in Same Month <span class="text-[10px] font-semibold text-orange-800 normal-case">(Optional)</span>
                         </span>
-                        <span id="egBillExistingPdfLink2" class="hidden text-xs"></span>
+                        <div class="flex items-center space-x-2">
+                            <div id="egBillExistingPdfLink2" class="hidden flex items-center space-x-2 text-xs"></div>
+                            <button type="button" id="btnClearSecondBillInModal" onclick="clearSecondBillInModal()" class="hidden text-[10px] bg-red-100 hover:bg-red-200 text-red-800 font-extrabold px-2 py-0.5 rounded border border-red-300 transition" title="Remove 2nd Bill Amount, Units & PDF">
+                                <i class="fa-solid fa-xmark mr-0.5"></i>Clear 2nd Bill
+                            </button>
+                        </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="text-xs font-bold text-gray-700 block mb-1">Bill #2 Amount (₹)</label>
-                            <input type="number" step="0.01" min="0" id="egBillAmount2Input" oninput="updateEgBillModalCombinedPreview()" placeholder="Leave blank if only 1 bill" class="w-full p-2 border border-orange-300 rounded-lg text-sm font-extrabold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <input type="number" step="0.01" min="0" id="egBillAmount2Input" oninput="updateEgBillModalCombinedPreview(); autoCheckLockOnManualEdit();" placeholder="Leave blank if only 1 bill" class="w-full p-2 border border-orange-300 rounded-lg text-sm font-extrabold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-700 block mb-1" id="egBillUnits2Label">Bill #2 Units (SCM)</label>
-                            <input type="number" step="0.01" min="0" id="egBillUnits2Input" oninput="updateEgBillModalCombinedPreview()" placeholder="Leave blank if only 1 bill" class="w-full p-2 border border-orange-300 rounded-lg text-sm font-bold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <input type="number" step="0.01" min="0" id="egBillUnits2Input" oninput="updateEgBillModalCombinedPreview(); autoCheckLockOnManualEdit();" placeholder="Leave blank if only 1 bill" class="w-full p-2 border border-orange-300 rounded-lg text-sm font-bold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="text-xs font-semibold text-gray-600 block mb-1">Bill #2 Date <span class="text-gray-400 font-normal">(Optional)</span></label>
-                            <input type="date" id="egBillDate2Input" class="w-full p-2 border rounded-lg text-xs bg-white">
+                            <input type="date" id="egBillDate2Input" onchange="autoCheckLockOnManualEdit()" class="w-full p-2 border rounded-lg text-xs bg-white">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-600 block mb-1">Attach Bill #2 PDF</label>
-                            <input type="file" id="egBillPdf2FileInput" accept=".pdf,image/*,application/pdf" class="w-full text-[11px] border p-1.5 rounded bg-white">
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Upload / Replace Bill #2 PDF</label>
+                            <input type="file" id="egBillPdf2FileInput" onchange="handleNewEgBillPdfSelected(2)" accept=".pdf,image/*,application/pdf" class="w-full text-[11px] border p-1.5 rounded bg-white">
                         </div>
                     </div>
                 </div>
@@ -4050,12 +4099,28 @@
                     <span id="egBillCombinedPreviewText">₹0 | 0 SCM</span>
                 </div>
 
-                <div>
-                    <label class="text-xs font-semibold text-gray-600 block mb-1">Notes / Reference <span class="text-gray-400 font-normal">(Optional)</span></label>
-                    <input type="text" id="egBillNotesInput" placeholder="e.g. Paid via NEFT / Auto-fetched" class="w-full p-2 border rounded-lg text-xs">
+                <!-- LOCK DETAILS TOGGLE BANNER (Prevents Auto-Fetch from Overwriting Edited/Locked Bills) -->
+                <div id="egBillLockBannerBox" class="bg-indigo-50 border-2 border-indigo-300 p-3 rounded-xl flex items-center justify-between gap-3">
+                    <label for="egBillLockCheckbox" class="flex items-start space-x-2.5 cursor-pointer select-none">
+                        <input type="checkbox" id="egBillLockCheckbox" onchange="updateEgBillLockBannerUI()" checked class="mt-0.5 w-4 h-4 text-indigo-700 rounded border-gray-300 focus:ring-indigo-600">
+                        <div>
+                            <span class="text-xs font-extrabold text-indigo-950 flex items-center space-x-1">
+                                <i class="fa-solid fa-lock text-indigo-700" id="egBillLockBannerIcon"></i>
+                                <span id="egBillLockBannerTitle">Lock Details (Protect from Auto-Fetch Overwrite)</span>
+                            </span>
+                            <span class="text-[10.5px] text-indigo-800 block leading-tight mt-0.5">
+                                When locked, clicking <strong>Auto-Fetch Sync</strong> will never overwrite this month's edited details or PDF (Auto-Fetch will only add to Pending bills).
+                            </span>
+                        </div>
+                    </label>
                 </div>
 
-                <div class="flex justify-between items-center pt-3 border-t">
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Notes / Reference <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <input type="text" id="egBillNotesInput" placeholder="e.g. Paid via NEFT / Verified manually" class="w-full p-2 border rounded-lg text-xs">
+                </div>
+
+                <div class="flex flex-wrap justify-between items-center gap-2 pt-3 border-t">
                     <button type="button" id="btnClearEgBillEntry" onclick="clearElecGasMonthlyBill()" class="hidden text-xs text-red-600 hover:text-red-800 font-bold flex items-center space-x-1">
                         <i class="fa-solid fa-rotate-left"></i>
                         <span>Reset to Pending (Red)</span>
@@ -5137,8 +5202,8 @@ function getOrCreateUtilityFolder_(name) {
                                 'Content-Type': 'text/plain;charset=utf-8'
                             },
                             body: JSON.stringify({
-                                filename: file.name,
-                                mimeType: file.type,
+                                filename: file.name || ('Bill_' + Date.now() + '.pdf'),
+                                mimeType: file.type || (String(file.name || '').toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream'),
                                 base64: base64Data
                             })
                         });
@@ -5534,7 +5599,14 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     maintLogs = data.maint || [];
                     vacantBills = data.bills || {};
                     elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
-                    elecGasBillsData = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
+                    let rawCloudEgBills = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
+                    try {
+                        const egSnap = await get(child(dbRef(db), 'elecGasBills'));
+                        if (egSnap && egSnap.exists() && egSnap.val() && typeof egSnap.val() === 'object') {
+                            rawCloudEgBills = { ...rawCloudEgBills, ...egSnap.val() };
+                        }
+                    } catch (eEg) {}
+                    elecGasBillsData = mergeElecGasBillsWithLocalCache(rawCloudEgBills);
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     usersList = normalizeUsersList(data.users || usersList);
                     if (data.watiConfig) {
@@ -5800,7 +5872,9 @@ window.loadClassroomsFromCloud = async function() {
                     maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
                     vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
                     if (data.elecGasMeters !== undefined) elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
-                    if (data.elecGasBills !== undefined) elecGasBillsData = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
+                    if (data.elecGasBills !== undefined) {
+                        elecGasBillsData = mergeElecGasBillsWithLocalCache(data.elecGasBills);
+                    }
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     if (data.users !== undefined) {
                         usersList = normalizeUsersList(data.users);
@@ -6686,40 +6760,83 @@ window.loadClassroomsFromCloud = async function() {
             updateModuleNotificationBadges();
         };
 
+      function mergeElecGasBillsWithLocalCache(cloudBills) {
+          const base = (cloudBills && typeof cloudBills === 'object') ? { ...cloudBills } : {};
+          try {
+              const cachedRaw = localStorage.getItem('siyanat_elec_gas_bills_cache');
+              if (cachedRaw) {
+                  const cached = JSON.parse(cachedRaw);
+                  if (cached && typeof cached === 'object') {
+                      Object.keys(cached).forEach(k => {
+                          const cRec = cached[k];
+                          if (!cRec) return;
+                          if (cRec._deleted === true) {
+                              // User explicitly reset this cell to Pending
+                              const cloudRec = base[k];
+                              if (!cloudRec || !cloudRec.updatedAt || String(cRec.deletedAt || '') >= String(cloudRec.updatedAt || '')) {
+                                  delete base[k];
+                              }
+                              return;
+                          }
+                          const existing = base[k];
+                          if (!existing) {
+                              base[k] = cRec;
+                          } else if (cRec.isLocked || cRec.isManualEdit) {
+                              if (!existing.updatedAt || String(cRec.updatedAt || '') >= String(existing.updatedAt || '')) {
+                                  base[k] = cRec;
+                              }
+                          }
+                      });
+                  }
+              }
+          } catch (e) {}
+          return base;
+      }
+
+      function saveElecGasBillsLocalCache(billsObj) {
+          try {
+              localStorage.setItem('siyanat_elec_gas_bills_cache', JSON.stringify(billsObj || {}));
+          } catch (e) {}
+      }
+
       window.saveCloudData = async function() {
     isSavingPortalData = true;
     try {
-        await set(dbRef(db, 'portalData'), {
-            estates: estatesData,
-            classrooms: classroomsData,
-            raihaan: raihaanData,
-            notifications: portalNotificationsData,
-            keys: keysInventoryData,
-            faculty: facultyData,
-            societies: societiesData,
-            docs: societyDocs,
-            maint: maintLogs,
-            bills: vacantBills,
-            socBills: societyBillsData,
-            users: usersList,
-            watiConfig: watiConfig,
-            estate_assets: estateAssetsData,
-            elecGasMeters: elecGasMetersData,
-            elecGasBills: elecGasBillsData,
-            googleScriptUrl: GOOGLE_SCRIPT_URL
-        });
+        saveElecGasBillsLocalCache(elecGasBillsData);
+        const cleanPayload = JSON.parse(JSON.stringify({
+            estates: estatesData || [],
+            classrooms: classroomsData || [],
+            raihaan: raihaanData || [],
+            notifications: portalNotificationsData || [],
+            keys: keysInventoryData || [],
+            faculty: facultyData || [],
+            societies: societiesData || [],
+            docs: societyDocs || [],
+            maint: maintLogs || [],
+            bills: vacantBills || {},
+            socBills: societyBillsData || {},
+            users: usersList || [],
+            watiConfig: watiConfig || {},
+            estate_assets: estateAssetsData || [],
+            elecGasMeters: elecGasMetersData || [],
+            elecGasBills: elecGasBillsData || {},
+            googleScriptUrl: GOOGLE_SCRIPT_URL || ''
+        }));
         await Promise.allSettled([
-            set(dbRef(db, 'classrooms'), classroomsData),
-            set(dbRef(db, 'estate_assets'), estateAssetsData),
-            set(dbRef(db, 'raihaan'), raihaanData),
-            set(dbRef(db, 'notifications'), portalNotificationsData)
+            set(dbRef(db, 'portalData'), cleanPayload),
+            set(dbRef(db, 'portalData/elecGasBills'), cleanPayload.elecGasBills),
+            set(dbRef(db, 'elecGasBills'), cleanPayload.elecGasBills),
+            set(dbRef(db, 'classrooms'), cleanPayload.classrooms),
+            set(dbRef(db, 'estate_assets'), cleanPayload.estate_assets),
+            set(dbRef(db, 'raihaan'), cleanPayload.raihaan),
+            set(dbRef(db, 'notifications'), cleanPayload.notifications)
         ]);
     } catch (err) {
         console.error("Error saving to cloud:", err);
     } finally {
         setTimeout(() => {
             isSavingPortalData = false;
-        }, 1500);
+        }, 2000);
     }
 };
 
@@ -15204,7 +15321,7 @@ await recordDawatEstatesNotification(
                         monthCellsHtml += `
                             <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="eg-month-col p-1.5 align-middle bg-emerald-300/90 hover:bg-emerald-400/90 border-2 border-emerald-600 text-center cursor-pointer transition shadow-inner" title="Click to Edit ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
                                 <div class="flex flex-col items-center justify-center leading-tight">
-                                    <span class="bg-emerald-800 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-0.5"><i class="fa-solid fa-circle-check text-[8px]"></i><span>${hasTwoBills ? 'Added (2 Bills)' : 'Added'}</span></span>
+                                    <span class="${(rec.isLocked || rec.isManualEdit) ? 'bg-indigo-900' : 'bg-emerald-800'} text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-1" title="${(rec.isLocked || rec.isManualEdit) ? 'Locked: Auto-Fetch will not overwrite this bill' : 'Added'}"><i class="fa-solid ${(rec.isLocked || rec.isManualEdit) ? 'fa-lock' : 'fa-circle-check'} text-[8px]"></i><span>${hasTwoBills ? 'Added (2 Bills)' : 'Added'}${(rec.isLocked || rec.isManualEdit) ? ' • Locked' : ''}</span></span>
                                     <span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>
                                     ${amtBreakdownHtml}
                                     <span class="text-[10.5px] font-extrabold text-emerald-900 mt-0.5">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${rowUnitSuffix}</span>
@@ -15419,9 +15536,13 @@ await recordDawatEstatesNotification(
                     const rec = elecGasBillsData[k];
                     if (!rec) return;
                     const mId = String(rec.meterId || k.split('_').slice(0, -2).join('_'));
+                    // NEVER delete or touch any bill that is Locked or Manually Added/Edited!
+                    if (rec.isLocked === true || rec.isManualEdit === true) {
+                        return;
+                    }
                     const notesStr = String(rec.notes || '');
                     const isAutoNote = notesStr.toLowerCase().includes('auto-fetched');
-                    const isNoticeNote = /disconnect|notice|receipt|intimation/i.test(notesStr);
+                    const isNoticeNote = isAutoNote && /disconnect|notice|intimation/i.test(notesStr);
                     const amt = Number(rec.amount || 0);
                     const units = Number(rec.units || 0);
                     if (!validMeterIdSet.has(mId) || isNoticeNote || (isAutoNote && (amt <= 0 || units <= 0 || amt === 34))) {
@@ -15461,6 +15582,12 @@ await recordDawatEstatesNotification(
 
             const bar = document.getElementById('egBillCombinedPreviewBar');
             const txt = document.getElementById('egBillCombinedPreviewText');
+            const clear2Btn = document.getElementById('btnClearSecondBillInModal');
+            if (clear2Btn) {
+                const hasPdf2 = document.getElementById('egBillDeletePdf2Flag')?.value !== '1' && !document.getElementById('egBillExistingPdfLink2')?.classList.contains('hidden');
+                if (a2 > 0 || u2 > 0 || hasPdf2) clear2Btn.classList.remove('hidden');
+                else clear2Btn.classList.add('hidden');
+            }
             if (!bar || !txt) return;
             if (a2 > 0 || u2 > 0) {
                 const totA = Math.round((a1 + a2) * 100) / 100;
@@ -15469,6 +15596,107 @@ await recordDawatEstatesNotification(
                 bar.classList.remove('hidden');
             } else {
                 bar.classList.add('hidden');
+            }
+        };
+
+        window.updateEgBillLockBannerUI = function() {
+            const cb = document.getElementById('egBillLockCheckbox');
+            const banner = document.getElementById('egBillLockBannerBox');
+            const icon = document.getElementById('egBillLockBannerIcon');
+            const title = document.getElementById('egBillLockBannerTitle');
+            const topBadge = document.getElementById('egBillModalLockStatusBadge');
+            const isLocked = cb ? cb.checked : true;
+            if (banner) {
+                banner.className = isLocked
+                    ? 'bg-indigo-50 border-2 border-indigo-400 p-3 rounded-xl flex items-center justify-between gap-3'
+                    : 'bg-gray-50 border border-gray-300 p-3 rounded-xl flex items-center justify-between gap-3';
+            }
+            if (icon) {
+                icon.className = isLocked ? 'fa-solid fa-lock text-indigo-700' : 'fa-solid fa-lock-open text-gray-500';
+            }
+            if (title) {
+                title.innerText = isLocked
+                    ? 'Details Locked (Protected from Auto-Fetch Overwrite)'
+                    : 'Lock Details (Click to prevent Auto-Fetch from overwriting)';
+            }
+            if (topBadge) {
+                topBadge.classList.toggle('hidden', !isLocked);
+            }
+        };
+
+        window.autoCheckLockOnManualEdit = function() {
+            const cb = document.getElementById('egBillLockCheckbox');
+            if (cb && !cb.checked) {
+                cb.checked = true;
+                updateEgBillLockBannerUI();
+            }
+        };
+
+        window.deleteEgBillPdfInModal = function(slotNum) {
+            if (slotNum === 1) {
+                document.getElementById('egBillDeletePdf1Flag').value = '1';
+                const fInp = document.getElementById('egBillPdfFileInput');
+                if (fInp) fInp.value = '';
+                const existingPdfEl = document.getElementById('egBillExistingPdfLink');
+                if (existingPdfEl) {
+                    existingPdfEl.innerHTML = `<span class="text-red-600 font-extrabold text-[11px]"><i class="fa-solid fa-trash-can mr-1"></i>PDF #1 Deleted (Save Bill to confirm or upload new PDF below)</span>`;
+                    existingPdfEl.classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('egBillDeletePdf2Flag').value = '1';
+                const fInp2 = document.getElementById('egBillPdf2FileInput');
+                if (fInp2) fInp2.value = '';
+                const existingPdf2El = document.getElementById('egBillExistingPdfLink2');
+                if (existingPdf2El) {
+                    existingPdf2El.innerHTML = `<span class="text-red-600 font-extrabold text-[11px]"><i class="fa-solid fa-trash-can mr-1"></i>PDF #2 Deleted</span>`;
+                    existingPdf2El.classList.remove('hidden');
+                }
+            }
+            autoCheckLockOnManualEdit();
+            updateEgBillModalCombinedPreview();
+        };
+
+        window.handleNewEgBillPdfSelected = function(slotNum) {
+            if (slotNum === 1) {
+                document.getElementById('egBillDeletePdf1Flag').value = '0';
+            } else {
+                document.getElementById('egBillDeletePdf2Flag').value = '0';
+            }
+            autoCheckLockOnManualEdit();
+        };
+
+        window.clearSecondBillInModal = function() {
+            if (document.getElementById('egBillAmount2Input')) document.getElementById('egBillAmount2Input').value = '';
+            if (document.getElementById('egBillUnits2Input')) document.getElementById('egBillUnits2Input').value = '';
+            if (document.getElementById('egBillDate2Input')) document.getElementById('egBillDate2Input').value = '';
+            if (document.getElementById('egBillPdf2FileInput')) document.getElementById('egBillPdf2FileInput').value = '';
+            document.getElementById('egBillDeletePdf2Flag').value = '1';
+            const existingPdf2El = document.getElementById('egBillExistingPdfLink2');
+            if (existingPdf2El) {
+                existingPdf2El.innerHTML = '';
+                existingPdf2El.classList.add('hidden');
+            }
+            autoCheckLockOnManualEdit();
+            updateEgBillModalCombinedPreview();
+        };
+
+        window.openManualAddElecGasBillModal = function() {
+            if (!guardEditingRights()) return;
+            if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                elecGasMetersData = ensureDefaultElecGasMeters([]);
+            }
+            const periodCfg = getActiveElecGasPeriodConfig();
+            const defaultMeter = elecGasMetersData.find(m => selectedElecGasUtilityFilter === 'gas' ? m.utility === 'gas' : m.utility !== 'gas') || elecGasMetersData[0];
+            const defaultMonth = (periodCfg.monthIndices && periodCfg.monthIndices.length > 0) ? periodCfg.monthIndices[0] : new Date().getMonth();
+            openElecGasBillEntryModal(defaultMeter ? defaultMeter.id : 'elec_1', periodCfg.selYear || '2026', defaultMonth);
+        };
+
+        window.handleEgBillModalTargetChange = function() {
+            const mId = document.getElementById('egBillModalMeterSelect')?.value;
+            const mIdx = parseInt(document.getElementById('egBillModalMonthSelect')?.value || '0', 10);
+            const yr = document.getElementById('egBillModalYearSelect')?.value || '2026';
+            if (mId) {
+                openElecGasBillEntryModal(mId, yr, mIdx);
             }
         };
 
@@ -15483,7 +15711,11 @@ await recordDawatEstatesNotification(
                 return;
             }
 
-            const meter = elecGasMetersData.find(m => String(m.id) === String(meterId));
+            if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                elecGasMetersData = ensureDefaultElecGasMeters([]);
+            }
+
+            const meter = elecGasMetersData.find(m => String(m.id) === String(meterId)) || elecGasMetersData[0];
             if (!meter) return;
 
             const form = document.getElementById('egBillEntryForm');
@@ -15492,6 +15724,21 @@ await recordDawatEstatesNotification(
             document.getElementById('egBillMeterId').value = String(meter.id);
             document.getElementById('egBillYear').value = String(year);
             document.getElementById('egBillMonthIndex').value = String(monthIdx);
+            document.getElementById('egBillDeletePdf1Flag').value = '0';
+            document.getElementById('egBillDeletePdf2Flag').value = '0';
+
+            // Populate Meter / Month / Year selector bar inside the modal
+            const meterSel = document.getElementById('egBillModalMeterSelect');
+            if (meterSel) {
+                meterSel.innerHTML = elecGasMetersData.map((m, idx) => {
+                    const tag = m.utility === 'gas' ? 'GAS' : 'ELEC';
+                    return `<option value="${m.id}" ${String(m.id) === String(meter.id) ? 'selected' : ''}>[${tag}] ${m.location || 'Meter #' + (idx + 1)} (CA: ${m.caNumber})</option>`;
+                }).join('');
+            }
+            const monthSel = document.getElementById('egBillModalMonthSelect');
+            if (monthSel) monthSel.value = String(monthIdx);
+            const yearSel = document.getElementById('egBillModalYearSelect');
+            if (yearSel) yearSel.value = String(year);
 
             const isGas = meter.utility === 'gas';
             const unitLabel = getMeterUnitLabel(meter);
@@ -15505,7 +15752,7 @@ await recordDawatEstatesNotification(
 
             document.getElementById('egBillModalTitle').innerText = `${EG_MONTH_NAMES[monthIdx]} ${year} Bill — ${meter.location}`;
             document.getElementById('egBillModalSubtitle').innerText = `CA No: ${meter.caNumber} | Meter No: ${meter.meterNumber}`;
-            document.getElementById('egBillUnitsLabel').innerText = `Bill #1 Units (${unitLabel}) *`;
+            document.getElementById('egBillUnitsLabel').innerText = `Bill #1 Units (${unitLabel})`;
             if (document.getElementById('egBillUnits2Label')) {
                 document.getElementById('egBillUnits2Label').innerText = `Bill #2 Units (${unitLabel})`;
             }
@@ -15514,31 +15761,42 @@ await recordDawatEstatesNotification(
             const clearBtn = document.getElementById('btnClearEgBillEntry');
             const existingPdfEl = document.getElementById('egBillExistingPdfLink');
             const existingPdf2El = document.getElementById('egBillExistingPdfLink2');
+            const lockCb = document.getElementById('egBillLockCheckbox');
 
             if (rec && (rec.amount !== undefined && rec.amount !== '')) {
                 const subBills = Array.isArray(rec.subBills) ? rec.subBills : [];
                 const b1Amt = subBills.length >= 2 ? subBills[0].amount : (rec.amount1 !== undefined ? rec.amount1 : rec.amount);
                 const b1Units = subBills.length >= 2 ? subBills[0].units : (rec.units1 !== undefined ? rec.units1 : (rec.units ?? ''));
-                const b1Date = subBills.length >= 1 ? (subBills[0].billDate || rec.billDate || '') : (rec.billDate || '');
+                const b1Date = normalizeDateToIso(subBills.length >= 1 ? (subBills[0].billDate || rec.billDate || '') : (rec.billDate || ''), '');
                 const b1Pdf = subBills.length >= 1 ? (subBills[0].fileUrl || rec.fileUrl || '') : (rec.fileUrl || '');
 
                 const b2Amt = subBills.length >= 2 ? subBills[1].amount : (rec.amount2 || '');
                 const b2Units = subBills.length >= 2 ? subBills[1].units : (rec.units2 || '');
-                const b2Date = subBills.length >= 2 ? (subBills[1].billDate || rec.billDate2 || '') : (rec.billDate2 || '');
+                const b2Date = (subBills.length >= 2 || rec.billDate2)
+                    ? normalizeDateToIso(subBills.length >= 2 ? (subBills[1].billDate || rec.billDate2 || '') : (rec.billDate2 || ''), '')
+                    : '';
                 const b2Pdf = subBills.length >= 2 ? (subBills[1].fileUrl || rec.fileUrl2 || '') : (rec.fileUrl2 || '');
 
                 document.getElementById('egBillAmountInput').value = b1Amt;
                 document.getElementById('egBillUnitsInput').value = b1Units;
                 document.getElementById('egBillDateInput').value = b1Date;
                 if (document.getElementById('egBillAmount2Input')) document.getElementById('egBillAmount2Input').value = b2Amt ? b2Amt : '';
-                if (document.getElementById('egBillUnits2Input')) document.getElementById('egBillUnits2Input').value = b2Units !== '' && b2Units !== undefined ? b2Units : '';
+                if (document.getElementById('egBillUnits2Input')) document.getElementById('egBillUnits2Input').value = b2Units !== '' && b2Units !== undefined && Number(b2Amt || 0) > 0 ? b2Units : '';
                 if (document.getElementById('egBillDate2Input')) document.getElementById('egBillDate2Input').value = b2Date;
                 document.getElementById('egBillNotesInput').value = rec.notes || '';
+
+                // Default Lock checkbox to true so saving any edit in the modal locks the details against Auto-Fetch overwrite
+                if (lockCb) lockCb.checked = true;
 
                 if (clearBtn) clearBtn.classList.remove('hidden');
                 if (existingPdfEl) {
                     if (b1Pdf) {
-                        existingPdfEl.innerHTML = `<a href="${b1Pdf}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>View PDF 1</a>`;
+                        existingPdfEl.innerHTML = `
+                            <a href="${b1Pdf}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-extrabold underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF 1</a>
+                            <button type="button" onclick="deleteEgBillPdfInModal(1)" class="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-0.5 rounded font-extrabold text-[10px] inline-flex items-center space-x-1 transition" title="Delete attached PDF 1">
+                                <i class="fa-solid fa-trash-can"></i><span>Delete PDF 1</span>
+                            </button>
+                        `;
                         existingPdfEl.classList.remove('hidden');
                     } else {
                         existingPdfEl.innerHTML = '';
@@ -15547,7 +15805,12 @@ await recordDawatEstatesNotification(
                 }
                 if (existingPdf2El) {
                     if (b2Pdf) {
-                        existingPdf2El.innerHTML = `<a href="${b2Pdf}" target="_blank" rel="noopener noreferrer" class="text-orange-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>View PDF 2</a>`;
+                        existingPdf2El.innerHTML = `
+                            <a href="${b2Pdf}" target="_blank" rel="noopener noreferrer" class="text-orange-800 font-extrabold underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF 2</a>
+                            <button type="button" onclick="deleteEgBillPdfInModal(2)" class="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-0.5 rounded font-extrabold text-[10px] inline-flex items-center space-x-1 transition" title="Delete attached PDF 2">
+                                <i class="fa-solid fa-trash-can"></i><span>Delete PDF 2</span>
+                            </button>
+                        `;
                         existingPdf2El.classList.remove('hidden');
                     } else {
                         existingPdf2El.innerHTML = '';
@@ -15562,6 +15825,7 @@ await recordDawatEstatesNotification(
                 if (document.getElementById('egBillUnits2Input')) document.getElementById('egBillUnits2Input').value = '';
                 if (document.getElementById('egBillDate2Input')) document.getElementById('egBillDate2Input').value = '';
                 document.getElementById('egBillNotesInput').value = '';
+                if (lockCb) lockCb.checked = true;
                 if (clearBtn) clearBtn.classList.add('hidden');
                 if (existingPdfEl) {
                     existingPdfEl.innerHTML = '';
@@ -15573,6 +15837,7 @@ await recordDawatEstatesNotification(
                 }
             }
 
+            updateEgBillLockBannerUI();
             updateEgBillModalCombinedPreview();
 
             const saveBtn = document.getElementById('btnSaveEgBillEntry');
@@ -15588,28 +15853,42 @@ await recordDawatEstatesNotification(
             e.preventDefault();
             if (!guardEditingRights()) return;
 
-            const meterId = document.getElementById('egBillMeterId').value;
-            const year = document.getElementById('egBillYear').value;
-            const monthIdx = parseInt(document.getElementById('egBillMonthIndex').value, 10);
+            // Prevent focus/onValue listeners from overwriting elecGasBillsData while uploading PDF or saving
+            isSavingPortalData = true;
+
+            const meterId = document.getElementById('egBillModalMeterSelect')?.value || document.getElementById('egBillMeterId').value;
+            const year = String(document.getElementById('egBillModalYearSelect')?.value || document.getElementById('egBillYear').value || '2026');
+            const monthIdx = parseInt(document.getElementById('egBillModalMonthSelect')?.value ?? document.getElementById('egBillMonthIndex').value, 10);
 
             const amount1Val = parseFloat(document.getElementById('egBillAmountInput').value) || 0;
             const units1Val = parseFloat(document.getElementById('egBillUnitsInput').value) || 0;
-            const billDate = document.getElementById('egBillDateInput').value;
+            const billDate = document.getElementById('egBillDateInput').value || new Date().toISOString().split('T')[0];
             const pdfFile = document.getElementById('egBillPdfFileInput').files[0];
+            const deletePdf1 = document.getElementById('egBillDeletePdf1Flag')?.value === '1';
 
             const amount2Val = parseFloat(document.getElementById('egBillAmount2Input')?.value || '0') || 0;
             const units2Val = parseFloat(document.getElementById('egBillUnits2Input')?.value || '0') || 0;
             const billDate2 = document.getElementById('egBillDate2Input')?.value || '';
             const pdf2File = document.getElementById('egBillPdf2FileInput')?.files[0];
+            const deletePdf2 = document.getElementById('egBillDeletePdf2Flag')?.value === '1';
 
-            const notes = document.getElementById('egBillNotesInput').value.trim();
+            const isLocked = document.getElementById('egBillLockCheckbox') ? Boolean(document.getElementById('egBillLockCheckbox').checked) : true;
+            let rawNotes = document.getElementById('egBillNotesInput').value.trim();
+            // Strip "Auto-fetched" prefix when user manually saves/locks so cleanup never treats it as unverified auto-fetch
+            if (isLocked && /^auto-fetched/i.test(rawNotes)) {
+                rawNotes = rawNotes.replace(/^auto-fetched/i, 'Manually verified (originally auto-fetched)');
+            }
 
             const key = getElecGasBillKey(meterId, year, monthIdx);
             const existingRec = (elecGasBillsData && elecGasBillsData[key]) ? elecGasBillsData[key] : null;
             const existingSubs = (existingRec && Array.isArray(existingRec.subBills)) ? existingRec.subBills : [];
 
-            let fileUrl = (existingSubs[0] && existingSubs[0].fileUrl) ? existingSubs[0].fileUrl : (existingRec ? (existingRec.fileUrl || '') : '');
-            let fileUrl2 = (existingSubs[1] && existingSubs[1].fileUrl) ? existingSubs[1].fileUrl : (existingRec ? (existingRec.fileUrl2 || '') : '');
+            let fileUrl = deletePdf1
+                ? ''
+                : ((existingSubs[0] && existingSubs[0].fileUrl) ? existingSubs[0].fileUrl : (existingRec ? (existingRec.fileUrl || '') : ''));
+            let fileUrl2 = deletePdf2
+                ? ''
+                : ((existingSubs[1] && existingSubs[1].fileUrl) ? existingSubs[1].fileUrl : (existingRec ? (existingRec.fileUrl2 || '') : ''));
 
             const saveBtn = document.getElementById('btnSaveEgBillEntry');
             if (saveBtn) {
@@ -15623,12 +15902,8 @@ await recordDawatEstatesNotification(
                     const uploadRes = await uploadFileToDrive(pdfFile);
                     fileUrl = (uploadRes && (uploadRes.fileUrl || uploadRes.url || uploadRes.directImgUrl)) || '';
                 } catch (err) {
-                    showAssetToast("PDF 1 Upload failed: " + err, true);
-                    if (saveBtn) {
-                        saveBtn.disabled = false;
-                        saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Bill</span>';
-                    }
-                    return;
+                    console.warn("PDF 1 Upload warning:", err);
+                    showAssetToast("Note: Bill details saved, but PDF 1 Drive upload failed (" + err + "). Check Apps Script URL.", true);
                 }
             }
 
@@ -15638,12 +15913,8 @@ await recordDawatEstatesNotification(
                     const uploadRes2 = await uploadFileToDrive(pdf2File);
                     fileUrl2 = (uploadRes2 && (uploadRes2.fileUrl || uploadRes2.url || uploadRes2.directImgUrl)) || '';
                 } catch (err) {
-                    showAssetToast("PDF 2 Upload failed: " + err, true);
-                    if (saveBtn) {
-                        saveBtn.disabled = false;
-                        saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Bill</span>';
-                    }
-                    return;
+                    console.warn("PDF 2 Upload warning:", err);
+                    showAssetToast("Note: Bill details saved, but PDF 2 Drive upload failed (" + err + ").", true);
                 }
             }
 
@@ -15660,7 +15931,7 @@ await recordDawatEstatesNotification(
                     billDate: billDate || '',
                     amount: amount1Val,
                     units: units1Val,
-                    fileUrl: fileUrl
+                    fileUrl: fileUrl || ''
                 }
             ];
             if (amount2Val > 0 || units2Val > 0 || fileUrl2) {
@@ -15669,12 +15940,15 @@ await recordDawatEstatesNotification(
                     billDate: billDate2 || '',
                     amount: amount2Val,
                     units: units2Val,
-                    fileUrl: fileUrl2
+                    fileUrl: fileUrl2 || ''
                 });
             }
 
+            const meterObj = elecGasMetersData.find(m => String(m.id) === String(meterId));
+
             elecGasBillsData[key] = {
-                meterId,
+                meterId: String(meterId),
+                caNumber: meterObj ? (meterObj.caNumber || '') : '',
                 year: String(year),
                 monthIndex: monthIdx,
                 amount: amountVal,
@@ -15683,30 +15957,63 @@ await recordDawatEstatesNotification(
                 units1: units1Val,
                 amount2: amount2Val,
                 units2: units2Val,
-                billDate,
-                billDate2,
-                notes,
-                fileUrl,
-                fileUrl2,
+                billDate: billDate || '',
+                billDate2: billDate2 || '',
+                notes: rawNotes || (isLocked ? 'Manually saved & locked' : ''),
+                fileUrl: fileUrl || '',
+                fileUrl2: fileUrl2 || '',
                 subBills,
+                isLocked: isLocked,
+                isManualEdit: true,
                 updatedAt: new Date().toISOString()
             };
 
-            const meterObj = elecGasMetersData.find(m => String(m.id) === String(meterId));
+            // Ensure the saved Year, Month, Utility filter, and Status filter on the main view page show the newly saved cell immediately!
+            const mainYearEl = document.getElementById('egYearSelect');
+            if (mainYearEl && mainYearEl.value !== String(year)) {
+                mainYearEl.value = String(year);
+            }
+            const statusFilterEl = document.getElementById('egStatusFilter');
+            if (statusFilterEl && statusFilterEl.value === 'pending_current') {
+                statusFilterEl.value = '';
+            }
+            const periodCfg = getActiveElecGasPeriodConfig();
+            if (!periodCfg.monthIndices.includes(monthIdx)) {
+                const targetQuarter = Math.floor(monthIdx / 3) + 1;
+                if (periodCfg.mode === 'monthly') {
+                    const mSel = document.getElementById('egMonthSelect');
+                    if (mSel) mSel.value = String(monthIdx);
+                } else if (periodCfg.mode === 'quarterly') {
+                    const qSel = document.getElementById('egQuarterSelect');
+                    if (qSel) qSel.value = String(targetQuarter);
+                }
+            }
+            if (meterObj) {
+                const mUtil = meterObj.utility === 'gas' ? 'gas' : 'electricity';
+                if (selectedElecGasUtilityFilter !== 'all' && selectedElecGasUtilityFilter !== mUtil) {
+                    setElecGasUtilityFilter('all');
+                }
+            }
+
             const utilLabel = (meterObj && meterObj.utility === 'gas') ? 'Mahanagar Gas' : 'Adani Electricity';
             const unitLabel = getMeterUnitLabel(meterObj);
             const locLabel = meterObj ? `${meterObj.location} (CA: ${meterObj.caNumber})` : meterId;
             const actionVerb = (existingRec && existingRec.amount > 0) ? 'Updated' : 'Added';
+
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Bill</span>';
+            }
 
             closeModal('modalElecGasBillEntry');
             renderElecGasModule();
             await saveCloudData();
             await recordElecGasNotification(
                 existingRec ? 'edit-bill' : 'add-bill',
-                `${actionVerb} ${utilLabel} bill for ${locLabel} — ${EG_MONTH_NAMES[monthIdx]} ${year}: ₹${(isNaN(amountVal) ? 0 : amountVal).toLocaleString('en-IN')}`,
+                `${actionVerb} ${utilLabel} bill for ${locLabel} — ${EG_MONTH_NAMES[monthIdx]} ${year}: ₹${(isNaN(amountVal) ? 0 : amountVal).toLocaleString('en-IN')}${isLocked ? ' (Locked)' : ''}`,
                 `Units: ${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${unitLabel}${fileUrl ? ' | PDF Bill Attached' : ''}`
             );
-            showAssetToast(`Updated ${EG_MONTH_NAMES[monthIdx]} ${year} bill (Turned Green)`);
+            showAssetToast(`Saved ${EG_MONTH_NAMES[monthIdx]} ${year} bill${isLocked ? ' & Locked details against Auto-Fetch overwrite' : ''}!`);
         };
 
         async function recordElecGasNotification(actionType, detailText, scheduleSummary = '') {
@@ -15754,14 +16061,23 @@ await recordDawatEstatesNotification(
 
         window.clearElecGasMonthlyBill = async function() {
             if (!guardEditingRights()) return;
-            const meterId = document.getElementById('egBillMeterId').value;
-            const year = document.getElementById('egBillYear').value;
-            const monthIdx = parseInt(document.getElementById('egBillMonthIndex').value, 10);
+            isSavingPortalData = true;
+            const meterId = document.getElementById('egBillModalMeterSelect')?.value || document.getElementById('egBillMeterId').value;
+            const year = String(document.getElementById('egBillModalYearSelect')?.value || document.getElementById('egBillYear').value || '2026');
+            const monthIdx = parseInt(document.getElementById('egBillModalMonthSelect')?.value ?? document.getElementById('egBillMonthIndex').value, 10);
             const key = getElecGasBillKey(meterId, year, monthIdx);
 
             if (elecGasBillsData && elecGasBillsData[key]) {
                 delete elecGasBillsData[key];
             }
+            try {
+                const cachedRaw = localStorage.getItem('siyanat_elec_gas_bills_cache');
+                const cached = cachedRaw ? JSON.parse(cachedRaw) : {};
+                if (cached && typeof cached === 'object') {
+                    delete cached[key];
+                    localStorage.setItem('siyanat_elec_gas_bills_cache', JSON.stringify(cached));
+                }
+            } catch (e) {}
             closeModal('modalElecGasBillEntry');
             renderElecGasModule();
             await saveCloudData();
@@ -16527,6 +16843,12 @@ await recordDawatEstatesNotification(
                             const billKey = getElecGasBillKey(matchedMeter.id, parsedBill.yearStr, parsedBill.monthIdx);
                             const existingRec = elecGasBillsData[billKey];
                             const caClean = String(matchedMeter.caNumber || matchedMeter.meterNumber || matchedMeter.id).trim();
+
+                            // STRICT LOCK & MANUAL EDIT PROTECTION:
+                            // Never overwrite or re-add old PDFs/details to any bill that was manually added, edited, or locked!
+                            if (existingRec && (existingRec.isLocked === true || existingRec.isManualEdit === true)) {
+                                continue;
+                            }
 
                             if (!item.isGasEmail) {
                                 // ADANI ELECTRICITY (1 Bill per Month, requires units > 0)

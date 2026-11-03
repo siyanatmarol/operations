@@ -4148,6 +4148,36 @@
             </div>
 
             <div class="space-y-3 text-xs text-gray-700 leading-relaxed">
+                <!-- Connected Google Apps Script Web App URL Box (Synced to Firebase) -->
+                <div class="bg-emerald-50 border-2 border-emerald-400 p-3.5 rounded-xl space-y-2 shadow-sm">
+                    <div class="flex flex-wrap justify-between items-center gap-1">
+                        <label for="egAppsScriptUrlInput" class="font-extrabold text-emerald-950 text-xs sm:text-sm flex items-center space-x-1.5">
+                            <i class="fa-solid fa-link text-emerald-700"></i>
+                            <span>Connected Apps Script Web App URL (Paste URL from Manage Deployments):</span>
+                        </label>
+                        <span class="bg-emerald-200 text-emerald-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Synced Across Devices</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-900">
+                        In Google Apps Script &rarr; <strong>Deploy &rarr; Manage deployments</strong>, click <strong>Copy</strong> under <strong>Web app URL</strong> (e.g. <code class="bg-white px-1 py-0.5 rounded border font-mono">https://script.google.com/macros/s/AKfycbzmdma.../exec</code>) and paste it here so the portal calls your latest Version 5 deployment:
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input
+                            type="url"
+                            id="egAppsScriptUrlInput"
+                            placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                            class="flex-grow p-2 border-2 border-emerald-400 rounded-lg font-mono text-xs bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        >
+                        <button
+                            type="button"
+                            onclick="saveAppsScriptWebAppUrl(true)"
+                            class="bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold px-4 py-2 rounded-lg text-xs transition shadow-sm whitespace-nowrap flex items-center justify-center space-x-1.5"
+                        >
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Save URL &amp; Test Sync</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl space-y-1.5">
                     <p class="font-extrabold text-indigo-950 text-sm"><i class="fa-solid fa-circle-info mr-1.5"></i>How Daily Auto-Fetch Works (100% Free via Your Existing fm.marol Google Apps Script)</p>
                     <p>Because Adani Electricity and Mahanagar Gas protect their public web portals with CAPTCHA/OTP and browser CORS blocks direct webpage scraping, the most reliable automated architecture uses your existing <strong>fm.marol Google Apps Script</strong> running on a <strong>Daily Time-Driven Trigger</strong>:</p>
@@ -4275,20 +4305,21 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
   var metersModified = false;
   var discoveredCaCount = 0;
 
-  // Pre-populate any placeholder meter slots from Dawat Estates elecCA / gasCA if present
+  // Pre-populate any placeholder meter slots from Dawat Estates elec / gas CA numbers if present
   for (var eIdx = 0; eIdx < estatesList.length; eIdx++) {
     var est = estatesList[eIdx];
     if (!est) continue;
-    var flatLoc = ((est.bldgName || "") + (est.flatNo ? " - Flat " + est.flatNo : "")).trim();
-    if (est.elecCA && String(est.elecCA).trim().length >= 6) {
-      if (findOrAssignMeterForCa_(meters, String(est.elecCA).trim(), false, flatLoc, "")) {
-        metersModified = true;
-      }
+    var bldg = est.building || est.bldgName || "";
+    var flatLoc = (bldg + (est.flatNo ? " - Flat " + est.flatNo : "")).trim();
+    var elecCaVal = String(est.elec || est.elecCA || "").trim();
+    var gasCaVal = String(est.gas || est.gasCA || "").trim();
+    if (elecCaVal && elecCaVal.length >= 6) {
+      var eRes = findOrAssignMeterForCa_(meters, elecCaVal, false, flatLoc, "");
+      if (eRes && eRes.wasNew) metersModified = true;
     }
-    if (est.gasCA && String(est.gasCA).trim().length >= 6) {
-      if (findOrAssignMeterForCa_(meters, String(est.gasCA).trim(), true, flatLoc, "")) {
-        metersModified = true;
-      }
+    if (gasCaVal && gasCaVal.length >= 6) {
+      var gRes = findOrAssignMeterForCa_(meters, gasCaVal, true, flatLoc, "");
+      if (gRes && gRes.wasNew) metersModified = true;
     }
   }
 
@@ -4797,7 +4828,8 @@ function getOrCreateUtilityFolder_(name) {
             console.warn("[Auth] getRedirectResult info:", err);
         });
 
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
+        const DEFAULT_GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzA5ERKzoxtMeCivvRhtMMRDT9_x06fngwXQnuzJTNaYKMLN4kIpXI-UU5ONXPFzSwz/exec";
+        let GOOGLE_SCRIPT_URL = localStorage.getItem('siyanat_google_script_url') || DEFAULT_GOOGLE_SCRIPT_URL;
         let currentUser = null;
         let currentUserPermissions = [1, 2, 3, 4, 5, 6, 7, 8];
         let currentUserModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
@@ -5678,6 +5710,12 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     usersList = normalizeUsersList(data.users || usersList);
                     if (data.watiConfig) {
                         watiConfig = normalizeWatiConfig(data.watiConfig);
+                    }
+                    if (data.googleScriptUrl && String(data.googleScriptUrl).trim().startsWith('https://script.google.com/')) {
+                        GOOGLE_SCRIPT_URL = String(data.googleScriptUrl).trim();
+                        localStorage.setItem('siyanat_google_script_url', GOOGLE_SCRIPT_URL);
+                        const urlInp = document.getElementById('egAppsScriptUrlInput');
+                        if (urlInp) urlInp.value = GOOGLE_SCRIPT_URL;
                     }
                     keysInventoryData = data.keys || [];
                     try {
@@ -6838,7 +6876,8 @@ window.loadClassroomsFromCloud = async function() {
             watiConfig: watiConfig,
             estate_assets: estateAssetsData,
             elecGasMeters: elecGasMetersData,
-            elecGasBills: elecGasBillsData
+            elecGasBills: elecGasBillsData,
+            googleScriptUrl: GOOGLE_SCRIPT_URL
         });
         await Promise.allSettled([
             set(dbRef(db, 'classrooms'), classroomsData),
@@ -15865,7 +15904,28 @@ await recordDawatEstatesNotification(
         };
 
         window.openElecGasAutoFetchModal = function() {
+            const urlInp = document.getElementById('egAppsScriptUrlInput');
+            if (urlInp) {
+                urlInp.value = GOOGLE_SCRIPT_URL || DEFAULT_GOOGLE_SCRIPT_URL;
+            }
             document.getElementById('modalElecGasAutoFetchGuide').classList.remove('hidden');
+        };
+
+        window.saveAppsScriptWebAppUrl = async function(runTestSync = false) {
+            const urlInp = document.getElementById('egAppsScriptUrlInput');
+            const rawUrl = (urlInp ? urlInp.value : '').trim();
+            if (!rawUrl || !rawUrl.startsWith('https://script.google.com/macros/s/')) {
+                showAssetToast("Please paste a valid Google Apps Script Web App URL starting with https://script.google.com/macros/s/...", true);
+                return;
+            }
+            GOOGLE_SCRIPT_URL = rawUrl;
+            localStorage.setItem('siyanat_google_script_url', GOOGLE_SCRIPT_URL);
+            await saveCloudData();
+            showAssetToast("Saved new Apps Script Web App URL to Cloud!");
+            if (runTestSync) {
+                closeModal('modalElecGasAutoFetchGuide');
+                await triggerAutoFetchUtilityBills();
+            }
         };
 
         window.copyAutoFetchAppsScriptCode = function() {
@@ -15892,6 +15952,13 @@ await recordDawatEstatesNotification(
                 btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Syncing 365d Bills...</span>';
             }
             try {
+                // If user typed a new URL in the setup modal input, adopt it immediately
+                const urlInp = document.getElementById('egAppsScriptUrlInput');
+                if (urlInp && urlInp.value.trim().startsWith('https://script.google.com/macros/s/')) {
+                    GOOGLE_SCRIPT_URL = urlInp.value.trim();
+                    localStorage.setItem('siyanat_google_script_url', GOOGLE_SCRIPT_URL);
+                }
+
                 // 1. Ensure default/current meters array is persisted in Firebase before Apps Script reads it
                 if (!elecGasMetersData || elecGasMetersData.length === 0) {
                     elecGasMetersData = ensureDefaultElecGasMeters([]);
@@ -15923,8 +15990,8 @@ await recordDawatEstatesNotification(
                     showAssetToast(`Auto-Fetch Complete: ${cnt} bill(s) pulled from ${threads} email thread(s)${newCas > 0 ? ' (' + newCas + ' CA numbers auto-detected)' : ''}!`);
                 } else if (scriptResult && scriptResult.status === 'error') {
                     const errMsg = String(scriptResult.message || '');
-                    if (errMsg.includes('base64') || errMsg.includes('null')) {
-                        showAssetToast("Apps Script is still running the OLD deployment! In Apps Script, click Deploy -> Manage deployments -> Edit -> Version: New version -> Deploy.", true);
+                    if (errMsg.includes('base64Decode')) {
+                        showAssetToast("Deployment URL Mismatch or Duplicate doPost(): Open 'Auto-Fetch Setup', paste your active Version 5 Web App URL, and ensure Code.gs has only ONE doPost(e). Raw error: " + errMsg, true);
                     } else if (errMsg.includes('permission') || errMsg.includes('Authorization') || errMsg.includes('GmailApp')) {
                         showAssetToast("Gmail Permission Needed: In Apps Script editor, select 'autoFetchAdaniAndMglBillsDaily' in the top bar and click Run once to Allow Gmail access.", true);
                     } else {

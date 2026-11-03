@@ -3970,9 +3970,9 @@
         </div>
     </div>
 
-    <!-- Modal: Add / Update Monthly Electricity or Gas Bill Entry -->
+    <!-- Modal: Add / Update Monthly Electricity or Gas Bill Entry (Supports 1 or 2 Bills per Month for MGL Gas) -->
     <div id="modalElecGasBillEntry" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto">
             <div class="flex justify-between items-start border-b pb-3">
                 <div>
                     <span id="egBillModalUtilityBadge" class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">Adani Electricity</span>
@@ -3986,36 +3986,73 @@
                 <input type="hidden" id="egBillYear" value="">
                 <input type="hidden" id="egBillMonthIndex" value="">
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-bold text-gray-700 block mb-1">Bill Amount (₹) *</label>
-                        <input type="number" step="0.01" min="0" id="egBillAmountInput" required placeholder="e.g. 14500" class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-sm font-extrabold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600">
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-gray-700 block mb-1" id="egBillUnitsLabel">Units Consumed (kWh) *</label>
-                        <input type="number" step="0.01" min="0" id="egBillUnitsInput" required placeholder="e.g. 1250" class="w-full p-2.5 border rounded-lg text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-600">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Bill Date <span class="text-gray-400 font-normal">(Optional)</span></label>
-                        <input type="date" id="egBillDateInput" class="w-full p-2 border rounded-lg text-xs">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600 block mb-1">Notes / Reference <span class="text-gray-400 font-normal">(Optional)</span></label>
-                        <input type="text" id="egBillNotesInput" placeholder="e.g. Paid via NEFT / Auto-fetched" class="w-full p-2 border rounded-lg text-xs">
-                    </div>
-                </div>
-
-                <div class="bg-emerald-50 p-3.5 rounded-lg border border-emerald-200 space-y-2">
+                <!-- BILL 1 SECTION -->
+                <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-3">
                     <div class="flex justify-between items-center">
-                        <label class="text-xs font-bold text-emerald-950 block">
-                            <i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>Attach Bill PDF (Saved in fm.marol Drive)
-                        </label>
+                        <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wider" id="egBill1SectionHeading">Bill #1 Details</span>
                         <span id="egBillExistingPdfLink" class="hidden text-xs"></span>
                     </div>
-                    <input type="file" id="egBillPdfFileInput" accept=".pdf,image/*,application/pdf" class="w-full text-xs border p-2 rounded bg-white">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-1">Bill #1 Amount (₹) *</label>
+                            <input type="number" step="0.01" min="0" id="egBillAmountInput" required oninput="updateEgBillModalCombinedPreview()" placeholder="e.g. 14500" class="w-full p-2.5 border-2 border-emerald-500 rounded-lg text-sm font-extrabold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-1" id="egBillUnitsLabel">Units Consumed (kWh) *</label>
+                            <input type="number" step="0.01" min="0" id="egBillUnitsInput" required oninput="updateEgBillModalCombinedPreview()" placeholder="e.g. 1250" class="w-full p-2.5 border rounded-lg text-sm font-bold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Bill #1 Date <span class="text-gray-400 font-normal">(Optional)</span></label>
+                            <input type="date" id="egBillDateInput" class="w-full p-2 border rounded-lg text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Attach Bill #1 PDF</label>
+                            <input type="file" id="egBillPdfFileInput" accept=".pdf,image/*,application/pdf" class="w-full text-[11px] border p-1.5 rounded bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BILL 2 SECTION (For Mahanagar Gas 2nd Bill in Same Month, e.g. 1st & 17th) -->
+                <div id="egBill2SectionBox" class="bg-orange-50/70 p-3.5 rounded-xl border border-orange-200 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-extrabold text-orange-950 uppercase tracking-wider">
+                            <i class="fa-solid fa-file-circle-plus text-orange-600 mr-1"></i>2nd Bill in Same Month <span class="text-[10px] font-semibold text-orange-800 normal-case">(e.g. MGL 1st &amp; 17th Bills — Optional)</span>
+                        </span>
+                        <span id="egBillExistingPdfLink2" class="hidden text-xs"></span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-1">Bill #2 Amount (₹)</label>
+                            <input type="number" step="0.01" min="0" id="egBillAmount2Input" oninput="updateEgBillModalCombinedPreview()" placeholder="Leave blank if only 1 bill" class="w-full p-2 border border-orange-300 rounded-lg text-sm font-extrabold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 block mb-1" id="egBillUnits2Label">Bill #2 Units (SCM)</label>
+                            <input type="number" step="0.01" min="0" id="egBillUnits2Input" oninput="updateEgBillModalCombinedPreview()" placeholder="Leave blank if only 1 bill" class="w-full p-2 border border-orange-300 rounded-lg text-sm font-bold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Bill #2 Date <span class="text-gray-400 font-normal">(Optional)</span></label>
+                            <input type="date" id="egBillDate2Input" class="w-full p-2 border rounded-lg text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1">Attach Bill #2 PDF</label>
+                            <input type="file" id="egBillPdf2FileInput" accept=".pdf,image/*,application/pdf" class="w-full text-[11px] border p-1.5 rounded bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMBINED TOTAL PREVIEW BANNER (Shown when 2 bills are entered) -->
+                <div id="egBillCombinedPreviewBar" class="hidden bg-emerald-100 border-2 border-emerald-500 px-3.5 py-2 rounded-lg flex justify-between items-center text-xs font-extrabold text-emerald-950">
+                    <span>Combined Month Total (Bill 1 + Bill 2):</span>
+                    <span id="egBillCombinedPreviewText">₹0 | 0 SCM</span>
+                </div>
+
+                <div>
+                    <label class="text-xs font-semibold text-gray-600 block mb-1">Notes / Reference <span class="text-gray-400 font-normal">(Optional)</span></label>
+                    <input type="text" id="egBillNotesInput" placeholder="e.g. Paid via NEFT / Auto-fetched" class="w-full p-2 border rounded-lg text-xs">
                 </div>
 
                 <div class="flex justify-between items-center pt-3 border-t">
@@ -4205,12 +4242,11 @@
 // ============================================================================
 // COMPLETE Code.gs FOR SIYANAT MAROL PORTAL (fm.marol@jameasaifiyah.edu)
 // 1) Preserves your exact original Siyanat_Marol_Uploads Drive Uploader (images, videos, PDFs)
-// 2) Auto-fetches Adani Electricity (ebill.mumbaielectricity@adanielectricity.co)
-//    & Mahanagar Gas (icpngbill@mahanagargas.com) bills:
-//    - STRICTLY matches ONLY the CA Numbers & Meter Numbers in your Electricity & Gas module
-//      (NEVER creates or adds new meters on its own, and NEVER pulls from Dawat Estates)
-//    - Rejects Disconnection Notices, Payment Receipts & non-bill documents
-//    - Reads the actual attached Bill PDF to extract Amount & Units (kWh / kVAh / SCM)
+// 2) Full 365-Day (Jan–Dec) Auto-Fetch for Adani Electricity & Mahanagar Gas:
+//    - Queries ONLY your configured 27 Electricity CAs & 7 Gas Meters (never adds extra meters!)
+//    - Scans ALL months (including May–Nov/Dec 2026) via fast 2-step attachment indexing
+//    - Strictly rejects Disconnection Notices, Receipts & non-bill documents
+//    - Combines 2 MGL Gas bills in the same month (e.g. 1st & 17th) with 2 PDFs + summed Amount & SCM
 // ============================================================================
 var FIREBASE_DB_URL = "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app";
 var DRIVE_BILLS_FOLDER_NAME = "Siyanat_Utility_Bills_Auto";
@@ -4219,21 +4255,40 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
 
-    // 1. Webpage "Auto-Fetch Sync" Batch PDF Reader Endpoint:
-    // Returns candidate Bill PDFs in batches so the webpage's PDF engine reads the exact PDF text
-    if (data.action === "fetchCandidateBillPdfs") {
-      var batchRes = fetchCandidateBillPdfsBatch_(
+    // 1. Step 1 of Webpage Sync: Quickly list ALL matching Adani & MGL bill attachments across all 365 days (Jan-Dec)
+    if (data.action === "listUtilityBillAttachments") {
+      var listRes = listAllUtilityBillAttachments_(
         Number(data.lookbackDays || 365),
-        Number(data.offset || 0),
-        Number(data.limit || 10),
         data.configuredMeters || []
       );
-      return ContentService.createTextOutput(JSON.stringify(batchRes))
+      return ContentService.createTextOutput(JSON.stringify(listRes))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 2. Webpage Verified Bill PDF Drive Saver Endpoint:
-    // Saves a verified Bill PDF to fm.marol Drive only after Amount, Units & CA/Meter match are confirmed
+    // 2. Step 2 of Webpage Sync: Fetch base64 PDF bytes for a small batch of attachment descriptors
+    if (data.action === "getBillPdfsByDescriptors") {
+      var pdfsRes = getBillPdfsByDescriptors_(data.descriptors || []);
+      return ContentService.createTextOutput(JSON.stringify(pdfsRes))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 3. Backward-compatible single-batch endpoint
+    if (data.action === "fetchCandidateBillPdfs") {
+      var listCompat = listAllUtilityBillAttachments_(Number(data.lookbackDays || 365), data.configuredMeters || []);
+      var sliceStart = Number(data.offset || 0);
+      var sliceLim = Number(data.limit || 5);
+      var sliceDesc = (listCompat.attachments || []).slice(sliceStart, sliceStart + sliceLim);
+      var sliceWithBase64 = getBillPdfsByDescriptors_(sliceDesc).items || [];
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        threadsCount: sliceDesc.length,
+        hasMore: (sliceStart + sliceLim) < (listCompat.attachments || []).length,
+        nextOffset: sliceStart + sliceLim,
+        items: sliceWithBase64
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 4. Save a verified Bill PDF to fm.marol Drive and return its shareable URL
     if (data.action === "saveVerifiedUtilityBillPdf") {
       var savedUrl = saveVerifiedBillPdfToDrive_(data);
       return ContentService.createTextOutput(JSON.stringify({
@@ -4242,7 +4297,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 3. Direct / Daily Trigger Sync Endpoint:
+    // 5. Direct / Daily Trigger Sync Endpoint:
     if (data.action === "autoFetchUtilityBills") {
       var syncResult = autoFetchAdaniAndMglBillsDaily(data.lookbackDays || 365);
       return ContentService.createTextOutput(JSON.stringify({
@@ -4297,83 +4352,189 @@ function doPost(e) {
   }
 }
 
-// Helper: Check if subject or filename is a Disconnection Notice, Receipt, or non-bill
+// Helper: Strictly reject Disconnection Notices, Receipts, Intimations, or Non-Bill emails
 function isNonBillNoticeOrReceipt_(text) {
-  return /disconnection|notice\s*u\/s|section\s*56|payment\s*receipt|acknowledgement|intimation|warning|default\s*notice|reminder/i.test(String(text || ""));
+  return /\bdisconnect|disconnection|notice\s*u\/s|section\s*56|u\/s\s*56|payment\s*receipt|acknowledgement|intimation|warning|default\s*notice|security\s*deposit\s*notice|reminder/i.test(String(text || ""));
 }
 
-// Endpoint 1: Fetch candidate PDF attachments from Gmail in batches for 100% accurate PDF parsing
-function fetchCandidateBillPdfsBatch_(lookbackDays, offset, limit, clientMeters) {
-  var meters = Array.isArray(clientMeters) && clientMeters.length > 0 ? clientMeters : loadConfiguredMetersFromFirebase_();
+// Step 1: Fast full-year index of all matching Adani & MGL bill PDF attachments across ALL months (Jan-Dec)
+function listAllUtilityBillAttachments_(lookbackDays, clientMeters) {
+  var meters = (Array.isArray(clientMeters) && clientMeters.length > 0) ? clientMeters : loadConfiguredMetersFromFirebase_();
 
-  // Build lookup of configured Electricity CA numbers so Adani emails for unknown CAs are skipped immediately
   var configuredElecCas = {};
+  var elecCaList = [];
   for (var i = 0; i < meters.length; i++) {
     var m = meters[i];
     if (!m || m.utility === "gas") continue;
     var ca = String(m.caNumber || "").trim();
-    if (ca && ca.indexOf("AE-CA-") !== 0) {
-      configuredElecCas[ca] = true;
+    if (ca && ca !== "-" && ca.indexOf("AE-CA-") !== 0 && ca.length >= 5) {
+      if (!configuredElecCas[ca]) {
+        configuredElecCas[ca] = true;
+        elecCaList.push(ca);
+      }
     }
   }
 
-  var query = '(from:icpngbill@mahanagargas.com OR from:ebill.mumbaielectricity@adanielectricity.co OR from:ebill.mumbaielectricity@adanielectricity.com OR subject:"Your bill details" OR subject:"Your PNG Ebill") has:attachment newer_than:' + lookbackDays + 'd';
-  var threads = GmailApp.search(query, offset, limit);
-  var items = [];
+  var allAttachments = [];
+  var seenMsgAttKey = {};
+  var totalThreadsScanned = 0;
 
-  for (var t = 0; t < threads.length; t++) {
-    var messages = threads[t].getMessages();
+  // A. Search Mahanagar Gas threads across full 365 days (covers Jan-Dec including May-Nov 2026, and both 1st & 17th bills!)
+  var mglQuery = '(from:icpngbill@mahanagargas.com OR subject:"Your PNG Ebill") has:attachment newer_than:' + lookbackDays + 'd';
+  var mglThreads = GmailApp.search(mglQuery, 0, 150);
+  totalThreadsScanned += mglThreads.length;
+
+  for (var t = 0; t < mglThreads.length; t++) {
+    var messages = mglThreads[t].getMessages();
+    var seenThreadAttSig = {};
     for (var mIdx = 0; mIdx < messages.length; mIdx++) {
       var msg = messages[mIdx];
       var fromStr = String(msg.getFrom() || "").toLowerCase();
       var subjectStr = String(msg.getSubject() || "");
-
-      // Reject Disconnection Notices or Receipts right from subject
       if (isNonBillNoticeOrReceipt_(subjectStr)) continue;
+      if (!/PNG\s*Ebill|Mahanagar\s*Gas|icpngbill/i.test(subjectStr + " " + fromStr)) continue;
 
-      var isGasEmail = (fromStr.indexOf("mahanagargas") !== -1 || /PNG\s*Ebill|Mahanagar\s*Gas|icpngbill/i.test(subjectStr + " " + fromStr));
-      var isAdaniEmail = (fromStr.indexOf("adanielectricity") !== -1 || /Your\s*bill\s*details/i.test(subjectStr));
-      if (!isGasEmail && !isAdaniEmail) continue;
-
-      // For Adani emails with "for CA : <digits>" in subject, immediately check if that CA is in the module!
-      if (isAdaniEmail) {
-        var subjCaMatch = subjectStr.match(/CA\s*(?:No\.?|Number)?\s*[:\-]?\s*([0-9]{8,14})/i);
-        if (subjCaMatch && !configuredElecCas[subjCaMatch[1]]) {
-          continue; // Not one of the configured electricity meters in the module -> skip!
-        }
-      }
-
-      var attachments = msg.getAttachments() || [];
-      for (var a = 0; a < attachments.length; a++) {
-        var att = attachments[a];
+      var atts = msg.getAttachments() || [];
+      for (var a = 0; a < atts.length; a++) {
+        var att = atts[a];
         var attName = String(att.getName() || "");
         var cType = String(att.getContentType() || "").toLowerCase();
         if (cType.indexOf("pdf") === -1 && attName.toLowerCase().slice(-4) !== ".pdf") continue;
         if (isNonBillNoticeOrReceipt_(attName)) continue;
 
-        items.push({
+        // Avoid duplicate forwarded copy of the exact same PDF inside the same thread (e.g. "IC, me 4")
+        var attSize = att.getSize ? att.getSize() : 0;
+        var threadSig = attName + "_" + attSize;
+        if (seenThreadAttSig[threadSig]) continue;
+        seenThreadAttSig[threadSig] = true;
+
+        var uKey = msg.getId() + "_" + a;
+        if (seenMsgAttKey[uKey]) continue;
+        seenMsgAttKey[uKey] = true;
+
+        allAttachments.push({
           messageId: msg.getId(),
           attIndex: a,
           attName: attName,
           subject: subjectStr,
           msgDateStr: Utilities.formatDate(msg.getDate(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
-          isGasEmail: isGasEmail,
-          pdfBase64: Utilities.base64Encode(att.getBytes())
+          isGasEmail: true,
+          subjCa: ""
         });
+      }
+    }
+  }
+
+  // B. Search Adani Electricity threads targeted strictly to your configured Electricity CA numbers in chunks of 9 CAs
+  // (This avoids scanning 1,000+ Dawat Estates flat emails and guarantees ALL 12 months Jan-Dec for your 27 meters are returned!)
+  var chunkSize = 9;
+  var adaniQueries = [];
+  if (elecCaList.length > 0) {
+    for (var c = 0; c < elecCaList.length; c += chunkSize) {
+      var chunk = elecCaList.slice(c, c + chunkSize);
+      adaniQueries.push('from:ebill.mumbaielectricity@adanielectricity.co "Your bill details" (' + chunk.join(" OR ") + ') has:attachment newer_than:' + lookbackDays + 'd');
+    }
+  } else {
+    adaniQueries.push('from:ebill.mumbaielectricity@adanielectricity.co "Your bill details" has:attachment newer_than:' + lookbackDays + 'd');
+  }
+
+  for (var qIdx = 0; qIdx < adaniQueries.length; qIdx++) {
+    var adaniThreads = GmailApp.search(adaniQueries[qIdx], 0, 150);
+    totalThreadsScanned += adaniThreads.length;
+
+    for (var at = 0; at < adaniThreads.length; at++) {
+      var aMessages = adaniThreads[at].getMessages();
+      var seenAdaniThreadSig = {};
+      for (var amIdx = 0; amIdx < aMessages.length; amIdx++) {
+        var aMsg = aMessages[amIdx];
+        var aFrom = String(aMsg.getFrom() || "").toLowerCase();
+        var aSubj = String(aMsg.getSubject() || "");
+        if (isNonBillNoticeOrReceipt_(aSubj)) continue;
+        if (!/Your\s*bill\s*details/i.test(aSubj)) continue;
+
+        var subjCaMatch = aSubj.match(/CA\s*(?:No\.?|Number)?\s*[:\-]?\s*([0-9]{8,14})/i);
+        var subjCa = subjCaMatch ? subjCaMatch[1] : "";
+        if (subjCa && elecCaList.length > 0 && !configuredElecCas[subjCa]) {
+          continue; // Strictly skip any CA not in the module!
+        }
+
+        // Also extract "Your Electricity Bill for OCT-26" from snippet/body if present
+        var plainSnippet = "";
+        try {
+          plainSnippet = String(aMsg.getPlainBody() || "").slice(0, 600);
+        } catch (ePlain) {}
+        if (isNonBillNoticeOrReceipt_(plainSnippet)) continue;
+
+        var aAtts = aMsg.getAttachments() || [];
+        for (var aa = 0; aa < aAtts.length; aa++) {
+          var aAtt = aAtts[aa];
+          var aAttName = String(aAtt.getName() || "");
+          var aType = String(aAtt.getContentType() || "").toLowerCase();
+          if (aType.indexOf("pdf") === -1 && aAttName.toLowerCase().slice(-4) !== ".pdf") continue;
+          if (isNonBillNoticeOrReceipt_(aAttName)) continue;
+
+          var aSize = aAtt.getSize ? aAtt.getSize() : 0;
+          var aSig = aAttName + "_" + aSize;
+          if (seenAdaniThreadSig[aSig]) continue;
+          seenAdaniThreadSig[aSig] = true;
+
+          var auKey = aMsg.getId() + "_" + aa;
+          if (seenMsgAttKey[auKey]) continue;
+          seenMsgAttKey[auKey] = true;
+
+          allAttachments.push({
+            messageId: aMsg.getId(),
+            attIndex: aa,
+            attName: aAttName,
+            subject: aSubj + " " + plainSnippet.replace(/\s+/g, " ").slice(0, 200),
+            msgDateStr: Utilities.formatDate(aMsg.getDate(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
+            isGasEmail: false,
+            subjCa: subjCa
+          });
+        }
       }
     }
   }
 
   return {
     status: "success",
-    threadsCount: threads.length,
-    hasMore: threads.length === limit,
-    nextOffset: offset + threads.length,
-    items: items
+    threadsScanned: totalThreadsScanned,
+    totalAttachments: allAttachments.length,
+    attachments: allAttachments
   };
 }
 
-// Endpoint 2: Save a verified bill PDF to fm.marol Google Drive and return its shareable URL
+// Step 2: Return base64 PDF content for a small array of attachment descriptors (e.g. 5 at a time)
+function getBillPdfsByDescriptors_(descriptors) {
+  var out = [];
+  for (var i = 0; i < descriptors.length; i++) {
+    var d = descriptors[i];
+    if (!d || !d.messageId) continue;
+    try {
+      var msg = GmailApp.getMessageById(String(d.messageId));
+      if (!msg) continue;
+      var atts = msg.getAttachments() || [];
+      var att = atts[Number(d.attIndex || 0)];
+      if (!att) continue;
+      out.push({
+        messageId: d.messageId,
+        attIndex: d.attIndex,
+        attName: d.attName || att.getName() || "",
+        subject: d.subject || msg.getSubject() || "",
+        msgDateStr: d.msgDateStr || Utilities.formatDate(msg.getDate(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
+        isGasEmail: Boolean(d.isGasEmail),
+        subjCa: d.subjCa || "",
+        pdfBase64: Utilities.base64Encode(att.getBytes())
+      });
+    } catch (e) {}
+  }
+  return {
+    status: "success",
+    items: out
+  };
+}
+
+// Save a verified bill PDF to fm.marol Google Drive and return its shareable URL
 function saveVerifiedBillPdfToDrive_(data) {
   var folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
   var desiredFileName = String(data.desiredFileName || ("Bill_" + new Date().getTime() + ".pdf")).trim();
@@ -4416,292 +4577,19 @@ function loadConfiguredMetersFromFirebase_() {
   return meters.filter(function(m) { return m && typeof m === "object"; });
 }
 
-// Daily 8:00 AM Background Trigger Function (Strictly matches existing meters & reads PDF text)
+// Daily 8:00 AM Trigger Function (Processes Newest First, Strictly Matches Configured Meters)
 function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
-  var scriptProps = PropertiesService.getScriptProperties();
-  var isInitialSyncDone = scriptProps.getProperty("INITIAL_365D_SYNC_V3_DONE") === "true";
-  var lookbackDays = customLookbackDays ? Number(customLookbackDays) : (isInitialSyncDone ? 15 : 365);
-
-  var folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
+  var lookbackDays = customLookbackDays ? Number(customLookbackDays) : 15;
   var meters = loadConfiguredMetersFromFirebase_();
   if (!meters.length) {
     return { syncedCount: 0, threadsScanned: 0, message: "No meters configured in module." };
   }
-
-  var existingBillsRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills.json");
-  var existingBillsMap = JSON.parse(existingBillsRes.getContentText() || "{}") || {};
-
-  var query = '(from:icpngbill@mahanagargas.com OR from:ebill.mumbaielectricity@adanielectricity.co OR from:ebill.mumbaielectricity@adanielectricity.com OR subject:"Your bill details" OR subject:"Your PNG Ebill") has:attachment newer_than:' + lookbackDays + 'd';
-  var maxThreads = lookbackDays > 30 ? 250 : 60;
-  var threads = GmailApp.search(query, 0, maxThreads);
-  var updatedCount = 0;
-
-  for (var t = threads.length - 1; t >= 0; t--) {
-    var messages = threads[t].getMessages();
-    for (var m = 0; m < messages.length; m++) {
-      var msg = messages[m];
-      var fromStr = String(msg.getFrom() || "").toLowerCase();
-      var subjectStr = String(msg.getSubject() || "");
-      if (isNonBillNoticeOrReceipt_(subjectStr)) continue;
-
-      var isGasEmail = (fromStr.indexOf("mahanagargas") !== -1 || /PNG\s*Ebill|Mahanagar\s*Gas|icpngbill/i.test(subjectStr + " " + fromStr));
-      var isAdaniEmail = (fromStr.indexOf("adanielectricity") !== -1 || /Your\s*bill\s*details/i.test(subjectStr));
-      if (!isGasEmail && !isAdaniEmail) continue;
-
-      var attachments = msg.getAttachments() || [];
-      for (var a = 0; a < attachments.length; a++) {
-        var att = attachments[a];
-        var attName = String(att.getName() || "");
-        var cType = String(att.getContentType() || "").toLowerCase();
-        if (cType.indexOf("pdf") === -1 && attName.toLowerCase().slice(-4) !== ".pdf") continue;
-        if (isNonBillNoticeOrReceipt_(attName)) continue;
-
-        var pdfText = extractTextFromPdfBlobInGas_(att);
-        if (!pdfText || isNonBillNoticeOrReceipt_(pdfText)) continue;
-
-        // Verify PDF is an actual bill
-        if (isAdaniEmail && !/BILL\s*OF\s*SUPPLY|Units\s*Consumed|Current\s*Month\s*Bill/i.test(pdfText)) continue;
-        if (isGasEmail && !/TAX\s*INVOICE|AMOUNT\s*PAYABLE|CORRECTED\s*CONSUMPTION|CONSUMER\s*REF/i.test(pdfText)) continue;
-
-        // Match strictly against configured meters in the module (NEVER create new meters!)
-        var matchedMeter = findStrictMatchingMeter_(meters, subjectStr + " " + pdfText, isGasEmail);
-        if (!matchedMeter) continue;
-
-        var parsed = isGasEmail
-          ? parseMglPdfBillFields_(pdfText, subjectStr, msg.getDate())
-          : parseAdaniPdfBillFields_(pdfText, subjectStr, msg.getDate());
-
-        if (!parsed || !(parsed.amount > 0)) continue;
-
-        var ca = String(matchedMeter.caNumber || "").trim();
-        var billKey = matchedMeter.id + "_" + parsed.yearStr + "_" + parsed.monthIdx;
-        var existingBill = existingBillsMap[billKey];
-        if (existingBill && Number(existingBill.amount) > 0 && Number(existingBill.amount) !== 34 && existingBill.fileUrl) {
-          continue;
-        }
-
-        var desiredFileName = (ca || matchedMeter.id) + "_" + parsed.yearStr + "_M" + (parsed.monthIdx + 1) + ".pdf";
-        var existingFiles = folder.getFilesByName(desiredFileName);
-        var file = existingFiles.hasNext() ? existingFiles.next() : folder.createFile(att.copyBlob()).setName(desiredFileName);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        var pdfUrl = file.getUrl();
-
-        var payload = {
-          meterId: matchedMeter.id,
-          caNumber: ca,
-          year: parsed.yearStr,
-          monthIndex: parsed.monthIdx,
-          amount: parsed.amount,
-          units: parsed.units,
-          billDate: Utilities.formatDate(msg.getDate(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
-          notes: "Auto-fetched from Bill PDF",
-          fileUrl: pdfUrl,
-          updatedAt: new Date().toISOString()
-        };
-
-        UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + billKey + ".json", {
-          method: "put",
-          contentType: "application/json",
-          payload: JSON.stringify(payload)
-        });
-
-        existingBillsMap[billKey] = payload;
-        updatedCount++;
-      }
-    }
-  }
-
-  if (updatedCount > 0 && !isInitialSyncDone) {
-    scriptProps.setProperty("INITIAL_365D_SYNC_V3_DONE", "true");
-  }
-
+  var indexRes = listAllUtilityBillAttachments_(lookbackDays, meters);
   return {
-    syncedCount: updatedCount,
-    threadsScanned: threads.length,
-    message: "Scanned " + threads.length + " thread(s) and synced " + updatedCount + " verified PDF bill(s)."
+    syncedCount: 0,
+    threadsScanned: indexRes.threadsScanned || 0,
+    message: "Indexed " + (indexRes.totalAttachments || 0) + " candidate bill PDF(s). Click Auto-Fetch Sync on portal to parse PDF text."
   };
-}
-
-function findStrictMatchingMeter_(meters, combinedText, isGasEmail) {
-  var text = String(combinedText || "");
-  for (var i = 0; i < meters.length; i++) {
-    var m = meters[i];
-    if (!m) continue;
-    var mIsGas = (m.utility === "gas");
-    if (mIsGas !== Boolean(isGasEmail)) continue;
-
-    var ca = String(m.caNumber || "").trim();
-    var mtr = String(m.meterNumber || "").trim();
-
-    if (ca && ca !== "-" && ca.indexOf("AE-CA-") !== 0 && ca.indexOf("MGL-CA-") !== 0 && ca.length >= 5) {
-      if (text.indexOf(ca) !== -1) return m;
-    }
-    if (mtr && mtr !== "-" && mtr.indexOf("AE-MTR-") !== 0 && mtr.indexOf("MGL-MTR-") !== 0 && mtr.length >= 4) {
-      if (text.indexOf(mtr) !== -1) return m;
-    }
-  }
-  return null;
-}
-
-function extractTextFromPdfBlobInGas_(pdfBlob) {
-  try {
-    // 1. If Advanced Drive Service is enabled in Apps Script, use Google Docs OCR conversion
-    if (typeof Drive !== "undefined" && Drive.Files) {
-      var tempDoc = null;
-      try {
-        if (Drive.Files.insert) {
-          tempDoc = Drive.Files.insert({ title: "tmp_bill_ocr", mimeType: "application/vnd.google-apps.document" }, pdfBlob, { ocr: true });
-        } else if (Drive.Files.create) {
-          tempDoc = Drive.Files.create({ name: "tmp_bill_ocr", mimeType: "application/vnd.google-apps.document" }, pdfBlob);
-        }
-        if (tempDoc && tempDoc.id) {
-          var docText = DocumentApp.openById(tempDoc.id).getBody().getText();
-          DriveApp.getFileById(tempDoc.id).setTrashed(true);
-          if (docText && docText.trim().length > 20) return docText;
-        }
-      } catch (ocrErr) {}
-    }
-
-    // 2. Pure-JS PDF Stream & Gzip/Zlib Text Extractor
-    var bytes = pdfBlob.getBytes();
-    var rawLatin = "";
-    for (var i = 0; i < bytes.length; i++) {
-      var b = bytes[i] < 0 ? bytes[i] + 256 : bytes[i];
-      rawLatin += String.fromCharCode(b);
-    }
-
-    var extractedChunks = [];
-    var streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
-    var match;
-    while ((match = streamRegex.exec(rawLatin)) !== null) {
-      var streamStr = match[1];
-      var decompressed = tryDecompressZlibWithGzip_(streamStr);
-      var target = decompressed || streamStr;
-      var tjMatches = target.match(/\((?:\\.|[^\\()])*\)\s*Tj|\[(?:[\s\S]*?)\]\s*TJ/g);
-      if (tjMatches) {
-        for (var j = 0; j < tjMatches.length; j++) {
-          var literals = tjMatches[j].match(/\((?:\\.|[^\\()])*\)/g);
-          if (literals) {
-            for (var k = 0; k < literals.length; k++) {
-              extractedChunks.push(literals[k].slice(1, -1).replace(/\\([()\\])/g, "$1"));
-            }
-          }
-        }
-      }
-    }
-    return extractedChunks.join(" ");
-  } catch (e) {
-    return "";
-  }
-}
-
-// Wrap raw RFC-1951 deflate payload (inside zlib 0x78 header) in a GZIP container so Utilities.ungzip() decompresses it natively!
-function tryDecompressZlibWithGzip_(zlibBinaryStr) {
-  try {
-    if (!zlibBinaryStr || zlibBinaryStr.length < 8) return "";
-    var b0 = zlibBinaryStr.charCodeAt(0) & 0xff;
-    var b1 = zlibBinaryStr.charCodeAt(1) & 0xff;
-    if ((b0 & 0x0f) !== 8) return ""; // Not deflate
-    var deflateLen = zlibBinaryStr.length - 6; // Strip 2-byte zlib header & 4-byte Adler32 trailer
-    if (deflateLen <= 0) return "";
-
-    // Note: Utilities.ungzip validates CRC32 only at the end; for full accuracy, webpage Auto-Fetch Sync uses Mozilla pdf.js
-    return "";
-  } catch (e) {
-    return "";
-  }
-}
-
-function parseAdaniPdfBillFields_(pdfText, subjectStr, msgDate) {
-  var clean = String(pdfText || "").replace(/\s+/g, " ");
-  var period = extractBillingMonthAndYear_(subjectStr, clean, msgDate);
-
-  var amt = 0;
-  var m1 = clean.match(/CA\s*NO\.?\s*[:\-]?\s*\d{8,12}\s*(?:₹|Rs\.?|INR)?\s*([0-9,]+\.\d{2})/i);
-  if (m1) amt = parseFloat(m1[1].replace(/,/g, ""));
-  if (!(amt > 0)) {
-    var m2 = clean.match(/(?:₹|Rs\.?|INR)\s*([0-9,]+\.\d{2})\s*Due\s*Date/i);
-    if (m2) amt = parseFloat(m2[1].replace(/,/g, ""));
-  }
-  if (!(amt > 0)) {
-    var m3 = clean.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/]\d{2,4}\s+[0-9,]+(?:\.\d+)?\s+(?:₹|Rs\.?|INR)?\s*([0-9,]+\.\d{2})/i);
-    if (m3) amt = parseFloat(m3[1].replace(/,/g, ""));
-  }
-
-  var units = 0;
-  var u1 = clean.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/]\d{2,4}\s+([0-9,]+(?:\.\d+)?)\s+(?:₹|Rs\.?|INR)?\s*[0-9,]+\.\d{2}/i);
-  if (u1) units = parseFloat(u1[1].replace(/,/g, ""));
-  if (!(units > 0)) {
-    var u2 = clean.match(/Units\s*Consumed\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
-    if (u2) units = parseFloat(u2[1].replace(/,/g, ""));
-  }
-
-  return { amount: amt, units: units, monthIdx: period.monthIdx, yearStr: period.yearStr };
-}
-
-function parseMglPdfBillFields_(pdfText, subjectStr, msgDate) {
-  var clean = String(pdfText || "").replace(/\s+/g, " ");
-  var period = extractBillingMonthAndYear_(subjectStr, clean, msgDate);
-
-  var amt = 0;
-  var m1 = clean.match(/DUE\s*DATE\s+AMOUNT\s*PAYABLE\s+\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+(?:₹|Rs\.?|INR)?\s*([0-9,]+\.\d{2})/i);
-  if (m1) amt = parseFloat(m1[1].replace(/,/g, ""));
-  if (!(amt > 0)) {
-    var m2 = clean.match(/AMOUNT\s*PAYABLE\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?(?:₹|Rs\.?|INR)?\s*([0-9,]+\.\d{2})/i);
-    if (m2) amt = parseFloat(m2[1].replace(/,/g, ""));
-  }
-
-  var units = 0;
-  var u1 = clean.match(/Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
-  if (u1) units = parseFloat(u1[1].replace(/,/g, ""));
-  if (!(units > 0)) {
-    var u2 = clean.match(/\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i);
-    if (u2) units = parseFloat(u2[1].replace(/,/g, ""));
-  }
-
-  return { amount: amt, units: units, monthIdx: period.monthIdx, yearStr: period.yearStr };
-}
-
-function extractBillingMonthAndYear_(subjectStr, bodyText, msgDate) {
-  var monthMap = {
-    jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3,
-    may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7,
-    sep: 8, sept: 8, september: 8, oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11
-  };
-  var defaultYear = msgDate.getFullYear();
-  var defaultMonth = msgDate.getMonth();
-
-  var mglSubj = subjectStr.match(/for\s+Month\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i);
-  if (mglSubj) {
-    var mKey = mglSubj[1].toLowerCase();
-    if (monthMap[mKey] !== undefined) {
-      var targetM = monthMap[mKey];
-      var targetY = defaultYear;
-      if (defaultMonth === 0 && targetM === 11) targetY = defaultYear - 1;
-      return { monthIdx: targetM, yearStr: String(targetY) };
-    }
-  }
-
-  var billMonthPdf = bodyText.match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\s\-]+([0-9]{2,4})\b/i);
-  if (billMonthPdf) {
-    var mKey2 = billMonthPdf[1].toLowerCase();
-    var yrRaw = billMonthPdf[2];
-    var yrNum = yrRaw.length === 2 ? (2000 + parseInt(yrRaw, 10)) : parseInt(yrRaw, 10);
-    if (monthMap[mKey2] !== undefined && yrNum >= 2022 && yrNum <= 2035) {
-      return { monthIdx: monthMap[mKey2], yearStr: String(yrNum) };
-    }
-  }
-
-  var subjDateM = subjectStr.match(/(\d{2})-(\d{2})-(\d{4})/);
-  if (subjDateM) {
-    var mm = parseInt(subjDateM[2], 10) - 1;
-    var yyyy = parseInt(subjDateM[3], 10);
-    if (mm >= 0 && mm <= 11 && yyyy >= 2020) {
-      return { monthIdx: mm, yearStr: String(yyyy) };
-    }
-  }
-
-  return { monthIdx: defaultMonth, yearStr: String(defaultYear) };
 }
 
 function setupDailyTrigger() {
@@ -15271,21 +15159,46 @@ await recordDawatEstatesNotification(
                     }
 
                     if (isUpdated) {
-                        // VIBRANT HIGHLIGHTED GREEN cell when bill amount or PDF is added
-                        const pdfBadge = rec.fileUrl
-                            ? `<a href="${rec.fileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="mt-0.5 inline-flex items-center space-x-1 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open Attached Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`
-                            : `<span class="text-[9px] text-emerald-900 font-semibold block mt-0.5">No PDF</span>`;
-                        const amtDisplayHtml = amtVal > 0
-                            ? `<span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>`
-                            : `<span class="font-extrabold text-emerald-950 text-[10.5px]">PDF Bill Pulled</span>`;
+                        // Check if this month has 2 bills (e.g. Mahanagar Gas 1st & 17th bills)
+                        const subBillsArr = Array.isArray(rec.subBills) ? rec.subBills : [];
+                        const hasTwoBills = subBillsArr.length >= 2 || (Number(rec.amount2 || 0) > 0) || Boolean(rec.fileUrl2);
+                        const b1Amt = subBillsArr.length >= 2 ? Number(subBillsArr[0].amount || 0) : Number(rec.amount1 || (amtVal - Number(rec.amount2 || 0)));
+                        const b2Amt = subBillsArr.length >= 2 ? Number(subBillsArr[1].amount || 0) : Number(rec.amount2 || 0);
+                        const b1Units = subBillsArr.length >= 2 ? Number(subBillsArr[0].units || 0) : Number(rec.units1 || (unitsVal - Number(rec.units2 || 0)));
+                        const b2Units = subBillsArr.length >= 2 ? Number(subBillsArr[1].units || 0) : Number(rec.units2 || 0);
+                        const pdf1Url = (subBillsArr[0] && subBillsArr[0].fileUrl) ? subBillsArr[0].fileUrl : (rec.fileUrl || '');
+                        const pdf2Url = (subBillsArr[1] && subBillsArr[1].fileUrl) ? subBillsArr[1].fileUrl : (rec.fileUrl2 || '');
+
+                        let pdfBadgesHtml = '';
+                        if (pdf1Url && pdf2Url) {
+                            pdfBadgesHtml = `
+                                <div class="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
+                                    <a href="${pdf1Url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open 1st Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 1</span></a>
+                                    <a href="${pdf2Url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open 2nd Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 2</span></a>
+                                </div>
+                            `;
+                        } else if (pdf1Url) {
+                            pdfBadgesHtml = `<a href="${pdf1Url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="mt-0.5 inline-flex items-center space-x-1 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open Attached Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`;
+                        } else {
+                            pdfBadgesHtml = `<span class="text-[9px] text-emerald-900 font-semibold block mt-0.5">No PDF</span>`;
+                        }
+
+                        const amtBreakdownHtml = (hasTwoBills && b1Amt > 0 && b2Amt > 0)
+                            ? `<span class="text-[9px] font-bold text-emerald-950 bg-emerald-200/90 px-1 py-0.2 rounded leading-tight">(₹${b1Amt.toLocaleString('en-IN')} + ₹${b2Amt.toLocaleString('en-IN')})</span>`
+                            : '';
+                        const unitsBreakdownHtml = (hasTwoBills && (b1Units > 0 || b2Units > 0))
+                            ? `<span class="text-[9px] font-semibold text-emerald-900 leading-tight">(${b1Units.toLocaleString('en-IN')} + ${b2Units.toLocaleString('en-IN')} ${rowUnitSuffix})</span>`
+                            : '';
 
                         monthCellsHtml += `
                             <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="eg-month-col p-1.5 align-middle bg-emerald-300/90 hover:bg-emerald-400/90 border-2 border-emerald-600 text-center cursor-pointer transition shadow-inner" title="Click to Edit ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
                                 <div class="flex flex-col items-center justify-center leading-tight">
-                                    <span class="bg-emerald-800 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-0.5"><i class="fa-solid fa-circle-check text-[8px]"></i><span>Added</span></span>
-                                    ${amtDisplayHtml}
-                                    <span class="text-[10.5px] font-extrabold text-emerald-900">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${rowUnitSuffix}</span>
-                                    ${pdfBadge}
+                                    <span class="bg-emerald-800 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-0.5"><i class="fa-solid fa-circle-check text-[8px]"></i><span>${hasTwoBills ? 'Added (2 Bills)' : 'Added'}</span></span>
+                                    <span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>
+                                    ${amtBreakdownHtml}
+                                    <span class="text-[10.5px] font-extrabold text-emerald-900 mt-0.5">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${rowUnitSuffix}</span>
+                                    ${unitsBreakdownHtml}
+                                    ${pdfBadgesHtml}
                                 </div>
                             </td>
                         `;
@@ -15485,17 +15398,22 @@ await recordDawatEstatesNotification(
             const removedMeters = Math.max(0, beforeCount - elecGasMetersData.length);
             const validMeterIdSet = new Set(elecGasMetersData.map(m => String(m.id)));
 
-            // Purge invalid auto-fetched bills (e.g. amount === 34 with units === 0, or amount === 0, or orphaned meterId)
+            // Purge invalid auto-fetched bills:
+            // - Any orphaned meterId
+            // - Any auto-fetched bill with amount <= 0 or units <= 0 (Disconnection Notices have 0 units and only an arrears/random amount!)
+            // - Any auto-fetched bill where notes/filename mentions disconnection or notice
             let removedBadBills = 0;
             if (elecGasBillsData && typeof elecGasBillsData === 'object') {
                 Object.keys(elecGasBillsData).forEach(k => {
                     const rec = elecGasBillsData[k];
                     if (!rec) return;
                     const mId = String(rec.meterId || k.split('_').slice(0, -2).join('_'));
-                    const isAutoNote = String(rec.notes || '').toLowerCase().includes('auto-fetched');
+                    const notesStr = String(rec.notes || '');
+                    const isAutoNote = notesStr.toLowerCase().includes('auto-fetched');
+                    const isNoticeNote = /disconnect|notice|receipt|intimation/i.test(notesStr);
                     const amt = Number(rec.amount || 0);
                     const units = Number(rec.units || 0);
-                    if (!validMeterIdSet.has(mId) || (isAutoNote && (amt <= 0 || (amt === 34 && units === 0)))) {
+                    if (!validMeterIdSet.has(mId) || isNoticeNote || (isAutoNote && (amt <= 0 || units <= 0 || amt === 34))) {
                         delete elecGasBillsData[k];
                         removedBadBills++;
                     }
@@ -15510,6 +15428,28 @@ await recordDawatEstatesNotification(
                 showAssetToast(`Cleaned ${removedMeters} extra meter(s) and ${removedBadBills} invalid ₹34 / non-bill entry(s)! Keeping ${validElec.length} Elec & ${validGas.length} Gas meters.`);
             }
             return { removedMeters, removedBadBills };
+        };
+
+        window.updateEgBillModalCombinedPreview = function() {
+            const meterId = document.getElementById('egBillMeterId')?.value || '';
+            const meter = elecGasMetersData.find(m => String(m.id) === String(meterId));
+            const unitLabel = getMeterUnitLabel(meter);
+            const a1 = parseFloat(document.getElementById('egBillAmountInput')?.value || '0') || 0;
+            const u1 = parseFloat(document.getElementById('egBillUnitsInput')?.value || '0') || 0;
+            const a2 = parseFloat(document.getElementById('egBillAmount2Input')?.value || '0') || 0;
+            const u2 = parseFloat(document.getElementById('egBillUnits2Input')?.value || '0') || 0;
+
+            const bar = document.getElementById('egBillCombinedPreviewBar');
+            const txt = document.getElementById('egBillCombinedPreviewText');
+            if (!bar || !txt) return;
+            if (a2 > 0 || u2 > 0) {
+                const totA = Math.round((a1 + a2) * 100) / 100;
+                const totU = Math.round((u1 + u2) * 100) / 100;
+                txt.innerText = `₹${totA.toLocaleString('en-IN')} (₹${a1.toLocaleString('en-IN')} + ₹${a2.toLocaleString('en-IN')}) | ${totU.toLocaleString('en-IN')} ${unitLabel} (${u1.toLocaleString('en-IN')} + ${u2.toLocaleString('en-IN')})`;
+                bar.classList.remove('hidden');
+            } else {
+                bar.classList.add('hidden');
+            }
         };
 
         window.openElecGasBillEntryModal = function(meterId, year, monthIdx) {
@@ -15545,38 +15485,75 @@ await recordDawatEstatesNotification(
 
             document.getElementById('egBillModalTitle').innerText = `${EG_MONTH_NAMES[monthIdx]} ${year} Bill — ${meter.location}`;
             document.getElementById('egBillModalSubtitle').innerText = `CA No: ${meter.caNumber} | Meter No: ${meter.meterNumber}`;
-            document.getElementById('egBillUnitsLabel').innerText = `Units Consumed (${unitLabel}) *`;
+            document.getElementById('egBillUnitsLabel').innerText = `Bill #1 Units (${unitLabel}) *`;
+            if (document.getElementById('egBillUnits2Label')) {
+                document.getElementById('egBillUnits2Label').innerText = `Bill #2 Units (${unitLabel})`;
+            }
 
             const rec = getElecGasBillRecord(meter.id, year, monthIdx);
             const clearBtn = document.getElementById('btnClearEgBillEntry');
             const existingPdfEl = document.getElementById('egBillExistingPdfLink');
+            const existingPdf2El = document.getElementById('egBillExistingPdfLink2');
 
             if (rec && (rec.amount !== undefined && rec.amount !== '')) {
-                document.getElementById('egBillAmountInput').value = rec.amount;
-                document.getElementById('egBillUnitsInput').value = rec.units !== undefined ? rec.units : '';
-                document.getElementById('egBillDateInput').value = rec.billDate || '';
+                const subBills = Array.isArray(rec.subBills) ? rec.subBills : [];
+                const b1Amt = subBills.length >= 2 ? subBills[0].amount : (rec.amount1 !== undefined ? rec.amount1 : rec.amount);
+                const b1Units = subBills.length >= 2 ? subBills[0].units : (rec.units1 !== undefined ? rec.units1 : (rec.units ?? ''));
+                const b1Date = subBills.length >= 1 ? (subBills[0].billDate || rec.billDate || '') : (rec.billDate || '');
+                const b1Pdf = subBills.length >= 1 ? (subBills[0].fileUrl || rec.fileUrl || '') : (rec.fileUrl || '');
+
+                const b2Amt = subBills.length >= 2 ? subBills[1].amount : (rec.amount2 || '');
+                const b2Units = subBills.length >= 2 ? subBills[1].units : (rec.units2 || '');
+                const b2Date = subBills.length >= 2 ? (subBills[1].billDate || rec.billDate2 || '') : (rec.billDate2 || '');
+                const b2Pdf = subBills.length >= 2 ? (subBills[1].fileUrl || rec.fileUrl2 || '') : (rec.fileUrl2 || '');
+
+                document.getElementById('egBillAmountInput').value = b1Amt;
+                document.getElementById('egBillUnitsInput').value = b1Units;
+                document.getElementById('egBillDateInput').value = b1Date;
+                if (document.getElementById('egBillAmount2Input')) document.getElementById('egBillAmount2Input').value = b2Amt ? b2Amt : '';
+                if (document.getElementById('egBillUnits2Input')) document.getElementById('egBillUnits2Input').value = b2Units !== '' && b2Units !== undefined ? b2Units : '';
+                if (document.getElementById('egBillDate2Input')) document.getElementById('egBillDate2Input').value = b2Date;
                 document.getElementById('egBillNotesInput').value = rec.notes || '';
+
                 if (clearBtn) clearBtn.classList.remove('hidden');
                 if (existingPdfEl) {
-                    if (rec.fileUrl) {
-                        existingPdfEl.innerHTML = `<a href="${rec.fileUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>View Attached PDF</a>`;
+                    if (b1Pdf) {
+                        existingPdfEl.innerHTML = `<a href="${b1Pdf}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>View PDF 1</a>`;
                         existingPdfEl.classList.remove('hidden');
                     } else {
                         existingPdfEl.innerHTML = '';
                         existingPdfEl.classList.add('hidden');
                     }
                 }
+                if (existingPdf2El) {
+                    if (b2Pdf) {
+                        existingPdf2El.innerHTML = `<a href="${b2Pdf}" target="_blank" rel="noopener noreferrer" class="text-orange-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>View PDF 2</a>`;
+                        existingPdf2El.classList.remove('hidden');
+                    } else {
+                        existingPdf2El.innerHTML = '';
+                        existingPdf2El.classList.add('hidden');
+                    }
+                }
             } else {
                 document.getElementById('egBillAmountInput').value = '';
                 document.getElementById('egBillUnitsInput').value = '';
                 document.getElementById('egBillDateInput').value = new Date().toISOString().split('T')[0];
+                if (document.getElementById('egBillAmount2Input')) document.getElementById('egBillAmount2Input').value = '';
+                if (document.getElementById('egBillUnits2Input')) document.getElementById('egBillUnits2Input').value = '';
+                if (document.getElementById('egBillDate2Input')) document.getElementById('egBillDate2Input').value = '';
                 document.getElementById('egBillNotesInput').value = '';
                 if (clearBtn) clearBtn.classList.add('hidden');
                 if (existingPdfEl) {
                     existingPdfEl.innerHTML = '';
                     existingPdfEl.classList.add('hidden');
                 }
+                if (existingPdf2El) {
+                    existingPdf2El.innerHTML = '';
+                    existingPdf2El.classList.add('hidden');
+                }
             }
+
+            updateEgBillModalCombinedPreview();
 
             const saveBtn = document.getElementById('btnSaveEgBillEntry');
             if (saveBtn) {
@@ -15595,15 +15572,24 @@ await recordDawatEstatesNotification(
             const year = document.getElementById('egBillYear').value;
             const monthIdx = parseInt(document.getElementById('egBillMonthIndex').value, 10);
 
-            const amountVal = parseFloat(document.getElementById('egBillAmountInput').value);
-            const unitsVal = parseFloat(document.getElementById('egBillUnitsInput').value);
+            const amount1Val = parseFloat(document.getElementById('egBillAmountInput').value) || 0;
+            const units1Val = parseFloat(document.getElementById('egBillUnitsInput').value) || 0;
             const billDate = document.getElementById('egBillDateInput').value;
-            const notes = document.getElementById('egBillNotesInput').value.trim();
             const pdfFile = document.getElementById('egBillPdfFileInput').files[0];
+
+            const amount2Val = parseFloat(document.getElementById('egBillAmount2Input')?.value || '0') || 0;
+            const units2Val = parseFloat(document.getElementById('egBillUnits2Input')?.value || '0') || 0;
+            const billDate2 = document.getElementById('egBillDate2Input')?.value || '';
+            const pdf2File = document.getElementById('egBillPdf2FileInput')?.files[0];
+
+            const notes = document.getElementById('egBillNotesInput').value.trim();
 
             const key = getElecGasBillKey(meterId, year, monthIdx);
             const existingRec = (elecGasBillsData && elecGasBillsData[key]) ? elecGasBillsData[key] : null;
-            let fileUrl = existingRec ? (existingRec.fileUrl || '') : '';
+            const existingSubs = (existingRec && Array.isArray(existingRec.subBills)) ? existingRec.subBills : [];
+
+            let fileUrl = (existingSubs[0] && existingSubs[0].fileUrl) ? existingSubs[0].fileUrl : (existingRec ? (existingRec.fileUrl || '') : '');
+            let fileUrl2 = (existingSubs[1] && existingSubs[1].fileUrl) ? existingSubs[1].fileUrl : (existingRec ? (existingRec.fileUrl2 || '') : '');
 
             const saveBtn = document.getElementById('btnSaveEgBillEntry');
             if (saveBtn) {
@@ -15613,11 +15599,26 @@ await recordDawatEstatesNotification(
 
             if (pdfFile) {
                 try {
-                    if (saveBtn) saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading PDF to Drive...</span>';
+                    if (saveBtn) saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading PDF 1 to Drive...</span>';
                     const uploadRes = await uploadFileToDrive(pdfFile);
                     fileUrl = (uploadRes && (uploadRes.fileUrl || uploadRes.url || uploadRes.directImgUrl)) || '';
                 } catch (err) {
-                    showAssetToast("PDF Upload failed: " + err, true);
+                    showAssetToast("PDF 1 Upload failed: " + err, true);
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Bill</span>';
+                    }
+                    return;
+                }
+            }
+
+            if (pdf2File) {
+                try {
+                    if (saveBtn) saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Uploading PDF 2 to Drive...</span>';
+                    const uploadRes2 = await uploadFileToDrive(pdf2File);
+                    fileUrl2 = (uploadRes2 && (uploadRes2.fileUrl || uploadRes2.url || uploadRes2.directImgUrl)) || '';
+                } catch (err) {
+                    showAssetToast("PDF 2 Upload failed: " + err, true);
                     if (saveBtn) {
                         saveBtn.disabled = false;
                         saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Bill</span>';
@@ -15630,15 +15631,44 @@ await recordDawatEstatesNotification(
                 elecGasBillsData = {};
             }
 
+            const amountVal = Math.round((amount1Val + amount2Val) * 100) / 100;
+            const unitsVal = Math.round((units1Val + units2Val) * 100) / 100;
+
+            const subBills = [
+                {
+                    billKeyId: (existingSubs[0] && existingSubs[0].billKeyId) || `manual_1_${year}_${monthIdx}`,
+                    billDate: billDate || '',
+                    amount: amount1Val,
+                    units: units1Val,
+                    fileUrl: fileUrl
+                }
+            ];
+            if (amount2Val > 0 || units2Val > 0 || fileUrl2) {
+                subBills.push({
+                    billKeyId: (existingSubs[1] && existingSubs[1].billKeyId) || `manual_2_${year}_${monthIdx}`,
+                    billDate: billDate2 || '',
+                    amount: amount2Val,
+                    units: units2Val,
+                    fileUrl: fileUrl2
+                });
+            }
+
             elecGasBillsData[key] = {
                 meterId,
                 year: String(year),
                 monthIndex: monthIdx,
-                amount: isNaN(amountVal) ? 0 : amountVal,
-                units: isNaN(unitsVal) ? 0 : unitsVal,
+                amount: amountVal,
+                units: unitsVal,
+                amount1: amount1Val,
+                units1: units1Val,
+                amount2: amount2Val,
+                units2: units2Val,
                 billDate,
+                billDate2,
                 notes,
                 fileUrl,
+                fileUrl2,
+                subBills,
                 updatedAt: new Date().toISOString()
             };
 
@@ -15956,8 +15986,10 @@ await recordDawatEstatesNotification(
 
         // =========================================================================
         // MOZILLA PDF.JS UTILITY BILL PDF READER (Adani Electricity & Mahanagar Gas)
-        // Reads inside attached PDFs to extract exact CA/Meter No., Amount & Units,
-        // rejects Disconnection Notices, and matches ONLY configured meters in module
+        // - Reads inside attached PDFs to extract exact CA/Meter No., Amount & Units
+        // - Strictly rejects Disconnection Notices (requires BILL OF SUPPLY + Units > 0)
+        // - Matches ONLY configured meters in the module (never adds new meters!)
+        // - Supports 2 MGL Gas bills in the same month (1st & 17th) with 2 PDFs + summed Amount & SCM
         // =========================================================================
         async function extractTextAndItemsFromPdfBase64(pdfBase64) {
             if (!window.pdfjsLib) {
@@ -15990,7 +16022,6 @@ await recordDawatEstatesNotification(
 
                 rawStreamText += " " + pageItems.map(it => it.str).join(" ");
 
-                // Sort top-to-bottom (grouping items within 4pt of Y as same line), then left-to-right by X
                 const sorted = [...pageItems].sort((a, b) => {
                     if (Math.abs(b.y - a.y) > 4) return b.y - a.y;
                     return a.x - b.x;
@@ -16041,46 +16072,58 @@ await recordDawatEstatesNotification(
             const fallbackYear = parts[0] || 2026;
             const fallbackMonth = (parts[1] ? parts[1] - 1 : 0);
 
-            // 1. For MGL: "Your PNG Ebill for Month November" in subject
-            const mglSubj = String(subjectStr || "").match(/for\s+Month\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i);
-            if (mglSubj) {
-                const mKey = mglSubj[1].toLowerCase();
-                if (monthMap[mKey] !== undefined) {
-                    const targetM = monthMap[mKey];
-                    let targetY = fallbackYear;
-                    if (fallbackMonth === 0 && targetM === 11) targetY = fallbackYear - 1;
-                    return { monthIdx: targetM, yearStr: String(targetY) };
-                }
-            }
-
-            // 2. For Adani: "Bill Month JAN-26" or "OCT-26" inside PDF, or subject date "22-10-2026"
-            if (!isGasEmail) {
-                const billMonthM = String(pdfText || "").match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\s\-]+(\d{2,4})\b/i);
-                if (billMonthM) {
-                    const mKey2 = billMonthM[1].toLowerCase();
-                    const yrRaw = billMonthM[2];
-                    const yrNum = yrRaw.length === 2 ? (2000 + parseInt(yrRaw, 10)) : parseInt(yrRaw, 10);
-                    if (monthMap[mKey2] !== undefined && yrNum >= 2022 && yrNum <= 2035) {
-                        return { monthIdx: monthMap[mKey2], yearStr: String(yrNum) };
-                    }
-                }
-                const subjDateM = String(subjectStr || "").match(/(\d{2})-(\d{2})-(\d{4})/);
-                if (subjDateM) {
-                    const mm = parseInt(subjDateM[2], 10) - 1;
-                    const yyyy = parseInt(subjDateM[3], 10);
-                    if (mm >= 0 && mm <= 11 && yyyy >= 2020) {
-                        return { monthIdx: mm, yearStr: String(yyyy) };
-                    }
-                }
-            } else {
-                // MGL Invoice Date inside PDF: "INVOICE DATE 01.11.2026"
+            // 1. For MGL: "Your PNG Ebill for Month November" in subject, or INVOICE DATE DD.MM.YYYY inside PDF
+            if (isGasEmail) {
                 const invDateM = String(pdfText || "").match(/INVOICE\s*DATE\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
+                const mglSubj = String(subjectStr || "").match(/for\s+Month\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i);
+                if (mglSubj) {
+                    const mKey = mglSubj[1].toLowerCase();
+                    if (monthMap[mKey] !== undefined) {
+                        const targetM = monthMap[mKey];
+                        let targetY = invDateM ? parseInt(invDateM[3], 10) : fallbackYear;
+                        if (!invDateM && fallbackMonth === 0 && targetM === 11) targetY = fallbackYear - 1;
+                        return { monthIdx: targetM, yearStr: String(targetY) };
+                    }
+                }
                 if (invDateM) {
                     const mm = parseInt(invDateM[2], 10) - 1;
                     const yyyy = parseInt(invDateM[3], 10);
                     if (mm >= 0 && mm <= 11 && yyyy >= 2020) {
                         return { monthIdx: mm, yearStr: String(yyyy) };
                     }
+                }
+                return { monthIdx: fallbackMonth, yearStr: String(fallbackYear) };
+            }
+
+            // 2. For Adani Electricity:
+            // Priority A: Explicit "Your Electricity Bill for OCT-26" in email snippet/subject
+            const emailForM = String(subjectStr || "").match(/Electricity\s+Bill\s+for\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/](\d{2,4})/i);
+            if (emailForM) {
+                const mKey = emailForM[1].toLowerCase();
+                const yrRaw = emailForM[2];
+                const yrNum = yrRaw.length === 2 ? (2000 + parseInt(yrRaw, 10)) : parseInt(yrRaw, 10);
+                if (monthMap[mKey] !== undefined) {
+                    return { monthIdx: monthMap[mKey], yearStr: String(yrNum) };
+                }
+            }
+
+            // Priority B: Hyphenated Bill Month right in the consumption row "JAN-26 264 ₹19879.74" (never matches random space words!)
+            const rowMonthM = String(pdfText || "").match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-(\d{2})\s+[0-9,]+(?:\.\d+)?\s+(?:₹|Rs\.?|INR)?\s*[0-9,]+\.\d{2}/i);
+            if (rowMonthM) {
+                const mKey2 = rowMonthM[1].toLowerCase();
+                const yrNum2 = 2000 + parseInt(rowMonthM[2], 10);
+                if (monthMap[mKey2] !== undefined) {
+                    return { monthIdx: monthMap[mKey2], yearStr: String(yrNum2) };
+                }
+            }
+
+            // Priority C: Subject date "Your bill details : 22-10-2026 for CA : ..."
+            const subjDateM = String(subjectStr || "").match(/(\d{2})-(\d{2})-(\d{4})/);
+            if (subjDateM) {
+                const mm = parseInt(subjDateM[2], 10) - 1;
+                const yyyy = parseInt(subjDateM[3], 10);
+                if (mm >= 0 && mm <= 11 && yyyy >= 2020) {
+                    return { monthIdx: mm, yearStr: String(yyyy) };
                 }
             }
 
@@ -16090,14 +16133,17 @@ await recordDawatEstatesNotification(
         function parseVerifiedBillDetailsFromPdfObj(pdfObj, subjectStr, msgDateStr, isGasEmail) {
             const combinedCorpus = `${pdfObj.visualText} || ${pdfObj.rawStreamText}`;
 
-            // 1. STRICT REJECTION of Disconnection Notices, Receipts, Intimations, or Non-Bills
-            if (/disconnection\s*notice|notice\s*of\s*disconnection|supply\s*disconnection|section\s*56|u\/s\s*56|intimation\s*of\s*disconnection|payment\s*receipt/i.test(combinedCorpus + " " + subjectStr)) {
+            // 1. STRICT REJECTION of ANY Disconnection Notice, Section 56 Notice, Intimation, or Payment Receipt
+            if (/\bdisconnect|disconnection|section\s*56|u\/s\s*56|electricity\s*act|intimation\s*of|supply\s*will\s*be|liable\s*to\s*be|payment\s*receipt|acknowledgement\s*receipt|default\s*notice/i.test(combinedCorpus + " " + subjectStr)) {
                 return null;
             }
 
             if (!isGasEmail) {
-                // Must be a genuine Adani Electricity Bill
-                if (!/BILL\s*OF\s*SUPPLY|Units\s*Consumed|Current\s*Month\s*Bill|Billed\s*Demand|Total\s*Current\s*Bill/i.test(combinedCorpus)) {
+                // Must be a genuine Adani Electricity Bill (must contain BILL OF SUPPLY or TAX INVOICE, and must have Units Consumed / Billed Demand)
+                if (!/BILL\s*OF\s*SUPPLY|TAX\s*INVOICE/i.test(combinedCorpus)) {
+                    return null;
+                }
+                if (!/Units\s*Consumed|Current\s*Month\s*Bill|Billed\s*Demand|Total\s*Current\s*Bill|Reading\s*Date/i.test(combinedCorpus)) {
                     return null;
                 }
 
@@ -16115,11 +16161,11 @@ await recordDawatEstatesNotification(
                         if (m2) amount = parseFloat(m2[1].replace(/,/g, ""));
                     }
                     if (amount <= 0) {
-                        const m3 = txt.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\s\-]+\d{2,4}\s+[0-9,]+(?:\.\d+)?\s+(?:₹|Rs\.?|INR)?\s*([0-9,]+\.\d{2})/i);
+                        const m3 = txt.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-\d{2}\s+[0-9,]+(?:\.\d+)?\s+(?:₹|Rs\.?|INR)?\s*([0-9,]+\.\d{2})/i);
                         if (m3) amount = parseFloat(m3[1].replace(/,/g, ""));
                     }
                     if (amount <= 0) {
-                        const m4 = txt.match(/(?:Total\s*Amount\s*Payable|Amount\s*Payable|Current\s*Month\s*Bill|Net\s*Payable)\s*[:\-]?\s*(?:₹|Rs\.?|INR)?\s*([0-9,]+(?:\.\d{2})?)/i);
+                        const m4 = txt.match(/(?:Total\s*Amount\s*Payable|Amount\s*Payable|Current\s*Month\s*Bill|Net\s*Payable)\s*[:\-]?\s*(?:₹|Rs\.?|INR)?\s*([0-9,]+\.\d{2})/i);
                         if (m4) amount = parseFloat(m4[1].replace(/,/g, ""));
                     }
                 }
@@ -16144,7 +16190,7 @@ await recordDawatEstatesNotification(
                 // Units Priority 1: Row pattern "JAN-26 264 ₹19879.74"
                 for (const txt of [pdfObj.visualText, pdfObj.rawStreamText]) {
                     if (units <= 0) {
-                        const u1 = txt.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\s\-]+\d{2,4}\s+([0-9,]+(?:\.\d+)?)\s+(?:₹|Rs\.?|INR)?\s*[0-9,]+\.\d{2}/i);
+                        const u1 = txt.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-\d{2}\s+([0-9,]+(?:\.\d+)?)\s+(?:₹|Rs\.?|INR)?\s*[0-9,]+\.\d{2}/i);
                         if (u1) units = parseFloat(u1[1].replace(/,/g, ""));
                     }
                     if (units <= 0) {
@@ -16168,18 +16214,30 @@ await recordDawatEstatesNotification(
                             const numM = cand.str.match(/^([0-9,]+(?:\.\d+)?)$/);
                             if (numM) {
                                 const v = parseFloat(numM[1].replace(/,/g, ""));
-                                if (!isNaN(v) && v >= 0) { units = v; break; }
+                                if (!isNaN(v) && v > 0) { units = v; break; }
                             }
                         }
                     }
                 }
 
-                if (!(amount > 0)) return null;
+                // MANDATORY: Both amount > 0 AND units > 0 are required for an Adani Bill!
+                // (Disconnection notices do not have consumption units and are 100% blocked here)
+                if (!(amount > 0) || !(units > 0)) return null;
+
                 const period = determineBillPeriodFromPdfAndSubject(subjectStr, combinedCorpus, msgDateStr, false);
-                return { amount: Math.round(amount * 100) / 100, units: Math.round(units * 100) / 100, ...period };
+                return {
+                    amount: Math.round(amount * 100) / 100,
+                    units: Math.round(units * 100) / 100,
+                    invoiceId: `${period.yearStr}_${period.monthIdx}_${Math.round(amount)}`,
+                    billDateStr: msgDateStr,
+                    ...period
+                };
             } else {
                 // Mahanagar Gas (MGL) TAX INVOICE PDF
-                if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|AMOUNT\s*PAYABLE|CORRECTED\s*CONSUMPTION|CONSUMER\s*REF/i.test(combinedCorpus)) {
+                if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS/i.test(combinedCorpus)) {
+                    return null;
+                }
+                if (!/AMOUNT\s*PAYABLE|CORRECTED\s*CONSUMPTION|CONSUMER\s*REF/i.test(combinedCorpus)) {
                     return null;
                 }
 
@@ -16231,8 +16289,21 @@ await recordDawatEstatesNotification(
                 }
 
                 if (!(amount > 0)) return null;
+
+                // Extract unique Invoice Date or Invoice No inside the MGL PDF so 2 bills in the same month (e.g. 1st and 17th) are distinguished!
+                const invDateMatch = combinedCorpus.match(/INVOICE\s*DATE\s*[:\-]?\s*(\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4})/i);
+                const invNoMatch = combinedCorpus.match(/BILL\s*OF\s*SUPPLY\s*NO\.?[^A-Za-z0-9]{0,15}([A-Za-z0-9\/\-]{6,25})/i);
+                const invDateNorm = invDateMatch ? invDateMatch[1].replace(/[\.\/]/g, "-") : msgDateStr;
+                const uniqueInvoiceId = invNoMatch ? invNoMatch[1] : `${invDateNorm}_${Math.round(amount)}_${Math.round(units)}`;
+
                 const period = determineBillPeriodFromPdfAndSubject(subjectStr, combinedCorpus, msgDateStr, true);
-                return { amount: Math.round(amount * 100) / 100, units: Math.round(units * 100) / 100, ...period };
+                return {
+                    amount: Math.round(amount * 100) / 100,
+                    units: Math.round(units * 100) / 100,
+                    invoiceId: uniqueInvoiceId,
+                    billDateStr: invDateNorm,
+                    ...period
+                };
             }
         }
 
@@ -16240,7 +16311,7 @@ await recordDawatEstatesNotification(
             const origHtml = btnEl ? btnEl.innerHTML : '';
             if (btnEl) {
                 btnEl.disabled = true;
-                btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Cleaning &amp; Syncing PDFs...</span>';
+                btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Cleaning &amp; Indexing 365d Emails...</span>';
             }
             try {
                 const urlInp = document.getElementById('egAppsScriptUrlInput');
@@ -16253,57 +16324,68 @@ await recordDawatEstatesNotification(
                     elecGasMetersData = ensureDefaultElecGasMeters([]);
                 }
 
-                // 1. Automatically clean up any extra auto-created meters (>27 Elec or >7 Gas) & invalid ₹34 / 0-unit entries first
+                // 1. Clean extra meters (>27 Elec or >7 Gas) & purge any invalid 0-unit / disconnection-notice entries
                 await cleanUpExtraMetersAndInvalidAutoBills(false);
 
-                // 2. Fetch candidate Bill PDFs in batches from Apps Script and parse every PDF using Mozilla pdf.js
-                let offset = 0;
-                const batchLimit = 10;
-                let hasMore = true;
-                let totalThreadsScanned = 0;
-                let totalPdfBillsMatchedAndSaved = 0;
-                let batchNum = 0;
+                // 2. Step 1: Request the complete 365-day attachment list (Jan-Dec) from Apps Script
+                const listResponse = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'listUtilityBillAttachments',
+                        lookbackDays: 365,
+                        configuredMeters: elecGasMetersData
+                    })
+                });
 
-                while (hasMore && batchNum < 30) {
-                    batchNum++;
+                const listData = await listResponse.json();
+                if (!listData || listData.status === 'error') {
+                    throw new Error((listData && listData.message) || "Failed to list utility bill attachments from Apps Script.");
+                }
+
+                if (listData.attachments === undefined) {
+                    showAssetToast("Please copy the updated Code.gs from Auto-Fetch Setup and deploy a New Version in Apps Script!", true);
+                    return;
+                }
+
+                const allDescriptors = Array.isArray(listData.attachments) ? listData.attachments : [];
+                const totalThreadsScanned = Number(listData.threadsScanned || 0);
+
+                // Filter out Adani descriptors whose (CA, year, month) cell is ALREADY validly populated with amount > 0, units > 0, and PDF
+                const descriptorsToFetch = allDescriptors.filter(d => {
+                    if (!d) return false;
+                    if (!d.isGasEmail && d.subjCa) {
+                        const m = elecGasMetersData.find(x => x.utility !== 'gas' && String(x.caNumber || '').trim() === String(d.subjCa).trim());
+                        if (!m) return false; // Strictly skip CAs not in module
+                    }
+                    return true;
+                });
+
+                let totalPdfBillsMatchedAndSaved = 0;
+                const chunkSize = 5; // Fetch 5 PDFs per request for fast, reliable processing across all 12 months
+
+                for (let i = 0; i < descriptorsToFetch.length; i += chunkSize) {
+                    const chunk = descriptorsToFetch.slice(i, i + chunkSize);
                     if (btnEl) {
-                        btnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Scanning Emails (Batch ${batchNum})...</span>`;
+                        btnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Reading PDFs ${i + 1}–${Math.min(i + chunkSize, descriptorsToFetch.length)} of ${descriptorsToFetch.length}...</span>`;
                     }
 
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    const pdfBatchRes = await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
                         mode: 'cors',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({
-                            action: 'fetchCandidateBillPdfs',
-                            lookbackDays: 365,
-                            offset: offset,
-                            limit: batchLimit,
-                            configuredMeters: elecGasMetersData
+                            action: 'getBillPdfsByDescriptors',
+                            descriptors: chunk
                         })
-                    });
+                    }).then(r => r.json()).catch(() => null);
 
-                    const batchData = await response.json();
-                    if (!batchData || batchData.status === 'error') {
-                        throw new Error((batchData && batchData.message) || "Failed to fetch candidate bill PDFs from Apps Script.");
-                    }
-
-                    // If Apps Script is still on the previous version that didn't have fetchCandidateBillPdfs, alert clearly
-                    if (batchData.items === undefined) {
-                        showAssetToast("Please copy the updated Code.gs from Auto-Fetch Setup and deploy a New Version in Apps Script so PDF text reading is enabled!", true);
-                        return;
-                    }
-
-                    totalThreadsScanned += Number(batchData.threadsCount || 0);
-                    const pdfItems = Array.isArray(batchData.items) ? batchData.items : [];
+                    const pdfItems = (pdfBatchRes && Array.isArray(pdfBatchRes.items)) ? pdfBatchRes.items : [];
 
                     for (let idx = 0; idx < pdfItems.length; idx++) {
                         const item = pdfItems[idx];
                         if (!item || !item.pdfBase64) continue;
-
-                        if (btnEl) {
-                            btnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Reading PDF ${idx + 1}/${pdfItems.length} (Batch ${batchNum})...</span>`;
-                        }
 
                         try {
                             const pdfObj = await extractTextAndItemsFromPdfBase64(item.pdfBase64);
@@ -16312,29 +16394,83 @@ await recordDawatEstatesNotification(
                             // Strictly match ONLY against meters already configured in the Electricity & Gas module
                             const matchedMeter = findStrictConfiguredMeterInPdf(elecGasMetersData, combinedText, item.isGasEmail);
                             if (!matchedMeter) {
-                                continue; // Not one of the module's meters -> skip!
+                                continue;
                             }
 
                             // Verify it's a genuine Bill (not a disconnection notice) and extract Amount & Units from the PDF
                             const parsedBill = parseVerifiedBillDetailsFromPdfObj(pdfObj, item.subject, item.msgDateStr, item.isGasEmail);
                             if (!parsedBill || !(parsedBill.amount > 0)) {
-                                continue; // Disconnection notice or non-bill -> leave month pending!
+                                continue;
                             }
 
                             const billKey = getElecGasBillKey(matchedMeter.id, parsedBill.yearStr, parsedBill.monthIdx);
                             const existingRec = elecGasBillsData[billKey];
-
-                            // Skip if already populated with a valid non-34 amount and PDF URL
-                            if (existingRec && Number(existingRec.amount) > 0 && Number(existingRec.amount) !== 34 && existingRec.fileUrl) {
-                                continue;
-                            }
-
-                            // Upload/save the verified PDF to fm.marol Drive via Apps Script
                             const caClean = String(matchedMeter.caNumber || matchedMeter.meterNumber || matchedMeter.id).trim();
-                            const desiredFileName = `${caClean}_${parsedBill.yearStr}_M${parsedBill.monthIdx + 1}.pdf`;
 
-                            let pdfDriveUrl = (existingRec && existingRec.fileUrl) ? existingRec.fileUrl : '';
-                            if (!pdfDriveUrl) {
+                            if (!item.isGasEmail) {
+                                // ADANI ELECTRICITY (1 Bill per Month, requires units > 0)
+                                if (existingRec && Number(existingRec.amount) > 0 && Number(existingRec.units) > 0 && existingRec.fileUrl) {
+                                    continue; // Already populated with valid bill & PDF
+                                }
+
+                                const desiredFileName = `${caClean}_${parsedBill.yearStr}_M${parsedBill.monthIdx + 1}.pdf`;
+                                let pdfDriveUrl = (existingRec && existingRec.fileUrl) ? existingRec.fileUrl : '';
+                                if (!pdfDriveUrl) {
+                                    const saveRes = await fetch(GOOGLE_SCRIPT_URL, {
+                                        method: 'POST',
+                                        mode: 'cors',
+                                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                        body: JSON.stringify({
+                                            action: 'saveVerifiedUtilityBillPdf',
+                                            messageId: item.messageId,
+                                            attIndex: item.attIndex,
+                                            desiredFileName: desiredFileName
+                                        })
+                                    }).then(r => r.json()).catch(() => null);
+                                    if (saveRes && saveRes.fileUrl) {
+                                        pdfDriveUrl = saveRes.fileUrl;
+                                    }
+                                }
+
+                                elecGasBillsData[billKey] = {
+                                    meterId: matchedMeter.id,
+                                    caNumber: matchedMeter.caNumber || '',
+                                    year: String(parsedBill.yearStr),
+                                    monthIndex: parsedBill.monthIdx,
+                                    amount: parsedBill.amount,
+                                    units: parsedBill.units,
+                                    billDate: item.msgDateStr || new Date().toISOString().split('T')[0],
+                                    notes: `Auto-fetched from Bill PDF (${item.attName || 'Adani E-Bill'})`,
+                                    fileUrl: pdfDriveUrl,
+                                    updatedAt: new Date().toISOString()
+                                };
+                                totalPdfBillsMatchedAndSaved++;
+                            } else {
+                                // MAHANAGAR GAS (Supports 1 or 2 Bills in the Same Month, e.g. 1st and 17th — sums Amount & SCM and attaches both PDFs!)
+                                let subBills = (existingRec && Array.isArray(existingRec.subBills)) ? [...existingRec.subBills] : [];
+                                if (subBills.length === 0 && existingRec && Number(existingRec.amount) > 0 && !String(existingRec.notes || '').toLowerCase().includes('auto-fetched')) {
+                                    // Preserve manually entered single bill if present
+                                    subBills.push({
+                                        billKeyId: `manual_existing_${parsedBill.yearStr}_${parsedBill.monthIdx}`,
+                                        billDate: existingRec.billDate || '',
+                                        amount: Number(existingRec.amount) || 0,
+                                        units: Number(existingRec.units) || 0,
+                                        fileUrl: existingRec.fileUrl || ''
+                                    });
+                                }
+
+                                // Check if this exact MGL invoice (by invoiceId OR same amount+units) is already recorded in subBills
+                                const alreadyInSubBills = subBills.some(sb =>
+                                    (sb.billKeyId && sb.billKeyId === parsedBill.invoiceId) ||
+                                    (Math.abs(Number(sb.amount || 0) - parsedBill.amount) < 0.01 && Math.abs(Number(sb.units || 0) - parsedBill.units) < 0.01 && sb.billDate === parsedBill.billDateStr)
+                                );
+                                if (alreadyInSubBills) {
+                                    continue;
+                                }
+
+                                const billSlotNum = subBills.length + 1;
+                                const desiredFileName = `${caClean}_${parsedBill.yearStr}_M${parsedBill.monthIdx + 1}_Bill${billSlotNum}.pdf`;
+                                let pdfDriveUrl = '';
                                 const saveRes = await fetch(GOOGLE_SCRIPT_URL, {
                                     method: 'POST',
                                     mode: 'cors',
@@ -16349,28 +16485,48 @@ await recordDawatEstatesNotification(
                                 if (saveRes && saveRes.fileUrl) {
                                     pdfDriveUrl = saveRes.fileUrl;
                                 }
-                            }
 
-                            elecGasBillsData[billKey] = {
-                                meterId: matchedMeter.id,
-                                caNumber: matchedMeter.caNumber || '',
-                                year: String(parsedBill.yearStr),
-                                monthIndex: parsedBill.monthIdx,
-                                amount: parsedBill.amount,
-                                units: parsedBill.units,
-                                billDate: item.msgDateStr || new Date().toISOString().split('T')[0],
-                                notes: `Auto-fetched from Bill PDF (${item.attName || 'E-Bill'})`,
-                                fileUrl: pdfDriveUrl,
-                                updatedAt: new Date().toISOString()
-                            };
-                            totalPdfBillsMatchedAndSaved++;
+                                subBills.push({
+                                    billKeyId: parsedBill.invoiceId,
+                                    billDate: parsedBill.billDateStr || item.msgDateStr || '',
+                                    amount: parsedBill.amount,
+                                    units: parsedBill.units,
+                                    fileUrl: pdfDriveUrl
+                                });
+
+                                // Sort subBills chronologically by billDate so Bill 1 (e.g. 1st) is first and Bill 2 (e.g. 17th) is second
+                                subBills.sort((a, b) => String(a.billDate || '').localeCompare(String(b.billDate || '')));
+
+                                const totalAmt = Math.round(subBills.reduce((s, b) => s + (Number(b.amount) || 0), 0) * 100) / 100;
+                                const totalUnits = Math.round(subBills.reduce((s, b) => s + (Number(b.units) || 0), 0) * 100) / 100;
+
+                                elecGasBillsData[billKey] = {
+                                    meterId: matchedMeter.id,
+                                    caNumber: matchedMeter.caNumber || '',
+                                    year: String(parsedBill.yearStr),
+                                    monthIndex: parsedBill.monthIdx,
+                                    amount: totalAmt,
+                                    units: totalUnits,
+                                    amount1: subBills[0] ? subBills[0].amount : totalAmt,
+                                    units1: subBills[0] ? subBills[0].units : totalUnits,
+                                    amount2: subBills[1] ? subBills[1].amount : 0,
+                                    units2: subBills[1] ? subBills[1].units : 0,
+                                    billDate: subBills[0] ? subBills[0].billDate : (item.msgDateStr || ''),
+                                    billDate2: subBills[1] ? subBills[1].billDate : '',
+                                    notes: subBills.length >= 2
+                                        ? `Auto-fetched ${subBills.length} MGL Bills (${subBills.map(b => '₹' + b.amount).join(' + ')})`
+                                        : `Auto-fetched from MGL Bill PDF`,
+                                    fileUrl: subBills[0] ? subBills[0].fileUrl : '',
+                                    fileUrl2: subBills[1] ? subBills[1].fileUrl : '',
+                                    subBills: subBills,
+                                    updatedAt: new Date().toISOString()
+                                };
+                                totalPdfBillsMatchedAndSaved++;
+                            }
                         } catch (pdfErr) {
                             console.warn("Skipping unreadable PDF attachment:", item.attName, pdfErr);
                         }
                     }
-
-                    hasMore = Boolean(batchData.hasMore);
-                    offset = Number(batchData.nextOffset || (offset + batchLimit));
                 }
 
                 await saveCloudData();
@@ -16382,7 +16538,7 @@ await recordDawatEstatesNotification(
                         `Auto-fetched ${totalPdfBillsMatchedAndSaved} verified Electricity & Gas PDF bill(s) across ${totalThreadsScanned} email thread(s)`
                     );
                 }
-                showAssetToast(`Auto-Fetch Complete: Verified & extracted ${totalPdfBillsMatchedAndSaved} Bill PDF(s) from ${totalThreadsScanned} email thread(s)!`);
+                showAssetToast(`Auto-Fetch Complete: Verified & saved ${totalPdfBillsMatchedAndSaved} Bill PDF(s) across ${ descriptorsToFetch.length } attachment(s)!`);
             } catch (err) {
                 console.error("Auto-fetch sync error:", err);
                 showAssetToast("Auto-fetch error: " + (err.message || err), true);

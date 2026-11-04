@@ -4698,14 +4698,14 @@ function getOrCreateUtilityFolder_(name) {
 
     <!-- Modal: Export Electricity & Gas Report Pop-Up (#modalElecGasExport) -->
     <div id="modalElecGasExport" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-4 max-h-[94vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
                 <div>
                     <h3 class="text-lg font-extrabold text-gray-900 flex items-center space-x-2">
                         <i class="fa-solid fa-file-export text-emerald-700"></i>
                         <span>Export Electricity &amp; Gas Report</span>
                     </h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Select utility category, export format, and custom month range.</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Select utility category, meters, metric (Amount / Unit / Both), format, and time period.</p>
                 </div>
                 <button type="button" onclick="closeModal('modalElecGasExport')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
@@ -4714,22 +4714,22 @@ function getOrCreateUtilityFolder_(name) {
             <div class="space-y-2">
                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">1. Select Category</label>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <label class="flex items-center space-x-2 p-3 border rounded-xl cursor-pointer hover:bg-amber-50 transition bg-white shadow-sm">
-                        <input type="radio" name="egExportCategory" value="electricity" class="text-amber-600 focus:ring-amber-500">
+                    <label class="flex items-center space-x-2 p-2.5 border rounded-xl cursor-pointer hover:bg-amber-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportCategory" value="electricity" onchange="handleEgExportCategoryChange()" class="text-amber-600 focus:ring-amber-500">
                         <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
                             <i class="fa-solid fa-bolt text-amber-500"></i>
                             <span>Adani Electricity</span>
                         </span>
                     </label>
-                    <label class="flex items-center space-x-2 p-3 border rounded-xl cursor-pointer hover:bg-orange-50 transition bg-white shadow-sm">
-                        <input type="radio" name="egExportCategory" value="gas" class="text-orange-600 focus:ring-orange-500">
+                    <label class="flex items-center space-x-2 p-2.5 border rounded-xl cursor-pointer hover:bg-orange-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportCategory" value="gas" onchange="handleEgExportCategoryChange()" class="text-orange-600 focus:ring-orange-500">
                         <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
                             <i class="fa-solid fa-fire-flame-simple text-orange-500"></i>
                             <span>Mahanagar Gas</span>
                         </span>
                     </label>
-                    <label class="flex items-center space-x-2 p-3 border rounded-xl cursor-pointer hover:bg-emerald-50 transition bg-white shadow-sm">
-                        <input type="radio" name="egExportCategory" value="both" checked class="text-emerald-600 focus:ring-emerald-500">
+                    <label class="flex items-center space-x-2 p-2.5 border rounded-xl cursor-pointer hover:bg-emerald-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportCategory" value="both" checked onchange="handleEgExportCategoryChange()" class="text-emerald-600 focus:ring-emerald-500">
                         <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
                             <i class="fa-solid fa-layer-group text-emerald-600"></i>
                             <span>Both</span>
@@ -4738,20 +4738,79 @@ function getOrCreateUtilityFolder_(name) {
                 </div>
             </div>
 
-            <!-- 2. Select Export Type -->
+            <!-- 2. Select Meters (Dropdown with Select All first option & checkboxes in front of each meter details) -->
+            <div class="space-y-2 pt-2 border-t relative" id="egExportMeterDropdownWrap">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">2. Select Meters</label>
+                    <span id="egExportSelectedMetersBadge" class="text-[11px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">All Selected</span>
+                </div>
+                <button type="button" onclick="toggleEgExportMeterDropdown()" class="w-full p-2.5 border-2 border-emerald-600 rounded-xl bg-white hover:bg-emerald-50/40 text-left flex items-center justify-between transition shadow-sm">
+                    <span id="egExportMeterDropdownLabel" class="text-xs font-extrabold text-gray-900 truncate">Select All Meters</span>
+                    <i id="egExportMeterDropdownChevron" class="fa-solid fa-chevron-down text-xs text-emerald-800 transition-transform"></i>
+                </button>
+                <div id="egExportMeterDropdownPanel" class="hidden mt-1 bg-white border-2 border-emerald-600 rounded-xl shadow-xl overflow-hidden z-40">
+                    <!-- Search Filter inside Dropdown -->
+                    <div class="p-2 bg-gray-50 border-b">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
+                            <input type="text" id="egExportMeterSearchInput" oninput="renderEgExportMetersDropdownList()" placeholder="Search CA No, Meter No, or Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <!-- First Option: Select All -->
+                    <label class="flex items-center justify-between px-3 py-2.5 bg-emerald-50/90 hover:bg-emerald-100/80 border-b border-emerald-200 cursor-pointer transition">
+                        <div class="flex items-center space-x-2.5">
+                            <input type="checkbox" id="egExportMeterSelectAllCb" checked onchange="toggleEgExportSelectAllMeters(this.checked)" class="rounded text-emerald-700 focus:ring-emerald-600 h-4 w-4">
+                            <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wide">Select All Meters</span>
+                        </div>
+                        <span id="egExportMeterTotalCountText" class="text-[10px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">0 Meters</span>
+                    </label>
+                    <!-- Individual Meter Checkboxes List -->
+                    <div id="egExportMetersCheckboxList" class="divide-y max-h-48 overflow-y-auto bg-white"></div>
+                </div>
+            </div>
+
+            <!-- 3. Select Data to Export (Amount, Unit, or Both) -->
             <div class="space-y-2 pt-2 border-t">
-                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">2. Select Export Type</label>
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">3. Select Data Values (Amount / Unit / Both)</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <label class="flex items-center space-x-2 p-2.5 border rounded-xl cursor-pointer hover:bg-emerald-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportDataField" value="amount" class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-indian-rupee-sign text-emerald-700"></i>
+                            <span>Only Amount (₹)</span>
+                        </span>
+                    </label>
+                    <label class="flex items-center space-x-2 p-2.5 border rounded-xl cursor-pointer hover:bg-blue-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportDataField" value="units" class="text-blue-600 focus:ring-blue-500">
+                        <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-gauge-high text-blue-600"></i>
+                            <span>Only Units</span>
+                        </span>
+                    </label>
+                    <label class="flex items-center space-x-2 p-2.5 border rounded-xl cursor-pointer hover:bg-purple-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportDataField" value="both" checked class="text-purple-600 focus:ring-purple-500">
+                        <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-table-list text-purple-700"></i>
+                            <span>Both: ₹ (Units)</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 4. Select Export Type -->
+            <div class="space-y-2 pt-2 border-t">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">4. Select Export Format</label>
                 <div class="grid grid-cols-2 gap-3">
-                    <label class="flex items-center space-x-2.5 p-3 border rounded-xl cursor-pointer hover:bg-emerald-50 transition bg-white shadow-sm">
+                    <label class="flex items-center space-x-2.5 p-2.5 border rounded-xl cursor-pointer hover:bg-emerald-50 transition bg-white shadow-sm">
                         <input type="radio" name="egExportType" value="excel" checked class="text-emerald-600 focus:ring-emerald-500">
-                        <span class="text-sm font-bold text-gray-800 flex items-center space-x-1.5">
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 flex items-center space-x-1.5">
                             <i class="fa-solid fa-file-excel text-emerald-700 text-base"></i>
                             <span>Excel (.xlsx)</span>
                         </span>
                     </label>
-                    <label class="flex items-center space-x-2.5 p-3 border rounded-xl cursor-pointer hover:bg-red-50 transition bg-white shadow-sm">
+                    <label class="flex items-center space-x-2.5 p-2.5 border rounded-xl cursor-pointer hover:bg-red-50 transition bg-white shadow-sm">
                         <input type="radio" name="egExportType" value="pdf" class="text-red-600 focus:ring-red-500">
-                        <span class="text-sm font-bold text-gray-800 flex items-center space-x-1.5">
+                        <span class="text-xs sm:text-sm font-bold text-gray-800 flex items-center space-x-1.5">
                             <i class="fa-solid fa-file-pdf text-red-600 text-base"></i>
                             <span>PDF Document</span>
                         </span>
@@ -4759,20 +4818,20 @@ function getOrCreateUtilityFolder_(name) {
                 </div>
             </div>
 
-            <!-- 3. Select Time Period (From Month & To Month up to Current Month) -->
+            <!-- 5. Select Time Period (From Month & To Month up to Current Month) -->
             <div class="space-y-2.5 pt-2 border-t">
                 <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">3. Select Time Period</label>
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">5. Select Time Period</label>
                     <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Previous Years to Current Month</span>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 p-3.5 rounded-xl border">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 p-3 rounded-xl border">
                     <div>
                         <label class="text-xs font-bold text-gray-700 block mb-1">From Month *</label>
-                        <select id="egExportFromPeriodSelect" onchange="handleEgExportPeriodChange()" class="w-full p-2.5 border rounded-lg text-xs font-bold bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
+                        <select id="egExportFromPeriodSelect" onchange="handleEgExportPeriodChange()" class="w-full p-2 border rounded-lg text-xs font-bold bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-700 block mb-1">To Month *</label>
-                        <select id="egExportToPeriodSelect" onchange="handleEgExportPeriodChange()" class="w-full p-2.5 border rounded-lg text-xs font-bold bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
+                        <select id="egExportToPeriodSelect" onchange="handleEgExportPeriodChange()" class="w-full p-2 border rounded-lg text-xs font-bold bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
                     </div>
                 </div>
                 <p id="egExportRangeSummaryText" class="text-[11px] text-gray-600 font-semibold"></p>
@@ -4781,7 +4840,7 @@ function getOrCreateUtilityFolder_(name) {
 
             <div class="flex justify-end space-x-2 pt-3 border-t">
                 <button type="button" onclick="closeModal('modalElecGasExport')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Cancel</button>
-                <button type="button" onclick="executeElecGasCustomExport()" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm">
+                <button type="button" onclick="executeElecGasCustomExport()" class="px-5 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm">
                     <i class="fa-solid fa-download"></i>
                     <span>Generate Export</span>
                 </button>
@@ -5471,6 +5530,10 @@ function getOrCreateUtilityFolder_(name) {
             }
             if (!e.target.closest('#assetFlatSelectContainer')) {
                 document.getElementById('assetFlatDropdown')?.classList.add('hidden');
+            }
+            if (!e.target.closest('#egExportMeterDropdownWrap')) {
+                document.getElementById('egExportMeterDropdownPanel')?.classList.add('hidden');
+                document.getElementById('egExportMeterDropdownChevron')?.classList.remove('rotate-180');
             }
             if (!e.target.closest('.raihaan-row-dropdown-wrap')) {
                 document.querySelectorAll('.raihaan-row-dropdown-list').forEach(el => el.classList.add('hidden'));
@@ -7581,7 +7644,7 @@ window.loadClassroomsFromCloud = async function() {
                     m.flat,
                     m.type || 'Refurbishment',
                     m.desc,
-                    m.cost || '0',
+                    formatIndianCurrency(m.cost || 0, format !== 'pdf'),
                     m.date
                 ]);
             } else if (section === 'bachelor') {
@@ -8527,7 +8590,7 @@ await recordDawatEstatesNotification(
                                 <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">${m.type || 'Refurbishment'}</span>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${m.cost || '0'}</span>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">₹${(parseFloat(m.cost) || 0).toLocaleString('en-IN')}</span>
                                 <button data-crud="true" onclick="openEditMaintenanceLog('${safeId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 text-sm ml-1" title="Edit Maintenance Log"><i class="fa-solid fa-pen-to-square"></i></button>
                             </div>
                         </div>
@@ -9595,7 +9658,7 @@ await recordDawatEstatesNotification(
                         <div class="bg-gray-50 p-4 rounded-lg border space-y-2 text-sm">
                             <div class="flex justify-between items-center border-b pb-2">
                                 <span class="font-bold text-amber-800 text-base">${m.type || 'Refurbishment'}</span>
-                                <span class="font-bold text-emerald-800 text-base">₹${m.cost || '0'}</span>
+                                <span class="font-bold text-emerald-800 text-base">₹${(parseFloat(m.cost) || 0).toLocaleString('en-IN')}</span>
                             </div>
                             <p class="text-gray-800">${m.desc}</p>
                             <p class="text-xs text-gray-500">Date: ${m.date}</p>
@@ -17296,7 +17359,7 @@ await recordDawatEstatesNotification(
                                     billDate: cleanSubBills[0] ? cleanSubBills[0].billDate : (item.msgDateStr || ''),
                                     billDate2: cleanSubBills[1] ? cleanSubBills[1].billDate : '',
                                     notes: cleanSubBills.length >= 2
-                                        ? `Auto-fetched ${cleanSubBills.length} MGL Bills (${cleanSubBills.map(b => '₹' + b.amount).join(' + ')})`
+                                        ? `Auto-fetched ${cleanSubBills.length} MGL Bills (${cleanSubBills.map(b => '₹' + (Number(b.amount) || 0).toLocaleString('en-IN')).join(' + ')})`
                                         : `Auto-fetched from MGL Bill PDF`,
                                     fileUrl: cleanSubBills[0] ? cleanSubBills[0].fileUrl : '',
                                     fileUrl2: cleanSubBills[1] ? cleanSubBills[1].fileUrl : '',
@@ -17397,72 +17460,46 @@ await recordDawatEstatesNotification(
             }
         };
 
-        window.exportElecGasYearlyReport = function(format) {
-            const { selYear, monthIndices, periodLabel, totalColHeader } = getActiveElecGasPeriodConfig();
-            const columns = [
-                "Sr. No.", "Utility", "Location / Description", "CA Number", "Meter Number",
-                ...monthIndices.map(mIdx => `${EG_MONTH_NAMES[mIdx]} (${selYear})`),
-                `${totalColHeader} (INR)`, `${totalColHeader} Units`
-            ];
+        // =========================================================================
+        // INDIAN NUMBER SYSTEM (THOUSANDS, LAKHS, CRORES) & CURRENCY FORMATTERS
+        // =========================================================================
 
-            const allElecList = elecGasMetersData.filter(item => item.utility !== 'gas');
-            const rows = [];
-            elecGasMetersData.forEach((m, idx) => {
-                const elecIdx = m.utility !== 'gas' ? allElecList.findIndex(x => String(x.id) === String(m.id)) : -1;
-                const unitLabel = getMeterUnitLabel(m, elecIdx);
-                let yAmt = 0, yUnits = 0;
-                const mCells = [];
-                monthIndices.forEach(mIdx => {
-                    const rec = getElecGasBillRecord(m.id, selYear, mIdx);
-                    const amt = rec && rec.amount ? parseFloat(rec.amount) : 0;
-                    const u = rec && rec.units ? parseFloat(rec.units) : 0;
-                    if (amt > 0) {
-                        yAmt += amt;
-                        yUnits += u;
-                        mCells.push(`Rs.${amt} (${u} ${unitLabel})`);
-                    } else {
-                        mCells.push("Pending");
-                    }
-                });
-                rows.push([
-                    idx + 1,
-                    m.utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity',
-                    m.location || '-',
-                    m.caNumber || '-',
-                    m.meterNumber || '-',
-                    ...mCells,
-                    yAmt,
-                    `${yUnits} ${unitLabel}`
-                ]);
+        function formatIndianNumber(val, maxFractionDigits = 2) {
+            const num = parseFloat(val);
+            if (isNaN(num)) return '0';
+            const rounded = Math.round(num * 100) / 100;
+            return rounded.toLocaleString('en-IN', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: maxFractionDigits
             });
+        }
 
-            const safePeriodSlug = periodLabel.replace(/[^A-Za-z0-9_-]+/g, '_');
-            const fileName = `Electricity_Gas_Report_${safePeriodSlug}`;
-            if (format === 'excel') {
-                const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, `Utility_Bills_${selYear}`);
-                XLSX.writeFile(wb, `${fileName}.xlsx`);
-            } else {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ orientation: 'landscape', format: monthIndices.length > 4 ? 'a3' : 'a4' });
-                doc.setFontSize(14);
-                doc.text(`Electricity & Gas Bills Report — ${periodLabel}`, 14, 15);
-                doc.autoTable({
-                    head: [columns],
-                    body: rows,
-                    startY: 22,
-                    theme: 'grid',
-                    styles: { fontSize: 7.5 },
-                    headStyles: { fillColor: [6, 95, 70] }
+        // Uses ₹ for UI & UTF-8 Excel exports, and "Rs. " for jsPDF standard fonts where ₹ is unsupported
+        function formatIndianCurrency(val, useRupeeSymbol = true) {
+            const formatted = formatIndianNumber(val, 2);
+            return useRupeeSymbol ? `₹${formatted}` : `Rs. ${formatted}`;
+        }
+
+        function formatUnitsBreakdownSummary(unitsByTypeObj) {
+            const entries = Object.entries(unitsByTypeObj || {}).filter(([, val]) => val > 0);
+            if (entries.length === 0) return '0';
+            return entries.map(([uLbl, val]) => `${formatIndianNumber(val)} ${uLbl}`).join(' + ');
+        }
+
+        window.exportElecGasYearlyReport = function(format) {
+            openElecGasExportModal();
+            if (format === 'excel' || format === 'pdf') {
+                document.querySelectorAll('input[name="egExportType"]').forEach(r => {
+                    r.checked = (r.value === format);
                 });
-                doc.save(`${fileName}.pdf`);
             }
         };
 
         // =========================================================================
-        // MERGED EXPORT POP-UP (CATEGORY, TYPE, & FROM/TO MONTH UP TO CURRENT MONTH)
+        // MERGED EXPORT POP-UP (CATEGORY, METERS DROPDOWN, AMOUNT/UNIT/BOTH, TYPE, & PERIOD)
         // =========================================================================
+
+        let currentEgExportSelectedMeterIds = new Set();
 
         function getElecGasAvailablePeriodsUpToNow() {
             const now = new Date();
@@ -17497,6 +17534,19 @@ await recordDawatEstatesNotification(
             return periods;
         }
 
+        function getEgExportCategoryMeters() {
+            if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                elecGasMetersData = ensureDefaultElecGasMeters([]);
+            }
+            const catRadio = document.querySelector('input[name="egExportCategory"]:checked');
+            const category = catRadio ? catRadio.value : 'both';
+            return elecGasMetersData.filter(m => {
+                if (category === 'electricity') return m.utility !== 'gas';
+                if (category === 'gas') return m.utility === 'gas';
+                return true;
+            });
+        }
+
         window.openElecGasExportModal = function() {
             const errEl = document.getElementById('egExportValidationError');
             if (errEl) errEl.classList.add('hidden');
@@ -17509,6 +17559,21 @@ await recordDawatEstatesNotification(
                 r.checked = (r.value === defaultCat);
             });
 
+            // Default Data Field to Both
+            document.querySelectorAll('input[name="egExportDataField"]').forEach(r => {
+                r.checked = (r.value === 'both');
+            });
+
+            // Initialize selected meters to all meters in the chosen category
+            if (document.getElementById('egExportMeterSearchInput')) {
+                document.getElementById('egExportMeterSearchInput').value = '';
+            }
+            document.getElementById('egExportMeterDropdownPanel')?.classList.add('hidden');
+            const chev = document.getElementById('egExportMeterDropdownChevron');
+            if (chev) chev.classList.remove('rotate-180');
+
+            handleEgExportCategoryChange();
+
             const periods = getElecGasAvailablePeriodsUpToNow();
             const fromSel = document.getElementById('egExportFromPeriodSelect');
             const toSel = document.getElementById('egExportToPeriodSelect');
@@ -17518,7 +17583,7 @@ await recordDawatEstatesNotification(
                 fromSel.innerHTML = optionsHtml;
                 toSel.innerHTML = optionsHtml;
 
-                // Default range based on current active view (or current year Jan to Current Month)
+                // Default range based on current year Jan to Current Month
                 const now = new Date();
                 const currYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                 const janCurrYm = `${now.getFullYear()}-01`;
@@ -17530,6 +17595,132 @@ await recordDawatEstatesNotification(
 
             handleEgExportPeriodChange();
             document.getElementById('modalElecGasExport')?.classList.remove('hidden');
+        };
+
+        window.handleEgExportCategoryChange = function() {
+            const catMeters = getEgExportCategoryMeters();
+            currentEgExportSelectedMeterIds = new Set(catMeters.map(m => String(m.id)));
+            renderEgExportMetersDropdownList();
+            document.getElementById('egExportValidationError')?.classList.add('hidden');
+        };
+
+        window.toggleEgExportMeterDropdown = function() {
+            const panel = document.getElementById('egExportMeterDropdownPanel');
+            const chev = document.getElementById('egExportMeterDropdownChevron');
+            if (!panel) return;
+            panel.classList.toggle('hidden');
+            if (chev) {
+                chev.classList.toggle('rotate-180', !panel.classList.contains('hidden'));
+            }
+        };
+
+        function updateEgExportMetersSummaryUI() {
+            const catMeters = getEgExportCategoryMeters();
+            const validIds = new Set(catMeters.map(m => String(m.id)));
+            let selectedCount = 0;
+            currentEgExportSelectedMeterIds.forEach(id => {
+                if (validIds.has(String(id))) selectedCount++;
+            });
+
+            const totalCount = catMeters.length;
+            const badge = document.getElementById('egExportSelectedMetersBadge');
+            const btnLabel = document.getElementById('egExportMeterDropdownLabel');
+            const totalText = document.getElementById('egExportMeterTotalCountText');
+
+            if (totalText) totalText.innerText = `${totalCount} Meter${totalCount === 1 ? '' : 's'}`;
+
+            if (selectedCount === totalCount && totalCount > 0) {
+                if (badge) badge.innerText = `All ${totalCount} Selected`;
+                if (btnLabel) btnLabel.innerText = `Select All (${totalCount} Meters Selected)`;
+            } else if (selectedCount === 0) {
+                if (badge) badge.innerText = `0 Selected`;
+                if (btnLabel) btnLabel.innerText = `No Meters Selected (Click to select)`;
+            } else {
+                if (badge) badge.innerText = `${selectedCount} of ${totalCount} Selected`;
+                const pickedNames = catMeters
+                    .filter(m => currentEgExportSelectedMeterIds.has(String(m.id)))
+                    .slice(0, 2)
+                    .map(m => `${m.location || m.caNumber} (${m.caNumber})`)
+                    .join(', ');
+                const moreSuffix = selectedCount > 2 ? ` +${selectedCount - 2} more` : '';
+                if (btnLabel) btnLabel.innerText = `${selectedCount} Selected: ${pickedNames}${moreSuffix}`;
+            }
+        }
+
+        window.renderEgExportMetersDropdownList = function() {
+            const listEl = document.getElementById('egExportMetersCheckboxList');
+            if (!listEl) return;
+
+            const q = (document.getElementById('egExportMeterSearchInput')?.value || '').toLowerCase().trim();
+            const catMeters = getEgExportCategoryMeters();
+
+            const filtered = catMeters.filter(m => {
+                if (!q) return true;
+                const corpus = `${m.location || ''} ${m.caNumber || ''} ${m.meterNumber || ''}`.toLowerCase();
+                return corpus.includes(q);
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<div class="p-3 text-center text-xs text-gray-400 italic">No meters match your search.</div>`;
+            } else {
+                listEl.innerHTML = filtered.map((m, idx) => {
+                    const safeId = String(m.id).replace(/'/g, "\'");
+                    const isChecked = currentEgExportSelectedMeterIds.has(String(m.id));
+                    const isGas = m.utility === 'gas';
+                    return `
+                        <label class="flex items-center justify-between px-3 py-2 hover:bg-emerald-50/50 cursor-pointer transition">
+                            <div class="flex items-center space-x-2.5 min-w-0">
+                                <input
+                                    type="checkbox"
+                                    ${isChecked ? 'checked' : ''}
+                                    onchange="toggleEgExportSingleMeter('${safeId}', this.checked)"
+                                    class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 shrink-0"
+                                >
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-gray-900 block truncate">${idx + 1}. ${m.location || 'Campus Meter'}</span>
+                                    <span class="text-[11px] font-mono text-emerald-800 font-semibold block">CA: ${m.caNumber || '-'} • Meter: ${m.meterNumber || '-'}</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isGas ? 'bg-orange-100 text-orange-800' : 'bg-amber-100 text-amber-900'}">
+                                ${isGas ? 'MGL' : 'Adani'}
+                            </span>
+                        </label>
+                    `;
+                }).join('');
+            }
+
+            const selectAllCb = document.getElementById('egExportMeterSelectAllCb');
+            if (selectAllCb) {
+                selectAllCb.checked = filtered.length > 0 && filtered.every(m => currentEgExportSelectedMeterIds.has(String(m.id)));
+            }
+            updateEgExportMetersSummaryUI();
+        };
+
+        window.toggleEgExportSingleMeter = function(meterId, isChecked) {
+            const key = String(meterId);
+            if (isChecked) {
+                currentEgExportSelectedMeterIds.add(key);
+            } else {
+                currentEgExportSelectedMeterIds.delete(key);
+            }
+            document.getElementById('egExportValidationError')?.classList.add('hidden');
+            renderEgExportMetersDropdownList();
+        };
+
+        window.toggleEgExportSelectAllMeters = function(isChecked) {
+            const q = (document.getElementById('egExportMeterSearchInput')?.value || '').toLowerCase().trim();
+            const catMeters = getEgExportCategoryMeters();
+            const targetList = catMeters.filter(m => {
+                if (!q) return true;
+                return `${m.location || ''} ${m.caNumber || ''} ${m.meterNumber || ''}`.toLowerCase().includes(q);
+            });
+
+            targetList.forEach(m => {
+                if (isChecked) currentEgExportSelectedMeterIds.add(String(m.id));
+                else currentEgExportSelectedMeterIds.delete(String(m.id));
+            });
+            document.getElementById('egExportValidationError')?.classList.add('hidden');
+            renderEgExportMetersDropdownList();
         };
 
         window.handleEgExportPeriodChange = function() {
@@ -17559,6 +17750,9 @@ await recordDawatEstatesNotification(
             const catRadio = document.querySelector('input[name="egExportCategory"]:checked');
             const category = catRadio ? catRadio.value : 'both'; // 'electricity' | 'gas' | 'both'
 
+            const dataFieldRadio = document.querySelector('input[name="egExportDataField"]:checked');
+            const dataField = dataFieldRadio ? dataFieldRadio.value : 'both'; // 'amount' | 'units' | 'both'
+
             const typeRadio = document.querySelector('input[name="egExportType"]:checked');
             const format = typeRadio ? typeRadio.value : 'excel'; // 'excel' | 'pdf'
 
@@ -17578,23 +17772,20 @@ await recordDawatEstatesNotification(
             }
 
             const selectedPeriods = allPeriods.slice(fromIdx, toIdx + 1);
-            if (!elecGasMetersData || elecGasMetersData.length === 0) {
-                elecGasMetersData = ensureDefaultElecGasMeters([]);
-            }
-
-            const targetMeters = elecGasMetersData.filter(m => {
-                if (category === 'electricity') return m.utility !== 'gas';
-                if (category === 'gas') return m.utility === 'gas';
-                return true;
-            });
+            const catMeters = getEgExportCategoryMeters();
+            const targetMeters = catMeters.filter(m => currentEgExportSelectedMeterIds.has(String(m.id)));
 
             if (targetMeters.length === 0) {
                 if (errEl) {
-                    errEl.innerText = 'No meters found for the selected category.';
+                    errEl.innerText = 'Please select at least one meter from the "Select Meters" dropdown.';
                     errEl.classList.remove('hidden');
                 }
                 return;
             }
+
+            // Use ₹ for Excel (UTF-8 supported) and "Rs. " for jsPDF standard Helvetica font so it never garbles
+            const useRupeeSign = (format === 'excel');
+            const showUtilityColumn = (category === 'both');
 
             const periodRangeLabel = selectedPeriods.length === 1
                 ? selectedPeriods[0].label
@@ -17604,75 +17795,193 @@ await recordDawatEstatesNotification(
                 ? 'Adani Electricity'
                 : (category === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity & Mahanagar Gas');
 
-            const columns = [
+            const dataModeTitle = dataField === 'amount'
+                ? 'Amount Only'
+                : (dataField === 'units' ? 'Units Only' : 'Amount & Units');
+
+            // Build table header columns dynamically:
+            // - Omit "Utility" column when exporting only Adani Electricity or only Mahanagar Gas
+            // - Include Total column(s) matching selected dataField ('amount', 'units', or 'both')
+            const baseCols = [
                 "Sr. No.",
-                "Utility",
+                ...(showUtilityColumn ? ["Utility"] : []),
                 "Location / Description",
                 "CA Number",
                 "Meter Number",
-                ...selectedPeriods.map(p => p.label),
-                "Period Total (INR)",
-                "Period Total Units"
+                ...selectedPeriods.map(p => p.label)
             ];
+
+            const totalCols = [];
+            if (dataField === 'amount') {
+                totalCols.push("Period Total Amount");
+            } else if (dataField === 'units') {
+                totalCols.push("Period Total Units");
+            } else {
+                totalCols.push("Period Total Amount", "Period Total Units");
+            }
+            const columns = [...baseCols, ...totalCols];
 
             const allElecList = elecGasMetersData.filter(item => item.utility !== 'gas');
             const rows = [];
 
+            // Track Grand Totals per month and across the full period
+            const monthlyGrandAmt = new Array(selectedPeriods.length).fill(0);
+            const monthlyGrandUnitsByType = selectedPeriods.map(() => ({}));
+            let overallGrandAmt = 0;
+            const overallGrandUnitsByType = {};
+
             targetMeters.forEach((m, idx) => {
                 const elecIdx = m.utility !== 'gas' ? allElecList.findIndex(x => String(x.id) === String(m.id)) : -1;
                 const unitLabel = getMeterUnitLabel(m, elecIdx);
-                let totalAmt = 0;
-                let totalUnits = 0;
+                let rowTotalAmt = 0;
+                let rowTotalUnits = 0;
                 const mCells = [];
 
-                selectedPeriods.forEach(p => {
+                selectedPeriods.forEach((p, pIdx) => {
                     const rec = getElecGasBillRecord(m.id, p.year, p.monthIdx);
                     const amt = rec && rec.amount ? parseFloat(rec.amount) : 0;
                     const u = rec && rec.units ? parseFloat(rec.units) : 0;
+                    const cleanU = isNaN(u) ? 0 : u;
+
                     if (amt > 0) {
-                        totalAmt += amt;
-                        totalUnits += (isNaN(u) ? 0 : u);
-                        mCells.push(`Rs.${amt} (${isNaN(u) ? 0 : u} ${unitLabel})`);
+                        rowTotalAmt += amt;
+                        rowTotalUnits += cleanU;
+                        monthlyGrandAmt[pIdx] += amt;
+                        monthlyGrandUnitsByType[pIdx][unitLabel] = (monthlyGrandUnitsByType[pIdx][unitLabel] || 0) + cleanU;
+                        overallGrandAmt += amt;
+                        overallGrandUnitsByType[unitLabel] = (overallGrandUnitsByType[unitLabel] || 0) + cleanU;
+
+                        const amtFormatted = formatIndianCurrency(amt, useRupeeSign);
+                        const unitFormatted = `${formatIndianNumber(cleanU)} ${unitLabel}`;
+
+                        if (dataField === 'amount') {
+                            mCells.push(amtFormatted);
+                        } else if (dataField === 'units') {
+                            mCells.push(unitFormatted);
+                        } else {
+                            mCells.push(`${amtFormatted} (${unitFormatted})`);
+                        }
                     } else {
                         mCells.push("Pending");
                     }
                 });
 
-                rows.push([
+                const rowPrefix = [
                     idx + 1,
-                    m.utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity',
+                    ...(showUtilityColumn ? [m.utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'] : []),
                     m.location || '-',
                     m.caNumber || '-',
                     m.meterNumber || '-',
-                    ...mCells,
-                    Math.round(totalAmt * 100) / 100,
-                    `${Math.round(totalUnits * 100) / 100} ${unitLabel}`
-                ]);
+                    ...mCells
+                ];
+
+                const rowTotalAmtStr = formatIndianCurrency(rowTotalAmt, useRupeeSign);
+                const rowTotalUnitsStr = `${formatIndianNumber(rowTotalUnits)} ${unitLabel}`;
+
+                if (dataField === 'amount') {
+                    rows.push([...rowPrefix, rowTotalAmtStr]);
+                } else if (dataField === 'units') {
+                    rows.push([...rowPrefix, rowTotalUnitsStr]);
+                } else {
+                    rows.push([...rowPrefix, rowTotalAmtStr, rowTotalUnitsStr]);
+                }
             });
+
+            // Build Grand Total Row at the bottom
+            const grandTotalMonthCells = selectedPeriods.map((_, pIdx) => {
+                const mAmtStr = formatIndianCurrency(monthlyGrandAmt[pIdx], useRupeeSign);
+                const mUnitStr = formatUnitsBreakdownSummary(monthlyGrandUnitsByType[pIdx]);
+                if (dataField === 'amount') return mAmtStr;
+                if (dataField === 'units') return mUnitStr;
+                return `${mAmtStr} (${mUnitStr})`;
+            });
+
+            const grandTotalPrefix = [
+                "",
+                ...(showUtilityColumn ? [""] : []),
+                "GRAND TOTAL",
+                "-",
+                "-",
+                ...grandTotalMonthCells
+            ];
+
+            const overallGrandAmtStr = formatIndianCurrency(overallGrandAmt, useRupeeSign);
+            const overallGrandUnitsStr = formatUnitsBreakdownSummary(overallGrandUnitsByType);
+
+            let grandTotalRow = [];
+            if (dataField === 'amount') {
+                grandTotalRow = [...grandTotalPrefix, overallGrandAmtStr];
+            } else if (dataField === 'units') {
+                grandTotalRow = [...grandTotalPrefix, overallGrandUnitsStr];
+            } else {
+                grandTotalRow = [...grandTotalPrefix, overallGrandAmtStr, overallGrandUnitsStr];
+            }
+
+            rows.push(grandTotalRow);
 
             const safeCatSlug = category === 'electricity' ? 'Adani_Electricity' : (category === 'gas' ? 'Mahanagar_Gas' : 'Elec_And_Gas');
             const safeRangeSlug = `${fromVal}_to_${toVal}`;
             const fileName = `${safeCatSlug}_Report_${safeRangeSlug}`;
 
             if (format === 'excel') {
-                const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
+                // First line: Aljamea-tus-Saifiyah (Mumbai)
+                const sheetAoA = [
+                    ["Aljamea-tus-Saifiyah (Mumbai)"],
+                    [`${categoryTitle} Bills Report — ${periodRangeLabel} (${dataModeTitle}) | Selected Meters: ${targetMeters.length}`],
+                    [],
+                    columns,
+                    ...rows
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(sheetAoA);
+                ws['!merges'] = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: columns.length - 1 } },
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: columns.length - 1 } }
+                ];
+                ws['!cols'] = columns.map((colName, cIdx) => {
+                    if (cIdx === 0) return { wch: 8 };
+                    if (colName === 'Location / Description') return { wch: 28 };
+                    if (colName === 'CA Number' || colName === 'Meter Number') return { wch: 16 };
+                    return { wch: 22 };
+                });
+
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Utility_Bills_Report");
                 XLSX.writeFile(wb, `${fileName}.xlsx`);
             } else {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'landscape', format: selectedPeriods.length > 4 ? 'a3' : 'a4' });
-                doc.setFontSize(14);
-                doc.text(`${categoryTitle} Bills Report — ${periodRangeLabel}`, 14, 15);
-                doc.setFontSize(9);
-                doc.text(`Exported on: ${new Date().toLocaleDateString()} | Total Meters: ${targetMeters.length}`, 14, 20);
+
+                // First line: Aljamea-tus-Saifiyah (Mumbai)
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(15);
+                doc.setTextColor(30, 58, 138); // Royal blue title accent
+                doc.text("Aljamea-tus-Saifiyah (Mumbai)", 14, 14);
+
+                doc.setFontSize(11);
+                doc.setTextColor(31, 41, 55);
+                doc.text(`${categoryTitle} Bills Report — ${periodRangeLabel} (${dataModeTitle})`, 14, 20.5);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(75, 85, 99);
+                doc.text(`Exported on: ${new Date().toLocaleDateString('en-IN')} | Selected Meters: ${targetMeters.length}`, 14, 25.5);
+
                 doc.autoTable({
                     head: [columns],
                     body: rows,
-                    startY: 24,
+                    startY: 29,
                     theme: 'grid',
-                    styles: { fontSize: selectedPeriods.length > 8 ? 6.5 : 7.5 },
-                    headStyles: { fillColor: [6, 95, 70] }
+                    styles: { fontSize: selectedPeriods.length > 8 ? 6.5 : 7.5, cellPadding: 2 },
+                    // Royal Blue Table Header
+                    headStyles: { fillColor: [30, 64, 175], textColor: [255, 255, 255], fontStyle: 'bold' },
+                    didParseCell: function(data) {
+                        // Highlight Grand Total row at the bottom
+                        if (data.section === 'body' && data.row.index === rows.length - 1) {
+                            data.cell.styles.fillColor = [219, 234, 254]; // Soft royal blue tint
+                            data.cell.styles.textColor = [30, 58, 138];
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
                 });
                 doc.save(`${fileName}.pdf`);
             }

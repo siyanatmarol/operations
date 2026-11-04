@@ -1927,13 +1927,13 @@
                         <i class="fa-solid fa-robot"></i>
                         <span>Auto-Fetch Setup</span>
                     </button>
-                    <button type="button" onclick="exportElecGasYearlyReport('excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>Export Excel</span>
+                    <button type="button" onclick="openElecGasExportModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Export Electricity &amp; Gas Bills Report (Excel or PDF)">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>Export</span>
                     </button>
-                    <button type="button" onclick="exportElecGasYearlyReport('pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        <span>Export PDF</span>
+                    <button type="button" onclick="openElecGasLoginDetailsModal()" class="bg-purple-700 hover:bg-purple-800 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="View &amp; Manage Adani Electricity &amp; Mahanagar Gas Portal Login Details">
+                        <i class="fa-solid fa-user-lock"></i>
+                        <span>Login Details</span>
                     </button>
                     <button type="button" onclick="cleanUpExtraMetersAndInvalidAutoBills(true)" class="crud-action-btn bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Remove Extra Auto-Added Meters (Keep Only 27 Elec & 7 Gas) and Clear Invalid ₹34 / Disconnection Notice Entries">
                         <i class="fa-solid fa-broom"></i>
@@ -4696,6 +4696,244 @@ function getOrCreateUtilityFolder_(name) {
         </div>
     </div>
 
+    <!-- Modal: Export Electricity & Gas Report Pop-Up (#modalElecGasExport) -->
+    <div id="modalElecGasExport" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-export text-emerald-700"></i>
+                        <span>Export Electricity &amp; Gas Report</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Select utility category, export format, and custom month range.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalElecGasExport')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- 1. Select Category -->
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">1. Select Category</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <label class="flex items-center space-x-2 p-3 border rounded-xl cursor-pointer hover:bg-amber-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportCategory" value="electricity" class="text-amber-600 focus:ring-amber-500">
+                        <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-bolt text-amber-500"></i>
+                            <span>Adani Electricity</span>
+                        </span>
+                    </label>
+                    <label class="flex items-center space-x-2 p-3 border rounded-xl cursor-pointer hover:bg-orange-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportCategory" value="gas" class="text-orange-600 focus:ring-orange-500">
+                        <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-fire-flame-simple text-orange-500"></i>
+                            <span>Mahanagar Gas</span>
+                        </span>
+                    </label>
+                    <label class="flex items-center space-x-2 p-3 border rounded-xl cursor-pointer hover:bg-emerald-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportCategory" value="both" checked class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-xs font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-layer-group text-emerald-600"></i>
+                            <span>Both</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2. Select Export Type -->
+            <div class="space-y-2 pt-2 border-t">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">2. Select Export Type</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex items-center space-x-2.5 p-3 border rounded-xl cursor-pointer hover:bg-emerald-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportType" value="excel" checked class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-sm font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-excel text-emerald-700 text-base"></i>
+                            <span>Excel (.xlsx)</span>
+                        </span>
+                    </label>
+                    <label class="flex items-center space-x-2.5 p-3 border rounded-xl cursor-pointer hover:bg-red-50 transition bg-white shadow-sm">
+                        <input type="radio" name="egExportType" value="pdf" class="text-red-600 focus:ring-red-500">
+                        <span class="text-sm font-bold text-gray-800 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-pdf text-red-600 text-base"></i>
+                            <span>PDF Document</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 3. Select Time Period (From Month & To Month up to Current Month) -->
+            <div class="space-y-2.5 pt-2 border-t">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">3. Select Time Period</label>
+                    <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Previous Years to Current Month</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 p-3.5 rounded-xl border">
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 block mb-1">From Month *</label>
+                        <select id="egExportFromPeriodSelect" onchange="handleEgExportPeriodChange()" class="w-full p-2.5 border rounded-lg text-xs font-bold bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 block mb-1">To Month *</label>
+                        <select id="egExportToPeriodSelect" onchange="handleEgExportPeriodChange()" class="w-full p-2.5 border rounded-lg text-xs font-bold bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
+                    </div>
+                </div>
+                <p id="egExportRangeSummaryText" class="text-[11px] text-gray-600 font-semibold"></p>
+                <p id="egExportValidationError" class="text-xs text-red-600 font-bold hidden"></p>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-3 border-t">
+                <button type="button" onclick="closeModal('modalElecGasExport')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="button" onclick="executeElecGasCustomExport()" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Generate Export</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Electricity & Gas Login Details List Pop-Up (#modalElecGasLoginDetails) -->
+    <div id="modalElecGasLoginDetails" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-6 space-y-4 max-h-[92vh] flex flex-col">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-3">
+                <div>
+                    <h3 class="text-lg font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-user-lock text-purple-700"></i>
+                        <span>Electricity &amp; Gas Portal Login Details</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Manage login credentials, registered contact numbers, and linked CA numbers for Adani Electricity &amp; Mahanagar Gas.</p>
+                </div>
+                <div class="flex items-center space-x-2 self-end sm:self-auto">
+                    <button type="button" onclick="openAddElecGasLoginFormModal()" class="crud-action-btn bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-2 rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Add Login Details</span>
+                    </button>
+                    <button type="button" onclick="closeModal('modalElecGasLoginDetails')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold px-1">&times;</button>
+                </div>
+            </div>
+
+            <!-- Filter Tabs (All / Adani Electricity / Mahanagar Gas) -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 p-2.5 rounded-xl border">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" id="egLoginTabAll" onclick="setEgLoginDetailsFilter('all')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-purple-800 text-white shadow-sm transition">
+                        All Accounts (<span id="egLoginCountAll">0</span>)
+                    </button>
+                    <button type="button" id="egLoginTabElec" onclick="setEgLoginDetailsFilter('electricity')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 hover:bg-amber-50 border transition flex items-center space-x-1">
+                        <i class="fa-solid fa-bolt text-amber-500"></i>
+                        <span>Adani Electricity (<span id="egLoginCountElec">0</span>)</span>
+                    </button>
+                    <button type="button" id="egLoginTabGas" onclick="setEgLoginDetailsFilter('gas')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 hover:bg-orange-50 border transition flex items-center space-x-1">
+                        <i class="fa-solid fa-fire-flame-simple text-orange-500"></i>
+                        <span>Mahanagar Gas (<span id="egLoginCountGas">0</span>)</span>
+                    </button>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
+                    <input type="text" id="egLoginSearchInput" oninput="renderElecGasLoginDetailsList()" placeholder="Search username, contact, CA no..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Saved Login Accounts List -->
+            <div id="egLoginDetailsListContainer" class="flex-grow overflow-y-auto space-y-3 pr-1 max-h-[62vh]"></div>
+
+            <div class="flex justify-end pt-3 border-t">
+                <button type="button" onclick="closeModal('modalElecGasLoginDetails')" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs font-bold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add / Edit Login Details Form Pop-Up (Supersedes Login Details List Pop-Up) (#modalElecGasAddLogin) -->
+    <div id="modalElecGasAddLogin" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-4 max-h-[92vh] flex flex-col">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-key text-purple-700"></i>
+                        <span id="egAddLoginModalTitle">Add Login Details</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Configure portal username, password, contact number, and linked CA numbers.</p>
+                </div>
+                <button type="button" onclick="backToElecGasLoginDetailsListModal()" class="text-gray-500 hover:text-gray-800 text-2xl font-bold" title="Back to Login Details">&times;</button>
+            </div>
+
+            <form id="egAddLoginForm" onsubmit="saveElecGasLoginDetailRecord(event)" class="space-y-4 flex-grow overflow-y-auto pr-1">
+                <input type="hidden" id="egLoginEditId" value="">
+
+                <!-- 1. Select Provider (Adani Electricity or Mahanagar Gas) -->
+                <div>
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-1.5">1. Utility Provider *</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center space-x-2.5 p-3 border-2 rounded-xl cursor-pointer hover:bg-amber-50 transition bg-white" id="egLoginProviderCardElec">
+                            <input type="radio" name="egLoginProvider" value="electricity" checked onchange="handleEgLoginProviderChange()" class="text-amber-600 focus:ring-amber-500">
+                            <span class="text-xs sm:text-sm font-extrabold text-gray-900 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-bolt text-amber-500"></i>
+                                <span>Adani Electricity</span>
+                            </span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 p-3 border-2 rounded-xl cursor-pointer hover:bg-orange-50 transition bg-white" id="egLoginProviderCardGas">
+                            <input type="radio" name="egLoginProvider" value="gas" onchange="handleEgLoginProviderChange()" class="text-orange-600 focus:ring-orange-500">
+                            <span class="text-xs sm:text-sm font-extrabold text-gray-900 flex items-center space-x-1.5">
+                                <i class="fa-solid fa-fire-flame-simple text-orange-500"></i>
+                                <span>Mahanagar Gas</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Username, Password & Contact Number -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 block mb-1">Username / User ID *</label>
+                        <input type="text" id="egLoginUsernameInput" required placeholder="Enter username or email" class="w-full p-2.5 border rounded-lg text-xs font-semibold bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 block mb-1">Password *</label>
+                        <div class="relative">
+                            <input type="text" id="egLoginPasswordInput" required placeholder="Enter password" class="w-full p-2.5 pr-8 border rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                            <button type="button" onclick="toggleEgLoginFormPasswordVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-xs" title="Show / Hide Password">
+                                <i id="egLoginPasswordToggleIcon" class="fa-solid fa-eye-slash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-700 block mb-1">Contact Number *</label>
+                        <input type="tel" id="egLoginContactInput" required placeholder="e.g. 9820011223" class="w-full p-2.5 border rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- 3. Select Checkboxes from All CA Numbers -->
+                <div class="space-y-2 pt-2 border-t">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">3. Select Linked CA Numbers *</label>
+                        <span id="egLoginSelectedCaCountBadge" class="text-xs font-extrabold text-purple-900 bg-purple-100 px-2.5 py-0.5 rounded-full border border-purple-300">0 Selected</span>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="relative flex-grow">
+                            <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
+                            <input type="text" id="egLoginCaSearchInput" oninput="renderEgLoginCaCheckboxesList()" placeholder="Filter by CA Number, Meter No, or Building / Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        </div>
+                        <label class="flex items-center space-x-2 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200 cursor-pointer shrink-0">
+                            <input type="checkbox" id="egLoginSelectAllCaCheckbox" onchange="toggleEgLoginSelectAllCa(this.checked)" class="rounded text-purple-600 focus:ring-purple-500 h-4 w-4">
+                            <span class="text-xs font-bold text-purple-950">Select All Visible</span>
+                        </label>
+                    </div>
+
+                    <div id="egLoginCaCheckboxesContainer" class="border rounded-xl divide-y overflow-y-auto max-h-56 bg-gray-50/60"></div>
+                    <p id="egLoginValidationError" class="text-xs text-red-600 font-bold hidden"></p>
+                </div>
+
+                <div class="flex justify-between items-center pt-3 border-t">
+                    <button type="button" onclick="backToElecGasLoginDetailsListModal()" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-100 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Back to Login Details</span>
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Login Details</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- FIREBASE & APPLICATION LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
@@ -4750,6 +4988,7 @@ function getOrCreateUtilityFolder_(name) {
         let estateAssetsData = [];
         let elecGasMetersData = [];
         let elecGasBillsData = {};
+        let elecGasLoginsData = [];
         let isSavingAssets = false;
         let isSavingPortalData = false;
         let expandedAssetFlats = new Set();
@@ -5600,6 +5839,7 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     maintLogs = data.maint || [];
                     vacantBills = data.bills || {};
                     elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
+                    elecGasLoginsData = normalizeElecGasLoginsList(data.elecGasLogins);
                     let rawCloudEgBills = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
                     try {
                         const egSnap = await get(child(dbRef(db), 'elecGasBills'));
@@ -5949,6 +6189,7 @@ window.loadClassroomsFromCloud = async function() {
                     maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
                     vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
                     if (data.elecGasMeters !== undefined) elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
+                    if (data.elecGasLogins !== undefined) elecGasLoginsData = normalizeElecGasLoginsList(data.elecGasLogins);
                     if (data.elecGasBills !== undefined) {
                         elecGasBillsData = mergeElecGasBillsWithLocalCache(data.elecGasBills);
                     }
@@ -6912,6 +7153,7 @@ window.loadClassroomsFromCloud = async function() {
             estate_assets: estateAssetsData || [],
             elecGasMeters: elecGasMetersData || [],
             elecGasBills: elecGasBillsData || {},
+            elecGasLogins: elecGasLoginsData || [],
             googleScriptUrl: GOOGLE_SCRIPT_URL || ''
         }));
         await Promise.allSettled([
@@ -14013,7 +14255,8 @@ await recordDawatEstatesNotification(
                     watiConfig: watiConfig,
                     estate_assets: estateAssetsData,
                     elecGasMeters: elecGasMetersData,
-                    elecGasBills: elecGasBillsData
+                    elecGasBills: elecGasBillsData,
+                    elecGasLogins: elecGasLoginsData
                 }
             };
 
@@ -14071,6 +14314,7 @@ await recordDawatEstatesNotification(
                     if (src.watiConfig !== undefined) watiConfig = normalizeWatiConfig(src.watiConfig);
                     if (src.estate_assets !== undefined) estateAssetsData = normalizeEstateAssetsList(src.estate_assets);
                     if (src.elecGasMeters !== undefined) elecGasMetersData = ensureDefaultElecGasMeters(src.elecGasMeters);
+                    if (src.elecGasLogins !== undefined) elecGasLoginsData = normalizeElecGasLoginsList(src.elecGasLogins);
                     if (src.elecGasBills && typeof src.elecGasBills === 'object') elecGasBillsData = src.elecGasBills;
 
                     await saveCloudData();
@@ -17214,6 +17458,653 @@ await recordDawatEstatesNotification(
                 });
                 doc.save(`${fileName}.pdf`);
             }
+        };
+
+        // =========================================================================
+        // MERGED EXPORT POP-UP (CATEGORY, TYPE, & FROM/TO MONTH UP TO CURRENT MONTH)
+        // =========================================================================
+
+        function getElecGasAvailablePeriodsUpToNow() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonthIdx = now.getMonth(); // 0..11
+
+            // Collect earliest year from existing bill records or default to 2020
+            let minYear = 2020;
+            if (elecGasBillsData && typeof elecGasBillsData === 'object') {
+                Object.values(elecGasBillsData).forEach(rec => {
+                    if (rec && rec.year) {
+                        const y = parseInt(rec.year, 10);
+                        if (!isNaN(y) && y >= 2015 && y < minYear) minYear = y;
+                    }
+                });
+            }
+
+            const periods = [];
+            for (let y = minYear; y <= currentYear; y++) {
+                const maxM = (y === currentYear) ? currentMonthIdx : 11;
+                for (let m = 0; m <= maxM; m++) {
+                    const ymVal = `${y}-${String(m + 1).padStart(2, '0')}`;
+                    const label = `${EG_MONTH_NAMES[m]} ${y}`;
+                    periods.push({
+                        value: ymVal,
+                        year: String(y),
+                        monthIdx: m,
+                        label
+                    });
+                }
+            }
+            return periods;
+        }
+
+        window.openElecGasExportModal = function() {
+            const errEl = document.getElementById('egExportValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
+            // Pre-select category based on active utility filter on the page
+            const defaultCat = selectedElecGasUtilityFilter === 'electricity'
+                ? 'electricity'
+                : (selectedElecGasUtilityFilter === 'gas' ? 'gas' : 'both');
+            document.querySelectorAll('input[name="egExportCategory"]').forEach(r => {
+                r.checked = (r.value === defaultCat);
+            });
+
+            const periods = getElecGasAvailablePeriodsUpToNow();
+            const fromSel = document.getElementById('egExportFromPeriodSelect');
+            const toSel = document.getElementById('egExportToPeriodSelect');
+
+            if (fromSel && toSel && periods.length > 0) {
+                const optionsHtml = periods.map(p => `<option value="${p.value}">${p.label}</option>`).join('');
+                fromSel.innerHTML = optionsHtml;
+                toSel.innerHTML = optionsHtml;
+
+                // Default range based on current active view (or current year Jan to Current Month)
+                const now = new Date();
+                const currYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const janCurrYm = `${now.getFullYear()}-01`;
+
+                const hasJanCurr = periods.some(p => p.value === janCurrYm);
+                fromSel.value = hasJanCurr ? janCurrYm : periods[0].value;
+                toSel.value = periods[periods.length - 1].value || currYm;
+            }
+
+            handleEgExportPeriodChange();
+            document.getElementById('modalElecGasExport')?.classList.remove('hidden');
+        };
+
+        window.handleEgExportPeriodChange = function() {
+            const fromVal = document.getElementById('egExportFromPeriodSelect')?.value || '';
+            const toVal = document.getElementById('egExportToPeriodSelect')?.value || '';
+            const summaryEl = document.getElementById('egExportRangeSummaryText');
+            const errEl = document.getElementById('egExportValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
+            if (!fromVal || !toVal || !summaryEl) return;
+            const periods = getElecGasAvailablePeriodsUpToNow();
+            const fromIdx = periods.findIndex(p => p.value === fromVal);
+            const toIdx = periods.findIndex(p => p.value === toVal);
+
+            if (fromIdx === -1 || toIdx === -1 || fromIdx > toIdx) {
+                summaryEl.innerHTML = `<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>"From Month" must be on or before "To Month".</span>`;
+            } else {
+                const count = toIdx - fromIdx + 1;
+                summaryEl.innerHTML = `<i class="fa-regular fa-calendar-check text-emerald-700 mr-1"></i>Selected Range: <strong>${periods[fromIdx].label}</strong> to <strong>${periods[toIdx].label}</strong> (${count} month${count === 1 ? '' : 's'})`;
+            }
+        };
+
+        window.executeElecGasCustomExport = function() {
+            const errEl = document.getElementById('egExportValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
+            const catRadio = document.querySelector('input[name="egExportCategory"]:checked');
+            const category = catRadio ? catRadio.value : 'both'; // 'electricity' | 'gas' | 'both'
+
+            const typeRadio = document.querySelector('input[name="egExportType"]:checked');
+            const format = typeRadio ? typeRadio.value : 'excel'; // 'excel' | 'pdf'
+
+            const fromVal = document.getElementById('egExportFromPeriodSelect')?.value || '';
+            const toVal = document.getElementById('egExportToPeriodSelect')?.value || '';
+
+            const allPeriods = getElecGasAvailablePeriodsUpToNow();
+            const fromIdx = allPeriods.findIndex(p => p.value === fromVal);
+            const toIdx = allPeriods.findIndex(p => p.value === toVal);
+
+            if (fromIdx === -1 || toIdx === -1 || fromIdx > toIdx) {
+                if (errEl) {
+                    errEl.innerText = 'Please select a valid time period where "From Month" is on or before "To Month".';
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const selectedPeriods = allPeriods.slice(fromIdx, toIdx + 1);
+            if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                elecGasMetersData = ensureDefaultElecGasMeters([]);
+            }
+
+            const targetMeters = elecGasMetersData.filter(m => {
+                if (category === 'electricity') return m.utility !== 'gas';
+                if (category === 'gas') return m.utility === 'gas';
+                return true;
+            });
+
+            if (targetMeters.length === 0) {
+                if (errEl) {
+                    errEl.innerText = 'No meters found for the selected category.';
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const periodRangeLabel = selectedPeriods.length === 1
+                ? selectedPeriods[0].label
+                : `${selectedPeriods[0].label} to ${selectedPeriods[selectedPeriods.length - 1].label}`;
+
+            const categoryTitle = category === 'electricity'
+                ? 'Adani Electricity'
+                : (category === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity & Mahanagar Gas');
+
+            const columns = [
+                "Sr. No.",
+                "Utility",
+                "Location / Description",
+                "CA Number",
+                "Meter Number",
+                ...selectedPeriods.map(p => p.label),
+                "Period Total (INR)",
+                "Period Total Units"
+            ];
+
+            const allElecList = elecGasMetersData.filter(item => item.utility !== 'gas');
+            const rows = [];
+
+            targetMeters.forEach((m, idx) => {
+                const elecIdx = m.utility !== 'gas' ? allElecList.findIndex(x => String(x.id) === String(m.id)) : -1;
+                const unitLabel = getMeterUnitLabel(m, elecIdx);
+                let totalAmt = 0;
+                let totalUnits = 0;
+                const mCells = [];
+
+                selectedPeriods.forEach(p => {
+                    const rec = getElecGasBillRecord(m.id, p.year, p.monthIdx);
+                    const amt = rec && rec.amount ? parseFloat(rec.amount) : 0;
+                    const u = rec && rec.units ? parseFloat(rec.units) : 0;
+                    if (amt > 0) {
+                        totalAmt += amt;
+                        totalUnits += (isNaN(u) ? 0 : u);
+                        mCells.push(`Rs.${amt} (${isNaN(u) ? 0 : u} ${unitLabel})`);
+                    } else {
+                        mCells.push("Pending");
+                    }
+                });
+
+                rows.push([
+                    idx + 1,
+                    m.utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity',
+                    m.location || '-',
+                    m.caNumber || '-',
+                    m.meterNumber || '-',
+                    ...mCells,
+                    Math.round(totalAmt * 100) / 100,
+                    `${Math.round(totalUnits * 100) / 100} ${unitLabel}`
+                ]);
+            });
+
+            const safeCatSlug = category === 'electricity' ? 'Adani_Electricity' : (category === 'gas' ? 'Mahanagar_Gas' : 'Elec_And_Gas');
+            const safeRangeSlug = `${fromVal}_to_${toVal}`;
+            const fileName = `${safeCatSlug}_Report_${safeRangeSlug}`;
+
+            if (format === 'excel') {
+                const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Utility_Bills_Report");
+                XLSX.writeFile(wb, `${fileName}.xlsx`);
+            } else {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape', format: selectedPeriods.length > 4 ? 'a3' : 'a4' });
+                doc.setFontSize(14);
+                doc.text(`${categoryTitle} Bills Report — ${periodRangeLabel}`, 14, 15);
+                doc.setFontSize(9);
+                doc.text(`Exported on: ${new Date().toLocaleDateString()} | Total Meters: ${targetMeters.length}`, 14, 20);
+                doc.autoTable({
+                    head: [columns],
+                    body: rows,
+                    startY: 24,
+                    theme: 'grid',
+                    styles: { fontSize: selectedPeriods.length > 8 ? 6.5 : 7.5 },
+                    headStyles: { fillColor: [6, 95, 70] }
+                });
+                doc.save(`${fileName}.pdf`);
+            }
+
+            closeModal('modalElecGasExport');
+            showAssetToast(`Exported ${categoryTitle} (${periodRangeLabel}) as ${format.toUpperCase()}`);
+        };
+
+        // =========================================================================
+        // LOGIN DETAILS POP-UP & SUPERSEDING ADD/EDIT FORM POP-UP
+        // =========================================================================
+
+        let selectedEgLoginFilter = 'all'; // 'all' | 'electricity' | 'gas'
+        let currentEgLoginSelectedCas = new Set();
+
+        function normalizeElecGasLoginsList(rawLogins) {
+            if (!rawLogins) return [];
+            const arr = Array.isArray(rawLogins)
+                ? rawLogins
+                : (typeof rawLogins === 'object' ? Object.values(rawLogins) : []);
+            return arr.filter(Boolean).map((item, idx) => ({
+                id: String(item.id || `eg_login_${Date.now()}_${idx}`),
+                provider: item.provider === 'gas' ? 'gas' : 'electricity',
+                username: String(item.username || '').trim(),
+                password: String(item.password || '').trim(),
+                contactNumber: String(item.contactNumber || '').trim(),
+                caNumbers: Array.isArray(item.caNumbers)
+                    ? item.caNumbers.map(c => String(c).trim()).filter(Boolean)
+                    : (item.caNumbers && typeof item.caNumbers === 'object' ? Object.values(item.caNumbers).map(c => String(c).trim()).filter(Boolean) : []),
+                updatedAt: item.updatedAt || ''
+            }));
+        }
+
+        window.openElecGasLoginDetailsModal = function() {
+            // Ensure the superseding form modal is closed when viewing the Login Details list modal
+            document.getElementById('modalElecGasAddLogin')?.classList.add('hidden');
+            if (document.getElementById('egLoginSearchInput')) {
+                document.getElementById('egLoginSearchInput').value = '';
+            }
+            setEgLoginDetailsFilter('all');
+            document.getElementById('modalElecGasLoginDetails')?.classList.remove('hidden');
+        };
+
+        window.setEgLoginDetailsFilter = function(filterVal) {
+            selectedEgLoginFilter = filterVal;
+            const btnAll = document.getElementById('egLoginTabAll');
+            const btnElec = document.getElementById('egLoginTabElec');
+            const btnGas = document.getElementById('egLoginTabGas');
+
+            const activeCls = "px-3 py-1.5 rounded-lg text-xs font-extrabold bg-purple-800 text-white shadow-sm transition flex items-center space-x-1";
+            const inactiveCls = "px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 hover:bg-gray-100 border transition flex items-center space-x-1";
+
+            if (btnAll) btnAll.className = filterVal === 'all' ? activeCls : inactiveCls;
+            if (btnElec) btnElec.className = filterVal === 'electricity' ? activeCls : inactiveCls;
+            if (btnGas) btnGas.className = filterVal === 'gas' ? activeCls : inactiveCls;
+
+            renderElecGasLoginDetailsList();
+        };
+
+        window.renderElecGasLoginDetailsList = function() {
+            const container = document.getElementById('egLoginDetailsListContainer');
+            if (!container) return;
+
+            const allList = Array.isArray(elecGasLoginsData) ? elecGasLoginsData : [];
+            const elecCount = allList.filter(item => item.provider !== 'gas').length;
+            const gasCount = allList.filter(item => item.provider === 'gas').length;
+
+            if (document.getElementById('egLoginCountAll')) document.getElementById('egLoginCountAll').innerText = allList.length;
+            if (document.getElementById('egLoginCountElec')) document.getElementById('egLoginCountElec').innerText = elecCount;
+            if (document.getElementById('egLoginCountGas')) document.getElementById('egLoginCountGas').innerText = gasCount;
+
+            const q = (document.getElementById('egLoginSearchInput')?.value || '').toLowerCase().trim();
+            const viewOnly = isCurrentUserViewOnly();
+
+            const filtered = allList.filter(item => {
+                if (selectedEgLoginFilter === 'electricity' && item.provider === 'gas') return false;
+                if (selectedEgLoginFilter === 'gas' && item.provider !== 'gas') return false;
+                if (q) {
+                    const caStr = (item.caNumbers || []).join(' ');
+                    const providerName = item.provider === 'gas' ? 'mahanagar gas mgl' : 'adani electricity';
+                    const corpus = `${providerName} ${item.username} ${item.contactNumber} ${caStr}`.toLowerCase();
+                    if (!corpus.includes(q)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300 space-y-2">
+                        <i class="fa-solid fa-user-lock text-3xl text-gray-400 block"></i>
+                        <p class="text-xs font-bold text-gray-600">No login credentials saved yet.</p>
+                        ${!viewOnly ? `<button type="button" onclick="openAddElecGasLoginFormModal()" class="mt-1 bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center space-x-1.5 shadow-sm"><i class="fa-solid fa-plus"></i><span>+ Add Login Details</span></button>` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            // Build lookup for meter location by CA number
+            const caLocationMap = {};
+            (elecGasMetersData || []).forEach(m => {
+                if (m && m.caNumber) {
+                    caLocationMap[String(m.caNumber).trim()] = m.location || '';
+                }
+            });
+
+            container.innerHTML = filtered.map(item => {
+                const safeId = String(item.id).replace(/'/g, "\'");
+                const isGas = item.provider === 'gas';
+                const providerBadge = isGas
+                    ? `<span class="bg-orange-100 text-orange-900 border border-orange-300 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1"><i class="fa-solid fa-fire-flame-simple text-orange-600"></i><span>Mahanagar Gas</span></span>`
+                    : `<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center space-x-1"><i class="fa-solid fa-bolt text-amber-600"></i><span>Adani Electricity</span></span>`;
+
+                const caNumbers = Array.isArray(item.caNumbers) ? item.caNumbers : [];
+                const caPillsHtml = caNumbers.length > 0
+                    ? caNumbers.map(ca => {
+                        const loc = caLocationMap[ca];
+                        return `<span class="bg-white border border-gray-300 text-gray-800 text-[11px] font-mono font-bold px-2 py-0.5 rounded shadow-sm" title="${loc || ''}">${ca}${loc ? ` <span class="font-sans font-normal text-gray-500">(${loc})</span>` : ''}</span>`;
+                    }).join('')
+                    : `<span class="text-xs text-gray-400 italic">No CA numbers linked</span>`;
+
+                return `
+                    <div class="bg-white border-2 ${isGas ? 'border-orange-200' : 'border-amber-200'} rounded-xl p-4 shadow-sm space-y-3">
+                        <div class="flex flex-wrap justify-between items-start gap-2 border-b pb-2.5">
+                            <div class="flex items-center space-x-2">
+                                ${providerBadge}
+                                <span class="text-xs font-extrabold text-purple-900 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">${caNumbers.length} CA${caNumbers.length === 1 ? '' : 's'} Linked</span>
+                            </div>
+                            ${!viewOnly ? `
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="openAddElecGasLoginFormModal('${safeId}')" class="crud-action-btn text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold px-2.5 py-1 rounded-lg transition inline-flex items-center space-x-1">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    <span>Edit</span>
+                                </button>
+                                <button type="button" onclick="deleteElecGasLoginDetailRecord('${safeId}')" class="crud-action-btn text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold px-2.5 py-1 rounded-lg transition inline-flex items-center space-x-1">
+                                    <i class="fa-solid fa-trash"></i>
+                                    <span>Delete</span>
+                                </button>
+                            </div>` : ''}
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-gray-50 p-3 rounded-lg border">
+                            <div>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase block">Username / User ID</span>
+                                <span class="font-bold text-gray-900 font-mono text-sm break-all">${item.username || '-'}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase block">Password</span>
+                                <div class="flex items-center space-x-2">
+                                    <span id="egSavedPass_${safeId}" data-pass="${(item.password || '').replace(/"/g, '&quot;')}" data-visible="true" class="font-mono font-bold text-emerald-900 text-sm break-all">${item.password || '-'}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-gray-500 uppercase block">Contact Number</span>
+                                <span class="font-bold text-gray-900 font-mono text-sm"><i class="fa-solid fa-phone text-emerald-600 mr-1 text-xs"></i>${item.contactNumber || '-'}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Linked CA Numbers:</span>
+                            <div class="flex flex-wrap gap-1.5">${caPillsHtml}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        // Separate button opens into a new pop-up which supersedes the old one
+        window.openAddElecGasLoginFormModal = function(editId = '') {
+            if (!guardEditingRights()) return;
+
+            // Supersede the previous Login Details list modal by hiding it before showing the Add/Edit Login pop-up
+            document.getElementById('modalElecGasLoginDetails')?.classList.add('hidden');
+
+            const form = document.getElementById('egAddLoginForm');
+            if (form) form.reset();
+            document.getElementById('egLoginValidationError')?.classList.add('hidden');
+            if (document.getElementById('egLoginCaSearchInput')) {
+                document.getElementById('egLoginCaSearchInput').value = '';
+            }
+
+            currentEgLoginSelectedCas = new Set();
+
+            if (editId) {
+                const rec = (elecGasLoginsData || []).find(item => String(item.id) === String(editId));
+                if (!rec) return;
+                document.getElementById('egAddLoginModalTitle').innerText = 'Edit Login Details';
+                document.getElementById('egLoginEditId').value = String(rec.id);
+                document.querySelectorAll('input[name="egLoginProvider"]').forEach(r => {
+                    r.checked = (r.value === (rec.provider === 'gas' ? 'gas' : 'electricity'));
+                });
+                document.getElementById('egLoginUsernameInput').value = rec.username || '';
+                document.getElementById('egLoginPasswordInput').value = rec.password || '';
+                document.getElementById('egLoginContactInput').value = rec.contactNumber || '';
+                (rec.caNumbers || []).forEach(ca => currentEgLoginSelectedCas.add(String(ca).trim()));
+            } else {
+                document.getElementById('egAddLoginModalTitle').innerText = 'Add Login Details';
+                document.getElementById('egLoginEditId').value = '';
+                const defaultProv = selectedEgLoginFilter === 'gas' ? 'gas' : 'electricity';
+                document.querySelectorAll('input[name="egLoginProvider"]').forEach(r => {
+                    r.checked = (r.value === defaultProv);
+                });
+            }
+
+            renderEgLoginCaCheckboxesList();
+            document.getElementById('modalElecGasAddLogin')?.classList.remove('hidden');
+        };
+
+        window.backToElecGasLoginDetailsListModal = function() {
+            document.getElementById('modalElecGasAddLogin')?.classList.add('hidden');
+            renderElecGasLoginDetailsList();
+            document.getElementById('modalElecGasLoginDetails')?.classList.remove('hidden');
+        };
+
+        window.toggleEgLoginFormPasswordVisibility = function() {
+            const inp = document.getElementById('egLoginPasswordInput');
+            const icon = document.getElementById('egLoginPasswordToggleIcon');
+            if (!inp) return;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                if (icon) icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                if (icon) icon.className = 'fa-solid fa-eye';
+            }
+        };
+
+        window.handleEgLoginProviderChange = function() {
+            // Re-render CA checkboxes list for the newly selected provider
+            renderEgLoginCaCheckboxesList();
+        };
+
+        function getAllCaItemsForLoginModal() {
+            if (!elecGasMetersData || elecGasMetersData.length === 0) {
+                elecGasMetersData = ensureDefaultElecGasMeters([]);
+            }
+            const provRadio = document.querySelector('input[name="egLoginProvider"]:checked');
+            const provider = provRadio ? provRadio.value : 'electricity';
+
+            const items = [];
+            const seenCa = new Set();
+
+            // 1. Pull CA numbers from Electricity & Gas module meters matching provider
+            elecGasMetersData.forEach(m => {
+                if (!m) return;
+                const isGas = m.utility === 'gas';
+                if ((provider === 'gas') !== isGas) return;
+                const ca = String(m.caNumber || '').trim();
+                if (!ca || seenCa.has(ca)) return;
+                seenCa.add(ca);
+                items.push({
+                    caNumber: ca,
+                    meterNumber: m.meterNumber || '',
+                    location: m.location || (isGas ? 'Mahanagar Gas Meter' : 'Adani Electricity Meter'),
+                    utility: isGas ? 'gas' : 'electricity'
+                });
+            });
+
+            // 2. Also include any additional CA numbers from Estate Master Directory if present
+            (estatesData || []).forEach(flat => {
+                if (!flat) return;
+                const rawCa = provider === 'gas' ? flat.gas : flat.elec;
+                const ca = String(rawCa || '').trim();
+                if (!ca || ca === '-' || seenCa.has(ca)) return;
+                seenCa.add(ca);
+                const wingStr = flat.wing ? ` (${flat.wing})` : '';
+                items.push({
+                    caNumber: ca,
+                    meterNumber: '',
+                    location: `${flat.building || 'Estate'}${wingStr} - Flat ${flat.flatNo || ''}`,
+                    utility: provider === 'gas' ? 'gas' : 'electricity'
+                });
+            });
+
+            return items;
+        }
+
+        function updateEgLoginSelectedCaCounter() {
+            const badge = document.getElementById('egLoginSelectedCaCountBadge');
+            const allProviderItems = getAllCaItemsForLoginModal();
+            const validProviderSet = new Set(allProviderItems.map(i => i.caNumber));
+            let count = 0;
+            currentEgLoginSelectedCas.forEach(ca => {
+                if (validProviderSet.has(ca)) count++;
+            });
+            if (badge) {
+                badge.innerText = `${count} of ${allProviderItems.length} Selected`;
+            }
+        }
+
+        window.renderEgLoginCaCheckboxesList = function() {
+            const container = document.getElementById('egLoginCaCheckboxesContainer');
+            if (!container) return;
+
+            const q = (document.getElementById('egLoginCaSearchInput')?.value || '').toLowerCase().trim();
+            const allItems = getAllCaItemsForLoginModal();
+
+            const filtered = allItems.filter(item => {
+                if (!q) return true;
+                const corpus = `${item.caNumber} ${item.meterNumber} ${item.location}`.toLowerCase();
+                return corpus.includes(q);
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-xs text-gray-400 italic">No matching CA numbers found.</div>`;
+                const selectAllCb = document.getElementById('egLoginSelectAllCaCheckbox');
+                if (selectAllCb) selectAllCb.checked = false;
+                updateEgLoginSelectedCaCounter();
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const safeCa = item.caNumber.replace(/'/g, "\'");
+                const isChecked = currentEgLoginSelectedCas.has(item.caNumber);
+                return `
+                    <label class="flex items-center justify-between p-2.5 hover:bg-purple-50/60 cursor-pointer transition bg-white">
+                        <div class="flex items-center space-x-2.5 min-w-0">
+                            <input
+                                type="checkbox"
+                                ${isChecked ? 'checked' : ''}
+                                onchange="toggleEgLoginSingleCa('${safeCa}', this.checked)"
+                                class="rounded text-purple-600 focus:ring-purple-500 h-4 w-4 shrink-0"
+                            >
+                            <div class="min-w-0">
+                                <span class="text-xs font-extrabold font-mono text-gray-900 block">${item.caNumber}</span>
+                                <span class="text-[11px] text-gray-500 block truncate">${item.location}${item.meterNumber ? ` • Meter: ${item.meterNumber}` : ''}</span>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${item.utility === 'gas' ? 'bg-orange-50 text-orange-800 border border-orange-200' : 'bg-amber-50 text-amber-800 border border-amber-200'} shrink-0">
+                            ${item.utility === 'gas' ? 'MGL' : 'Adani'}
+                        </span>
+                    </label>
+                `;
+            }).join('');
+
+            const selectAllCb = document.getElementById('egLoginSelectAllCaCheckbox');
+            if (selectAllCb) {
+                selectAllCb.checked = filtered.length > 0 && filtered.every(i => currentEgLoginSelectedCas.has(i.caNumber));
+            }
+            updateEgLoginSelectedCaCounter();
+        };
+
+        window.toggleEgLoginSingleCa = function(caNumber, isChecked) {
+            const cleanCa = String(caNumber).trim();
+            if (isChecked) {
+                currentEgLoginSelectedCas.add(cleanCa);
+            } else {
+                currentEgLoginSelectedCas.delete(cleanCa);
+            }
+            document.getElementById('egLoginValidationError')?.classList.add('hidden');
+            renderEgLoginCaCheckboxesList();
+        };
+
+        window.toggleEgLoginSelectAllCa = function(isChecked) {
+            const q = (document.getElementById('egLoginCaSearchInput')?.value || '').toLowerCase().trim();
+            const allItems = getAllCaItemsForLoginModal();
+            const visibleItems = allItems.filter(item => {
+                if (!q) return true;
+                return `${item.caNumber} ${item.meterNumber} ${item.location}`.toLowerCase().includes(q);
+            });
+
+            visibleItems.forEach(item => {
+                if (isChecked) currentEgLoginSelectedCas.add(item.caNumber);
+                else currentEgLoginSelectedCas.delete(item.caNumber);
+            });
+            document.getElementById('egLoginValidationError')?.classList.add('hidden');
+            renderEgLoginCaCheckboxesList();
+        };
+
+        window.saveElecGasLoginDetailRecord = async function(e) {
+            e.preventDefault();
+            if (!guardEditingRights()) return;
+
+            const errEl = document.getElementById('egLoginValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
+            const editId = (document.getElementById('egLoginEditId')?.value || '').trim();
+            const provRadio = document.querySelector('input[name="egLoginProvider"]:checked');
+            const provider = (provRadio && provRadio.value === 'gas') ? 'gas' : 'electricity';
+            const username = (document.getElementById('egLoginUsernameInput')?.value || '').trim();
+            const password = (document.getElementById('egLoginPasswordInput')?.value || '').trim();
+            const contactNumber = (document.getElementById('egLoginContactInput')?.value || '').trim();
+
+            // Keep only CAs belonging to the chosen provider
+            const validProviderCas = new Set(getAllCaItemsForLoginModal().map(i => i.caNumber));
+            const selectedCas = Array.from(currentEgLoginSelectedCas).filter(ca => validProviderCas.has(ca));
+
+            if (selectedCas.length === 0) {
+                if (errEl) {
+                    errEl.innerText = 'Please select at least one CA number from the checkboxes above.';
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (!Array.isArray(elecGasLoginsData)) elecGasLoginsData = [];
+
+            const record = {
+                id: editId || `eg_login_${Date.now()}`,
+                provider,
+                username,
+                password,
+                contactNumber,
+                caNumbers: selectedCas,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (editId) {
+                const idx = elecGasLoginsData.findIndex(item => String(item.id) === String(editId));
+                if (idx !== -1) elecGasLoginsData[idx] = record;
+                else elecGasLoginsData.push(record);
+            } else {
+                elecGasLoginsData.push(record);
+            }
+
+            await saveCloudData();
+            await recordElecGasNotification(
+                editId ? 'edit-login-details' : 'add-login-details',
+                `${editId ? 'Updated' : 'Added'} ${provider === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} login details for "${username}" (${selectedCas.length} CA numbers linked)`
+            );
+
+            showAssetToast(`Saved login details for ${username}`);
+            backToElecGasLoginDetailsListModal();
+        };
+
+        window.deleteElecGasLoginDetailRecord = async function(id) {
+            if (!guardEditingRights()) return;
+            const rec = (elecGasLoginsData || []).find(item => String(item.id) === String(id));
+            if (!rec) return;
+            elecGasLoginsData = (elecGasLoginsData || []).filter(item => String(item.id) !== String(id));
+            renderElecGasLoginDetailsList();
+            await saveCloudData();
+            showAssetToast(`Deleted login details for ${rec.username}`);
         };
 
         window.removeUser = async function(email) {

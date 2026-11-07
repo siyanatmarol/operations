@@ -1463,6 +1463,10 @@
                             <i class="fa-solid fa-plus"></i>
                             <span>Add Asset</span>
                         </button>
+                        <button type="button" onclick="cleanDuplicateEstateAssets()" class="crud-action-btn bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded text-sm font-medium transition flex items-center space-x-1.5 shadow-sm" title="Remove duplicate assets that were created by the sync issue">
+    <i class="fa-solid fa-broom"></i>
+    <span>Clean Duplicates</span>
+</button>
                     </div>
                 </div>
 
@@ -6281,13 +6285,9 @@ window.loadClassroomsFromCloud = async function() {
                             });
                         }
                     }
-                    if (!isSavingAssets && data.estate_assets !== undefined) {
-                        const incomingAssets = normalizeEstateAssetsList(data.estate_assets);
-                        if (incomingAssets.length >= estateAssetsData.length && incomingAssets.length > 0) {
-                            estateAssetsData = incomingAssets;
-                        }
-                    }
-
+                   if (!isSavingAssets && data.estate_assets !== undefined) {
+    estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
+}
                     syncCurrentUserLivePermissions();
                     refreshAllPortalViews(false);
                     checkAndTriggerActiveModuleNotifications();
@@ -6324,24 +6324,21 @@ window.loadClassroomsFromCloud = async function() {
                 });
 
                 // Dedicated listener on /estate_assets for instant Asset Details updates
-                onValue(dbRef(db, 'estate_assets'), (snapshot) => {
-                    if (!isSavingAssets && snapshot.exists()) {
-                        const incoming = normalizeEstateAssetsList(snapshot.val());
-                        if (incoming.length >= estateAssetsData.length || estateAssetsData.length === 0) {
-                            estateAssetsData = incoming;
-                            if (getCurrentlyVisibleModuleName() === 'dawat-estates' && currentActiveDawatSubHeader === 'asset-details') {
-                                renderAssetDetailsTable();
-                            } else {
-                                dirtyPortalViewsSet.add('sub:asset-details');
-                            }
-                            if (getCurrentlyVisibleModuleName() === 'dawat-estates' && currentActiveDawatSubHeader === 'integrated' && document.getElementById('integratedFlatSelect')?.value) {
-                                renderIntegratedView();
-                            } else {
-                                dirtyPortalViewsSet.add('sub:integrated');
-                            }
-                        }
-                    }
-                });
+               onValue(dbRef(db, 'estate_assets'), (snapshot) => {
+    if (!isSavingAssets) {
+        estateAssetsData = snapshot.exists() ? normalizeEstateAssetsList(snapshot.val()) : [];
+        if (getCurrentlyVisibleModuleName() === 'dawat-estates' && currentActiveDawatSubHeader === 'asset-details') {
+            renderAssetDetailsTable();
+        } else {
+            dirtyPortalViewsSet.add('sub:asset-details');
+        }
+        if (getCurrentlyVisibleModuleName() === 'dawat-estates' && currentActiveDawatSubHeader === 'integrated' && document.getElementById('integratedFlatSelect')?.value) {
+            renderIntegratedView();
+        } else {
+            dirtyPortalViewsSet.add('sub:integrated');
+        }
+    }
+});
 
                 // Dedicated listener on /notifications for instant badge & pop-up notification updates
                 onValue(dbRef(db, 'notifications'), (snapshot) => {
@@ -14471,27 +14468,48 @@ await recordDawatEstatesNotification(
             return null;
         }
 
+  function getCanonicalFlatIdentity(building, wing, flatNo) {
+            const b = String(building || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const w = String(wing || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const f = String(flatNo || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            return `${b}__${w}__${f}`;
+        }
+
         function getAssetsForFlat(flat) {
             if (!flat) return [];
-            const targetId = String(flat.id).trim();
+            const targetId = String(flat.id || '').trim();
+            const targetKey = getCanonicalFlatIdentity(flat.building, flat.wing, flat.flatNo);
             const targetLabel = formatFlatDisplayLabel(flat).toLowerCase().trim();
-            const wingPart = flat.wing ? ` (${flat.wing})` : '';
-            const altLabel1 = `${flat.building}${wingPart} - ${flat.flatNo}`.toLowerCase().trim();
-            const altLabel2 = `${flat.building} - Flat ${flat.flatNo}`.toLowerCase().trim();
-            const altLabel3 = `${flat.building} - ${flat.flatNo}`.toLowerCase().trim();
-
-            const bNorm = String(flat.building || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const fNorm = String(flat.flatNo || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const wNorm = String(flat.wing || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
             return estateAssetsData.filter(a => {
-                if (a.flatId && String(a.flatId).trim() === targetId) return true;
+                if (!a) return false;
+                
+                // 1. Direct Flat ID Match
+                if (targetId && a.flatId && String(a.flatId).trim() === targetId) {
+                    return true;
+                }
+
+                // 2. Exact Label / Canonical Match (STRICT - NO SUBSTRING INCLUDES)
                 if (a.flatLabel) {
                     const lbl = String(a.flatLabel).trim().toLowerCase();
-                    if (lbl === targetLabel || lbl === altLabel1 || lbl === altLabel2 || lbl === altLabel3) return true;
-                    const lblNorm = lbl.replace(/[^a-z0-9]/g, '');
-                    if (bNorm && fNorm && lblNorm.includes(bNorm) && lblNorm.includes(fNorm)) {
-                        if (!wNorm || lblNorm.includes(wNorm)) return true;
+                    if (lbl === targetLabel) return true;
+
+                    // Extract building, wing, flatNo from stored label: "Building (Wing) - FlatNo" or "Building - FlatNo"
+                    const parts = lbl.split(' - ');
+                    if (parts.length >= 2) {
+                        const leftSide = parts[0].trim();
+                        const assetFlatNo = parts.slice(1).join(' - ').replace(/^flat\s*/i, '').trim();
+                        
+                        let assetBuilding = leftSide;
+                        let assetWing = '';
+                        const wingMatch = leftSide.match(/^(.*?)\s*\((.*?)\)$/);
+                        if (wingMatch) {
+                            assetBuilding = wingMatch[1].trim();
+                            assetWing = wingMatch[2].trim();
+                        }
+                        
+                        const assetKey = getCanonicalFlatIdentity(assetBuilding, assetWing, assetFlatNo);
+                        if (assetKey === targetKey) return true;
                     }
                 }
                 return false;
@@ -15091,6 +15109,41 @@ await recordDawatEstatesNotification(
             showAssetToast(editId ? "Asset updated in estate_assets" : (cloneSourceId ? "Asset cloned and saved to estate_assets" : "Asset added to estate_assets"));
         };
 
+window.cleanDuplicateEstateAssets = async function() {
+            if (!guardEditingRights()) return;
+            const initialCount = estateAssetsData.length;
+            const seen = new Set();
+            const uniqueAssets = [];
+
+            estateAssetsData.forEach(asset => {
+                if (!asset) return;
+                // Create a unique fingerprint based on flat + asset details
+                const fp = [
+                    String(asset.flatLabel || asset.flatId || '').trim().toLowerCase(),
+                    String(asset.assetName || '').trim().toLowerCase(),
+                    String(asset.location || '').trim().toLowerCase(),
+                    String(asset.brand || '').trim().toLowerCase(),
+                    String(asset.modelNumber || '').trim().toLowerCase(),
+                    String(asset.capacity || '').trim().toLowerCase()
+                ].join('|');
+
+                if (!seen.has(fp)) {
+                    seen.add(fp);
+                    uniqueAssets.push(asset);
+                }
+            });
+
+            if (uniqueAssets.length === initialCount) {
+                showAssetToast("No duplicate assets found.");
+                return;
+            }
+
+            estateAssetsData = uniqueAssets;
+            await window.saveAssetsToCloud();
+            renderAssetDetailsTable();
+            showAssetToast(`Removed ${initialCount - uniqueAssets.length} duplicate asset(s) successfully!`);
+        };
+        
         window.deleteAssetRecord = function(assetId) {
             const asset = estateAssetsData.find(a => String(a.id) === String(assetId));
             if (!asset) return;

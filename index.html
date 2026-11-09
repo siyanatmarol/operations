@@ -3947,9 +3947,21 @@
                 <input type="hidden" id="egMeterEditId" value="">
                 <div>
                     <label class="text-xs font-bold text-gray-700 block mb-1">Utility Provider *</label>
-                    <select id="egMeterUtilityType" required class="w-full p-2.5 border rounded-lg text-sm bg-white font-semibold">
+                    <select id="egMeterUtilityType" required onchange="handleEgMeterUtilityTypeChange()" class="w-full p-2.5 border rounded-lg text-sm bg-white font-semibold">
                         <option value="electricity">Adani Electricity (Electricity)</option>
                         <option value="gas">Mahanagar Gas (Piped Gas)</option>
+                    </select>
+                </div>
+                <div id="egMeterLineNumberWrapper" class="hidden">
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Line Number *</label>
+                    <select id="egMeterLineNumber" class="w-full p-2.5 border rounded-lg text-sm bg-white font-bold text-gray-900">
+                        <option value="Line 1">Line 1</option>
+                        <option value="Line 2">Line 2</option>
+                        <option value="Line 3">Line 3</option>
+                        <option value="Line 4">Line 4</option>
+                        <option value="Line 5">Line 5</option>
+                        <option value="Line 6">Line 6</option>
+                        <option value="Line 7">Line 7</option>
                     </select>
                 </div>
                 <div>
@@ -3960,8 +3972,12 @@
                     <label class="text-xs font-bold text-gray-700 block mb-1">Meter Number *</label>
                     <input type="text" id="egMeterNumber" required placeholder="e.g. AE-8839201 or MGL-44102" class="w-full p-2.5 border rounded-lg text-sm font-mono">
                 </div>
+                <div id="egMeterBpNumberWrapper" class="hidden">
+                    <label class="text-xs font-bold text-gray-700 block mb-1">BP Number</label>
+                    <input type="text" id="egMeterBpNumber" placeholder="e.g. BP-11002233" class="w-full p-2.5 border rounded-lg text-sm font-mono">
+                </div>
                 <div>
-                    <label class="text-xs font-bold text-gray-700 block mb-1">Campus Location / Building / Description *</label>
+                    <label id="egMeterLocationLabel" class="text-xs font-bold text-gray-700 block mb-1">Campus Location / Building / Description *</label>
                     <input type="text" id="egMeterLocation" required placeholder="e.g. Academic Block Main Panel / Saifee Park Wing A" class="w-full p-2.5 border rounded-lg text-sm">
                 </div>
                 <div class="flex justify-between items-center pt-3 border-t">
@@ -15408,17 +15424,23 @@ window.cleanDuplicateEstateAssets = async function() {
             }
             if (list.length > 0) {
                 let elecIdx = 0;
+                let gasIdx = 0;
                 return list.map((m, idx) => {
                     const isGas = m.utility === 'gas';
                     if (!isGas) elecIdx++;
+                    else gasIdx++;
                     const isFirstElec = !isGas && (elecIdx === 1 || String(m.id) === 'elec_1');
+                    const defaultLineNo = isGas ? `Line ${Math.min(7, Math.max(1, gasIdx))}` : '';
                     return {
                         id: String(m.id || `eg_meter_${idx + 1}`),
                         utility: isGas ? 'gas' : 'electricity',
                         unitType: isGas ? 'SCM' : (isFirstElec ? 'kVAh' : (m.unitType || 'kWh')),
+                        lineNumber: isGas ? String(m.lineNumber || defaultLineNo).trim() : '',
                         caNumber: String(m.caNumber || '').trim(),
                         meterNumber: String(m.meterNumber || '').trim(),
-                        location: String(m.location || '').trim()
+                        bpNumber: isGas ? String(m.bpNumber || '').trim() : '',
+                        areasCovered: isGas ? String(m.areasCovered || m.location || '').trim() : '',
+                        location: String(m.location || m.areasCovered || '').trim()
                     };
                 });
             }
@@ -15442,8 +15464,11 @@ window.cleanDuplicateEstateAssets = async function() {
                     id: `gas_${j}`,
                     utility: 'gas',
                     unitType: 'SCM',
+                    lineNumber: `Line ${j}`,
                     caNumber: `MGL-CA-${padNum}`,
                     meterNumber: `MGL-MTR-${padNum}`,
+                    bpNumber: '',
+                    areasCovered: `Mahanagar Gas Meter #${j}`,
                     location: `Mahanagar Gas Meter #${j}`
                 });
             }
@@ -15635,7 +15660,7 @@ window.cleanDuplicateEstateAssets = async function() {
             const filterMetersFn = (metersList) => {
                 return metersList.filter(m => {
                     if (searchTokens.length > 0) {
-                        const corpus = `${m.caNumber || ''} ${m.meterNumber || ''} ${m.location || ''}`.toLowerCase();
+                        const corpus = `${m.lineNumber || ''} ${m.caNumber || ''} ${m.meterNumber || ''} ${m.bpNumber || ''} ${m.areasCovered || ''} ${m.location || ''}`.toLowerCase();
                         if (!searchTokens.every(t => corpus.includes(t))) return false;
                     }
                     if (statusFilter === 'pending_current') {
@@ -15675,10 +15700,11 @@ window.cleanDuplicateEstateAssets = async function() {
                 `<th class="eg-month-col p-2 text-center min-w-[100px]">${EG_MONTH_NAMES[mIdx]}</th>`
             ).join('');
 
+            const mainColHeaderLabel = isGas ? 'Gas Line Details' : 'CA Number &amp; Meter Details';
             thead.innerHTML = `
                 <tr>
                     <th class="eg-sr-col p-2.5 w-10 text-center bg-gray-100">#</th>
-                    <th class="eg-main-col p-2.5 min-w-[185px] sticky left-0 bg-gray-100 z-30 border-r">CA Number &amp; Meter Details</th>
+                    <th class="eg-main-col p-2.5 min-w-[185px] sticky left-0 bg-gray-100 z-30 border-r">${mainColHeaderLabel}</th>
                     ${monthHeadersHtml}
                     <th class="eg-total-col p-2.5 text-right min-w-[115px] ${totalHeaderTheme} border-l font-extrabold">${totalColHeader}</th>
                 </tr>
@@ -15788,6 +15814,22 @@ window.cleanDuplicateEstateAssets = async function() {
                     ? `<span class="ml-1 bg-amber-200 text-amber-950 border border-amber-400 text-[9.5px] font-extrabold px-1.5 py-0.2 rounded">HT • kVAh</span>`
                     : '';
 
+                const gasLineLabel = isGas ? (m.lineNumber || `Line ${Math.min(7, idx + 1)}`) : '';
+                const gasAreasCovered = isGas ? (m.areasCovered !== undefined ? m.areasCovered : (m.location || '')) : '';
+                const mainDetailsHtml = isGas
+                    ? `<div class="min-w-0">
+                                <div class="eg-loc-text font-extrabold text-gray-900 text-xs flex items-center flex-wrap">${gasLineLabel}</div>
+                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 mt-0.5 leading-snug">CA: ${m.caNumber || '-'}</div>
+                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">Meter: ${m.meterNumber || '-'}</div>
+                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">BP: ${m.bpNumber || '-'}</div>
+                                ${gasAreasCovered ? `<div class="eg-loc-text text-[11.5px] font-bold text-emerald-700 mt-0.5 leading-snug">${gasAreasCovered}</div>` : ''}
+                            </div>`
+                    : `<div class="min-w-0">
+                                <div class="eg-loc-text font-extrabold text-gray-900 text-xs flex items-center flex-wrap">${m.location || 'Campus Meter'}${htBadge}</div>
+                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 mt-0.5 leading-snug">CA: ${m.caNumber || '-'}</div>
+                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">Meter: ${m.meterNumber || '-'}</div>
+                            </div>`;
+
                 // CA & Meter Number font sizes increased by +1pt (text-[12.5px] and text-[11.5px])
                 const tr = document.createElement('tr');
                 tr.className = "border-b hover:bg-gray-50/60";
@@ -15795,14 +15837,10 @@ window.cleanDuplicateEstateAssets = async function() {
                     <td class="eg-sr-col p-2 text-center font-bold text-gray-600 bg-white">${idx + 1}</td>
                     <td class="eg-main-col p-2.5 sticky left-0 bg-white z-10 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
                         <div class="flex items-start justify-between gap-1">
-                            <div class="min-w-0">
-                                <div class="eg-loc-text font-extrabold text-gray-900 text-xs flex items-center flex-wrap">${m.location || 'Campus Meter'}${htBadge}</div>
-                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 mt-0.5 leading-snug">CA: ${m.caNumber || '-'}</div>
-                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">Meter: ${m.meterNumber || '-'}</div>
-                            </div>
+                            ${mainDetailsHtml}
                             ${!viewOnly ? `
                             <div class="flex items-center space-x-0.5 shrink-0">
-                                <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Edit CA Number, Meter No & Location">
+                                <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="${isGas ? 'Edit Gas Line Details' : 'Edit CA Number, Meter No & Location'}">
                                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                                 </button>
                                 <button type="button" onclick="deleteElecGasMeterFromRow('${safeMeterId}')" class="crud-action-btn text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50" title="Delete Meter Row">
@@ -15844,6 +15882,26 @@ window.cleanDuplicateEstateAssets = async function() {
             `;
         }
 
+        window.handleEgMeterUtilityTypeChange = function() {
+            const utilVal = document.getElementById('egMeterUtilityType')?.value || 'electricity';
+            const isGas = utilVal === 'gas';
+            const lineWrap = document.getElementById('egMeterLineNumberWrapper');
+            const bpWrap = document.getElementById('egMeterBpNumberWrapper');
+            const locLabel = document.getElementById('egMeterLocationLabel');
+            const locInput = document.getElementById('egMeterLocation');
+
+            if (lineWrap) lineWrap.classList.toggle('hidden', !isGas);
+            if (bpWrap) bpWrap.classList.toggle('hidden', !isGas);
+            if (locLabel) {
+                locLabel.innerText = isGas ? 'Areas covered *' : 'Campus Location / Building / Description *';
+            }
+            if (locInput) {
+                locInput.placeholder = isGas
+                    ? 'e.g. Mawaid, Darul Imarat, Campus Kitchen'
+                    : 'e.g. Academic Block Main Panel / Saifee Park Wing A';
+            }
+        };
+
         window.openEditElecGasMeterModal = function(meterId = '') {
             if (!guardEditingRights()) return;
             const form = document.getElementById('egMeterForm');
@@ -15853,17 +15911,40 @@ window.cleanDuplicateEstateAssets = async function() {
             if (meterId) {
                 const m = elecGasMetersData.find(item => String(item.id) === String(meterId));
                 if (!m) return;
-                document.getElementById('egMeterModalTitle').innerText = 'Edit CA & Meter Details';
+                const isGas = m.utility === 'gas';
+                const allGasMeters = elecGasMetersData.filter(item => item.utility === 'gas');
+                const gasIdx = isGas ? allGasMeters.findIndex(item => String(item.id) === String(m.id)) : -1;
+                const fallbackLine = isGas ? `Line ${Math.min(7, Math.max(1, gasIdx + 1))}` : 'Line 1';
+
+                document.getElementById('egMeterModalTitle').innerText = isGas ? 'Edit Gas Line Details' : 'Edit CA & Meter Details';
                 document.getElementById('egMeterEditId').value = String(m.id);
-                document.getElementById('egMeterUtilityType').value = m.utility === 'gas' ? 'gas' : 'electricity';
+                document.getElementById('egMeterUtilityType').value = isGas ? 'gas' : 'electricity';
+                handleEgMeterUtilityTypeChange();
+                if (document.getElementById('egMeterLineNumber')) {
+                    document.getElementById('egMeterLineNumber').value = m.lineNumber || fallbackLine;
+                }
                 document.getElementById('egMeterCaNumber').value = m.caNumber || '';
                 document.getElementById('egMeterNumber').value = m.meterNumber || '';
-                document.getElementById('egMeterLocation').value = m.location || '';
+                if (document.getElementById('egMeterBpNumber')) {
+                    document.getElementById('egMeterBpNumber').value = m.bpNumber || '';
+                }
+                document.getElementById('egMeterLocation').value = (isGas ? (m.areasCovered || m.location) : m.location) || '';
                 if (deleteBtn) deleteBtn.classList.remove('hidden');
             } else {
-                document.getElementById('egMeterModalTitle').innerText = 'Add New Utility Meter';
+                const defaultIsGas = selectedElecGasUtilityFilter === 'gas';
+                const currentGasCount = elecGasMetersData.filter(item => item.utility === 'gas').length;
+                const nextLine = `Line ${Math.min(7, Math.max(1, currentGasCount + 1))}`;
+
+                document.getElementById('egMeterModalTitle').innerText = defaultIsGas ? 'Add Gas Line Details' : 'Add New Utility Meter';
                 document.getElementById('egMeterEditId').value = '';
-                document.getElementById('egMeterUtilityType').value = selectedElecGasUtilityFilter === 'gas' ? 'gas' : 'electricity';
+                document.getElementById('egMeterUtilityType').value = defaultIsGas ? 'gas' : 'electricity';
+                handleEgMeterUtilityTypeChange();
+                if (document.getElementById('egMeterLineNumber')) {
+                    document.getElementById('egMeterLineNumber').value = nextLine;
+                }
+                if (document.getElementById('egMeterBpNumber')) {
+                    document.getElementById('egMeterBpNumber').value = '';
+                }
                 if (deleteBtn) deleteBtn.classList.add('hidden');
             }
 
@@ -15876,22 +15957,39 @@ window.cleanDuplicateEstateAssets = async function() {
 
             const editId = document.getElementById('egMeterEditId').value.trim();
             const utility = document.getElementById('egMeterUtilityType').value === 'gas' ? 'gas' : 'electricity';
+            const isGas = utility === 'gas';
+            const lineNumber = isGas ? (document.getElementById('egMeterLineNumber')?.value || 'Line 1').trim() : '';
             const caNumber = document.getElementById('egMeterCaNumber').value.trim();
             const meterNumber = document.getElementById('egMeterNumber').value.trim();
-            const location = document.getElementById('egMeterLocation').value.trim();
+            const bpNumber = isGas ? (document.getElementById('egMeterBpNumber')?.value || '').trim() : '';
+            const locationVal = document.getElementById('egMeterLocation').value.trim();
+            const areasCovered = isGas ? locationVal : '';
+            const location = locationVal;
 
             if (editId) {
                 const idx = elecGasMetersData.findIndex(m => String(m.id) === String(editId));
                 if (idx !== -1) {
-                    elecGasMetersData[idx] = { ...elecGasMetersData[idx], utility, caNumber, meterNumber, location };
+                    elecGasMetersData[idx] = {
+                        ...elecGasMetersData[idx],
+                        utility,
+                        lineNumber,
+                        caNumber,
+                        meterNumber,
+                        bpNumber,
+                        areasCovered,
+                        location
+                    };
                 }
             } else {
                 elecGasMetersData.push({
-                    id: `${utility === 'gas' ? 'gas' : 'elec'}_${Date.now()}`,
+                    id: `${isGas ? 'gas' : 'elec'}_${Date.now()}`,
                     utility,
-                    unitType: utility === 'gas' ? 'SCM' : 'kWh',
+                    unitType: isGas ? 'SCM' : 'kWh',
+                    lineNumber,
                     caNumber,
                     meterNumber,
+                    bpNumber,
+                    areasCovered,
                     location
                 });
             }
@@ -15899,9 +15997,10 @@ window.cleanDuplicateEstateAssets = async function() {
             closeModal('modalElecGasMeter');
             renderElecGasModule();
             await saveCloudData();
+            const displayTitle = isGas ? `${lineNumber} (${areasCovered})` : location;
             await recordElecGasNotification(
                 editId ? 'edit-meter' : 'add-meter',
-                `${editId ? 'Updated' : 'Added'} ${utility === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} meter "${location}" (CA: ${caNumber}, Meter: ${meterNumber})`
+                `${editId ? 'Updated' : 'Added'} ${isGas ? 'Mahanagar Gas' : 'Adani Electricity'} meter "${displayTitle}" (CA: ${caNumber}, Meter: ${meterNumber}${isGas && bpNumber ? ', BP: ' + bpNumber : ''})`
             );
             showAssetToast(`Saved meter details for CA ${caNumber}`);
         };
@@ -16173,7 +16272,10 @@ window.cleanDuplicateEstateAssets = async function() {
             if (meterSel) {
                 meterSel.innerHTML = elecGasMetersData.map((m, idx) => {
                     const tag = m.utility === 'gas' ? 'GAS' : 'ELEC';
-                    return `<option value="${m.id}" ${String(m.id) === String(meter.id) ? 'selected' : ''}>[${tag}] ${m.location || 'Meter #' + (idx + 1)} (CA: ${m.caNumber})</option>`;
+                    const mTitle = m.utility === 'gas'
+                        ? `${m.lineNumber || 'Line'}${m.areasCovered || m.location ? ' - ' + (m.areasCovered || m.location) : ''}`
+                        : (m.location || 'Meter #' + (idx + 1));
+                    return `<option value="${m.id}" ${String(m.id) === String(meter.id) ? 'selected' : ''}>[${tag}] ${mTitle} (CA: ${m.caNumber})</option>`;
                 }).join('');
             }
             const monthSel = document.getElementById('egBillModalMonthSelect');
@@ -16191,8 +16293,13 @@ window.cleanDuplicateEstateAssets = async function() {
                     : 'text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900';
             }
 
-            document.getElementById('egBillModalTitle').innerText = `${EG_MONTH_NAMES[monthIdx]} ${year} Bill — ${meter.location}`;
-            document.getElementById('egBillModalSubtitle').innerText = `CA No: ${meter.caNumber} | Meter No: ${meter.meterNumber}`;
+            const modalMeterTitle = isGas
+                ? `${meter.lineNumber || 'Gas Line'}${(meter.areasCovered || meter.location) ? ' (' + (meter.areasCovered || meter.location) + ')' : ''}`
+                : meter.location;
+            document.getElementById('egBillModalTitle').innerText = `${EG_MONTH_NAMES[monthIdx]} ${year} Bill — ${modalMeterTitle}`;
+            document.getElementById('egBillModalSubtitle').innerText = isGas
+                ? `CA No: ${meter.caNumber || '-'} | Meter No: ${meter.meterNumber || '-'} | BP No: ${meter.bpNumber || '-'}`
+                : `CA No: ${meter.caNumber} | Meter No: ${meter.meterNumber}`;
             document.getElementById('egBillUnitsLabel').innerText = `Bill #1 Units (${unitLabel})`;
             if (document.getElementById('egBillUnits2Label')) {
                 document.getElementById('egBillUnits2Label').innerText = `Bill #2 Units (${unitLabel})`;
@@ -16553,7 +16660,10 @@ window.cleanDuplicateEstateAssets = async function() {
             selEl.innerHTML = `<option value="all">All ${utilType === 'gas' ? 'Mahanagar Gas' : 'Adani Electricity'} Meters (${meters.length})</option>`;
             meters.forEach((m, idx) => {
                 const uLbl = getMeterUnitLabel(m, idx);
-                selEl.innerHTML += `<option value="${m.id}">${m.location} — CA: ${m.caNumber} (${uLbl})</option>`;
+                const mName = m.utility === 'gas'
+                    ? `${m.lineNumber || 'Line ' + (idx + 1)}${(m.areasCovered || m.location) ? ' (' + (m.areasCovered || m.location) + ')' : ''}`
+                    : m.location;
+                selEl.innerHTML += `<option value="${m.id}">${mName} — CA: ${m.caNumber} (${uLbl})</option>`;
             });
         }
 
@@ -16855,6 +16965,7 @@ window.cleanDuplicateEstateAssets = async function() {
 
                 const ca = String(m.caNumber || '').trim();
                 const mtr = String(m.meterNumber || '').trim();
+                const bp = String(m.bpNumber || '').trim();
 
                 if (ca && ca !== '-' && !ca.startsWith('AE-CA-') && !ca.startsWith('MGL-CA-') && ca.length >= 5) {
                     if (normText.includes(ca) || normTextNoSpaces.includes(ca.replace(/\s+/g, ""))) {
@@ -16863,6 +16974,11 @@ window.cleanDuplicateEstateAssets = async function() {
                 }
                 if (mtr && mtr !== '-' && !mtr.startsWith('AE-MTR-') && !mtr.startsWith('MGL-MTR-') && mtr.length >= 4) {
                     if (normText.includes(mtr) || normTextNoSpaces.includes(mtr.replace(/\s+/g, ""))) {
+                        return m;
+                    }
+                }
+                if (mIsGas && bp && bp !== '-' && bp.length >= 5) {
+                    if (normText.includes(bp) || normTextNoSpaces.includes(bp.replace(/\s+/g, ""))) {
                         return m;
                     }
                 }
@@ -17709,7 +17825,7 @@ window.cleanDuplicateEstateAssets = async function() {
 
             const filtered = catMeters.filter(m => {
                 if (!q) return true;
-                const corpus = `${m.location || ''} ${m.caNumber || ''} ${m.meterNumber || ''}`.toLowerCase();
+                const corpus = `${m.lineNumber || ''} ${m.areasCovered || ''} ${m.location || ''} ${m.caNumber || ''} ${m.meterNumber || ''} ${m.bpNumber || ''}`.toLowerCase();
                 return corpus.includes(q);
             });
 
@@ -17720,6 +17836,12 @@ window.cleanDuplicateEstateAssets = async function() {
                     const safeId = String(m.id).replace(/'/g, "\'");
                     const isChecked = currentEgExportSelectedMeterIds.has(String(m.id));
                     const isGas = m.utility === 'gas';
+                    const titleLabel = isGas
+                        ? `${m.lineNumber || 'Line'} — ${m.areasCovered || m.location || 'Gas Meter'}`
+                        : (m.location || 'Campus Meter');
+                    const subLabel = isGas
+                        ? `CA: ${m.caNumber || '-'} • Meter: ${m.meterNumber || '-'} • BP: ${m.bpNumber || '-'}`
+                        : `CA: ${m.caNumber || '-'} • Meter: ${m.meterNumber || '-'}`;
                     return `
                         <label class="flex items-center justify-between px-3 py-2 hover:bg-emerald-50/50 cursor-pointer transition">
                             <div class="flex items-center space-x-2.5 min-w-0">
@@ -17730,8 +17852,8 @@ window.cleanDuplicateEstateAssets = async function() {
                                     class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4 shrink-0"
                                 >
                                 <div class="min-w-0">
-                                    <span class="text-xs font-bold text-gray-900 block truncate">${idx + 1}. ${m.location || 'Campus Meter'}</span>
-                                    <span class="text-[11px] font-mono text-emerald-800 font-semibold block">CA: ${m.caNumber || '-'} • Meter: ${m.meterNumber || '-'}</span>
+                                    <span class="text-xs font-bold text-gray-900 block truncate">${idx + 1}. ${titleLabel}</span>
+                                    <span class="text-[11px] font-mono text-emerald-800 font-semibold block">${subLabel}</span>
                                 </div>
                             </div>
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isGas ? 'bg-orange-100 text-orange-800' : 'bg-amber-100 text-amber-900'}">

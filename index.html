@@ -30,6 +30,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
     <!-- Chart.js for Electricity & Gas Comparison Bar Charts (Deferred for fast initial load) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    <!-- JSZip for End of Year Classroom & Events ZIP Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
     <style>
         .hidden { display: none !important; }
         html { font-size: 17px; }
@@ -1561,6 +1563,10 @@
                     <button type="button" id="btnEventsArchiveHeader" onclick="openEventsArchiveModal()" class="bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="View Active, Upcoming & Past Events Details">
                         <i class="fa-solid fa-box-archive text-amber-300"></i>
                         <span>Events Archive</span>
+                    </button>
+                    <button type="button" id="btnEndOfYearHeader" onclick="openEndOfYearModal()" class="bg-rose-700 hover:bg-rose-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="End of Year Archive & Export (Excel / PDF ZIP)">
+                        <i class="fa-solid fa-calendar-check text-amber-200"></i>
+                        <span>End of Year</span>
                     </button>
                     <button type="button" id="btnAddClassroomHeader" onclick="openAddClassroomModal()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap">
                         <i class="fa-solid fa-plus"></i>
@@ -3835,6 +3841,108 @@
         </div>
     </div>
 
+    <!-- Modal: Classroom End of Year & Academic Year Archives -->
+    <div id="modalEndOfYear" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center p-2.5 sm:p-4 z-[65]">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-4 sm:p-6 space-y-4 max-h-[92vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex flex-wrap justify-between items-start sm:items-center border-b pb-3 gap-3">
+                <div>
+                    <h3 class="text-base sm:text-xl font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-check text-rose-700"></i>
+                        <span>End of Year — Academic Year Archives</span>
+                    </h3>
+                    <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5">Archive classroom allocations, student counts, extra chairs &amp; events by Academic Year and export as a ZIP folder (Excel or PDF).</p>
+                </div>
+                <div class="flex items-center space-x-2.5 self-end sm:self-auto">
+                    <span id="endOfYearViewerBadge" class="hidden bg-amber-50 text-amber-900 border border-amber-300 text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                        <i class="fa-solid fa-eye mr-1 text-amber-600"></i>View &amp; Export Access
+                    </span>
+                    <button
+                        type="button"
+                        id="btnEndOfYearToggleAdd"
+                        onclick="toggleEndOfYearAddForm()"
+                        class="hidden bg-rose-700 hover:bg-rose-800 text-white text-xs sm:text-sm font-extrabold px-3.5 py-2 rounded-lg shadow-sm transition inline-flex items-center space-x-1.5"
+                        title="Add Academic Year to End Year & Archive All Classroom Data"
+                    >
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Add</span>
+                    </button>
+                    <button type="button" onclick="closeModal('modalEndOfYear')" class="text-gray-400 hover:text-gray-800 text-2xl font-bold px-1">&times;</button>
+                </div>
+            </div>
+
+            <!-- Collapsible "+ Add" Academic Year & End Year Form (Restricted to murtaza.kheraluwala@jameasaifiyah.edu) -->
+            <div id="endOfYearAddFormSection" class="hidden bg-rose-50/90 border-2 border-rose-300 rounded-xl p-4 space-y-3 shadow-inner">
+                <div class="flex justify-between items-center border-b border-rose-200 pb-2">
+                    <h4 class="text-xs sm:text-sm font-extrabold text-rose-950 uppercase tracking-wider flex items-center space-x-1.5">
+                        <i class="fa-solid fa-box-archive text-rose-700"></i>
+                        <span>Add Academic Year &amp; Archive Current Data</span>
+                    </h4>
+                    <button type="button" onclick="toggleEndOfYearAddForm(false)" class="text-xs text-rose-700 hover:underline font-bold">Cancel</button>
+                </div>
+                <form id="endOfYearArchiveForm" onsubmit="handleEndOfYearArchiveSubmit(event)" class="space-y-3">
+                    <div>
+                        <label for="endOfYearAcademicNameInput" class="text-xs font-extrabold text-rose-950 uppercase tracking-wider block mb-1">
+                            Academic Year Name <span class="text-red-600">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="endOfYearAcademicNameInput"
+                            required
+                            placeholder="e.g. 1447-1448 H (2025-2026) or Academic Year 2025-26"
+                            class="w-full p-2.5 border-2 border-rose-400 rounded-lg text-sm font-bold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-600"
+                        >
+                    </div>
+                    <div class="bg-white/90 border border-rose-200 rounded-lg p-3 text-xs text-gray-700 space-y-1 leading-relaxed">
+                        <p class="font-bold text-rose-900 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-circle-info text-rose-600"></i>
+                            <span>What happens when you click &ldquo;End Year and Archive all Data&rdquo;:</span>
+                        </p>
+                        <ul class="list-disc list-inside text-[11px] text-gray-600 space-y-0.5 pl-1">
+                            <li>Saves all current <strong>Classroom Numbers, Locations, Allocated Classes, Student Counts, Extra Chairs</strong>, and <strong>All Events Details</strong> under this Academic Year name.</li>
+                            <li>Clears <strong>Allocated Class, Other Events, Student Count, and Extra Chair</strong> fields on the main Classroom Allocation page (preserving <strong>Classroom Number</strong> and <strong>Location</strong>).</li>
+                            <li>Clears the <strong>Events Archive</strong> for the new academic year.</li>
+                        </ul>
+                    </div>
+                    <p id="endOfYearValidationError" class="hidden text-xs text-red-600 font-extrabold"></p>
+                    <div class="flex justify-end items-center space-x-2 pt-1">
+                        <button type="button" onclick="toggleEndOfYearAddForm(false)" class="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition">
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            id="btnExecuteEndOfYearArchive"
+                            class="bg-rose-700 hover:bg-rose-800 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-extrabold shadow-md transition inline-flex items-center space-x-1.5"
+                        >
+                            <i class="fa-solid fa-box-archive"></i>
+                            <span>End Year and Archive all Data</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Archived Academic Years Table -->
+            <div class="flex-grow overflow-y-auto border rounded-xl min-h-[240px] max-h-[60vh] bg-white">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                    <thead class="bg-emerald-950 text-white uppercase text-[11px] sticky top-0 z-20">
+                        <tr>
+                            <th class="p-3 w-12 text-center">#</th>
+                            <th class="p-3">Academic Year Name &amp; Summary</th>
+                            <th class="p-3 text-center whitespace-nowrap">Export Archive (.ZIP)</th>
+                            <th class="p-3 text-center whitespace-nowrap">Undo / Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="endOfYearArchivesTableBody" class="divide-y bg-white"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t text-xs text-gray-500">
+                <span><i class="fa-solid fa-file-zipper text-emerald-700 mr-1"></i>Each ZIP export contains 2 files: <strong>Classrooms Data</strong> &amp; <strong>Events Details</strong> (Excel or PDF).</span>
+                <button type="button" onclick="closeModal('modalEndOfYear')" class="px-5 py-1.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-xs sm:text-sm font-bold transition">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Raihaan Archive -->
     <div id="modalRaihaanArchive" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-6 space-y-4 max-h-[90vh] flex flex-col">
@@ -5105,6 +5213,28 @@ function getOrCreateUtilityFolder_(name) {
         let classroomsData = [];
         let isSavingClassrooms = false;
         let raihaanData = [];
+        let classroomYearArchivesData = [];
+        const END_OF_YEAR_AUTHORIZED_EMAIL = 'murtaza.kheraluwala@jameasaifiyah.edu';
+
+        function isEndOfYearAuthorizedUser() {
+            if (!currentUser || !currentUser.email) return false;
+            return currentUser.email.trim().toLowerCase() === END_OF_YEAR_AUTHORIZED_EMAIL.toLowerCase();
+        }
+
+        const alert = function(msg) {
+            if (typeof showAssetToast === 'function') {
+                showAssetToast(String(msg || ''), true);
+            } else {
+                console.warn(msg);
+            }
+        };
+        const confirm = function(msg) {
+            try {
+                return typeof window.confirm === 'function' ? window.confirm(msg) : true;
+            } catch (e) {
+                return true;
+            }
+        };
         let portalNotificationsData = [];
         let notificationsRealtimeListenerAttached = false;
         let keysInventoryData = [];
@@ -5615,6 +5745,9 @@ function getOrCreateUtilityFolder_(name) {
             if (!e.target.closest('.raihaan-row-dropdown-wrap')) {
                 document.querySelectorAll('.raihaan-row-dropdown-list').forEach(el => el.classList.add('hidden'));
             }
+            if (!e.target.closest('.eoy-export-dropdown-wrap')) {
+                document.querySelectorAll('.eoy-export-dropdown-menu').forEach(el => el.classList.add('hidden'));
+            }
 
             const btn = e.target.closest('.btn-manage-allocation');
             if (btn) {
@@ -5880,6 +6013,37 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
             }).filter(r => r.entries.length > 0 && r.fromDate && r.toDate);
         }
 
+        function normalizeClassroomYearArchivesList(rawArchives) {
+            let arr = [];
+            if (Array.isArray(rawArchives)) {
+                arr = rawArchives.filter(Boolean);
+            } else if (rawArchives && typeof rawArchives === 'object') {
+                arr = Object.values(rawArchives).filter(Boolean);
+            }
+            return arr.map((item, idx) => {
+                const classroomsSnap = normalizeClassroomsList(item.classroomsSnapshot || []);
+                const raihaanSnap = normalizeRaihaanList(item.raihaanSnapshot || []);
+                const classroomRowsSnap = Array.isArray(item.classroomRowsSnapshot)
+                    ? item.classroomRowsSnapshot.filter(Boolean)
+                    : (item.classroomRowsSnapshot && typeof item.classroomRowsSnapshot === 'object' ? Object.values(item.classroomRowsSnapshot).filter(Boolean) : []);
+                const eventsSnap = Array.isArray(item.eventsSnapshot)
+                    ? item.eventsSnapshot.filter(Boolean)
+                    : (item.eventsSnapshot && typeof item.eventsSnapshot === 'object' ? Object.values(item.eventsSnapshot).filter(Boolean) : []);
+                return {
+                    id: String(item.id || `eoy_${idx}_${Date.now()}`),
+                    academicYearName: String(item.academicYearName || '').trim(),
+                    archivedAt: String(item.archivedAt || ''),
+                    archivedDateDisplay: String(item.archivedDateDisplay || ''),
+                    archivedByEmail: String(item.archivedByEmail || ''),
+                    archivedByName: String(item.archivedByName || ''),
+                    classroomsSnapshot: classroomsSnap,
+                    raihaanSnapshot: raihaanSnap,
+                    classroomRowsSnapshot: classroomRowsSnap,
+                    eventsSnapshot: eventsSnap
+                };
+            }).filter(a => a.academicYearName);
+        }
+
         function normalizeUsersList(rawUsers) {
             if (!rawUsers) return usersList;
             const arr = Array.isArray(rawUsers)
@@ -6021,6 +6185,21 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                         const raiSnap = await get(child(dbRef(db), 'raihaan'));
                         raihaanData = raiSnap.exists() ? normalizeRaihaanList(raiSnap.val()) : [];
                     }
+                    try {
+                        const eoySnap = await get(child(dbRef(db), 'classroomYearArchives'));
+                        if (eoySnap && eoySnap.exists()) {
+                            classroomYearArchivesData = normalizeClassroomYearArchivesList(eoySnap.val());
+                        } else if (data.classroomYearArchives) {
+                            classroomYearArchivesData = normalizeClassroomYearArchivesList(data.classroomYearArchives);
+                        } else {
+                            const cachedEoy = localStorage.getItem('siyanat_classroom_year_archives_cache');
+                            classroomYearArchivesData = cachedEoy ? normalizeClassroomYearArchivesList(JSON.parse(cachedEoy)) : [];
+                        }
+                    } catch (eEoy) {
+                        if (data.classroomYearArchives) {
+                            classroomYearArchivesData = normalizeClassroomYearArchivesList(data.classroomYearArchives);
+                        }
+                    }
                     let cloudNotifs = [];
                     if (data.notifications) {
                         cloudNotifs = normalizeNotificationsList(data.notifications);
@@ -6128,6 +6307,8 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
             set(dbRef(db, 'portalData/classrooms'), classroomsData),
             set(dbRef(db, 'raihaan'), raihaanData),
             set(dbRef(db, 'portalData/raihaan'), raihaanData),
+            set(dbRef(db, 'classroomYearArchives'), classroomYearArchivesData),
+            set(dbRef(db, 'portalData/classroomYearArchives'), classroomYearArchivesData),
             set(dbRef(db, 'notifications'), portalNotificationsData),
             set(dbRef(db, 'portalData/notifications'), portalNotificationsData)
         ]);
@@ -6347,6 +6528,9 @@ window.loadClassroomsFromCloud = async function() {
                     if (data.raihaan !== undefined) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
                     }
+                    if (data.classroomYearArchives !== undefined) {
+                        classroomYearArchivesData = normalizeClassroomYearArchivesList(data.classroomYearArchives);
+                    }
                     if (data.notifications !== undefined && data.notifications !== null) {
                         const incoming = normalizeNotificationsList(data.notifications);
                         if (incoming.length > 0) {
@@ -6392,6 +6576,16 @@ window.loadClassroomsFromCloud = async function() {
                         }
                         if (!document.getElementById('modalRaihaanArchive')?.classList.contains('hidden')) {
                             renderRaihaanArchiveTable();
+                        }
+                    }
+                });
+
+                // Dedicated listener on /classroomYearArchives for instant End of Year Archive updates
+                onValue(dbRef(db, 'classroomYearArchives'), (snapshot) => {
+                    if (!isSavingClassrooms) {
+                        classroomYearArchivesData = snapshot.exists() ? normalizeClassroomYearArchivesList(snapshot.val()) : [];
+                        if (typeof renderEndOfYearArchivesList === 'function' && !document.getElementById('modalEndOfYear')?.classList.contains('hidden')) {
+                            renderEndOfYearArchivesList();
                         }
                     }
                 });
@@ -7300,6 +7494,7 @@ window.loadClassroomsFromCloud = async function() {
             estates: estatesData || [],
             classrooms: classroomsData || [],
             raihaan: raihaanData || [],
+            classroomYearArchives: classroomYearArchivesData || [],
             notifications: portalNotificationsData || [],
             keys: keysInventoryData || [],
             faculty: facultyData || [],
@@ -7323,6 +7518,7 @@ window.loadClassroomsFromCloud = async function() {
             set(dbRef(db, 'classrooms'), cleanPayload.classrooms),
             set(dbRef(db, 'estate_assets'), cleanPayload.estate_assets),
             set(dbRef(db, 'raihaan'), cleanPayload.raihaan),
+            set(dbRef(db, 'classroomYearArchives'), cleanPayload.classroomYearArchives),
             set(dbRef(db, 'notifications'), cleanPayload.notifications)
         ]);
     } catch (err) {
@@ -13297,6 +13493,703 @@ await recordDawatEstatesNotification(
             }
         };
 
+        // =========================================================================
+        // END OF YEAR ARCHIVE, ZIP EXPORT (EXCEL / PDF) & UNDO LOGIC
+        // Hardcoded archive & undo rights: murtaza.kheraluwala@jameasaifiyah.edu
+        // Other users may view and export.
+        // =========================================================================
+
+        function saveClassroomYearArchivesLocalCache() {
+            try {
+                localStorage.setItem('siyanat_classroom_year_archives_cache', JSON.stringify(classroomYearArchivesData || []));
+            } catch (e) {}
+        }
+
+        window.openEndOfYearModal = function() {
+            const canManageEoy = isEndOfYearAuthorizedUser();
+            const addBtn = document.getElementById('btnEndOfYearToggleAdd');
+            const viewerBadge = document.getElementById('endOfYearViewerBadge');
+            const addFormSection = document.getElementById('endOfYearAddFormSection');
+
+            if (addBtn) addBtn.classList.toggle('hidden', !canManageEoy);
+            if (viewerBadge) viewerBadge.classList.toggle('hidden', canManageEoy);
+            if (addFormSection) addFormSection.classList.add('hidden');
+            document.getElementById('endOfYearValidationError')?.classList.add('hidden');
+
+            renderEndOfYearArchivesList();
+            document.getElementById('modalEndOfYear')?.classList.remove('hidden');
+        };
+
+        window.toggleEndOfYearAddForm = function(forceShow = null) {
+            if (!isEndOfYearAuthorizedUser()) {
+                showAssetToast("Access Denied: Only murtaza.kheraluwala@jameasaifiyah.edu can End Year and Archive data.", true);
+                return;
+            }
+            const section = document.getElementById('endOfYearAddFormSection');
+            const errEl = document.getElementById('endOfYearValidationError');
+            const nameInp = document.getElementById('endOfYearAcademicNameInput');
+            if (!section) return;
+
+            const shouldShow = forceShow !== null ? Boolean(forceShow) : section.classList.contains('hidden');
+            section.classList.toggle('hidden', !shouldShow);
+            if (errEl) errEl.classList.add('hidden');
+            if (shouldShow && nameInp) {
+                nameInp.value = '';
+                setTimeout(() => nameInp.focus(), 50);
+            }
+        };
+
+        function buildEndOfYearClassroomAndEventsData(sourceRooms) {
+            const todayStr = getLocalTodayDateString();
+            const sortedRooms = [...(sourceRooms || [])].sort((a, b) => {
+                if ((a.type || 'Male') !== (b.type || 'Male')) {
+                    return (a.type || 'Male') === 'Male' ? -1 : 1;
+                }
+                return compareClassroomsByAllocatedClass(a, b);
+            });
+
+            const classroomRows = [];
+            const eventRows = [];
+
+            sortedRooms.forEach((room) => {
+                const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+                const classAllocs = allocations.filter(a => a && (a.allocationType || 'class') === 'class');
+                const eventAllocs = allocations.filter(a => a && a.allocationType === 'event');
+
+                const allocatedClassNames = classAllocs.length > 0
+                    ? classAllocs.map(a => a.standardEventName || 'Class').join(', ')
+                    : 'Unallocated';
+                const allocatedClassSchedules = classAllocs.length > 0
+                    ? classAllocs.map(a => `${a.standardEventName}: ${formatCleanWhatsAppScheduleSummary(a.slots, a.customTimings)}`).join(' ; ')
+                    : '-';
+
+                const rawStudentCount = (room.studentCount !== undefined && room.studentCount !== null && room.studentCount !== '')
+                    ? Number(room.studentCount)
+                    : null;
+
+                const ecEntries = Array.isArray(room.extraChairEntries) ? room.extraChairEntries : [];
+                const activeExtraChairTotal = getEffectiveExtraChairTotal(room, todayStr);
+                const allRecordedExtraChairSum = ecEntries.reduce((acc, ec) => acc + (Number(ec.count) || 0), 0);
+                const extraChairValue = activeExtraChairTotal > 0
+                    ? activeExtraChairTotal
+                    : (allRecordedExtraChairSum > 0 ? allRecordedExtraChairSum : ((room.extraChair !== undefined && room.extraChair !== null && room.extraChair !== '') ? Number(room.extraChair) : null));
+                const extraChairDetailsStr = ecEntries.length > 0
+                    ? ecEntries.map(ec => `${ec.count} chair(s) (${ec.fromDate || '-'} to ${ec.toDate || '-'})`).join(' | ')
+                    : (extraChairValue ? `${extraChairValue} chair(s)` : '-');
+
+                classroomRows.push({
+                    classroomId: String(room.id || ''),
+                    classroomNumber: String(room.classroomNumber || '-'),
+                    type: room.type === 'Female' ? 'Female' : 'Male',
+                    location: String(room.location || '-'),
+                    allocatedClass: allocatedClassNames,
+                    classSchedule: allocatedClassSchedules,
+                    studentCount: rawStudentCount,
+                    extraChair: extraChairValue,
+                    extraChairDetails: extraChairDetailsStr
+                });
+
+                eventAllocs.forEach(ev => {
+                    eventRows.push({
+                        allocId: String(ev.id || ''),
+                        eventName: String(ev.standardEventName || 'Event'),
+                        classroomNumber: String(room.classroomNumber || '-'),
+                        roomType: room.type === 'Female' ? 'Female' : 'Male',
+                        location: String(room.location || '-'),
+                        allocatedClassInRoom: allocatedClassNames,
+                        fromDate: String(ev.fromDate || '-'),
+                        toDate: String(ev.toDate || '-'),
+                        scheduleSummary: formatAllocationScheduleSummary(ev.slots, ev.customTimings),
+                        cleanScheduleSummary: formatCleanWhatsAppScheduleSummary(ev.slots, ev.customTimings)
+                    });
+                });
+            });
+
+            return { classroomRows, eventRows };
+        }
+
+        window.handleEndOfYearArchiveSubmit = async function(e) {
+            e.preventDefault();
+            if (!isEndOfYearAuthorizedUser()) {
+                showAssetToast("Access Denied: Only murtaza.kheraluwala@jameasaifiyah.edu is authorized to End Year and Archive data.", true);
+                return;
+            }
+
+            const errEl = document.getElementById('endOfYearValidationError');
+            if (errEl) errEl.classList.add('hidden');
+
+            const nameInp = document.getElementById('endOfYearAcademicNameInput');
+            const academicYearName = (nameInp?.value || '').trim();
+            if (!academicYearName) {
+                if (errEl) {
+                    errEl.innerText = "Please enter an Academic Year name.";
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const duplicate = classroomYearArchivesData.some(a => String(a.academicYearName || '').trim().toLowerCase() === academicYearName.toLowerCase());
+            if (duplicate) {
+                if (errEl) {
+                    errEl.innerText = `Academic Year "${academicYearName}" already exists in the archive list. Please use a distinct name or undo the existing archive first.`;
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            const btn = document.getElementById('btnExecuteEndOfYearArchive');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Archiving &amp; Clearing...</span>';
+            }
+
+            try {
+                isSavingClassrooms = true;
+                const classroomsSnapshot = JSON.parse(JSON.stringify(classroomsData || []));
+                const raihaanSnapshot = JSON.parse(JSON.stringify(raihaanData || []));
+                const { classroomRows, eventRows } = buildEndOfYearClassroomAndEventsData(classroomsSnapshot);
+
+                const todayStr = getLocalTodayDateString();
+                const nowIso = new Date().toISOString();
+                const actorEmail = currentUser && currentUser.email ? currentUser.email.trim() : END_OF_YEAR_AUTHORIZED_EMAIL;
+                const actorName = getUserDisplayNameByEmail(actorEmail, (currentUser && currentUser.displayName) || 'Murtaza Kheraluwala');
+
+                const archiveRecord = {
+                    id: 'eoy_' + Date.now().toString() + '_' + Math.random().toString().slice(2, 6),
+                    academicYearName,
+                    archivedAt: nowIso,
+                    archivedDateDisplay: formatDateToDdMmmYyyy(todayStr),
+                    archivedByEmail: actorEmail,
+                    archivedByName: actorName,
+                    classroomsSnapshot,
+                    raihaanSnapshot,
+                    classroomRowsSnapshot: classroomRows,
+                    eventsSnapshot: eventRows
+                };
+
+                classroomYearArchivesData.unshift(archiveRecord);
+                saveClassroomYearArchivesLocalCache();
+
+                // Clear all classroom fields (Allocated Class, Other Events, Student Count, Extra Chair) AND Events Archive
+                // while keeping Classroom Number, Location, and Gender/Type intact
+                classroomsData = (classroomsData || []).map(room => ({
+                    id: String(room.id),
+                    classroomNumber: String(room.classroomNumber || ''),
+                    location: String(room.location || ''),
+                    type: room.type === 'Female' ? 'Female' : 'Male',
+                    isAllocated: false,
+                    studentCount: null,
+                    extraChair: null,
+                    extraChairEntries: [],
+                    allocations: [],
+                    updatedAt: todayStr
+                }));
+
+                // Also clear active Raihaan schedules for the new academic year (preserved in raihaanSnapshot)
+                raihaanData = [];
+
+                toggleEndOfYearAddForm(false);
+                renderEndOfYearArchivesList();
+                renderClassroomsTables();
+                if (typeof renderEventsArchiveList === 'function') {
+                    renderEventsArchiveList();
+                }
+
+                await saveClassroomsToCloud();
+                await saveCloudData();
+
+                showAssetToast(`Academic Year "${academicYearName}" archived! Cleared classroom allocations, counts, extra chairs & events archive.`);
+            } catch (err) {
+                console.error("End of Year archive error:", err);
+                showAssetToast("Error archiving End of Year data: " + (err.message || err), true);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-box-archive"></i><span>End Year and Archive all Data</span>';
+                }
+            }
+        };
+
+        window.renderEndOfYearArchivesList = function() {
+            const tbody = document.getElementById('endOfYearArchivesTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const canManageEoy = isEndOfYearAuthorizedUser();
+            const addBtn = document.getElementById('btnEndOfYearToggleAdd');
+            const viewerBadge = document.getElementById('endOfYearViewerBadge');
+            if (addBtn) addBtn.classList.toggle('hidden', !canManageEoy);
+            if (viewerBadge) viewerBadge.classList.toggle('hidden', canManageEoy);
+
+            if (!Array.isArray(classroomYearArchivesData) || classroomYearArchivesData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="p-8 text-center text-gray-400 text-xs italic">
+                            No Academic Year archives created yet.${canManageEoy ? ' Click "+ Add" above to enter an Academic Year name and archive all classroom &amp; event data.' : ''}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = classroomYearArchivesData.map((arch, idx) => {
+                const safeId = String(arch.id).replace(/'/g, "\'");
+                const derived = (Array.isArray(arch.classroomRowsSnapshot) && arch.classroomRowsSnapshot.length > 0)
+                    ? { classroomRows: arch.classroomRowsSnapshot, eventRows: Array.isArray(arch.eventsSnapshot) ? arch.eventsSnapshot : [] }
+                    : buildEndOfYearClassroomAndEventsData(arch.classroomsSnapshot || []);
+
+                const totalRooms = derived.classroomRows.length;
+                const allocatedRoomsCount = derived.classroomRows.filter(r => r.allocatedClass && r.allocatedClass !== 'Unallocated').length;
+                const totalStudents = derived.classroomRows.reduce((s, r) => s + (Number(r.studentCount) || 0), 0);
+                const totalExtraChairs = derived.classroomRows.reduce((s, r) => s + (Number(r.extraChair) || 0), 0);
+                const totalEvents = derived.eventRows.length;
+
+                const archivedDateLabel = arch.archivedDateDisplay || (arch.archivedAt ? formatDateToDdMmmYyyy(String(arch.archivedAt).slice(0, 10)) : '-');
+                const archivedByLabel = arch.archivedByName || getUserDisplayNameByEmail(arch.archivedByEmail || END_OF_YEAR_AUTHORIZED_EMAIL, 'Murtaza Kheraluwala');
+
+                const undoBtnHtml = canManageEoy
+                    ? `<button
+                        type="button"
+                        onclick="undoEndOfYearArchive('${safeId}')"
+                        class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1.5"
+                        title="Undo End of Year Archive and restore all classroom allocations, counts, extra chairs &amp; events"
+                    >
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Undo</span>
+                    </button>`
+                    : `<span class="text-[11px] text-gray-400 italic font-medium">View &amp; Export Only</span>`;
+
+                return `
+                    <tr class="hover:bg-gray-50 border-b align-middle">
+                        <td class="p-3 text-center font-bold text-gray-500">${idx + 1}</td>
+                        <td class="p-3">
+                            <div class="font-extrabold text-gray-900 text-sm sm:text-base flex items-center space-x-2">
+                                <i class="fa-solid fa-graduation-cap text-rose-700"></i>
+                                <span>${arch.academicYearName}</span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] font-bold">
+                                <span class="bg-emerald-50 text-emerald-900 border border-emerald-200 px-2 py-0.5 rounded">${totalRooms} Classrooms (${allocatedRoomsCount} Allocated)</span>
+                                <span class="bg-blue-50 text-blue-900 border border-blue-200 px-2 py-0.5 rounded">Students: ${totalStudents}</span>
+                                <span class="bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded">Extra Chairs: ${totalExtraChairs}</span>
+                                <span class="bg-purple-50 text-purple-900 border border-purple-200 px-2 py-0.5 rounded">Events: ${totalEvents}</span>
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-1">
+                                Archived on ${archivedDateLabel} by <strong>${archivedByLabel}</strong>
+                            </div>
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <div class="relative inline-block text-left eoy-export-dropdown-wrap">
+                                <button
+                                    type="button"
+                                    onclick="toggleEndOfYearExportDropdown('${safeId}', event)"
+                                    class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold px-3.5 py-2 rounded-lg shadow-sm transition inline-flex items-center space-x-1.5"
+                                    title="Export Classroom Data &amp; Events Details as ZIP (Excel or PDF)"
+                                >
+                                    <i class="fa-solid fa-file-zipper"></i>
+                                    <span>Export</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
+                                </button>
+                                <div
+                                    id="eoyExportMenu_${arch.id}"
+                                    class="eoy-export-dropdown-menu hidden origin-top-right absolute right-0 mt-1.5 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 border border-gray-200 divide-y divide-gray-100 z-50"
+                                >
+                                    <button
+                                        type="button"
+                                        onclick="exportAcademicYearArchiveZip('${safeId}', 'excel')"
+                                        class="w-full text-left px-3.5 py-2.5 text-xs font-bold text-gray-800 hover:bg-emerald-50 hover:text-emerald-900 flex items-center space-x-2 transition rounded-t-xl"
+                                    >
+                                        <i class="fa-solid fa-file-excel text-emerald-700 text-sm"></i>
+                                        <div>
+                                            <div class="font-extrabold">Excel (.xlsx ZIP)</div>
+                                            <div class="text-[10px] text-gray-500 font-normal">Classrooms + Events Excel</div>
+                                        </div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onclick="exportAcademicYearArchiveZip('${safeId}', 'pdf')"
+                                        class="w-full text-left px-3.5 py-2.5 text-xs font-bold text-gray-800 hover:bg-red-50 hover:text-red-900 flex items-center space-x-2 transition rounded-b-xl"
+                                    >
+                                        <i class="fa-solid fa-file-pdf text-red-600 text-sm"></i>
+                                        <div>
+                                            <div class="font-extrabold">PDF (.pdf ZIP)</div>
+                                            <div class="text-[10px] text-gray-500 font-normal">Classrooms + Events PDF</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            ${undoBtnHtml}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        window.toggleEndOfYearExportDropdown = function(archiveId, ev) {
+            if (ev) ev.stopPropagation();
+            const targetMenuId = `eoyExportMenu_${archiveId}`;
+            document.querySelectorAll('.eoy-export-dropdown-menu').forEach(el => {
+                if (el.id !== targetMenuId) {
+                    el.classList.add('hidden');
+                }
+            });
+            const menuEl = document.getElementById(targetMenuId);
+            if (menuEl) {
+                menuEl.classList.toggle('hidden');
+            }
+        };
+
+        window.exportAcademicYearArchiveZip = async function(archiveId, format) {
+            document.querySelectorAll('.eoy-export-dropdown-menu').forEach(el => el.classList.add('hidden'));
+
+            const arch = classroomYearArchivesData.find(a => String(a.id) === String(archiveId));
+            if (!arch) {
+                showAssetToast("Archived Academic Year record not found.", true);
+                return;
+            }
+
+            if (!window.JSZip) {
+                showAssetToast("ZIP library is still loading. Please try again in a moment.", true);
+                return;
+            }
+
+            const isPdf = String(format).toLowerCase() === 'pdf';
+            if (isPdf && (!window.jspdf || !window.jspdf.jsPDF)) {
+                showAssetToast("PDF library is still loading. Please try again in a moment.", true);
+                return;
+            }
+            if (!isPdf && typeof XLSX === 'undefined') {
+                showAssetToast("Excel library is still loading. Please try again in a moment.", true);
+                return;
+            }
+
+            const yearTitle = String(arch.academicYearName || 'Academic_Year').trim();
+            const safeYearSlug = yearTitle.replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'Academic_Year';
+            const archivedDateStr = arch.archivedDateDisplay || formatDateToDdMmmYyyy(getLocalTodayDateString());
+
+            const derived = (Array.isArray(arch.classroomRowsSnapshot) && arch.classroomRowsSnapshot.length > 0)
+                ? { classroomRows: arch.classroomRowsSnapshot, eventRows: Array.isArray(arch.eventsSnapshot) ? arch.eventsSnapshot : [] }
+                : buildEndOfYearClassroomAndEventsData(arch.classroomsSnapshot || []);
+
+            const classroomRows = derived.classroomRows;
+            const eventRows = derived.eventRows;
+
+            const totalStudents = classroomRows.reduce((s, r) => s + (Number(r.studentCount) || 0), 0);
+            const totalExtraChairs = classroomRows.reduce((s, r) => s + (Number(r.extraChair) || 0), 0);
+
+            try {
+                showAssetToast(`Preparing ${isPdf ? 'PDF' : 'Excel'} ZIP archive for "${yearTitle}"...`);
+                const zip = new window.JSZip();
+
+                if (!isPdf) {
+                    // 1. Excel File 1: All Classroom Number, Location, Allocated Class, Student Count & Extra Chairs Data
+                    const clsHeaders = [
+                        "Sr. No.",
+                        "Classroom Number",
+                        "Type (Male / Female)",
+                        "Location",
+                        "Allocated Class",
+                        "Weekly Class Schedule",
+                        "Student Count",
+                        "Extra Chairs",
+                        "Extra Chair Details"
+                    ];
+                    const clsBody = classroomRows.map((r, idx) => [
+                        idx + 1,
+                        r.classroomNumber || '-',
+                        r.type || 'Male',
+                        r.location || '-',
+                        r.allocatedClass || 'Unallocated',
+                        r.classSchedule || '-',
+                        (r.studentCount !== null && r.studentCount !== undefined && r.studentCount !== '') ? Number(r.studentCount) : 0,
+                        (r.extraChair !== null && r.extraChair !== undefined && r.extraChair !== '') ? Number(r.extraChair) : 0,
+                        r.extraChairDetails || '-'
+                    ]);
+                    clsBody.push([
+                        "",
+                        "TOTAL",
+                        "",
+                        "",
+                        "",
+                        "",
+                        totalStudents,
+                        totalExtraChairs,
+                        ""
+                    ]);
+
+                    const clsSheetAoA = [
+                        [`Aljamea-tus-Saifiyah Facilities Management Dept (Marol) — Classroom Data Archive (${yearTitle})`],
+                        [`Academic Year: ${yearTitle} | Archived On: ${archivedDateStr} | Total Classrooms: ${classroomRows.length}`],
+                        [],
+                        clsHeaders,
+                        ...clsBody
+                    ];
+                    const wsClassrooms = XLSX.utils.aoa_to_sheet(clsSheetAoA);
+                    wsClassrooms['!cols'] = [
+                        { wch: 8 },
+                        { wch: 18 },
+                        { wch: 18 },
+                        { wch: 24 },
+                        { wch: 26 },
+                        { wch: 42 },
+                        { wch: 16 },
+                        { wch: 16 },
+                        { wch: 34 }
+                    ];
+                    const wbClassrooms = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wbClassrooms, wsClassrooms, "Classrooms Data");
+                    const clsExcelBuffer = XLSX.write(wbClassrooms, { bookType: 'xlsx', type: 'array' });
+                    zip.file(`Classrooms_Data_${safeYearSlug}.xlsx`, clsExcelBuffer);
+
+                    // 2. Excel File 2: All Events Details
+                    const evHeaders = [
+                        "Sr. No.",
+                        "Event Name",
+                        "Classroom Number",
+                        "Type (Male / Female)",
+                        "Location",
+                        "Allocated Class in Room",
+                        "From Date",
+                        "To Date",
+                        "Weekly Timetable Schedule"
+                    ];
+                    const evBody = eventRows.length > 0
+                        ? eventRows.map((ev, idx) => [
+                            idx + 1,
+                            ev.eventName || '-',
+                            ev.classroomNumber || '-',
+                            ev.roomType || 'Male',
+                            ev.location || '-',
+                            ev.allocatedClassInRoom || '-',
+                            ev.fromDate || '-',
+                            ev.toDate || '-',
+                            ev.scheduleSummary || ev.cleanScheduleSummary || '-'
+                        ])
+                        : [["-", "No events recorded for this Academic Year", "-", "-", "-", "-", "-", "-", "-"]];
+
+                    const evSheetAoA = [
+                        [`Aljamea-tus-Saifiyah Facilities Management Dept (Marol) — Classroom Events Archive (${yearTitle})`],
+                        [`Academic Year: ${yearTitle} | Archived On: ${archivedDateStr} | Total Events: ${eventRows.length}`],
+                        [],
+                        evHeaders,
+                        ...evBody
+                    ];
+                    const wsEvents = XLSX.utils.aoa_to_sheet(evSheetAoA);
+                    wsEvents['!cols'] = [
+                        { wch: 8 },
+                        { wch: 30 },
+                        { wch: 18 },
+                        { wch: 18 },
+                        { wch: 24 },
+                        { wch: 24 },
+                        { wch: 14 },
+                        { wch: 14 },
+                        { wch: 50 }
+                    ];
+                    const wbEvents = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wbEvents, wsEvents, "Events Details");
+                    const evExcelBuffer = XLSX.write(wbEvents, { bookType: 'xlsx', type: 'array' });
+                    zip.file(`Events_Details_${safeYearSlug}.xlsx`, evExcelBuffer);
+                } else {
+                    const { jsPDF } = window.jspdf;
+
+                    // 1. PDF File 1: All Classroom Number, Location, Allocated Class, Student Count & Extra Chairs Data
+                    const docCls = new jsPDF({ orientation: 'landscape' });
+                    docCls.setFont('helvetica', 'bold');
+                    docCls.setFontSize(14);
+                    docCls.setTextColor(6, 78, 59);
+                    docCls.text(`Classroom Data Archive — Academic Year: ${yearTitle}`, 14, 14);
+                    docCls.setFont('helvetica', 'normal');
+                    docCls.setFontSize(9);
+                    docCls.setTextColor(75, 85, 99);
+                    docCls.text(`Aljamea-tus-Saifiyah Facilities Management Dept (Marol) | Archived on: ${archivedDateStr} | Total Classrooms: ${classroomRows.length}`, 14, 20);
+
+                    const clsPdfHead = [["Sr. No.", "Classroom No.", "Type", "Location", "Allocated Class", "Weekly Schedule", "Student Count", "Extra Chairs", "Extra Chair Details"]];
+                    const clsPdfBody = classroomRows.map((r, idx) => [
+                        idx + 1,
+                        r.classroomNumber || '-',
+                        r.type || 'Male',
+                        r.location || '-',
+                        r.allocatedClass || 'Unallocated',
+                        r.classSchedule || '-',
+                        (r.studentCount !== null && r.studentCount !== undefined && r.studentCount !== '') ? String(r.studentCount) : '0',
+                        (r.extraChair !== null && r.extraChair !== undefined && r.extraChair !== '') ? String(r.extraChair) : '0',
+                        r.extraChairDetails || '-'
+                    ]);
+                    clsPdfBody.push([
+                        "",
+                        "TOTAL",
+                        "",
+                        "",
+                        "",
+                        "",
+                        String(totalStudents),
+                        String(totalExtraChairs),
+                        ""
+                    ]);
+
+                    docCls.autoTable({
+                        head: clsPdfHead,
+                        body: clsPdfBody,
+                        startY: 24,
+                        theme: 'grid',
+                        styles: { fontSize: 8, cellPadding: 2 },
+                        headStyles: { fillColor: [6, 95, 70], textColor: [255, 255, 255], fontStyle: 'bold' },
+                        didParseCell: function(data) {
+                            if (data.section === 'body' && data.row.index === clsPdfBody.length - 1) {
+                                data.cell.styles.fillColor = [209, 250, 229];
+                                data.cell.styles.textColor = [6, 78, 59];
+                                data.cell.styles.fontStyle = 'bold';
+                            }
+                        }
+                    });
+                    const clsPdfBuffer = docCls.output('arraybuffer');
+                    zip.file(`Classrooms_Data_${safeYearSlug}.pdf`, clsPdfBuffer);
+
+                    // 2. PDF File 2: All Events Details
+                    const docEv = new jsPDF({ orientation: 'landscape' });
+                    docEv.setFont('helvetica', 'bold');
+                    docEv.setFontSize(14);
+                    docEv.setTextColor(88, 28, 135);
+                    docEv.text(`Classroom Events Details Archive — Academic Year: ${yearTitle}`, 14, 14);
+                    docEv.setFont('helvetica', 'normal');
+                    docEv.setFontSize(9);
+                    docEv.setTextColor(75, 85, 99);
+                    docEv.text(`Aljamea-tus-Saifiyah Facilities Management Dept (Marol) | Archived on: ${archivedDateStr} | Total Events: ${eventRows.length}`, 14, 20);
+
+                    const evPdfHead = [["Sr. No.", "Event Name", "Classroom No.", "Type", "Location", "Allocated Class", "From Date", "To Date", "Weekly Timetable Schedule"]];
+                    const evPdfBody = eventRows.length > 0
+                        ? eventRows.map((ev, idx) => [
+                            idx + 1,
+                            ev.eventName || '-',
+                            ev.classroomNumber || '-',
+                            ev.roomType || 'Male',
+                            ev.location || '-',
+                            ev.allocatedClassInRoom || '-',
+                            ev.fromDate || '-',
+                            ev.toDate || '-',
+                            ev.scheduleSummary || ev.cleanScheduleSummary || '-'
+                        ])
+                        : [["-", "No events recorded for this Academic Year", "-", "-", "-", "-", "-", "-", "-"]];
+
+                    docEv.autoTable({
+                        head: evPdfHead,
+                        body: evPdfBody,
+                        startY: 24,
+                        theme: 'grid',
+                        styles: { fontSize: 8, cellPadding: 2 },
+                        headStyles: { fillColor: [88, 28, 135], textColor: [255, 255, 255], fontStyle: 'bold' }
+                    });
+                    const evPdfBuffer = docEv.output('arraybuffer');
+                    zip.file(`Events_Details_${safeYearSlug}.pdf`, evPdfBuffer);
+                }
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const downloadUrl = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                const zipFileName = `Academic_Year_${safeYearSlug}_${isPdf ? 'PDF' : 'Excel'}_Archive.zip`;
+                a.download = zipFileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(downloadUrl), 3000);
+                showAssetToast(`Downloaded ${zipFileName} (Classrooms Data + Events Details)`);
+            } catch (err) {
+                console.error("Error generating End of Year ZIP export:", err);
+                showAssetToast("Failed to generate ZIP archive: " + (err.message || err), true);
+            }
+        };
+
+        window.undoEndOfYearArchive = async function(archiveId) {
+            if (!isEndOfYearAuthorizedUser()) {
+                showAssetToast("Access Denied: Only murtaza.kheraluwala@jameasaifiyah.edu is authorized to undo End of Year archives.", true);
+                return;
+            }
+
+            const arch = classroomYearArchivesData.find(a => String(a.id) === String(archiveId));
+            if (!arch) {
+                showAssetToast("Archived Academic Year record not found.", true);
+                return;
+            }
+
+            try {
+                isSavingClassrooms = true;
+                const snapRooms = Array.isArray(arch.classroomsSnapshot) ? normalizeClassroomsList(arch.classroomsSnapshot) : [];
+
+                if (snapRooms.length > 0) {
+                    const snapById = new Map();
+                    const snapByNumAndType = new Map();
+                    snapRooms.forEach(sr => {
+                        snapById.set(String(sr.id), sr);
+                        snapByNumAndType.set(`${String(sr.classroomNumber || '').trim().toLowerCase()}__${sr.type || 'Male'}`, sr);
+                    });
+
+                    const restoredIds = new Set();
+                    const updatedRooms = (classroomsData || []).map(currRoom => {
+                        const keyNumType = `${String(currRoom.classroomNumber || '').trim().toLowerCase()}__${currRoom.type || 'Male'}`;
+                        const matchedSnap = snapById.get(String(currRoom.id)) || snapByNumAndType.get(keyNumType);
+                        if (matchedSnap) {
+                            restoredIds.add(String(matchedSnap.id));
+                            return JSON.parse(JSON.stringify({
+                                ...matchedSnap,
+                                id: String(currRoom.id),
+                                classroomNumber: currRoom.classroomNumber || matchedSnap.classroomNumber,
+                                location: currRoom.location || matchedSnap.location,
+                                type: currRoom.type || matchedSnap.type
+                            }));
+                        }
+                        return currRoom;
+                    });
+
+                    snapRooms.forEach(sr => {
+                        const keyNumType = `${String(sr.classroomNumber || '').trim().toLowerCase()}__${sr.type || 'Male'}`;
+                        const alreadyPresent = updatedRooms.some(r =>
+                            String(r.id) === String(sr.id) ||
+                            `${String(r.classroomNumber || '').trim().toLowerCase()}__${r.type || 'Male'}` === keyNumType
+                        );
+                        if (!alreadyPresent) {
+                            updatedRooms.push(JSON.parse(JSON.stringify(sr)));
+                        }
+                    });
+
+                    classroomsData = normalizeClassroomsList(updatedRooms);
+                }
+
+                if (Array.isArray(arch.raihaanSnapshot) && arch.raihaanSnapshot.length > 0) {
+                    const existingRaiIds = new Set((raihaanData || []).map(r => String(r.id)));
+                    const restoredRai = [...(raihaanData || [])];
+                    normalizeRaihaanList(arch.raihaanSnapshot).forEach(r => {
+                        if (!existingRaiIds.has(String(r.id))) {
+                            restoredRai.push(r);
+                        }
+                    });
+                    raihaanData = restoredRai;
+                }
+
+                classroomYearArchivesData = classroomYearArchivesData.filter(a => String(a.id) !== String(archiveId));
+                saveClassroomYearArchivesLocalCache();
+
+                renderEndOfYearArchivesList();
+                renderClassroomsTables();
+                if (typeof renderEventsArchiveList === 'function') {
+                    renderEventsArchiveList();
+                }
+                if (typeof renderRaihaanArchiveTable === 'function' && !document.getElementById('modalRaihaanArchive')?.classList.contains('hidden')) {
+                    renderRaihaanArchiveTable();
+                }
+
+                await saveClassroomsToCloud();
+                await saveCloudData();
+
+                showAssetToast(`Undid End of Year archive for "${arch.academicYearName}" — restored all classroom allocations, counts, extra chairs & events!`);
+            } catch (err) {
+                console.error("Undo End of Year error:", err);
+                showAssetToast("Error undoing End of Year archive: " + (err.message || err), true);
+            }
+        };
+
         // Normalize class name for natural sorting (e.g. "Std 1 A", "Std 1 B", "Std 2 A", ..., "Std 9", "Std 10", "Std 11")
         function normalizeAllocatedClassForSort(rawName) {
             if (!rawName || typeof rawName !== 'string') return '';
@@ -14475,6 +15368,7 @@ await recordDawatEstatesNotification(
                     estates: estatesData,
                     classrooms: classroomsData,
                     raihaan: raihaanData,
+                    classroomYearArchives: classroomYearArchivesData,
                     keys: keysInventoryData,
                     faculty: facultyData,
                     societies: societiesData,
@@ -14533,6 +15427,7 @@ await recordDawatEstatesNotification(
                     if (Array.isArray(src.estates)) estatesData = src.estates;
                     if (src.classrooms !== undefined) classroomsData = normalizeClassroomsList(src.classrooms);
                     if (src.raihaan !== undefined) raihaanData = normalizeRaihaanList(src.raihaan);
+                    if (src.classroomYearArchives !== undefined) classroomYearArchivesData = normalizeClassroomYearArchivesList(src.classroomYearArchives);
                     if (src.notifications !== undefined) portalNotificationsData = normalizeNotificationsList(src.notifications);
                     if (Array.isArray(src.keys)) keysInventoryData = src.keys;
                     if (Array.isArray(src.faculty)) facultyData = src.faculty;

@@ -6717,8 +6717,32 @@ window.loadClassroomsFromCloud = async function() {
             return Array.from(new Set(candidates.filter(Boolean)));
         }
 
+        const SHORT_MONTH_NAMES_DDMMMYYYY = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        function formatDateToDdMmmYyyy(dateStr) {
+            if (!dateStr) return '';
+            const clean = String(dateStr).trim();
+            const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!m) return clean;
+            const year = m[1];
+            const monthIdx = parseInt(m[2], 10) - 1;
+            const day = m[3];
+            if (monthIdx < 0 || monthIdx > 11) return clean;
+            return `${day}-${SHORT_MONTH_NAMES_DDMMMYYYY[monthIdx]}-${year}`;
+        }
+
+        function formatAllIsoDatesInTextToDdMmmYyyy(text) {
+            if (text === null || text === undefined) return '';
+            return String(text).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (full, yyyy, mm, dd) => {
+                const mIdx = parseInt(mm, 10) - 1;
+                if (mIdx < 0 || mIdx > 11) return full;
+                return `${dd}-${SHORT_MONTH_NAMES_DDMMMYYYY[mIdx]}-${yyyy}`;
+            });
+        }
+
         function sanitizeWatiParamValue(val, fallback = '-') {
-            const cleaned = String(val ?? '')
+            const formattedDates = formatAllIsoDatesInTextToDdMmmYyyy(val ?? '');
+            const cleaned = String(formattedDates)
                 .replace(/[\r\n\t]+/g, ' ')
                 .replace(/\s{2,}/g, ' ')
                 .trim();
@@ -6939,6 +6963,9 @@ window.loadClassroomsFromCloud = async function() {
             const pad = (n) => String(n).padStart(2, '0');
             const formattedTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
+            const formattedDetailText = formatAllIsoDatesInTextToDdMmmYyyy(detailText || '');
+            const formattedScheduleSummary = formatAllIsoDatesInTextToDdMmmYyyy(scheduleSummary || '');
+
             const newNotif = {
                 id: 'notif_' + Date.now().toString() + '_' + Math.random().toString().slice(2, 6),
                 module: 'classroom-allocation',
@@ -6947,8 +6974,8 @@ window.loadClassroomsFromCloud = async function() {
                 actorEmail,
                 actorName,
                 actionType: actionType || '',
-                detailText: detailText || '',
-                scheduleSummary: scheduleSummary || '',
+                detailText: formattedDetailText,
+                scheduleSummary: formattedScheduleSummary,
                 createdAt: formattedTime,
                 timestamp: Date.now(),
                 seenBy: [actorEmail.toLowerCase()]
@@ -10145,12 +10172,13 @@ await recordDawatEstatesNotification(
 
             const actorName = currentUser ? getUserDisplayNameByEmail(currentUser.email, currentUser.displayName || '') : 'Admin User';
 
+            const todayFormatted = formatDateToDdMmmYyyy(getLocalTodayDateString());
             const testParams = [
                 { name: "1", value: sanitizeWatiParamValue(actorName, 'Admin') },
                 { name: "2", value: "Added Extra Chair" },
                 { name: "3", value: "Std 1 A M - 1411 (Female) - 4th Floor" },
                 { name: "4", value: "2 Chairs (Total Extra Chairs: 2)" },
-                { name: "5", value: `${getLocalTodayDateString()} to ${getLocalTodayDateString()}` }
+                { name: "5", value: sanitizeWatiParamValue(`${todayFormatted} to ${todayFormatted}`, '-') }
             ];
 
             const result = await dispatchWatiTemplateMessages([normalizedPhone], testParams);
@@ -11674,9 +11702,19 @@ await recordDawatEstatesNotification(
             if (!listEl) return;
             listEl.innerHTML = '';
 
-            const allocations = Array.isArray(room.allocations) ? room.allocations : [];
+            const todayStr = getLocalTodayDateString();
+            const rawAllocations = Array.isArray(room.allocations) ? room.allocations : [];
+            // Only display current/active or upcoming allocations here (past events whose To Date < todayStr are excluded here and shown in Events Archive)
+            const allocations = rawAllocations.filter(alloc => {
+                if (!alloc) return false;
+                if (alloc.allocationType === 'event' && alloc.toDate && String(alloc.toDate).trim() < todayStr) {
+                    return false;
+                }
+                return true;
+            });
+
             if (allocations.length === 0) {
-                listEl.innerHTML = '<p class="text-xs text-gray-400 italic">No Allocated Classes or Other Events saved for this classroom yet.</p>';
+                listEl.innerHTML = '<p class="text-xs text-gray-400 italic">No current Allocated Classes or active/upcoming Other Events in this classroom.</p>';
                 return;
             }
 
@@ -11686,11 +11724,12 @@ await recordDawatEstatesNotification(
                 const summary = formatAllocationScheduleSummary(alloc.slots, alloc.customTimings);
                 const isEvent = alloc.allocationType === 'event';
                 const canEditThisAlloc = canEditClassroomColumn(isEvent ? 'event' : 'allotted-class');
+                const isUpcoming = isEvent && alloc.fromDate && String(alloc.fromDate).trim() > todayStr;
                 const typeBadge = isEvent
-                    ? '<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Other Event</span>'
+                    ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Other Event</span>${isUpcoming ? '<span class="bg-blue-100 text-blue-900 border border-blue-200 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded ml-1">Upcoming</span>' : '<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded ml-1">Active</span>'}`
                     : '<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded">Allocated Class</span>';
                 const datesNotice = (isEvent && (alloc.fromDate || alloc.toDate))
-                    ? `<span class="text-[10px] text-amber-800 font-mono block mt-0.5"><i class="fa-regular fa-calendar mr-1"></i>${alloc.fromDate || '-'} to ${alloc.toDate || '-'}</span>`
+                    ? `<span class="text-[10px] text-amber-800 font-mono block mt-0.5"><i class="fa-regular fa-calendar mr-1"></i>${formatDateToDdMmmYyyy(alloc.fromDate) || '-'} to ${formatDateToDdMmmYyyy(alloc.toDate) || '-'}</span>`
                     : '';
                 const item = document.createElement('div');
                 item.className = "bg-white p-2.5 rounded border flex justify-between items-start gap-2 text-xs";

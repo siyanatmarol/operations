@@ -1828,18 +1828,52 @@
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
                         <input type="text" id="facultySearch" oninput="renderFacultyTable()" placeholder="Dynamic search by Name, ITS Number, Category, Gender, or Contact..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
-                    <div class="md:col-span-3">
-                        <select id="facultyCategoryFilter" onchange="renderFacultyTable()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                            <option value="">All Categories</option>
-                            <option value="Faculty - QA">Faculty - QA</option>
-                            <option value="Faculty - Sighat">Faculty - Sighat</option>
-                            <option value="Faculty">Faculty</option>
-                            <option value="Non Tayeen">Non Tayeen</option>
-                            <option value="Faculty - Teachers">Faculty - Teachers</option>
-                            <option value="Staff">Staff</option>
-                            <option value="Faculty Family / Staff">Faculty Family / Staff</option>
-                            <option value="Faculty Family">Faculty Family</option>
-                        </select>
+                    <div class="md:col-span-3 relative" id="facultyCategoryDropdownWrap">
+                        <button type="button" onclick="toggleFacultyCategoryDropdown()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-between focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <span id="facultyCategoryDropdownLabel" class="truncate">All Categories</span>
+                            <i id="facultyCategoryDropdownChevron" class="fa-solid fa-chevron-down text-xs text-gray-500 ml-2 transition-transform"></i>
+                        </button>
+                        <div id="facultyCategoryDropdownPanel" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-40 overflow-hidden">
+                            <div class="flex items-center justify-between px-3 py-2 bg-emerald-50 border-b border-emerald-100 text-xs">
+                                <button type="button" onclick="setAllFacultyCategoryFilters(true)" class="font-bold text-emerald-800 hover:underline">Select All</button>
+                                <span class="text-gray-300">|</span>
+                                <button type="button" onclick="setAllFacultyCategoryFilters(false)" class="font-semibold text-gray-600 hover:underline">Clear All</button>
+                            </div>
+                            <div class="max-h-60 overflow-y-auto divide-y divide-gray-100 p-1">
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Faculty - QA" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Faculty - QA</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Faculty - Sighat" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Faculty - Sighat</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Faculty" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Faculty</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Non Tayeen" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Non Tayeen</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Faculty - Teachers" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Faculty - Teachers</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Staff" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Staff</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Faculty Family / Staff" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Faculty Family / Staff</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 px-2.5 py-2 hover:bg-emerald-50/60 rounded-lg cursor-pointer transition text-xs font-semibold text-gray-800">
+                                    <input type="checkbox" name="facultyCategoryFilterCb" value="Faculty Family" onchange="handleFacultyCategoryCheckboxChange()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span>Faculty Family</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div class="md:col-span-2">
                         <select id="facultyGenderFilter" onchange="renderFacultyTable()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -2997,11 +3031,30 @@
                 <h3 class="text-lg font-bold text-gray-800">Excel / CSV Data Import</h3>
                 <button onclick="closeModal('modalImport')" class="text-gray-500 text-xl font-bold">&times;</button>
             </div>
-            <div class="space-y-3">
-                <p class="text-xs text-gray-600">Select or drop your spreadsheet (.xlsx, .csv).</p>
-                <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="w-full border p-2 text-sm rounded">
+            <div class="space-y-3.5">
+                <div>
+                    <label class="text-xs font-bold text-gray-700 block mb-1">1. Choose Spreadsheet (.xlsx, .xls, .csv) *</label>
+                    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="w-full border p-2 text-sm rounded bg-white">
+                </div>
+                <div class="space-y-2 pt-1">
+                    <label class="text-xs font-bold text-gray-700 block">2. Import Mode *</label>
+                    <label class="flex items-start space-x-2.5 p-2.5 border rounded-lg cursor-pointer hover:bg-emerald-50/60 transition bg-white">
+                        <input type="radio" name="excelImportMode" id="excelImportModeAdd" value="add" checked class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                        <div class="text-xs">
+                            <span class="font-bold text-gray-900 block">Add New Imports (Append to Existing Data)</span>
+                            <span class="text-gray-500 text-[11px]">Keeps all existing records and adds the newly imported rows.</span>
+                        </div>
+                    </label>
+                    <label class="flex items-start space-x-2.5 p-2.5 border rounded-lg cursor-pointer hover:bg-red-50/60 transition bg-white">
+                        <input type="radio" name="excelImportMode" id="excelImportModeOverwrite" value="overwrite" class="mt-0.5 text-red-600 focus:ring-red-500">
+                        <div class="text-xs">
+                            <span class="font-bold text-red-800 block">Overwrite Existing Data (Replace All)</span>
+                            <span class="text-gray-500 text-[11px]">Clears existing records in this module and replaces them with the imported sheet.</span>
+                        </div>
+                    </label>
+                </div>
                 <input type="hidden" id="importTypeTarget">
-                <button onclick="processExcelImport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-bold transition">Process Import</button>
+                <button onclick="processExcelImport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-bold transition shadow-sm">Process Import</button>
             </div>
         </div>
     </div>
@@ -5554,6 +5607,10 @@ function getOrCreateUtilityFolder_(name) {
             if (!e.target.closest('#egExportMeterDropdownWrap')) {
                 document.getElementById('egExportMeterDropdownPanel')?.classList.add('hidden');
                 document.getElementById('egExportMeterDropdownChevron')?.classList.remove('rotate-180');
+            }
+            if (!e.target.closest('#facultyCategoryDropdownWrap')) {
+                document.getElementById('facultyCategoryDropdownPanel')?.classList.add('hidden');
+                document.getElementById('facultyCategoryDropdownChevron')?.classList.remove('rotate-180');
             }
             if (!e.target.closest('.raihaan-row-dropdown-wrap')) {
                 document.querySelectorAll('.raihaan-row-dropdown-list').forEach(el => el.classList.add('hidden'));
@@ -8618,10 +8675,53 @@ await recordDawatEstatesNotification(
             });
         };
 
+        function getSelectedFacultyCategories() {
+            const cbs = Array.from(document.querySelectorAll('input[name="facultyCategoryFilterCb"]:checked'));
+            return cbs.map(cb => String(cb.value || '').trim()).filter(Boolean);
+        }
+
+        function updateFacultyCategoryDropdownLabel() {
+            const selectedCats = getSelectedFacultyCategories();
+            const allCbs = document.querySelectorAll('input[name="facultyCategoryFilterCb"]');
+            const lbl = document.getElementById('facultyCategoryDropdownLabel');
+            if (!lbl) return;
+            if (selectedCats.length === 0 || (allCbs.length > 0 && selectedCats.length === allCbs.length)) {
+                lbl.innerText = 'All Categories';
+            } else if (selectedCats.length === 1) {
+                lbl.innerText = selectedCats[0];
+            } else {
+                lbl.innerText = `${selectedCats.length} Categories (${selectedCats.slice(0, 2).join(', ')}${selectedCats.length > 2 ? '...' : ''})`;
+            }
+        }
+
+        window.toggleFacultyCategoryDropdown = function() {
+            const panel = document.getElementById('facultyCategoryDropdownPanel');
+            const chev = document.getElementById('facultyCategoryDropdownChevron');
+            if (!panel) return;
+            panel.classList.toggle('hidden');
+            if (chev) {
+                chev.classList.toggle('rotate-180', !panel.classList.contains('hidden'));
+            }
+        };
+
+        window.handleFacultyCategoryCheckboxChange = function() {
+            updateFacultyCategoryDropdownLabel();
+            renderFacultyTable();
+        };
+
+        window.setAllFacultyCategoryFilters = function(checked) {
+            document.querySelectorAll('input[name="facultyCategoryFilterCb"]').forEach(cb => {
+                cb.checked = Boolean(checked);
+            });
+            updateFacultyCategoryDropdownLabel();
+            renderFacultyTable();
+        };
+
         function getFilteredDirectoryList() {
             const rawSearch = (document.getElementById('facultySearch')?.value || '').toLowerCase().trim();
             const searchTokens = rawSearch.split(/\s+/).filter(t => t.length > 0);
-            const selectedCat = (document.getElementById('facultyCategoryFilter')?.value || '').trim();
+            const selectedCats = getSelectedFacultyCategories();
+            const selectedCatsLower = new Set(selectedCats.map(c => c.toLowerCase()));
             const selectedGender = (document.getElementById('facultyGenderFilter')?.value || '').trim();
 
             return facultyData.filter(f => {
@@ -8629,7 +8729,7 @@ await recordDawatEstatesNotification(
                 const fCat = String(f.category || '').trim();
                 const fGender = String(f.gender || '').trim();
 
-                if (selectedCat && fCat.toLowerCase() !== selectedCat.toLowerCase()) {
+                if (selectedCatsLower.size > 0 && !selectedCatsLower.has(fCat.toLowerCase())) {
                     return false;
                 }
                 if (selectedGender && fGender.toLowerCase() !== selectedGender.toLowerCase()) {
@@ -8647,10 +8747,12 @@ await recordDawatEstatesNotification(
 
         window.resetDirectoryFilters = function() {
             const searchEl = document.getElementById('facultySearch');
-            const catEl = document.getElementById('facultyCategoryFilter');
             const genderEl = document.getElementById('facultyGenderFilter');
             if (searchEl) searchEl.value = '';
-            if (catEl) catEl.value = '';
+            document.querySelectorAll('input[name="facultyCategoryFilterCb"]').forEach(cb => {
+                cb.checked = false;
+            });
+            updateFacultyCategoryDropdownLabel();
             if (genderEl) genderEl.value = '';
             renderFacultyTable();
         };
@@ -8661,9 +8763,10 @@ await recordDawatEstatesNotification(
             tbody.innerHTML = '';
 
             const rawSearch = (document.getElementById('facultySearch')?.value || '').trim();
-            const selectedCat = (document.getElementById('facultyCategoryFilter')?.value || '').trim();
+            const selectedCats = getSelectedFacultyCategories();
             const selectedGender = (document.getElementById('facultyGenderFilter')?.value || '').trim();
 
+            updateFacultyCategoryDropdownLabel();
             const filteredList = getFilteredDirectoryList();
 
             // Update Total Count Overview Card according to active filters & search bar
@@ -8676,13 +8779,13 @@ await recordDawatEstatesNotification(
 
             if (totalCountEl) totalCountEl.innerText = filteredList.length;
 
-            const isFiltered = Boolean(rawSearch || selectedCat || selectedGender);
+            const isFiltered = Boolean(rawSearch || selectedCats.length > 0 || selectedGender);
             if (outOfTotalEl) {
                 outOfTotalEl.innerText = isFiltered ? `of ${facultyData.length} total records` : `total registered records`;
             }
 
             const activeFilterParts = [];
-            if (selectedCat) activeFilterParts.push(`Category: ${selectedCat}`);
+            if (selectedCats.length > 0) activeFilterParts.push(`Category: ${selectedCats.join(', ')}`);
             if (selectedGender) activeFilterParts.push(`Gender: ${selectedGender}`);
             if (rawSearch) activeFilterParts.push(`Search: "${rawSearch}"`);
 
@@ -9765,6 +9868,10 @@ await recordDawatEstatesNotification(
 
         window.openImportModal = function(target) {
             document.getElementById('importTypeTarget').value = target;
+            const fileInput = document.getElementById('excelFileInput');
+            if (fileInput) fileInput.value = '';
+            const addRadio = document.getElementById('excelImportModeAdd');
+            if (addRadio) addRadio.checked = true;
             document.getElementById('modalImport').classList.remove('hidden');
         };
 
@@ -9772,6 +9879,9 @@ await recordDawatEstatesNotification(
             const fileInput = document.getElementById('excelFileInput');
             const target = document.getElementById('importTypeTarget').value;
             if(!fileInput.files[0]) return alert("Please select a file!");
+
+            const modeRadio = document.querySelector('input[name="excelImportMode"]:checked');
+            const importMode = modeRadio ? modeRadio.value : 'add'; // 'add' | 'overwrite'
 
             const reader = new FileReader();
             reader.onload = async function(e) {
@@ -9781,6 +9891,9 @@ await recordDawatEstatesNotification(
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { raw: false, dateNF: 'yyyy-mm-dd' });
 
                 if(target === 'estates') {
+                    if (importMode === 'overwrite') {
+                        estatesData = [];
+                    }
                     jsonData.forEach(row => {
                         const getVal = (keys) => {
                             for(let k of Object.keys(row)) {
@@ -9879,6 +9992,9 @@ await recordDawatEstatesNotification(
                     renderAllocationTable();
                     populateIntegratedFlatDropdown();
                 } else if(target === 'faculty') {
+                    if (importMode === 'overwrite') {
+                        facultyData = [];
+                    }
                     jsonData.forEach(row => {
                         const getVal = (keys) => {
                             for (let k of Object.keys(row)) {
@@ -15816,19 +15932,39 @@ window.cleanDuplicateEstateAssets = async function() {
 
                 const gasLineLabel = isGas ? (m.lineNumber || `Line ${Math.min(7, idx + 1)}`) : '';
                 const gasAreasCovered = isGas ? (m.areasCovered !== undefined ? m.areasCovered : (m.location || '')) : '';
+                const actionButtonsHtml = !viewOnly ? `
+                    <div class="flex items-center space-x-0.5 shrink-0">
+                        <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="${isGas ? 'Edit Gas Line Details' : 'Edit CA Number, Meter No & Location'}">
+                            <i class="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
+                        <button type="button" onclick="deleteElecGasMeterFromRow('${safeMeterId}')" class="crud-action-btn text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50" title="Delete Meter Row">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>` : '';
+
                 const mainDetailsHtml = isGas
-                    ? `<div class="min-w-0">
+                    ? `<div class="w-full min-w-0">
+                            <div class="flex items-center justify-between gap-1 w-full">
                                 <div class="eg-loc-text font-extrabold text-gray-900 text-xs flex items-center flex-wrap">${gasLineLabel}</div>
-                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 mt-0.5 leading-snug">CA: ${m.caNumber || '-'}</div>
-                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">Meter: ${m.meterNumber || '-'}</div>
-                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">BP: ${m.bpNumber || '-'}</div>
-                                ${gasAreasCovered ? `<div class="eg-loc-text text-[11.5px] font-bold text-emerald-700 mt-0.5 leading-snug">${gasAreasCovered}</div>` : ''}
-                            </div>`
-                    : `<div class="min-w-0">
+                                ${actionButtonsHtml}
+                            </div>
+                            <div class="w-full mt-0.5">
+                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 leading-snug w-full">CA: ${m.caNumber || '-'}</div>
+                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug w-full">Meter: ${m.meterNumber || '-'}</div>
+                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug w-full">BP: ${m.bpNumber || '-'}</div>
+                                ${gasAreasCovered ? `<div class="eg-loc-text text-[11.5px] font-bold text-emerald-700 mt-0.5 leading-snug w-full">${gasAreasCovered}</div>` : ''}
+                            </div>
+                        </div>`
+                    : `<div class="w-full min-w-0">
+                            <div class="flex items-start justify-between gap-1 w-full">
                                 <div class="eg-loc-text font-extrabold text-gray-900 text-xs flex items-center flex-wrap">${m.location || 'Campus Meter'}${htBadge}</div>
-                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 mt-0.5 leading-snug">CA: ${m.caNumber || '-'}</div>
-                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug">Meter: ${m.meterNumber || '-'}</div>
-                            </div>`;
+                                ${actionButtonsHtml}
+                            </div>
+                            <div class="w-full mt-0.5">
+                                <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 leading-snug w-full">CA: ${m.caNumber || '-'}</div>
+                                <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug w-full">Meter: ${m.meterNumber || '-'}</div>
+                            </div>
+                        </div>`;
 
                 // CA & Meter Number font sizes increased by +1pt (text-[12.5px] and text-[11.5px])
                 const tr = document.createElement('tr');
@@ -15836,18 +15972,7 @@ window.cleanDuplicateEstateAssets = async function() {
                 tr.innerHTML = `
                     <td class="eg-sr-col p-2 text-center font-bold text-gray-600 bg-white">${idx + 1}</td>
                     <td class="eg-main-col p-2.5 sticky left-0 bg-white z-10 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
-                        <div class="flex items-start justify-between gap-1">
-                            ${mainDetailsHtml}
-                            ${!viewOnly ? `
-                            <div class="flex items-center space-x-0.5 shrink-0">
-                                <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="${isGas ? 'Edit Gas Line Details' : 'Edit CA Number, Meter No & Location'}">
-                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
-                                </button>
-                                <button type="button" onclick="deleteElecGasMeterFromRow('${safeMeterId}')" class="crud-action-btn text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50" title="Delete Meter Row">
-                                    <i class="fa-solid fa-trash text-xs"></i>
-                                </button>
-                            </div>` : ''}
-                        </div>
+                        ${mainDetailsHtml}
                     </td>
                     ${monthCellsHtml}
                     <td class="eg-total-col p-2.5 text-right bg-gray-50 border-l align-middle">

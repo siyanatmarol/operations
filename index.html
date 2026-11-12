@@ -23156,8 +23156,11 @@ Shukran`;
                     }
 
                     let issuedCount = 0;
+                    let updatedExistingCount = 0;
                     let returnedCount = 0;
                     let unmatchedCount = 0;
+                    let lastSeenArea = '';
+                    learnKeyPrefixesFromDataset(jsonData);
 
                     jsonData.forEach((row, idx) => {
                         const getVal = (keys) => {
@@ -23176,7 +23179,10 @@ Shukran`;
                         const keyIdVal = String(getVal(['Key ID', 'KEY ID', 'Key Code']) || '').trim();
                         if (!keyIdVal) return;
 
-                        const areaVal = String(getVal(['Area / Building', 'Building/Area', 'Building', 'Area']) || 'Academic & Admin Bldg').trim();
+                        const rawArea = String(getVal(['Area / Building', 'Building/Area', 'Building', 'Area']) || '').trim();
+                        const areaVal = inferAreaFromKeyIdOrPrev(keyIdVal, rawArea, lastSeenArea);
+                        if (areaVal) lastSeenArea = areaVal;
+
                         const floorVal = String(getVal(['Floor', 'Flr']) || '-').trim() || '-';
                         const roomVal = String(getVal(['Room No', 'Room No.', 'Room Number', 'Room']) || '-').trim() || '-';
                         const detailsVal = String(getVal(['Details', 'Description']) || '-').trim() || '-';
@@ -23214,11 +23220,11 @@ Shukran`;
                         if (!Array.isArray(keyObj.history)) keyObj.history = [];
 
                         const dirMatch = matchHolderAgainstDirectory(issuedToVal);
+                        const targetNameLower = (dirMatch.holderName || issuedToVal).trim().toLowerCase();
+                        const targetIts = String(dirMatch.holderIts || '').trim();
 
                         if (isReturn) {
                             // Match active holder on this key by Name or ITS
-                            const targetNameLower = (dirMatch.holderName || issuedToVal).toLowerCase();
-                            const targetIts = dirMatch.holderIts || '';
                             let hIdx = keyObj.holders.findIndex(h => {
                                 if (!h || h.status === 'returned') return false;
                                 if (targetIts && String(h.holderIts || '').trim() === targetIts) return true;
@@ -23235,7 +23241,8 @@ Shukran`;
                                     status: 'returned',
                                     returnDate: issueDateIso
                                 });
-                                keyObj.keysInStore = Math.min(Math.max(1, Number(keyObj.totalKeys) || 1), (Number(keyObj.keysInStore) || 0) + 1);
+                                const totalK = Math.max(keyObj.holders.length, Number(keyObj.totalKeys) || 1);
+                                keyObj.keysInStore = Math.max(0, totalK - keyObj.holders.length);
                                 keyObj.updatedAt = getLocalTodayDateString();
                                 returnedCount++;
                             }
@@ -23243,33 +23250,57 @@ Shukran`;
                             if (!issuedToVal) return;
                             if (!dirMatch.matched) unmatchedCount++;
 
-                            keyObj.holders.push({
-                                id: `iss_${Date.now()}_${idx}_${Math.random().toString().slice(2, 6)}`,
-                                keyId: keyObj.keyId,
-                                holderName: dirMatch.holderName || issuedToVal,
-                                holderIts: dirMatch.holderIts || '',
-                                holderMobile: dirMatch.holderMobile || '',
-                                isDirectoryMatch: dirMatch.matched,
-                                issueDate: issueDateIso,
-                                expiryDate: expiryDateIso,
-                                status: 'active',
-                                whatsappSent: false,
-                                whatsappTemplateUsed: '',
-                                whatsappSentAt: ''
+                            // Check if this holder is ALREADY in keyObj.holders (e.g. from Master List import without Expiry Date)
+                            const existingHolder = keyObj.holders.find(h => {
+                                if (!h || h.status === 'returned') return false;
+                                const samePerson = (targetIts && String(h.holderIts || '').trim() === targetIts) ||
+                                                   (targetNameLower && String(h.holderName || '').trim().toLowerCase() === targetNameLower);
+                                if (!samePerson) return false;
+                                // Match if existing holder has no expiryDate yet or has the same issueDate
+                                return !h.expiryDate || h.issueDate === issueDateIso;
                             });
-                            keyObj.keysInStore = Math.max(0, (Number(keyObj.keysInStore) || 0) - 1);
-                            if (keyObj.holders.length > (Number(keyObj.totalKeys) || 0)) {
-                                keyObj.totalKeys = keyObj.holders.length + keyObj.keysInStore;
+
+                            if (existingHolder) {
+                                // Update existing holder's Expiry Date & Issue Date in place without duplicating or double-deducting Keys in Store!
+                                if (rawIssueDate) existingHolder.issueDate = issueDateIso;
+                                if (expiryDateIso) existingHolder.expiryDate = expiryDateIso;
+                                existingHolder.holderName = dirMatch.holderName || existingHolder.holderName;
+                                if (dirMatch.holderIts) existingHolder.holderIts = dirMatch.holderIts;
+                                if (dirMatch.holderMobile && !existingHolder.holderMobile) existingHolder.holderMobile = dirMatch.holderMobile;
+                                existingHolder.isDirectoryMatch = dirMatch.matched;
+                                updatedExistingCount++;
+                            } else {
+                                keyObj.holders.push({
+                                    id: `iss_${Date.now()}_${idx}_${Math.random().toString().slice(2, 6)}`,
+                                    keyId: keyObj.keyId,
+                                    holderName: dirMatch.holderName || issuedToVal,
+                                    holderIts: dirMatch.holderIts || '',
+                                    holderMobile: dirMatch.holderMobile || '',
+                                    isDirectoryMatch: dirMatch.matched,
+                                    issueDate: issueDateIso,
+                                    expiryDate: expiryDateIso,
+                                    status: 'active',
+                                    whatsappSent: false,
+                                    whatsappTemplateUsed: '',
+                                    whatsappSentAt: ''
+                                });
+                                issuedCount++;
                             }
+
+                            // Reconcile totalKeys and keysInStore from totalKeys - activeHolders.length so Keys in store is NEVER double-deducted!
+                            const activeCount = keyObj.holders.filter(h => h && h.status !== 'returned').length;
+                            if (activeCount > (Number(keyObj.totalKeys) || 0)) {
+                                keyObj.totalKeys = activeCount;
+                            }
+                            keyObj.keysInStore = Math.max(0, (Number(keyObj.totalKeys) || 0) - activeCount);
                             keyObj.updatedAt = getLocalTodayDateString();
-                            issuedCount++;
                         }
                     });
 
                     closeModal('modalKeysMassIssueImport');
                     renderKeysInventory();
                     await saveKeysInventoryToCloud();
-                    showAssetToast(`Mass Import Complete: ${issuedCount} Issued, ${returnedCount} Returned${unmatchedCount > 0 ? ` (${unmatchedCount} flagged with non-directory warning)` : ''}!`);
+                    showAssetToast(`Mass Import Complete: ${issuedCount} New Issued, ${updatedExistingCount} Updated with Expiry Date, ${returnedCount} Returned${unmatchedCount > 0 ? ` (${unmatchedCount} non-directory warning)` : ''}!`);
                 } catch (err) {
                     console.error("Mass Issue Import Error:", err);
                     showAssetToast("Failed to process Mass Issue/Return file: " + (err.message || err), true);

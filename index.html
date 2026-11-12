@@ -8449,11 +8449,10 @@ window.loadClassroomsFromCloud = async function() {
                     });
                     if (res.ok) {
                         const data = await res.json().catch(() => ({}));
-                        const hasBulkError = data && (data.result === false || (data.errors && String(data.errors).trim() !== ''));
-                        if (data && !hasBulkError) {
+                        if (data && data.result !== false) {
                             return { ok: true, sentCount: cleanPhones.length, endpointUsed: bulkUrl, response: data };
                         }
-                        lastErrorMsg = (data && (data.errors || data.info || data.message || data.error)) || 'WATI returned result: false';
+                        lastErrorMsg = (data && (data.info || data.message || data.error)) || 'WATI returned result: false';
                     } else {
                         const errText = await res.text().catch(() => '');
                         lastErrorMsg = `HTTP ${res.status}: ${errText.slice(0, 160)}`;

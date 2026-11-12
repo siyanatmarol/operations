@@ -2808,44 +2808,101 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-600 block mb-1">Access Level Rights (Permissions)</label>
+                            <label class="text-xs font-semibold text-gray-600 block mb-1" title="Quickly set all modules to Editing Rights or View Only, or customize each module individually below">Quick-Set All Modules Access</label>
                             <div class="grid grid-cols-2 gap-2 bg-white p-1.5 border rounded text-xs">
                                 <label class="flex items-center space-x-1.5 cursor-pointer px-2 py-1 rounded hover:bg-emerald-50">
-                                    <input type="radio" name="inviteAccessLevel" id="accessLevelEditing" value="Editing Rights" checked class="text-emerald-600 focus:ring-emerald-500">
-                                    <span class="font-semibold text-emerald-900"><i class="fa-solid fa-pen-to-square mr-1"></i>Editing Rights</span>
+                                    <input type="radio" name="inviteAccessLevel" id="accessLevelEditing" value="Editing Rights" checked onchange="applyGlobalAccessLevelToAllModuleSelects('Editing Rights')" class="text-emerald-600 focus:ring-emerald-500">
+                                    <span class="font-semibold text-emerald-900"><i class="fa-solid fa-pen-to-square mr-1"></i>All Edit</span>
                                 </label>
                                 <label class="flex items-center space-x-1.5 cursor-pointer px-2 py-1 rounded hover:bg-amber-50">
-                                    <input type="radio" name="inviteAccessLevel" id="accessLevelViewOnly" value="View Only" class="text-amber-600 focus:ring-amber-500">
-                                    <span class="font-semibold text-amber-900"><i class="fa-solid fa-eye mr-1"></i>View Only</span>
+                                    <input type="radio" name="inviteAccessLevel" id="accessLevelViewOnly" value="View Only" onchange="applyGlobalAccessLevelToAllModuleSelects('View Only')" class="text-amber-600 focus:ring-amber-500">
+                                    <span class="font-semibold text-amber-900"><i class="fa-solid fa-eye mr-1"></i>All View Only</span>
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Allowed Module Permissions -->
+                    <!-- Allowed Module Permissions with Per-Module Editing Rights vs View Only -->
                     <div class="space-y-3 pt-1">
-                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">Allowed Module Permissions:</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                            <label class="flex items-center space-x-2 bg-white p-3 border-2 border-emerald-200 rounded-lg cursor-pointer hover:bg-emerald-50/40 transition shadow-sm">
-                                <input type="checkbox" id="mod-perm-dawat-estates" value="dawat-estates" checked onchange="toggleNestedDawatEstatesPerms()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                                <span class="font-bold text-gray-800"><i class="fa-solid fa-city text-emerald-600 mr-1.5"></i>Dawat Estates</span>
-                            </label>
-                            <label class="flex items-center space-x-2 bg-white p-3 border-2 border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/40 transition shadow-sm">
-                                <input type="checkbox" id="mod-perm-classroom-allocation" value="classroom-allocation" checked onchange="toggleNestedClassroomPerms()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                                <span class="font-bold text-gray-800"><i class="fa-solid fa-chalkboard-user text-emerald-600 mr-1.5"></i>Classroom Allocation</span>
-                            </label>
-                            <label class="flex items-center space-x-2 bg-white p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-sm">
-                                <input type="checkbox" id="mod-perm-inventory" value="inventory" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                                <span class="font-bold text-gray-800"><i class="fa-solid fa-key text-emerald-600 mr-1.5"></i>Keys Inventory</span>
-                            </label>
-                            <label class="flex items-center space-x-2 bg-white p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition shadow-sm">
-                                <input type="checkbox" id="mod-perm-faculty-dir" value="faculty-dir" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                                <span class="font-bold text-gray-800"><i class="fa-solid fa-id-card text-emerald-600 mr-1.5"></i>Directory</span>
-                            </label>
-                            <label class="flex items-center space-x-2 bg-white p-3 border-2 border-amber-200 rounded-lg cursor-pointer hover:bg-amber-50/40 transition shadow-sm">
-                                <input type="checkbox" id="mod-perm-elec-gas-bills" value="elec-gas-bills" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                                <span class="font-bold text-gray-800"><i class="fa-solid fa-bolt-lightning text-amber-500 mr-1.5"></i>Electricity &amp; Gas Bills</span>
-                            </label>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">Allowed Module Permissions &amp; Per-Module Access Level (Editing Rights vs. View Only):</label>
+                            <span class="text-[11px] text-gray-500">Each module can independently be set to <strong>Editing Rights</strong> or <strong>View Only</strong>.</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+                            <!-- 1. Dawat Estates -->
+                            <div class="bg-white p-3 border-2 border-emerald-200 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="mod-perm-dawat-estates" value="dawat-estates" checked onchange="toggleNestedDawatEstatesPerms()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span class="font-bold text-gray-800"><i class="fa-solid fa-city text-emerald-600 mr-1.5"></i>Dawat Estates</span>
+                                </label>
+                                <div id="wrap-access-dawat-estates" class="pt-1.5 border-t border-emerald-100">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Module Access Level</label>
+                                    <select id="mod-access-dawat-estates" onchange="handlePerModuleAccessSelectChange('dawat-estates')" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none">
+                                        <option value="Editing Rights">✏️ Editing Rights</option>
+                                        <option value="View Only">👁️ View Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 2. Classroom Allocation -->
+                            <div class="bg-white p-3 border-2 border-blue-200 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="mod-perm-classroom-allocation" value="classroom-allocation" checked onchange="toggleNestedClassroomPerms()" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span class="font-bold text-gray-800"><i class="fa-solid fa-chalkboard-user text-blue-600 mr-1.5"></i>Classroom Allocation</span>
+                                </label>
+                                <div id="wrap-access-classroom-allocation" class="pt-1.5 border-t border-blue-100">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Module Access Level</label>
+                                    <select id="mod-access-classroom-allocation" onchange="handlePerModuleAccessSelectChange('classroom-allocation')" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none">
+                                        <option value="Editing Rights">✏️ Editing Rights</option>
+                                        <option value="View Only">👁️ View Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 3. Keys Inventory -->
+                            <div class="bg-white p-3 border-2 border-teal-200 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="mod-perm-inventory" value="inventory" checked onchange="toggleModuleCardAccessSelect('inventory')" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span class="font-bold text-gray-800"><i class="fa-solid fa-key text-teal-600 mr-1.5"></i>Keys Inventory</span>
+                                </label>
+                                <div id="wrap-access-inventory" class="pt-1.5 border-t border-teal-100">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Module Access Level</label>
+                                    <select id="mod-access-inventory" onchange="handlePerModuleAccessSelectChange('inventory')" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none">
+                                        <option value="Editing Rights">✏️ Editing Rights</option>
+                                        <option value="View Only">👁️ View Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 4. Directory -->
+                            <div class="bg-white p-3 border-2 border-purple-200 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="mod-perm-faculty-dir" value="faculty-dir" checked onchange="toggleModuleCardAccessSelect('faculty-dir')" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span class="font-bold text-gray-800"><i class="fa-solid fa-id-card text-purple-600 mr-1.5"></i>Directory</span>
+                                </label>
+                                <div id="wrap-access-faculty-dir" class="pt-1.5 border-t border-purple-100">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Module Access Level</label>
+                                    <select id="mod-access-faculty-dir" onchange="handlePerModuleAccessSelectChange('faculty-dir')" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none">
+                                        <option value="Editing Rights">✏️ Editing Rights</option>
+                                        <option value="View Only">👁️ View Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 5. Electricity & Gas Bills -->
+                            <div class="bg-white p-3 border-2 border-amber-200 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="mod-perm-elec-gas-bills" value="elec-gas-bills" checked onchange="toggleModuleCardAccessSelect('elec-gas-bills')" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span class="font-bold text-gray-800"><i class="fa-solid fa-bolt-lightning text-amber-500 mr-1.5"></i>Electricity &amp; Gas Bills</span>
+                                </label>
+                                <div id="wrap-access-elec-gas-bills" class="pt-1.5 border-t border-amber-100">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Module Access Level</label>
+                                    <select id="mod-access-elec-gas-bills" onchange="handlePerModuleAccessSelectChange('elec-gas-bills')" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none">
+                                        <option value="Editing Rights">✏️ Editing Rights</option>
+                                        <option value="View Only">👁️ View Only</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Nested Permissions for Dawat Estates -->
@@ -6460,6 +6517,13 @@ function getOrCreateUtilityFolder_(name) {
         let currentUserModules = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
         let currentUserClassroomPerms = ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'];
         let currentUserAccessLevel = 'Editing Rights'; // 'Editing Rights' | 'View Only'
+        let currentUserModuleAccessLevels = {
+            'dawat-estates': 'Editing Rights',
+            'classroom-allocation': 'Editing Rights',
+            'inventory': 'Editing Rights',
+            'faculty-dir': 'Editing Rights',
+            'elec-gas-bills': 'Editing Rights'
+        };
         let isUserAdmin = false;
 
         let estatesData = [];
@@ -6646,13 +6710,23 @@ function getOrCreateUtilityFolder_(name) {
             return rawEmail || 'User';
         }
 
-        function isCurrentUserViewOnly() {
-            return !isUserAdmin && currentUserAccessLevel === 'View Only';
+        function getModuleAccessLevelForCurrentUser(modKey = '') {
+            if (isUserAdmin) return 'Editing Rights';
+            const targetMod = modKey || (typeof getCurrentlyVisibleModuleName === 'function' ? getCurrentlyVisibleModuleName() : 'dawat-estates') || 'dawat-estates';
+            if (currentUserModuleAccessLevels && currentUserModuleAccessLevels[targetMod]) {
+                return currentUserModuleAccessLevels[targetMod] === 'View Only' ? 'View Only' : 'Editing Rights';
+            }
+            return currentUserAccessLevel === 'View Only' ? 'View Only' : 'Editing Rights';
+        }
+
+        function isCurrentUserViewOnly(modKey = '') {
+            if (isUserAdmin) return false;
+            return getModuleAccessLevelForCurrentUser(modKey) === 'View Only';
         }
 
         function canEditClassroomColumn(colKey) {
             if (isUserAdmin) return true;
-            if (isCurrentUserViewOnly()) return false;
+            if (isCurrentUserViewOnly('classroom-allocation')) return false;
             if (!Array.isArray(currentUserClassroomPerms)) return false;
             if (colKey === 'allotted-class' || colKey === 'class') {
                 return currentUserClassroomPerms.includes('allotted-class') || currentUserClassroomPerms.includes('darajah-event');
@@ -6666,9 +6740,9 @@ function getOrCreateUtilityFolder_(name) {
             return currentUserClassroomPerms.includes(colKey);
         }
 
-        function guardEditingRights() {
-            if (isCurrentUserViewOnly()) {
-                showAssetToast("View Only Access: Editing rights are required to perform this action.", true);
+        function guardEditingRights(modKey = '') {
+            if (isCurrentUserViewOnly(modKey)) {
+                showAssetToast("View Only Access: You have View Only permissions for this module.", true);
                 return false;
             }
             return true;
@@ -6837,7 +6911,7 @@ function getOrCreateUtilityFolder_(name) {
                     <td class="p-3 text-center space-x-2">
                         <button data-crud="true" onclick="openEditFlat('${e.id}')" class="crud-action-btn text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button data-crud="true" onclick="deleteFlat('${e.id}')" class="crud-action-btn text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
-                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
+                        ${isCurrentUserViewOnly('dawat-estates') ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -6951,7 +7025,7 @@ function getOrCreateUtilityFolder_(name) {
                             <button data-crud="true" type="button" data-flat-id="${e.id}" data-is-bachelor="${e.isBachelor}" class="crud-action-btn btn-manage-allocation bg-emerald-600 text-white text-xs px-3 py-1 rounded hover:bg-emerald-700 font-medium transition">Manage</button>
                             <button data-crud="true" type="button" onclick="sendFlatDetailsOnWhatsApp('${ String(e.id).replace(/'/g, "\\'") }', this)" class="crud-action-btn bg-green-600 hover:bg-green-700 text-white text-xs px-2.5 py-1 rounded font-semibold transition inline-flex items-center space-x-1 shadow-sm" title="Send Allotted Flat, Electricity & Gas CA Details on WhatsApp via WATI (elec_gas_details)"><i class="fa-brands fa-whatsapp"></i><span>Send Details on WhatsApp</span></button>
                         </div>
-                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
+                        ${isCurrentUserViewOnly('dawat-estates') ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -7059,6 +7133,8 @@ function getOrCreateUtilityFolder_(name) {
                     currentUserModules = [...ALL_PORTAL_MODULES];
                     currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
                     currentUserAccessLevel = 'Editing Rights';
+                    currentUserModuleAccessLevels = {};
+                    ALL_PORTAL_MODULES.forEach(m => { currentUserModuleAccessLevels[m] = 'Editing Rights'; });
                     document.getElementById('mod-admin-access').classList.remove('hidden'); document.getElementById('pwa-nav-admin-access')?.classList.remove('hidden');
                 } else {
                     const rawPerms = dbUser ? (Array.isArray(dbUser.permissions) ? [...dbUser.permissions] : []) : [];
@@ -7070,6 +7146,12 @@ function getOrCreateUtilityFolder_(name) {
                         ? [...dbUser.classroomPermissions]
                         : [...ALL_CLASSROOM_COL_PERMS];
                     currentUserAccessLevel = (dbUser && dbUser.accessLevel) ? dbUser.accessLevel : 'Editing Rights';
+                    const fallbackModLevel = currentUserAccessLevel === 'View Only' ? 'View Only' : 'Editing Rights';
+                    currentUserModuleAccessLevels = {};
+                    ALL_PORTAL_MODULES.forEach(m => {
+                        const savedLvl = dbUser && dbUser.moduleAccessLevels && dbUser.moduleAccessLevels[m];
+                        currentUserModuleAccessLevels[m] = savedLvl === 'View Only' ? 'View Only' : (savedLvl === 'Editing Rights' ? 'Editing Rights' : fallbackModLevel);
+                    });
                     document.getElementById('mod-admin-access').classList.add('hidden'); document.getElementById('pwa-nav-admin-access')?.classList.add('hidden');
                 }
 
@@ -7345,13 +7427,21 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                 const userNameClean = String(u.name || u.userName || (fallbackDefaultUser ? fallbackDefaultUser.name : '')).trim();
                 const whatsappClean = normalizeWhatsAppPhone(u.whatsappNumber || u.whatsapp || u.phone || (fallbackDefaultUser ? fallbackDefaultUser.whatsappNumber : ''));
                 const receiveClsWa = u.receiveClassroomWhatsapp !== undefined ? Boolean(u.receiveClassroomWhatsapp) : true;
+                const baseAccessLvl = u.accessLevel === 'View Only' ? 'View Only' : 'Editing Rights';
+                const rawModLevels = (u.moduleAccessLevels && typeof u.moduleAccessLevels === 'object') ? u.moduleAccessLevels : {};
+                const normalizedModLevels = {};
+                ALL_PORTAL_MODULES.forEach(m => {
+                    const v = rawModLevels[m];
+                    normalizedModLevels[m] = v === 'View Only' ? 'View Only' : (v === 'Editing Rights' ? 'Editing Rights' : baseAccessLvl);
+                });
                 return {
                     name: userNameClean,
                     email: emailClean,
                     whatsappNumber: whatsappClean,
                     receiveClassroomWhatsapp: receiveClsWa,
                     role: (u.role === 'Admin' || fallbackDefaultUser) ? 'Admin' : 'User',
-                    accessLevel: u.accessLevel === 'View Only' ? 'View Only' : 'Editing Rights',
+                    accessLevel: baseAccessLvl,
+                    moduleAccessLevels: normalizedModLevels,
                     allowedModules: rawMods,
                     permissions: rawPerms,
                     classroomPermissions: rawClsPerms
@@ -7732,6 +7822,8 @@ window.loadClassroomsFromCloud = async function() {
                 currentUserModules = [...ALL_PORTAL_MODULES];
                 currentUserClassroomPerms = [...ALL_CLASSROOM_COL_PERMS];
                 currentUserAccessLevel = 'Editing Rights';
+                currentUserModuleAccessLevels = {};
+                ALL_PORTAL_MODULES.forEach(m => { currentUserModuleAccessLevels[m] = 'Editing Rights'; });
             } else if (dbUser) {
                 currentUserPermissions = Array.isArray(dbUser.permissions) ? [...dbUser.permissions] : [];
                 currentUserModules = (Array.isArray(dbUser.allowedModules) && dbUser.allowedModules.length > 0)
@@ -7741,6 +7833,12 @@ window.loadClassroomsFromCloud = async function() {
                     ? [...dbUser.classroomPermissions]
                     : [...ALL_CLASSROOM_COL_PERMS];
                 currentUserAccessLevel = dbUser.accessLevel || 'Editing Rights';
+                const fallbackModLevel = currentUserAccessLevel === 'View Only' ? 'View Only' : 'Editing Rights';
+                currentUserModuleAccessLevels = {};
+                ALL_PORTAL_MODULES.forEach(m => {
+                    const savedLvl = dbUser.moduleAccessLevels && dbUser.moduleAccessLevels[m];
+                    currentUserModuleAccessLevels[m] = savedLvl === 'View Only' ? 'View Only' : (savedLvl === 'Editing Rights' ? 'Editing Rights' : fallbackModLevel);
+                });
             }
 
             const roleEl = document.getElementById('currentUserRole');
@@ -8951,11 +9049,22 @@ window.loadClassroomsFromCloud = async function() {
     }
 };
 
-        function applyAccessLevelEnforcement() {
-            const viewOnly = isCurrentUserViewOnly();
+        function applyAccessLevelEnforcement(modOverride = '') {
+            const activeMod = modOverride || getCurrentlyVisibleModuleName() || 'dawat-estates';
+            const viewOnly = isCurrentUserViewOnly(activeMod);
             document.body.classList.toggle('view-only-mode', viewOnly);
             const banner = document.getElementById('viewOnlyNoticeBanner');
             if (banner) banner.classList.toggle('hidden', !viewOnly);
+
+            const accessBadge = document.getElementById('currentUserAccessBadge');
+            if (accessBadge) {
+                const modLabel = (typeof MODULE_LABELS_MAP !== 'undefined' && MODULE_LABELS_MAP[activeMod]) ? MODULE_LABELS_MAP[activeMod] : '';
+                const lvlText = isUserAdmin ? 'Editing Rights' : (viewOnly ? 'View Only' : 'Editing Rights');
+                accessBadge.innerText = (!isUserAdmin && modLabel) ? `${lvlText} (${modLabel})` : lvlText;
+                accessBadge.className = viewOnly
+                    ? 'text-[11px] bg-amber-600 text-white px-2 py-0.5 rounded-full font-semibold border border-amber-400'
+                    : 'text-[11px] bg-teal-800 text-teal-100 px-2 py-0.5 rounded-full font-semibold border border-teal-600';
+            }
 
             // "+ Add Classroom" and "Export Excel" buttons in Classroom Allocation are strictly available ONLY to Admin
             const addClassroomBtn = document.getElementById('btnAddClassroomHeader');
@@ -9239,6 +9348,7 @@ window.loadClassroomsFromCloud = async function() {
 
             document.getElementById('module-' + modName)?.classList.remove('hidden');
             document.getElementById('mod-' + modName)?.classList.add('active-tab');
+            applyAccessLevelEnforcement(modName);
             if (typeof window.pwaUpdateActiveNav === 'function') {
                 window.pwaUpdateActiveNav(modName);
             }
@@ -10142,7 +10252,7 @@ await recordDawatEstatesNotification(
                     <td class="p-3 text-center space-x-1">
                         <button data-crud="true" onclick="toggleBillStatus('${billKey}', 'elecPaid')" class="crud-action-btn text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Elec</button>
                         <button data-crud="true" onclick="toggleBillStatus('${billKey}', 'gasPaid')" class="crud-action-btn text-xs bg-gray-200 hover:bg-gray-300 p-1 rounded">Toggle Gas</button>
-                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
+                        ${isCurrentUserViewOnly('dawat-estates') ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -10472,7 +10582,7 @@ await recordDawatEstatesNotification(
                 return;
             }
 
-            const viewOnlyNow = isCurrentUserViewOnly();
+            const viewOnlyNow = isCurrentUserViewOnly('faculty-dir');
             renderTableRowsInChunks('facultyTableBody', filteredList, (f, idx) => {
                 const safeId = String(f.id).replace(/'/g, "\'");
                 const categoryBadge = f.category
@@ -11714,12 +11824,62 @@ await recordDawatEstatesNotification(
             'raihaan': 'Raihaan Add Details'
         };
 
+        window.styleModuleAccessSelect = function(modKey) {
+            const sel = document.getElementById(`mod-access-${modKey}`);
+            if (!sel) return;
+            const isViewOnly = sel.value === 'View Only';
+            sel.className = isViewOnly
+                ? 'w-full p-1.5 border rounded-lg text-xs font-bold bg-amber-50 text-amber-900 border-amber-300 focus:outline-none'
+                : 'w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none';
+        };
+
+        window.toggleModuleCardAccessSelect = function(modKey) {
+            const chk = document.getElementById(`mod-perm-${modKey}`);
+            const wrap = document.getElementById(`wrap-access-${modKey}`);
+            if (wrap && chk) {
+                wrap.classList.toggle('opacity-40', !chk.checked);
+                wrap.classList.toggle('pointer-events-none', !chk.checked);
+            }
+            styleModuleAccessSelect(modKey);
+        };
+
+        window.handlePerModuleAccessSelectChange = function(modKey) {
+            styleModuleAccessSelect(modKey);
+            if (modKey === 'classroom-allocation') {
+                const isClsViewOnly = document.getElementById('mod-access-classroom-allocation')?.value === 'View Only';
+                ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'].forEach(k => {
+                    const c = document.getElementById(`cls-perm-${k}`);
+                    if (c) c.disabled = isClsViewOnly;
+                });
+            }
+            // Sync top-level radio if all 5 modules share the same state
+            const vals = ALL_PORTAL_MODULES.map(m => document.getElementById(`mod-access-${m}`)?.value || 'Editing Rights');
+            const allView = vals.every(v => v === 'View Only');
+            const allEdit = vals.every(v => v === 'Editing Rights');
+            const rEdit = document.getElementById('accessLevelEditing');
+            const rView = document.getElementById('accessLevelViewOnly');
+            if (rEdit) rEdit.checked = allEdit;
+            if (rView) rView.checked = allView;
+        };
+
+        window.applyGlobalAccessLevelToAllModuleSelects = function(level) {
+            ALL_PORTAL_MODULES.forEach(m => {
+                const sel = document.getElementById(`mod-access-${m}`);
+                if (sel) {
+                    sel.value = level === 'View Only' ? 'View Only' : 'Editing Rights';
+                    styleModuleAccessSelect(m);
+                }
+            });
+            handlePerModuleAccessSelectChange('classroom-allocation');
+        };
+
         window.toggleNestedDawatEstatesPerms = function() {
             const dawatChecked = document.getElementById('mod-perm-dawat-estates')?.checked;
             const nestedBox = document.getElementById('nestedDawatEstatesPermsBox');
             if (nestedBox) {
                 nestedBox.classList.toggle('hidden', !dawatChecked);
             }
+            toggleModuleCardAccessSelect('dawat-estates');
         };
 
         window.toggleNestedClassroomPerms = function() {
@@ -11728,6 +11888,8 @@ await recordDawatEstatesNotification(
             if (nestedBox) {
                 nestedBox.classList.toggle('hidden', !clsChecked);
             }
+            toggleModuleCardAccessSelect('classroom-allocation');
+            handlePerModuleAccessSelectChange('classroom-allocation');
         };
 
         window.setAllDawatSubPerms = function(checked) {
@@ -11857,8 +12019,10 @@ await recordDawatEstatesNotification(
             document.getElementById('mod-perm-faculty-dir').checked = true;
             if (document.getElementById('mod-perm-elec-gas-bills')) document.getElementById('mod-perm-elec-gas-bills').checked = true;
             document.getElementById('accessLevelEditing').checked = true;
+            applyGlobalAccessLevelToAllModuleSelects('Editing Rights');
             setAllDawatSubPerms(true);
             setAllClassroomSubPerms(true);
+            ALL_PORTAL_MODULES.forEach(m => toggleModuleCardAccessSelect(m));
             toggleNestedDawatEstatesPerms();
             toggleNestedClassroomPerms();
         };
@@ -11879,9 +12043,15 @@ await recordDawatEstatesNotification(
             }
             document.getElementById('inviteRole').value = u.role || 'User';
 
-            const isViewOnly = u.accessLevel === 'View Only';
-            document.getElementById('accessLevelViewOnly').checked = isViewOnly;
-            document.getElementById('accessLevelEditing').checked = !isViewOnly;
+            const fallbackLevel = u.accessLevel === 'View Only' ? 'View Only' : 'Editing Rights';
+            ALL_PORTAL_MODULES.forEach(m => {
+                const sel = document.getElementById(`mod-access-${m}`);
+                if (sel) {
+                    const modLvl = (u.moduleAccessLevels && u.moduleAccessLevels[m]) ? u.moduleAccessLevels[m] : fallbackLevel;
+                    sel.value = modLvl === 'View Only' ? 'View Only' : 'Editing Rights';
+                    styleModuleAccessSelect(m);
+                }
+            });
 
             const mods = Array.isArray(u.allowedModules) ? u.allowedModules : [...ALL_PORTAL_MODULES];
             document.getElementById('mod-perm-dawat-estates').checked = mods.includes('dawat-estates');
@@ -11908,6 +12078,7 @@ await recordDawatEstatesNotification(
                 }
             });
 
+            ALL_PORTAL_MODULES.forEach(m => toggleModuleCardAccessSelect(m));
             toggleNestedDawatEstatesPerms();
             toggleNestedClassroomPerms();
             document.getElementById('inviteFormHeading').innerText = `Editing User: ${u.name ? u.name + ' (' + u.email + ')' : u.email}`;
@@ -11925,12 +12096,27 @@ await recordDawatEstatesNotification(
                 const mods = Array.isArray(u.allowedModules) && u.allowedModules.length > 0
                     ? u.allowedModules
                     : [...ALL_PORTAL_MODULES];
-                const modBadges = mods.map(m => `<span class="inline-block bg-gray-100 border text-gray-800 font-semibold px-2 py-0.5 rounded mr-1 mb-1">${MODULE_LABELS_MAP[m] || m}</span>`).join('');
+                const fallbackLevel = u.accessLevel === 'View Only' ? 'View Only' : 'Editing Rights';
+                const modBadges = mods.map(m => {
+                    const mLvl = (u.role === 'Admin') ? 'Editing Rights' : ((u.moduleAccessLevels && u.moduleAccessLevels[m]) ? u.moduleAccessLevels[m] : fallbackLevel);
+                    const isVo = mLvl === 'View Only';
+                    const badgeStyle = isVo
+                        ? 'bg-amber-50 border-amber-300 text-amber-900'
+                        : 'bg-teal-50 border-teal-300 text-teal-900';
+                    const rightPill = isVo
+                        ? `<span class="bg-amber-200/80 text-amber-950 px-1.5 py-0.2 rounded text-[10px] font-extrabold ml-1"><i class="fa-solid fa-eye mr-0.5"></i>View Only</span>`
+                        : `<span class="bg-teal-200/80 text-teal-950 px-1.5 py-0.2 rounded text-[10px] font-extrabold ml-1"><i class="fa-solid fa-pen-to-square mr-0.5"></i>Edit</span>`;
+                    return `<span class="inline-flex items-center border font-semibold px-2 py-0.5 rounded-md mr-1.5 mb-1.5 ${badgeStyle}">${MODULE_LABELS_MAP[m] || m}${rightPill}</span>`;
+                }).join('');
 
-                const accessLevel = u.accessLevel || 'Editing Rights';
-                const accessBadge = accessLevel === 'View Only'
+                const allowedLevels = mods.map(m => (u.role === 'Admin') ? 'Editing Rights' : ((u.moduleAccessLevels && u.moduleAccessLevels[m]) ? u.moduleAccessLevels[m] : fallbackLevel));
+                const allVo = allowedLevels.every(l => l === 'View Only');
+                const allEd = allowedLevels.every(l => l === 'Editing Rights');
+                const accessBadge = allVo
                     ? `<span class="bg-amber-100 text-amber-800 border border-amber-300 font-bold px-2 py-0.5 rounded-full ml-1"><i class="fa-solid fa-eye mr-1"></i>View Only</span>`
-                    : `<span class="bg-teal-100 text-teal-800 border border-teal-300 font-bold px-2 py-0.5 rounded-full ml-1"><i class="fa-solid fa-pen-to-square mr-1"></i>Editing Rights</span>`;
+                    : (allEd
+                        ? `<span class="bg-teal-100 text-teal-800 border border-teal-300 font-bold px-2 py-0.5 rounded-full ml-1"><i class="fa-solid fa-pen-to-square mr-1"></i>Editing Rights</span>`
+                        : `<span class="bg-indigo-100 text-indigo-900 border border-indigo-300 font-bold px-2 py-0.5 rounded-full ml-1"><i class="fa-solid fa-sliders mr-1"></i>Per-Module Rights</span>`);
 
                 const dawatSubText = mods.includes('dawat-estates')
                     ? ((u.permissions && u.permissions.length > 0) ? `<div><strong class="text-emerald-900">Estates:</strong> ${u.permissions.map(p => `Sub ${p}`).join(', ')}</div>` : '<div><strong class="text-emerald-900">Estates:</strong> None</div>')
@@ -11984,8 +12170,6 @@ await recordDawatEstatesNotification(
             const whatsappNumber = normalizeWhatsAppPhone(document.getElementById('inviteWhatsappNumber')?.value || '');
             const receiveClassroomWhatsapp = document.getElementById('cls-perm-whatsapp-notify') ? document.getElementById('cls-perm-whatsapp-notify').checked : true;
             const role = document.getElementById('inviteRole').value;
-            const accessRadio = document.querySelector('input[name="inviteAccessLevel"]:checked');
-            const accessLevel = accessRadio ? accessRadio.value : 'Editing Rights';
 
             const allowedModules = [];
             if (document.getElementById('mod-perm-dawat-estates')?.checked) allowedModules.push('dawat-estates');
@@ -11999,6 +12183,16 @@ await recordDawatEstatesNotification(
                 return;
             }
 
+            const moduleAccessLevels = {};
+            ALL_PORTAL_MODULES.forEach(m => {
+                const selVal = document.getElementById(`mod-access-${m}`)?.value;
+                moduleAccessLevels[m] = selVal === 'View Only' ? 'View Only' : 'Editing Rights';
+            });
+
+            // Derive summary accessLevel from allowed modules
+            const allowedLevels = allowedModules.map(m => moduleAccessLevels[m] || 'Editing Rights');
+            const accessLevel = allowedLevels.every(l => l === 'View Only') ? 'View Only' : 'Editing Rights';
+
             const perms = [];
             if (allowedModules.includes('dawat-estates')) {
                 for (let i = 1; i <= 8; i++) {
@@ -12007,7 +12201,7 @@ await recordDawatEstatesNotification(
             }
 
             const classroomPermissions = [];
-            if (allowedModules.includes('classroom-allocation')) {
+            if (allowedModules.includes('classroom-allocation') && moduleAccessLevels['classroom-allocation'] !== 'View Only') {
                 ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'].forEach(k => {
                     if (document.getElementById(`cls-perm-${k}`)?.checked) classroomPermissions.push(k);
                 });
@@ -12021,6 +12215,7 @@ await recordDawatEstatesNotification(
                 receiveClassroomWhatsapp,
                 role,
                 accessLevel,
+                moduleAccessLevels,
                 allowedModules,
                 permissions: perms,
                 classroomPermissions
@@ -17218,7 +17413,7 @@ await recordDawatEstatesNotification(
                                     <button data-crud="true" type="button" onclick="deleteAssetRecord('${safeAssetId}')" class="crud-action-btn text-red-600 hover:text-red-800 font-bold px-1.5 py-0.5 rounded hover:bg-red-50" title="Delete Asset">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
-                                    ${isCurrentUserViewOnly() ? '<span class="text-[11px] text-gray-400 italic">View Only</span>' : ''}
+                                    ${isCurrentUserViewOnly('dawat-estates') ? '<span class="text-[11px] text-gray-400 italic">View Only</span>' : ''}
                                 </td>
                             </tr>
                         `;
@@ -18189,7 +18384,7 @@ window.cleanDuplicateEstateAssets = async function() {
             if (!thead || !tbody || !tfoot) return;
 
             const { selYear, monthIndices, totalColHeader } = periodCfg;
-            const viewOnly = isCurrentUserViewOnly();
+            const viewOnly = isCurrentUserViewOnly('elec-gas-bills');
             const isGas = utilityType === 'gas';
             const totalHeaderTheme = isGas ? 'bg-orange-50 text-orange-950' : 'bg-amber-50 text-amber-950';
 
@@ -18748,7 +18943,7 @@ window.cleanDuplicateEstateAssets = async function() {
         };
 
         window.openElecGasBillEntryModal = function(meterId, year, monthIdx) {
-            if (isCurrentUserViewOnly()) {
+            if (isCurrentUserViewOnly('elec-gas-bills')) {
                 const rec = getElecGasBillRecord(meterId, year, monthIdx);
                 if (rec && rec.fileUrl) {
                     window.open(rec.fileUrl, '_blank', 'noopener,noreferrer');
@@ -20736,7 +20931,7 @@ window.cleanDuplicateEstateAssets = async function() {
             if (document.getElementById('egLoginCountGas')) document.getElementById('egLoginCountGas').innerText = gasCount;
 
             const q = (document.getElementById('egLoginSearchInput')?.value || '').toLowerCase().trim();
-            const viewOnly = isCurrentUserViewOnly();
+            const viewOnly = isCurrentUserViewOnly('elec-gas-bills');
 
             const filtered = allList.filter(item => {
                 if (selectedEgLoginFilter === 'electricity' && item.provider === 'gas') return false;

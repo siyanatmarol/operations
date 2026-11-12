@@ -59,6 +59,50 @@
         .timetable-grid th, .timetable-grid td {
             border: 1px solid #d1d5db;
         }
+        /* Bold, high-contrast row & cell separation for Keys Inventory Master List & Trackers */
+        .keys-master-table {
+            border-collapse: collapse !important;
+            border: 2px solid #475569 !important;
+        }
+        .keys-master-table thead th {
+            border-bottom: 3px solid #064e3b !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.18) !important;
+        }
+        .keys-master-table tbody tr.key-id-row {
+            border-bottom: 2.5px solid #64748b !important;
+            transition: background-color 0.15s ease;
+        }
+        .keys-master-table tbody tr.key-id-row:nth-child(even) {
+            background-color: #f1f5f9;
+        }
+        .keys-master-table tbody tr.key-id-row:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        .keys-master-table tbody tr.key-id-row.key-row-expired {
+            background-color: #fef2f2 !important;
+            border-bottom: 2.5px solid #dc2626 !important;
+        }
+        .keys-master-table tbody tr.key-id-row.key-row-unassigned {
+            background-color: #f8fafc !important;
+            border-bottom: 2.5px solid #94a3b8 !important;
+        }
+        .keys-master-table tbody tr.key-id-row:hover {
+            background-color: #ecfdf5 !important;
+        }
+        .keys-master-table tbody td {
+            border-right: 1px solid #cbd5e1 !important;
+            padding-top: 0.85rem !important;
+            padding-bottom: 0.85rem !important;
+        }
+        .keys-master-table tbody td:first-child {
+            border-left: 5px solid #059669 !important;
+        }
+        .keys-master-table tbody tr.key-id-row.key-row-expired td:first-child {
+            border-left: 5px solid #dc2626 !important;
+        }
+        .keys-master-table tbody tr.key-id-row.key-row-unassigned td:first-child {
+            border-left: 5px solid #94a3b8 !important;
+        }
     
         /* ========================================================================= */
         /* PWA RESPONSIVE APP STYLES (Adaptive Mobile & Desktop Layout)              */
@@ -857,6 +901,12 @@
             body.pwa-mode .fixed.inset-0 > div[class*="bg-white"] {
                 max-width: 48rem !important;
                 padding: 1.5rem !important;
+            }
+
+            body.pwa-mode #modalKeyIssueReturn > div,
+            body.pwa-mode #modalKeysExpiredAlert > div {
+                max-width: 94vw !important;
+                width: 1260px !important;
             }
 
             body.pwa-mode footer {
@@ -1821,9 +1871,11 @@
                                 <i class="fa-solid fa-tags text-emerald-300"></i>
                             </div>
                         </div>
-                        <div class="mt-4 pt-2.5 border-t border-emerald-700/80 flex items-center justify-between text-xs text-emerald-100 font-semibold">
-                            <span>Across <strong id="cardKeysActiveAreasCount" class="text-white">10</strong> Supported &amp; Custom Areas</span>
-                            <span class="underline text-emerald-200">View Master List &rarr;</span>
+                        <div class="mt-4 pt-2.5 border-t border-emerald-700/80 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-100 font-semibold">
+                            <span>Across <strong id="cardKeysActiveAreasCount" class="text-white">10</strong> Areas</span>
+                            <span onclick="event.stopPropagation(); switchKeysSubTab('master'); document.getElementById('keysMasterStatusFilter').value='unassigned'; renderKeysMasterTable();" class="bg-emerald-950/80 hover:bg-emerald-950 text-amber-200 border border-emerald-600 px-2.5 py-0.5 rounded-full font-bold cursor-pointer transition" title="View Unassigned Key IDs reserved for future provision">
+                                <i class="fa-regular fa-bookmark mr-1"></i>Unassigned IDs: <span id="cardKeysUnassignedIdsCount">0</span>
+                            </span>
                         </div>
                     </div>
 
@@ -1977,11 +2029,12 @@
                     <div class="md:col-span-2">
                         <select id="keysMasterStatusFilter" onchange="renderKeysMasterTable()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                             <option value="">All Key Statuses</option>
+                            <option value="unassigned">Unassigned Key IDs (Future Provision)</option>
                             <option value="issued">Currently Issued</option>
                             <option value="expired">Past Expiry Alert (Red)</option>
                             <option value="unmatched">Unmatched Directory Holder</option>
                             <option value="available">Available in Store</option>
-                            <option value="out_of_stock">0 Keys in Store</option>
+                            <option value="out_of_stock">0 Keys in Store (Assigned)</option>
                         </select>
                     </div>
                     <div class="md:col-span-2 flex justify-end">
@@ -1993,9 +2046,9 @@
                 </div>
 
                 <!-- Master List Data Table -->
-                <div class="bg-white rounded-xl shadow border overflow-x-auto">
-                    <table class="w-full text-left text-xs sm:text-sm border-collapse">
-                        <thead class="bg-emerald-950 text-white uppercase text-[11px]">
+                <div class="bg-white rounded-xl shadow-md border-2 border-slate-600 overflow-x-auto max-h-[76vh] overflow-y-auto">
+                    <table class="w-full text-left text-xs sm:text-sm keys-master-table">
+                        <thead class="bg-emerald-950 text-white uppercase text-[11px] sticky top-0 z-20 shadow-md">
                             <tr>
                                 <th class="p-3 whitespace-nowrap">Key ID</th>
                                 <th class="p-3">Area / Building</th>
@@ -2005,11 +2058,11 @@
                                 <th class="p-3">Storage Location</th>
                                 <th class="p-3 text-center whitespace-nowrap">Total Keys</th>
                                 <th class="p-3 text-center whitespace-nowrap">Keys in Store</th>
-                                <th class="p-3 min-w-[220px]">Active Key Holders</th>
+                                <th class="p-3 min-w-[240px]">Active Key Holders</th>
                                 <th class="p-3 text-center whitespace-nowrap">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="keysMasterTableBody" class="divide-y"></tbody>
+                        <tbody id="keysMasterTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -2059,16 +2112,16 @@
                 </div>
 
                 <!-- People Tracker Table -->
-                <div class="bg-white rounded-xl shadow border overflow-x-auto">
-                    <table class="w-full text-left text-xs sm:text-sm border-collapse">
-                        <thead class="bg-emerald-950 text-white uppercase text-[11px]">
+                <div class="bg-white rounded-xl shadow-md border-2 border-slate-600 overflow-x-auto max-h-[76vh] overflow-y-auto">
+                    <table class="w-full text-left text-xs sm:text-sm keys-master-table">
+                        <thead class="bg-emerald-950 text-white uppercase text-[11px] sticky top-0 z-20 shadow-md">
                             <tr>
                                 <th class="p-3 w-20 text-center">Sr No</th>
                                 <th class="p-3 w-1/3">Name &amp; ITS ID</th>
                                 <th class="p-3">List of KEY IDs Currently Issued (with Issue Date)</th>
                             </tr>
                         </thead>
-                        <tbody id="keysPeopleTableBody" class="divide-y"></tbody>
+                        <tbody id="keysPeopleTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -5489,8 +5542,8 @@ function getOrCreateUtilityFolder_(name) {
     <!-- ===================================================================== -->
 
     <!-- Modal 1: Wide Issue / Return Pop-Up (#modalKeyIssueReturn) -->
-    <div id="modalKeyIssueReturn" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-[70]">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full p-5 sm:p-6 space-y-5 max-h-[94vh] flex flex-col overflow-y-auto">
+    <div id="modalKeyIssueReturn" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-2 sm:p-4 z-[70]">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-7xl w-[96vw] xl:w-[1260px] p-5 sm:p-6 space-y-5 max-h-[94vh] flex flex-col overflow-y-auto">
             <!-- Modal Header Info -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 gap-3 bg-emerald-950 text-white -m-5 sm:-m-6 mb-2 p-5 sm:p-6 rounded-t-2xl">
                 <div class="space-y-1">
@@ -5533,17 +5586,17 @@ function getOrCreateUtilityFolder_(name) {
                     <span class="text-[11px] text-gray-500">Click <strong>Send WhatsApp</strong> to intimate holder (`key_issue_updated` / `key_issue_imtehan`) or <strong>Return Key</strong> upon return (`key_return`).</span>
                 </div>
 
-                <div class="border rounded-xl overflow-x-auto shadow-sm">
-                    <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                <div class="border rounded-xl overflow-x-auto lg:overflow-x-visible shadow-sm">
+                    <table class="w-full text-left text-xs sm:text-sm border-collapse table-auto">
                         <thead class="bg-gray-100 border-b text-gray-700 uppercase text-[11px]">
                             <tr>
-                                <th class="p-2.5 w-10 text-center">#</th>
-                                <th class="p-2.5">Holder Name &amp; ITS ID</th>
-                                <th class="p-2.5">Mobile No.</th>
-                                <th class="p-2.5 whitespace-nowrap">Issue Date</th>
-                                <th class="p-2.5 whitespace-nowrap">Expiry Date</th>
-                                <th class="p-2.5 text-center whitespace-nowrap">WhatsApp Intimation &amp; Status</th>
-                                <th class="p-2.5 text-center whitespace-nowrap">Return Action</th>
+                                <th class="py-2.5 px-2 w-10 text-center">#</th>
+                                <th class="py-2.5 px-3 min-w-[240px]">Holder Name &amp; ITS ID</th>
+                                <th class="py-2.5 px-2.5 whitespace-nowrap">Mobile No.</th>
+                                <th class="py-2.5 px-2.5 whitespace-nowrap">Issue Date</th>
+                                <th class="py-2.5 px-2.5 whitespace-nowrap">Expiry Date</th>
+                                <th class="py-2.5 px-2.5 text-center whitespace-nowrap">WhatsApp Intimation &amp; Status</th>
+                                <th class="py-2.5 px-2.5 text-center whitespace-nowrap">Return Action</th>
                             </tr>
                         </thead>
                         <tbody id="kirActiveHoldersTableBody" class="divide-y bg-white"></tbody>
@@ -5856,8 +5909,8 @@ function getOrCreateUtilityFolder_(name) {
                 </div>
 
                 <div>
-                    <label class="text-xs font-bold text-gray-700 block mb-1">Details / Description <span class="text-red-600">*</span></label>
-                    <input type="text" id="editKeyDetailsInput" required placeholder="e.g. Offices Main Door - 1500 / Pantry Door - 5401" class="w-full p-2.5 border rounded-lg text-sm">
+                    <label class="text-xs font-bold text-gray-700 block mb-1">Details / Description <span class="text-gray-400 font-normal">(Leave blank or '-' for Unassigned Key IDs)</span></label>
+                    <input type="text" id="editKeyDetailsInput" placeholder="e.g. Offices Main Door - 1500 (or leave blank for future provision)" class="w-full p-2.5 border rounded-lg text-sm">
                 </div>
 
                 <div>
@@ -21176,6 +21229,68 @@ window.cleanDuplicateEstateAssets = async function() {
             return holders;
         }
 
+        const DYNAMIC_KEY_PREFIX_AREA_MAP = {
+            'AA': 'Academic & Admin Bldg',
+            'MZ': 'Mahad al-Zahra Bldg',
+            'RB': 'Religious Block',
+            'MK': 'Mawaid & Kitchen Bldg',
+            'MW': 'Mawaid & Kitchen Bldg',
+            'MS': 'Maskan (Boys Hostel)',
+            'MB': 'Maskan (Boys Hostel)',
+            'RW': 'Rabwat (Girls Hostel)',
+            'RG': 'Rabwat (Girls Hostel)',
+            'FB': 'Faculty Bldg',
+            'CK': 'Compound Area & Khaimat',
+            'CA': 'Compound Area & Khaimat',
+            'NJ': 'Najmi Bldg',
+            'NB': 'Najmi Bldg',
+            'LK': 'Lockers'
+        };
+
+        function learnKeyPrefixesFromDataset(rowsList) {
+            if (!Array.isArray(rowsList)) return;
+            rowsList.forEach(item => {
+                if (!item) return;
+                const kId = String(item.keyId || item.key_id || item['Key ID'] || item['KEY ID'] || '').trim();
+                const area = String(item.area || item.building || item['Building/Area'] || item['Area / Building'] || item['Building'] || '').trim();
+                const flr = String(item.floor || item['Floor'] || '').trim();
+                const rm = String(item.roomNo || item['Room No.'] || item['Room No'] || '').trim();
+                const det = String(item.details || item['Details'] || '').trim();
+                const hasAssignedInfo = (flr && flr !== '-') || (rm && rm !== '-') || (det && det !== '-');
+                if (kId && area && area !== '-' && hasAssignedInfo) {
+                    const pfx = kId.split('/')[0].trim().toUpperCase();
+                    if (pfx) DYNAMIC_KEY_PREFIX_AREA_MAP[pfx] = area;
+                }
+            });
+        }
+
+        function inferAreaFromKeyIdOrPrev(keyIdStr, rawAreaStr, prevAreaStr = '') {
+            const cleanRawArea = String(rawAreaStr || '').trim();
+            const prefix = String(keyIdStr || '').split('/')[0].trim().toUpperCase();
+            const mappedByPrefix = DYNAMIC_KEY_PREFIX_AREA_MAP[prefix] || '';
+            if (cleanRawArea && cleanRawArea !== '-') {
+                return cleanRawArea;
+            }
+            if (mappedByPrefix) {
+                return mappedByPrefix;
+            }
+            if (prevAreaStr && prevAreaStr !== '-') {
+                return prevAreaStr;
+            }
+            return 'Academic & Admin Bldg';
+        }
+
+        function isKeyRecordUnassigned(k) {
+            if (!k) return false;
+            const flr = String(k.floor || '').trim();
+            const rm = String(k.roomNo || '').trim();
+            const det = String(k.details || '').trim();
+            const noFlr = !flr || flr === '-';
+            const noRm = !rm || rm === '-';
+            const noDet = !det || det === '-' || det.toLowerCase() === 'unassigned';
+            return noFlr && noRm && noDet;
+        }
+
         function normalizeKeysInventoryList(rawKeys) {
             let arr = [];
             if (Array.isArray(rawKeys)) {
@@ -21196,10 +21311,25 @@ window.cleanDuplicateEstateAssets = async function() {
                 arr = getDefaultSeedKeysInventory();
             }
 
+            learnKeyPrefixesFromDataset(arr);
+            let lastAreaTracker = '';
             return arr.map((item, idx) => {
                 const keyIdClean = String(item.keyId || item.key_id || item.code || `KEY-${idx + 1}`).trim();
                 const docId = String(item.id || `key_${keyIdClean.replace(/[^a-zA-Z0-9]/g, '_')}_${idx}`);
-                const areaClean = String(item.area || item.building || 'Academic & Admin Bldg').trim();
+                const floorClean = String(item.floor || '-').trim() || '-';
+                const roomClean = String(item.roomNo || item.room || '-').trim() || '-';
+                const detailsClean = String(item.details || '-').trim() || '-';
+                const storageClean = String(item.storageLocation || item.storage || '-').trim() || '-';
+
+                const isUnassigned = (floorClean === '-' && roomClean === '-' && (detailsClean === '-' || detailsClean.toLowerCase() === 'unassigned'));
+
+                let rawArea = String(item.area || item.building || '').trim();
+                // If an unassigned key was previously defaulted to Academic & Admin Bldg despite having a different building prefix (like MZ/ /488), infer its true building
+                if (isUnassigned && rawArea === 'Academic & Admin Bldg' && !keyIdClean.toUpperCase().startsWith('AA')) {
+                    rawArea = '';
+                }
+                const areaClean = inferAreaFromKeyIdOrPrev(keyIdClean, rawArea, lastAreaTracker);
+                if (areaClean) lastAreaTracker = areaClean;
 
                 if (areaClean && !DEFAULT_KEY_AREAS.includes(areaClean) && !customKeyAreasData.includes(areaClean)) {
                     customKeyAreasData.push(areaClean);
@@ -21242,22 +21372,31 @@ window.cleanDuplicateEstateAssets = async function() {
                     rawHistory = Object.values(item.history).filter(Boolean);
                 }
 
-                const totalKeysNum = Math.max(0, parseInt(item.totalKeys ?? item.total_keys ?? 1, 10) || 0);
                 const rawInStore = item.keysInStore ?? item.keys_in_store;
                 const keysInStoreNum = (rawInStore !== undefined && rawInStore !== null && rawInStore !== '')
                     ? Math.max(0, parseInt(rawInStore, 10) || 0)
-                    : Math.max(0, totalKeysNum - holders.length);
+                    : 0;
+
+                const rawTotal = item.totalKeys ?? item.total_keys;
+                let totalKeysNum = (rawTotal !== undefined && rawTotal !== null && rawTotal !== '')
+                    ? Math.max(0, parseInt(rawTotal, 10) || 0)
+                    : (isUnassigned ? 0 : Math.max(1, keysInStoreNum + holders.length));
+
+                // Fix legacy import where blank Total Keys on an unassigned key with 0 in store was defaulted to 1
+                if (isUnassigned && holders.length === 0 && storageClean === '-' && keysInStoreNum === 0 && totalKeysNum === 1) {
+                    totalKeysNum = 0;
+                }
 
                 return {
                     id: docId,
                     keyId: keyIdClean,
                     area: areaClean,
-                    floor: String(item.floor || '-').trim() || '-',
-                    roomNo: String(item.roomNo || item.room || '-').trim() || '-',
-                    details: String(item.details || '-').trim() || '-',
-                    storageLocation: String(item.storageLocation || item.storage || '-').trim() || '-',
+                    floor: floorClean,
+                    roomNo: roomClean,
+                    details: detailsClean,
+                    storageLocation: storageClean,
                     totalKeys: totalKeysNum,
-                    keysInStore: keysInStoreNum,
+                    keysInStore: (rawInStore !== undefined && rawInStore !== null && rawInStore !== '') ? keysInStoreNum : Math.max(0, totalKeysNum - holders.length),
                     holders,
                     history: rawHistory,
                     updatedAt: String(item.updatedAt || getLocalTodayDateString())
@@ -21495,12 +21634,14 @@ window.cleanDuplicateEstateAssets = async function() {
 
         window.renderKeysDashboard = function() {
             const totalKeyIds = keysInventoryData.length;
+            let unassignedKeyIdsCount = 0;
             let totalKeysQty = 0;
             let totalInStoreQty = 0;
             let totalIssuedQty = 0;
             let activeHoldersTotal = 0;
 
             keysInventoryData.forEach(k => {
+                if (isKeyRecordUnassigned(k)) unassignedKeyIdsCount++;
                 const tot = Math.max(0, Number(k.totalKeys) || 0);
                 const store = Math.max(0, Number(k.keysInStore) || 0);
                 const issued = Math.max(0, tot - store);
@@ -21513,6 +21654,7 @@ window.cleanDuplicateEstateAssets = async function() {
             const areas = getAllSupportedKeyAreas();
 
             if (document.getElementById('cardKeysTotalActiveIds')) document.getElementById('cardKeysTotalActiveIds').innerText = totalKeyIds.toLocaleString('en-IN');
+            if (document.getElementById('cardKeysUnassignedIdsCount')) document.getElementById('cardKeysUnassignedIdsCount').innerText = unassignedKeyIdsCount.toLocaleString('en-IN');
             if (document.getElementById('cardKeysActiveAreasCount')) document.getElementById('cardKeysActiveAreasCount').innerText = String(areas.length);
             if (document.getElementById('cardKeysTotalQuantity')) document.getElementById('cardKeysTotalQuantity').innerText = totalKeysQty.toLocaleString('en-IN');
             if (document.getElementById('cardKeysTotalInStore')) document.getElementById('cardKeysTotalInStore').innerText = totalInStoreQty.toLocaleString('en-IN');
@@ -21670,15 +21812,18 @@ window.cleanDuplicateEstateAssets = async function() {
                 const isExpired = hasKeyExpiredIssuance(k, todayStr);
                 const hasUnmatched = activeHolders.some(h => !h.isDirectoryMatch);
 
-                if (statusFilter === 'issued' && issuedCount === 0 && activeHolders.length === 0) return false;
+                const unassigned = isKeyRecordUnassigned(k);
+                if (statusFilter === 'unassigned' && !unassigned) return false;
+                if (statusFilter === 'issued' && (unassigned || (issuedCount === 0 && activeHolders.length === 0))) return false;
                 if (statusFilter === 'expired' && !isExpired) return false;
                 if (statusFilter === 'unmatched' && !hasUnmatched) return false;
                 if (statusFilter === 'available' && store <= 0) return false;
-                if (statusFilter === 'out_of_stock' && store > 0) return false;
+                if (statusFilter === 'out_of_stock' && (unassigned || store > 0)) return false;
 
                 if (tokens.length > 0) {
                     const holdersCorpus = activeHolders.map(h => `${h.holderName} ${h.holderIts} ${h.holderMobile} ${formatKeyDateDdMmmYyyy(h.issueDate)}`).join(' ');
-                    const corpus = `${k.keyId} ${k.area} ${k.floor} ${k.roomNo} ${k.details} ${k.storageLocation} ${tot} ${store} ${holdersCorpus}`.toLowerCase();
+                    const unassignedTag = unassigned ? 'unassigned future provision' : '';
+                    const corpus = `${k.keyId} ${k.area} ${k.floor} ${k.roomNo} ${k.details} ${k.storageLocation} ${tot} ${store} ${holdersCorpus} ${unassignedTag}`.toLowerCase();
                     if (!tokens.every(t => corpus.includes(t))) return false;
                 }
                 return true;
@@ -21738,21 +21883,26 @@ window.cleanDuplicateEstateAssets = async function() {
                     </button>`
                     : '';
 
+                const isUnassigned = isKeyRecordUnassigned(k);
                 const storeCount = Math.max(0, Number(k.keysInStore) || 0);
                 const totalCount = Math.max(0, Number(k.totalKeys) || 0);
-                const storeBadgeClass = storeCount > 0
-                    ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                    : 'bg-red-100 text-red-800 border border-red-300';
+                const storeBadgeClass = isUnassigned && totalCount === 0
+                    ? 'bg-slate-100 text-slate-600 border border-slate-300'
+                    : (storeCount > 0
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        : 'bg-red-100 text-red-800 border border-red-300');
 
-                let holdersCellHtml = '<span class="text-gray-400 italic text-xs">All in store</span>';
+                let holdersCellHtml = isUnassigned && totalCount === 0
+                    ? '<span class="text-slate-400 italic text-xs">Reserved / Unassigned</span>'
+                    : '<span class="text-gray-400 italic text-xs">All in store</span>';
                 if (activeHolders.length > 0) {
                     holdersCellHtml = `<div class="space-y-1">` + activeHolders.map(h => {
                         const holderExpired = h.expiryDate && String(h.expiryDate).trim() < todayStr;
                         const nameWithIts = h.holderIts ? `${h.holderName}-${h.holderIts}` : h.holderName;
                         const issueFormatted = formatKeyDateDdMmmYyyy(h.issueDate);
-                        const unmatchedIcon = !h.isDirectoryMatch
+                        const dirStatusIcon = !h.isDirectoryMatch
                             ? `<span class="inline-flex items-center bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-1.5 py-0.2 rounded ml-1" title="Warning: Name does not match any record in Directory"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-0.5"></i>Not in Dir</span>`
-                            : '';
+                            : `<span class="inline-flex items-center bg-emerald-50 text-emerald-700 border border-emerald-300 text-[10px] font-extrabold px-1.5 py-0.2 rounded ml-1" title="Directory Verified"><i class="fa-solid fa-address-book mr-0.5"></i><i class="fa-solid fa-check text-[8px]"></i></span>`;
                         const expTag = holderExpired
                             ? `<span class="inline-flex items-center bg-red-600 text-white text-[9.5px] font-extrabold px-1.5 py-0.2 rounded ml-1">Exp: ${formatKeyDateDdMmmYyyy(h.expiryDate)}</span>`
                             : (h.expiryDate ? `<span class="text-[10px] text-gray-500 ml-1">(Exp: ${formatKeyDateDdMmmYyyy(h.expiryDate)})</span>` : '');
@@ -21765,26 +21915,30 @@ window.cleanDuplicateEstateAssets = async function() {
                                 <span class="font-bold text-gray-900">${nameWithIts}</span>
                                 <span class="text-emerald-800 font-mono font-semibold ml-1">(${issueFormatted})</span>
                                 ${expTag}
-                                ${unmatchedIcon}
+                                ${dirStatusIcon}
                                 ${waTickTag}
                             </div>
                         `;
                     }).join('') + `</div>`;
                 }
 
+                const detailsDisplayHtml = isUnassigned
+                    ? `<span class="inline-flex items-center bg-slate-100 text-slate-600 border border-slate-300 px-2.5 py-0.5 rounded-full text-xs font-semibold italic" title="Designated for this building for future provision"><i class="fa-regular fa-bookmark mr-1.5 text-slate-500"></i>Unassigned Key ID (Future Provision)</span>`
+                    : (k.details || '-');
+
                 return `
-                    <tr class="hover:bg-emerald-50/30 border-b transition ${isExpired ? 'bg-red-50/40' : ''}">
+                    <tr class="key-id-row ${isExpired ? 'key-row-expired' : (isUnassigned ? 'key-row-unassigned' : '')}">
                         <td class="p-3 font-mono font-extrabold text-indigo-950 whitespace-nowrap">
                             <div class="flex items-center">
                                 ${adminEditBtnHtml}
-                                <span class="bg-indigo-100 text-indigo-950 border border-indigo-300 px-2.5 py-1 rounded-md text-xs font-extrabold">${k.keyId}</span>
+                                <span class="${isUnassigned ? 'bg-slate-200 text-slate-800 border-slate-300' : 'bg-indigo-100 text-indigo-950 border-indigo-300'} border px-2.5 py-1 rounded-md text-xs font-extrabold">${k.keyId}</span>
                                 ${expiredWarningBadgeHtml}
                             </div>
                         </td>
                         <td class="p-3 font-semibold text-gray-800">${k.area || '-'}</td>
                         <td class="p-3 text-gray-700 whitespace-nowrap">${k.floor || '-'}</td>
                         <td class="p-3 font-semibold text-emerald-900 whitespace-nowrap">${k.roomNo || '-'}</td>
-                        <td class="p-3 font-medium text-gray-900">${k.details || '-'}</td>
+                        <td class="p-3 font-medium text-gray-900">${detailsDisplayHtml}</td>
                         <td class="p-3 text-gray-600 text-xs font-medium">${k.storageLocation || '-'}</td>
                         <td class="p-3 text-center font-extrabold text-gray-900">${totalCount}</td>
                         <td class="p-3 text-center">
@@ -21989,8 +22143,8 @@ window.cleanDuplicateEstateAssets = async function() {
                         const isExp = h.expiryDate && String(h.expiryDate).trim() < todayStr;
                         const nameWithIts = h.holderIts ? `${h.holderName}-${h.holderIts}` : h.holderName;
                         const unmatchedBadge = !h.isDirectoryMatch
-                            ? `<span class="inline-flex items-center bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1.5" title="Holder name not found in Directory"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i>Not in Directory</span>`
-                            : `<span class="inline-flex items-center bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-1.5 py-0.5 rounded ml-1.5"><i class="fa-solid fa-id-badge mr-1"></i>Directory Verified</span>`;
+                            ? `<span class="inline-flex items-center bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded ml-1.5 shrink-0" title="Holder name not found in Directory"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i>Not in Directory</span>`
+                            : `<span class="inline-flex items-center bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-extrabold px-1.5 py-0.5 rounded-md ml-1.5 shrink-0" title="Directory Verified"><i class="fa-solid fa-address-book mr-0.5"></i><i class="fa-solid fa-check text-[10px]"></i></span>`;
 
                         const expBadge = isExp
                             ? `<span class="bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-pulse ml-1">EXPIRED</span>`
@@ -22004,23 +22158,23 @@ window.cleanDuplicateEstateAssets = async function() {
                             : `Click to mark/unmark WhatsApp intimation tick`;
 
                         return `
-                            <tr class="border-b hover:bg-gray-50 ${isExp ? 'bg-red-50/50' : ''}">
-                                <td class="p-2.5 text-center font-bold text-gray-500">${idx + 1}</td>
-                                <td class="p-2.5">
-                                    <div class="font-extrabold text-gray-900 text-xs sm:text-sm flex flex-wrap items-center">
+                            <tr class="border-b-2 border-slate-300 hover:bg-emerald-50/40 ${isExp ? 'bg-red-50/60' : 'even:bg-slate-50/70'}">
+                                <td class="py-2.5 px-2 text-center font-bold text-gray-500">${idx + 1}</td>
+                                <td class="py-2.5 px-3 min-w-[240px]">
+                                    <div class="font-extrabold text-gray-900 text-xs sm:text-sm flex items-center flex-wrap gap-y-1">
                                         <span>${nameWithIts}</span>
                                         ${unmatchedBadge}
                                     </div>
                                 </td>
-                                <td class="p-2.5 font-mono text-xs text-gray-700">${h.holderMobile || '-'}</td>
-                                <td class="p-2.5 font-mono text-xs font-bold text-emerald-900 whitespace-nowrap">${formatKeyDateDdMmmYyyy(h.issueDate)}</td>
-                                <td class="p-2.5 whitespace-nowrap">
+                                <td class="py-2.5 px-2.5 font-mono text-xs text-gray-700 whitespace-nowrap">${h.holderMobile || '-'}</td>
+                                <td class="py-2.5 px-2.5 font-mono text-xs font-bold text-emerald-900 whitespace-nowrap">${formatKeyDateDdMmmYyyy(h.issueDate)}</td>
+                                <td class="py-2.5 px-2.5 whitespace-nowrap">
                                     <div class="flex items-center space-x-1">
                                         <span class="font-mono text-xs font-bold ${isExp ? 'text-red-700' : 'text-gray-800'}">${h.expiryDate ? formatKeyDateDdMmmYyyy(h.expiryDate) : 'No Expiry'}</span>
                                         ${expBadge}
                                     </div>
                                 </td>
-                                <td class="p-2.5 text-center whitespace-nowrap">
+                                <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
                                     <div class="inline-flex items-center space-x-1.5">
                                         <button
                                             type="button"
@@ -22044,7 +22198,7 @@ window.cleanDuplicateEstateAssets = async function() {
                                         </button>
                                     </div>
                                 </td>
-                                <td class="p-2.5 text-center whitespace-nowrap">
+                                <td class="py-2.5 px-2.5 text-center whitespace-nowrap">
                                     <button
                                         type="button"
                                         data-crud="true"
@@ -22800,7 +22954,7 @@ Shukran`;
                 }
 
                 return `
-                    <tr class="border-b hover:bg-gray-50">
+                    <tr class="key-id-row">
                         <td class="p-3 text-center font-bold text-gray-500">${idx + 1}</td>
                         <td class="p-3">
                             <div class="font-extrabold text-gray-900 text-xs sm:text-sm flex flex-wrap items-center">
@@ -22889,7 +23043,9 @@ Shukran`;
                         keysInventoryData = [];
                     }
 
+                    learnKeyPrefixesFromDataset(jsonData);
                     let importedCount = 0;
+                    let lastSeenArea = '';
                     jsonData.forEach((row, idx) => {
                         const getVal = (keys) => {
                             for (const k of Object.keys(row)) {
@@ -22904,19 +23060,28 @@ Shukran`;
                         const keyIdVal = String(getVal(['Key ID', 'KEY ID', 'Key Code', 'KeyNo']) || '').trim();
                         if (!keyIdVal) return;
 
-                        const areaVal = String(getVal(['Building/Area', 'Area / Building', 'Building', 'Area']) || 'Academic & Admin Bldg').trim();
+                        const rawArea = String(getVal(['Building/Area', 'Area / Building', 'Building', 'Area']) || '').trim();
+                        const areaVal = inferAreaFromKeyIdOrPrev(keyIdVal, rawArea, lastSeenArea);
+                        if (areaVal) lastSeenArea = areaVal;
+
                         const floorVal = String(getVal(['Floor', 'Flr']) || '-').trim() || '-';
                         const roomVal = String(getVal(['Room No.', 'Room No', 'Room Number', 'Room']) || '-').trim() || '-';
                         const detailsVal = String(getVal(['Details', 'Description', 'Key Details']) || '-').trim() || '-';
                         const storageVal = String(getVal(['Storage Location', 'Storage', 'Cupboard']) || '-').trim() || '-';
-                        const totalVal = Math.max(0, parseInt(getVal(['Total Keys Available', 'Total Keys', 'Total Count']), 10) || 1);
+
+                        const isRowUnassigned = (floorVal === '-' && roomVal === '-' && (detailsVal === '-' || detailsVal.toLowerCase() === 'unassigned'));
+
+                        const rawTotal = getVal(['Total Keys Available', 'Total Keys', 'Total Count']);
                         const rawInStore = getVal(['Keys in store', 'Keys Available in Store', 'Available Keys', 'In Store']);
                         const holdersText = String(getVal(['Active Key Holders', 'Current Holders', 'Issued To']) || '').trim();
 
                         const parsedHolders = parseActiveHoldersCellString(holdersText, keyIdVal);
                         const inStoreVal = (rawInStore !== undefined && rawInStore !== '')
                             ? Math.max(0, parseInt(rawInStore, 10) || 0)
-                            : Math.max(0, totalVal - parsedHolders.length);
+                            : 0;
+                        const totalVal = (rawTotal !== undefined && rawTotal !== '')
+                            ? Math.max(0, parseInt(rawTotal, 10) || 0)
+                            : (isRowUnassigned ? 0 : Math.max(1, inStoreVal + parsedHolders.length));
 
                         if (areaVal && !DEFAULT_KEY_AREAS.includes(areaVal) && !customKeyAreasData.includes(areaVal)) {
                             customKeyAreasData.push(areaVal);

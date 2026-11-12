@@ -1129,7 +1129,7 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-lg shadow border">
-                    <input type="text" id="estateSearch" oninput="renderEstateTable()" placeholder="Search Building Name, Wing, Flat No, Owner, or CA Number..." class="w-full p-2 border rounded text-sm">
+                    <input type="text" id="estateSearch" oninput="debouncePortalSearch('estate', renderEstateTable)" placeholder="Search Building Name, Wing, Flat No, Owner, or CA Number..." class="w-full p-2 border rounded text-sm">
                 </div>
 
                 <div class="bg-white rounded-lg shadow border overflow-x-auto">
@@ -1167,7 +1167,7 @@
                             <i class="fa-solid fa-file-pdf"></i>
                             <span>Export PDF</span>
                         </button>
-                        <input type="text" id="allocSearch" oninput="renderAllocationTable()" placeholder="Search Faculty Name, Building, Flat No..." class="w-full sm:w-64 p-2 border rounded text-sm">
+                        <input type="text" id="allocSearch" oninput="debouncePortalSearch('alloc', renderAllocationTable)" placeholder="Search Faculty Name, Building, Flat No..." class="w-full sm:w-64 p-2 border rounded text-sm">
                     </div>
                 </div>
 
@@ -1228,7 +1228,7 @@
                             <i class="fa-solid fa-file-pdf"></i>
                             <span>Export PDF</span>
                         </button>
-                        <input type="text" id="maintSearch" oninput="renderMaintenanceGrid()" placeholder="Search Building, Flat No, Type or Details..." class="p-2 border rounded text-sm w-full sm:w-64">
+                        <input type="text" id="maintSearch" oninput="debouncePortalSearch('maint', renderMaintenanceGrid)" placeholder="Search Building, Flat No, Type or Details..." class="p-2 border rounded text-sm w-full sm:w-64">
                         <button onclick="openAddMaintenanceModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center justify-center space-x-1 whitespace-nowrap">
                             <i class="fa-solid fa-plus"></i>
                             <span>Add Maintenance Log</span>
@@ -1351,7 +1351,7 @@
                         <select id="docFilterSociety" onchange="renderSocietyDocs()" class="p-2 border rounded text-sm sm:w-1/3">
                             <option value="">All Societies</option>
                         </select>
-                        <input type="text" id="docSearchQuery" oninput="renderSocietyDocs()" placeholder="Search document title or notes..." class="p-2 border rounded text-sm sm:w-2/3">
+                        <input type="text" id="docSearchQuery" oninput="debouncePortalSearch('docs', renderSocietyDocs)" placeholder="Search document title or notes..." class="p-2 border rounded text-sm sm:w-2/3">
                     </div>
 
                     <div id="societyDocsContainer" class="space-y-4"></div>
@@ -1558,7 +1558,7 @@
                 <div class="bg-white p-4 rounded-lg shadow border flex flex-col sm:flex-row gap-3 items-center justify-between">
                     <div class="w-full sm:w-2/3 relative">
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
-                        <input type="text" id="assetMainTableSearch" oninput="renderAssetDetailsTable()" placeholder="Search by Building, Wing, Flat No, Status, or Asset Name / Brand / Location..." class="w-full pl-8 pr-3 py-2 border rounded text-sm">
+                        <input type="text" id="assetMainTableSearch" oninput="debouncePortalSearch('assets', renderAssetDetailsTable)" placeholder="Search by Building, Wing, Flat No, Status, or Asset Name / Brand / Location..." class="w-full pl-8 pr-3 py-2 border rounded text-sm">
                     </div>
                     <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
                         <button type="button" onclick="expandAllAssetDrawers(true)" class="px-3 py-1.5 border rounded text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">
@@ -1601,7 +1601,7 @@
                 <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                     <div class="relative flex-grow sm:flex-grow-0 sm:w-64">
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
-                        <input type="text" id="classroomSearchInput" oninput="renderClassroomsTables()" placeholder="Search Classroom, Location, Darajah..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm">
+                        <input type="text" id="classroomSearchInput" oninput="debouncePortalSearch('classrooms', renderClassroomsTables)" placeholder="Search Classroom, Location, Darajah..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm">
                     </div>
                     <button type="button" id="btnExportClassroomsHeader" onclick="exportClassroomsToExcel()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Download Classroom Allocation & Darajah/Event Details (.xlsx)">
                         <i class="fa-solid fa-file-excel"></i>
@@ -1945,6 +1945,266 @@
 
                     <div id="keysAreaBreakdownGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5"></div>
                 </div>
+
+                <!-- Building Name Guide & Key Numbering Series Reference Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <!-- Left Card: Building Name Guide (Codes AA to LK) -->
+                    <div class="lg:col-span-5 bg-white p-5 rounded-xl shadow border flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between border-b pb-3 mb-3">
+                                <div>
+                                    <h3 class="text-base sm:text-lg font-extrabold text-gray-900 flex items-center space-x-2">
+                                        <i class="fa-solid fa-Signs-post text-indigo-700"></i>
+                                        <i class="fa-solid fa-compass text-indigo-700"></i>
+                                        <span>Building Name Guide</span>
+                                    </h3>
+                                    <p class="text-xs text-gray-500 mt-0.5">Official 2-letter Key ID prefix codes by Campus Area / Building. Click any row to view its keys.</p>
+                                </div>
+                                <span class="bg-indigo-50 text-indigo-900 border border-indigo-200 text-[11px] font-extrabold px-2.5 py-1 rounded-full">10 Codes</span>
+                            </div>
+                            <div class="overflow-x-auto rounded-xl border border-slate-300">
+                                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-800 text-white uppercase text-[11px] tracking-wider">
+                                            <th class="p-2.5 px-3.5 font-extrabold border-r border-slate-600">Building / Area Name</th>
+                                            <th class="p-2.5 px-3.5 font-extrabold text-center w-28">Prefix Code</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                                        <tr onclick="filterKeysMasterByArea('Academic & Admin Bldg')" class="hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Academic &amp; Admin Bldg</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">AA</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('Mahad al-Zahra Bldg')" class="bg-slate-50/70 hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Mahad al-Zahra Bldg</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">MZ</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('Religious Block')" class="hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Religious Block</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">RB</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('BH')" class="bg-slate-50/70 hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Maskan (Boys Hostel)</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">BH</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('GH')" class="hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Rabwat (Girls Hostel)</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">GH</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('Mawaid & Kitchen Bldg')" class="bg-slate-50/70 hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Mawaid &amp; Kitchen</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">KM</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('Faculty Bldg')" class="hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Faculty Bldg</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">FB</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('Compound Area')" class="bg-slate-50/70 hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Compound Area</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">CA</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('Najmi Bldg')" class="hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Najmi Bldg</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">NJ</span></td>
+                                        </tr>
+                                        <tr onclick="filterKeysMasterByArea('Lockers')" class="bg-slate-50/70 hover:bg-indigo-50/60 cursor-pointer transition">
+                                            <td class="p-2.5 px-3.5 font-bold text-gray-800 border-r border-slate-200">Lockers</td>
+                                            <td class="p-2.5 px-3.5 text-center"><span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded-md text-xs">LK</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Card: Key Series & Category Range Guide (001 to 981+) -->
+                    <div class="lg:col-span-7 bg-white p-5 rounded-xl shadow border flex flex-col justify-between">
+                        <div>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 mb-3 gap-2">
+                                <div>
+                                    <h3 class="text-base sm:text-lg font-extrabold text-gray-900 flex items-center space-x-2">
+                                        <i class="fa-solid fa-list-ol text-emerald-700"></i>
+                                        <span>Key Numbering &amp; Category Range Guide</span>
+                                    </h3>
+                                    <p class="text-xs text-gray-500 mt-0.5">Designated serial ranges for Master Keys, General Keys, and Office Keys across each building.</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-extrabold">
+                                    <span class="bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded-full">Master Keys</span>
+                                    <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full">General Keys</span>
+                                    <span class="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">Office Keys</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <!-- Academic & Admin Bldg -->
+                                <div onclick="filterKeysMasterByArea('Academic & Admin Bldg')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                    <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                        <span>Academic &amp; Admin Bldg</span>
+                                        <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">AA</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-200 text-xs">
+                                        <div class="flex justify-between items-center px-3 py-1.5 bg-purple-50/40">
+                                            <span class="font-mono font-extrabold text-slate-900">001 - 010</span>
+                                            <span class="bg-purple-100 text-purple-900 border border-purple-300 font-bold px-2 py-0.5 rounded text-[11px]">Master Keys</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5">
+                                            <span class="font-mono font-extrabold text-slate-900">011 - 175</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 bg-amber-50/30">
+                                            <span class="font-mono font-extrabold text-slate-900">176 - 405</span>
+                                            <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Office Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mahad al-Zahra Bldg -->
+                                <div onclick="filterKeysMasterByArea('Mahad al-Zahra Bldg')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                    <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                        <span>Mahad al-Zahra Bldg</span>
+                                        <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">MZ</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-200 text-xs">
+                                        <div class="flex justify-between items-center px-3 py-1.5">
+                                            <span class="font-mono font-extrabold text-slate-900">406 - 491</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 bg-amber-50/30">
+                                            <span class="font-mono font-extrabold text-slate-900">492 - 539</span>
+                                            <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Office Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Religious Block -->
+                                <div onclick="filterKeysMasterByArea('Religious Block')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                    <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                        <span>Religious Block</span>
+                                        <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">RB</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-200 text-xs">
+                                        <div class="flex justify-between items-center px-3 py-1.5">
+                                            <span class="font-mono font-extrabold text-slate-900">540 - 573</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 bg-amber-50/30">
+                                            <span class="font-mono font-extrabold text-slate-900">574 - 580</span>
+                                            <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Office Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mawaid & Kitchen Bldg -->
+                                <div onclick="filterKeysMasterByArea('Mawaid & Kitchen Bldg')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                    <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                        <span>Mawaid &amp; Kitchen Bldg</span>
+                                        <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">KM</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-200 text-xs">
+                                        <div class="flex justify-between items-center px-3 py-1.5">
+                                            <span class="font-mono font-extrabold text-slate-900">581 - 632</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 bg-amber-50/30">
+                                            <span class="font-mono font-extrabold text-slate-900">633 - 646</span>
+                                            <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Office Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Maskan (Boys Hostel) -->
+                                <div onclick="filterKeysMasterByArea('BH')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                    <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                        <span>Maskan (Boys Hostel)</span>
+                                        <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">BH</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-200 text-xs">
+                                        <div class="flex justify-between items-center px-3 py-1.5">
+                                            <span class="font-mono font-extrabold text-slate-900">647 - 724</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 bg-amber-50/30">
+                                            <span class="font-mono font-extrabold text-slate-900">725 - 751</span>
+                                            <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Office Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Rabwat (Girls Hostel) -->
+                                <div onclick="filterKeysMasterByArea('GH')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                    <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                        <span>Rabwat (Girls Hostel)</span>
+                                        <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">GH</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-200 text-xs">
+                                        <div class="flex justify-between items-center px-3 py-1.5">
+                                            <span class="font-mono font-extrabold text-slate-900">752 - 839</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 bg-amber-50/30">
+                                            <span class="font-mono font-extrabold text-slate-900">840 - 871</span>
+                                            <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Office Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Faculty Building & Compound Area -->
+                                <div class="grid grid-cols-1 gap-2.5">
+                                    <div onclick="filterKeysMasterByArea('Faculty Bldg')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                        <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                            <span>Faculty Building</span>
+                                            <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">FB</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 text-xs">
+                                            <span class="font-mono font-extrabold text-slate-900">872 - 889</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                    </div>
+                                    <div onclick="filterKeysMasterByArea('Compound Area')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                        <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                            <span>Compound Area</span>
+                                            <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">CA</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 text-xs">
+                                            <span class="font-mono font-extrabold text-slate-900">890 - 924</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Najmi Bldg & Lockers -->
+                                <div class="grid grid-cols-1 gap-2.5">
+                                    <div onclick="filterKeysMasterByArea('Najmi Bldg')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                        <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                            <span>Najmi Bldg</span>
+                                            <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">NJ</span>
+                                        </div>
+                                        <div class="divide-y divide-slate-200 text-xs">
+                                            <div class="flex justify-between items-center px-3 py-1.5">
+                                                <span class="font-mono font-extrabold text-slate-900">925 - 960</span>
+                                                <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                            </div>
+                                            <div class="flex justify-between items-center px-3 py-1.5 bg-amber-50/30">
+                                                <span class="font-mono font-extrabold text-slate-900">961 - 980</span>
+                                                <span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Office Keys</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div onclick="filterKeysMasterByArea('Lockers')" class="border border-slate-300 rounded-xl overflow-hidden hover:border-emerald-600 transition cursor-pointer bg-white shadow-sm">
+                                        <div class="bg-slate-800 text-white px-3 py-1.5 text-xs font-extrabold flex items-center justify-between">
+                                            <span>Lockers</span>
+                                            <span class="bg-indigo-500/30 border border-indigo-300/40 text-indigo-100 font-mono text-[10px] px-1.5 py-0.2 rounded">LK</span>
+                                        </div>
+                                        <div class="flex justify-between items-center px-3 py-1.5 text-xs">
+                                            <span class="font-mono font-extrabold text-slate-900">981 -</span>
+                                            <span class="bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded text-[11px]">General Keys</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- =============================================================== -->
@@ -2016,7 +2276,7 @@
                         <input
                             type="text"
                             id="keysMasterSearchInput"
-                            oninput="renderKeysMasterTable()"
+                            oninput="debouncePortalSearch('keysMaster', renderKeysMasterTable)"
                             placeholder="Global search across Key ID, Building/Area, Floor, Room No., Details, Storage, Holder..."
                             class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
@@ -2104,7 +2364,7 @@
                         <input
                             type="text"
                             id="keysPeopleSearchInput"
-                            oninput="renderKeysPeopleTracker()"
+                            oninput="debouncePortalSearch('keysPeople', renderKeysPeopleTracker)"
                             placeholder="Search by Person Name, ITS ID, or issued Key ID (e.g. AA/MK/001)..."
                             class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
@@ -2193,7 +2453,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                     <div class="md:col-span-5 relative">
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
-                        <input type="text" id="facultySearch" oninput="renderFacultyTable()" placeholder="Dynamic search by Name, ITS Number, Category, Gender, or Contact..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" id="facultySearch" oninput="debouncePortalSearch('faculty', renderFacultyTable)" placeholder="Dynamic search by Name, ITS Number, Category, Gender, or Contact..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div class="md:col-span-3 relative" id="facultyCategoryDropdownWrap">
                         <button type="button" onclick="toggleFacultyCategoryDropdown()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-between focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -2450,7 +2710,7 @@
                 <div class="flex flex-wrap items-center gap-2 flex-grow md:max-w-md">
                     <div class="relative flex-grow">
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
-                        <input type="text" id="egMeterSearch" oninput="renderElecGasModule()" placeholder="Search CA Number, Meter No, or Building / Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" id="egMeterSearch" oninput="debouncePortalSearch('egMeter', renderElecGasModule)" placeholder="Search CA Number, Meter No, or Building / Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <select id="egStatusFilter" onchange="renderElecGasModule()" class="p-1.5 border rounded-lg text-xs font-semibold bg-white text-gray-700">
                         <option value="">All Statuses</option>
@@ -4028,7 +4288,7 @@
                                 <input
                                     type="text"
                                     id="massEventSearchInput"
-                                    oninput="renderMassEventsTable()"
+                                    oninput="debouncePortalSearch('massEvents', renderMassEventsTable)"
                                     placeholder="Search Classroom No., Std Name, Location..."
                                     class="w-full pl-7 pr-3 py-1.5 border border-amber-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-amber-600"
                                 >
@@ -4173,7 +4433,7 @@
                     <input
                         type="text"
                         id="eventsArchiveSearchInput"
-                        oninput="renderEventsArchiveList()"
+                        oninput="debouncePortalSearch('eventsArchive', renderEventsArchiveList)"
                         placeholder="Search event name, classroom, dates..."
                         class="w-full pl-7 pr-3 py-1 border rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                     >
@@ -5296,7 +5556,7 @@ function getOrCreateUtilityFolder_(name) {
                     <div class="p-2 bg-gray-50 border-b">
                         <div class="relative">
                             <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
-                            <input type="text" id="egExportMeterSearchInput" oninput="renderEgExportMetersDropdownList()" placeholder="Search CA No, Meter No, or Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none">
+                            <input type="text" id="egExportMeterSearchInput" oninput="debouncePortalSearch('egExportMeter', renderEgExportMetersDropdownList)" placeholder="Search CA No, Meter No, or Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none">
                         </div>
                     </div>
                     <!-- First Option: Select All -->
@@ -5428,7 +5688,7 @@ function getOrCreateUtilityFolder_(name) {
                 </div>
                 <div class="relative w-full sm:w-64">
                     <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
-                    <input type="text" id="egLoginSearchInput" oninput="renderElecGasLoginDetailsList()" placeholder="Search username, contact, CA no..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    <input type="text" id="egLoginSearchInput" oninput="debouncePortalSearch('egLogin', renderElecGasLoginDetailsList)" placeholder="Search username, contact, CA no..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                 </div>
             </div>
 
@@ -5510,7 +5770,7 @@ function getOrCreateUtilityFolder_(name) {
                     <div class="flex flex-col sm:flex-row gap-2">
                         <div class="relative flex-grow">
                             <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 text-xs"></i>
-                            <input type="text" id="egLoginCaSearchInput" oninput="renderEgLoginCaCheckboxesList()" placeholder="Filter by CA Number, Meter No, or Building / Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                            <input type="text" id="egLoginCaSearchInput" oninput="debouncePortalSearch('egLoginCa', renderEgLoginCaCheckboxesList)" placeholder="Filter by CA Number, Meter No, or Building / Location..." class="w-full pl-8 pr-3 py-1.5 border rounded-lg text-xs bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
                         </div>
                         <label class="flex items-center space-x-2 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200 cursor-pointer shrink-0">
                             <input type="checkbox" id="egLoginSelectAllCaCheckbox" onchange="toggleEgLoginSelectAllCa(this.checked)" class="rounded text-purple-600 focus:ring-purple-500 h-4 w-4">
@@ -5790,13 +6050,19 @@ function getOrCreateUtilityFolder_(name) {
                 </div>
             </div>
 
-            <label class="flex items-start space-x-2.5 bg-green-50 border border-green-200 p-3 rounded-xl cursor-pointer">
-                <input type="checkbox" id="ckrSendWhatsappCheckbox" checked class="mt-0.5 rounded text-green-600 focus:ring-green-500 h-4 w-4">
-                <div class="text-xs">
-                    <span class="font-extrabold text-green-950 block"><i class="fa-brands fa-whatsapp text-green-600 mr-1"></i>Send WATI Return Notification (`key_return`)</span>
-                    <span class="text-[11px] text-green-800">Automatically sends return receipt message on WhatsApp upon confirmation.</span>
+            <div class="bg-green-50 border border-green-200 p-3 rounded-xl space-y-2.5">
+                <label class="flex items-start space-x-2.5 cursor-pointer">
+                    <input type="checkbox" id="ckrSendWhatsappCheckbox" checked class="mt-0.5 rounded text-green-600 focus:ring-green-500 h-4 w-4">
+                    <div class="text-xs">
+                        <span class="font-extrabold text-green-950 block"><i class="fa-brands fa-whatsapp text-green-600 mr-1"></i>Send WATI Return Notification (`key_return`)</span>
+                        <span class="text-[11px] text-green-800">Automatically sends return receipt message on WhatsApp upon confirmation.</span>
+                    </div>
+                </label>
+                <div>
+                    <label class="text-[11px] font-bold text-green-900 block mb-1">Recipient WhatsApp Number (with country code)</label>
+                    <input type="tel" id="ckrRecipientPhoneInput" placeholder="e.g. 919820011223" class="w-full p-2 border border-green-300 rounded-lg text-xs font-mono font-bold bg-white focus:ring-2 focus:ring-green-500 focus:outline-none">
                 </div>
-            </label>
+            </div>
 
             <div class="flex justify-end space-x-2 pt-2 border-t">
                 <button type="button" onclick="closeModal('modalConfirmKeyReturn')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Cancel</button>
@@ -6165,7 +6431,7 @@ function getOrCreateUtilityFolder_(name) {
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
-        import { getDatabase, ref as dbRef, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+        import { getDatabase, ref as dbRef, set, update as dbUpdate, get, child, onValue } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAmfhe1OId_cHrnHnf4iPIHgJN81-tFluY",
@@ -7136,26 +7402,128 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
             };
         }
 
+        // Performance Helpers: Debounced Search, Progressive Chunked Table Rendering & Differential Cloud Sync
+        const _portalSearchDebounceTimers = {};
+        window.debouncePortalSearch = function(key, fn, delayMs = 140) {
+            if (_portalSearchDebounceTimers[key]) {
+                clearTimeout(_portalSearchDebounceTimers[key]);
+            }
+            _portalSearchDebounceTimers[key] = setTimeout(() => {
+                delete _portalSearchDebounceTimers[key];
+                if (typeof fn === 'function') fn();
+            }, delayMs);
+        };
+
+        const _chunkedTableRenderState = {};
+        function renderTableRowsInChunks(tbodyId, itemsArray, rowRendererFn, firstBatchSize = 100, nextBatchSize = 150) {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+
+            if (_chunkedTableRenderState[tbodyId]?.rafId) {
+                cancelAnimationFrame(_chunkedTableRenderState[tbodyId].rafId);
+            }
+
+            const total = itemsArray.length;
+            const firstEnd = Math.min(total, firstBatchSize);
+            let firstHtml = '';
+            for (let i = 0; i < firstEnd; i++) {
+                firstHtml += rowRendererFn(itemsArray[i], i);
+            }
+            tbody.innerHTML = firstHtml;
+
+            if (firstEnd >= total) {
+                delete _chunkedTableRenderState[tbodyId];
+                return;
+            }
+
+            const renderToken = Symbol(tbodyId);
+            const state = {
+                token: renderToken,
+                cursor: firstEnd,
+                total,
+                items: itemsArray,
+                rowRendererFn,
+                nextBatchSize,
+                rafId: null
+            };
+            _chunkedTableRenderState[tbodyId] = state;
+
+            const appendNextChunk = () => {
+                if (_chunkedTableRenderState[tbodyId]?.token !== renderToken) return;
+                const start = state.cursor;
+                const end = Math.min(state.total, start + state.nextBatchSize);
+                let chunkHtml = '';
+                for (let i = start; i < end; i++) {
+                    chunkHtml += state.rowRendererFn(state.items[i], i);
+                }
+                if (chunkHtml) {
+                    tbody.insertAdjacentHTML('beforeend', chunkHtml);
+                }
+                state.cursor = end;
+                if (state.cursor < state.total) {
+                    state.rafId = requestAnimationFrame(appendNextChunk);
+                } else {
+                    delete _chunkedTableRenderState[tbodyId];
+                }
+            };
+
+            state.rafId = requestAnimationFrame(appendNextChunk);
+        }
+
+        const _cloudNodeSnapshots = {};
+        function computeFastNodeSignature(val) {
+            try {
+                return JSON.stringify(val ?? null);
+            } catch (e) {
+                return String(Date.now());
+            }
+        }
+        function recordAllCloudNodeSnapshots(payloadObj) {
+            if (!payloadObj || typeof payloadObj !== 'object') return;
+            Object.keys(payloadObj).forEach(k => {
+                _cloudNodeSnapshots[k] = computeFastNodeSignature(payloadObj[k]);
+            });
+        }
+
         async function loadCloudData() {
             try {
-                const snapshot = await get(child(dbRef(db), 'portalData'));
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    estatesData = data.estates || [];
-                    facultyData = data.faculty || [];
+                const rootRef = dbRef(db);
+                // Fetch all primary and root fallback nodes in parallel (1 network round-trip instead of 7 sequential round-trips)
+                const [
+                    portalRes,
+                    egRes,
+                    clsRes,
+                    raiRes,
+                    eoyRes,
+                    notifRes,
+                    assetsRes
+                ] = await Promise.allSettled([
+                    get(child(rootRef, 'portalData')),
+                    get(child(rootRef, 'elecGasBills')),
+                    get(child(rootRef, 'classrooms')),
+                    get(child(rootRef, 'raihaan')),
+                    get(child(rootRef, 'classroomYearArchives')),
+                    get(child(rootRef, 'notifications')),
+                    get(child(rootRef, 'estate_assets'))
+                ]);
+
+                const snapshot = portalRes.status === 'fulfilled' ? portalRes.value : null;
+                if (snapshot && snapshot.exists()) {
+                    const data = snapshot.val() || {};
+                    estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
+                    facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
                     societiesData = data.societies || societiesData;
-                    societyDocs = data.docs || [];
-                    maintLogs = data.maint || [];
+                    societyDocs = Array.isArray(data.docs) ? data.docs : (data.docs && typeof data.docs === 'object' ? Object.values(data.docs) : []);
+                    maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
                     vacantBills = data.bills || {};
                     elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
                     elecGasLoginsData = normalizeElecGasLoginsList(data.elecGasLogins);
+
                     let rawCloudEgBills = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
-                    try {
-                        const egSnap = await get(child(dbRef(db), 'elecGasBills'));
-                        if (egSnap && egSnap.exists() && egSnap.val() && typeof egSnap.val() === 'object') {
-                            rawCloudEgBills = { ...rawCloudEgBills, ...egSnap.val() };
-                        }
-                    } catch (eEg) {}
+                    const egSnap = egRes.status === 'fulfilled' ? egRes.value : null;
+                    if (egSnap && egSnap.exists() && egSnap.val() && typeof egSnap.val() === 'object') {
+                        rawCloudEgBills = { ...rawCloudEgBills, ...egSnap.val() };
+                    }
                     elecGasBillsData = mergeElecGasBillsWithLocalCache(rawCloudEgBills);
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     usersList = normalizeUsersList(data.users || usersList);
@@ -7175,80 +7543,68 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     }
                     keysInventoryData = normalizeKeysInventoryList(data.keys);
                     syncIssuedKeysCollectionFromMaster();
-                    try {
-                        const clsSnap = await get(child(dbRef(db), 'classrooms'));
-                        if (clsSnap && clsSnap.exists()) {
-                            classroomsData = normalizeClassroomsList(clsSnap.val());
-                        } else if (data.classrooms) {
-                            classroomsData = normalizeClassroomsList(data.classrooms);
-                        } else {
-                            classroomsData = [];
-                        }
-                    } catch (eCls) {
-                        console.warn("Could not load classrooms from root:", eCls);
-                        if (data.classrooms) {
-                            classroomsData = normalizeClassroomsList(data.classrooms);
-                        }
+
+                    const clsSnap = clsRes.status === 'fulfilled' ? clsRes.value : null;
+                    if (clsSnap && clsSnap.exists()) {
+                        classroomsData = normalizeClassroomsList(clsSnap.val());
+                    } else if (data.classrooms) {
+                        classroomsData = normalizeClassroomsList(data.classrooms);
+                    } else {
+                        classroomsData = [];
                     }
+
+                    const raiSnap = raiRes.status === 'fulfilled' ? raiRes.value : null;
                     if (data.raihaan) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
+                    } else if (raiSnap && raiSnap.exists()) {
+                        raihaanData = normalizeRaihaanList(raiSnap.val());
                     } else {
-                        const raiSnap = await get(child(dbRef(db), 'raihaan'));
-                        raihaanData = raiSnap.exists() ? normalizeRaihaanList(raiSnap.val()) : [];
+                        raihaanData = [];
                     }
-                    try {
-                        const eoySnap = await get(child(dbRef(db), 'classroomYearArchives'));
-                        if (eoySnap && eoySnap.exists()) {
-                            classroomYearArchivesData = normalizeClassroomYearArchivesList(eoySnap.val());
-                        } else if (data.classroomYearArchives) {
-                            classroomYearArchivesData = normalizeClassroomYearArchivesList(data.classroomYearArchives);
-                        } else {
-                            const cachedEoy = localStorage.getItem('siyanat_classroom_year_archives_cache');
-                            classroomYearArchivesData = cachedEoy ? normalizeClassroomYearArchivesList(JSON.parse(cachedEoy)) : [];
-                        }
-                    } catch (eEoy) {
-                        if (data.classroomYearArchives) {
-                            classroomYearArchivesData = normalizeClassroomYearArchivesList(data.classroomYearArchives);
-                        }
+
+                    const eoySnap = eoyRes.status === 'fulfilled' ? eoyRes.value : null;
+                    if (eoySnap && eoySnap.exists()) {
+                        classroomYearArchivesData = normalizeClassroomYearArchivesList(eoySnap.val());
+                    } else if (data.classroomYearArchives) {
+                        classroomYearArchivesData = normalizeClassroomYearArchivesList(data.classroomYearArchives);
+                    } else {
+                        const cachedEoy = localStorage.getItem('siyanat_classroom_year_archives_cache');
+                        classroomYearArchivesData = cachedEoy ? normalizeClassroomYearArchivesList(JSON.parse(cachedEoy)) : [];
                     }
+
                     let cloudNotifs = [];
                     if (data.notifications) {
                         cloudNotifs = normalizeNotificationsList(data.notifications);
                     }
-                    try {
-                        const notifSnap = await get(child(dbRef(db), 'notifications'));
-                        if (notifSnap && notifSnap.exists() && notifSnap.val()) {
-                            const rootNotifs = normalizeNotificationsList(notifSnap.val());
-                            cloudNotifs = mergeNotificationsArrays(cloudNotifs, rootNotifs);
-                        }
-                    } catch (eSnap) {
-                        console.warn("Could not read root notifications:", eSnap);
+                    const notifSnap = notifRes.status === 'fulfilled' ? notifRes.value : null;
+                    if (notifSnap && notifSnap.exists() && notifSnap.val()) {
+                        const rootNotifs = normalizeNotificationsList(notifSnap.val());
+                        cloudNotifs = mergeNotificationsArrays(cloudNotifs, rootNotifs);
                     }
                     portalNotificationsData = mergeNotificationsArrays(cloudNotifs, portalNotificationsData);
+
                     let cloudAssets = [];
                     if (data.estate_assets) {
                         cloudAssets = normalizeEstateAssetsList(data.estate_assets);
                     }
-                    try {
-                        const assetsSnap = await get(child(dbRef(db), 'estate_assets'));
-                        if (assetsSnap && assetsSnap.exists()) {
-                            const rootAssets = normalizeEstateAssetsList(assetsSnap.val());
-                            if (rootAssets.length >= cloudAssets.length) {
-                                cloudAssets = rootAssets;
-                            } else if (cloudAssets.length > 0) {
-                                const rootIds = new Set(rootAssets.map(a => String(a.id)));
-                                cloudAssets.forEach(ca => {
-                                    if (!rootIds.has(String(ca.id))) rootAssets.push(ca);
-                                });
-                                cloudAssets = rootAssets;
-                            }
+                    const assetsSnap = assetsRes.status === 'fulfilled' ? assetsRes.value : null;
+                    if (assetsSnap && assetsSnap.exists()) {
+                        const rootAssets = normalizeEstateAssetsList(assetsSnap.val());
+                        if (rootAssets.length >= cloudAssets.length) {
+                            cloudAssets = rootAssets;
+                        } else if (cloudAssets.length > 0) {
+                            const rootIds = new Set(rootAssets.map(a => String(a.id)));
+                            cloudAssets.forEach(ca => {
+                                if (!rootIds.has(String(ca.id))) rootAssets.push(ca);
+                            });
+                            cloudAssets = rootAssets;
                         }
-                    } catch (eAssets) {
-                        console.warn("Could not read root estate_assets:", eAssets);
                     }
                     if (cloudAssets.length > 0 || estateAssetsData.length === 0) {
                         estateAssetsData = cloudAssets;
                     }
+
+                    recordAllCloudNodeSnapshots(data);
                 } else {
                     estatesData = [
                         { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [], residents: [] }
@@ -7465,6 +7821,7 @@ window.loadClassroomsFromCloud = async function() {
         function markAllPortalViewsDirty() {
             ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'].forEach(m => dirtyPortalViewsSet.add('mod:' + m));
             ['estate-details', 'allocation', 'maintenance', 'bachelor', 'vacant-bills', 'society', 'integrated', 'asset-details'].forEach(s => dirtyPortalViewsSet.add('sub:' + s));
+            ['dashboard', 'master', 'people'].forEach(k => dirtyPortalViewsSet.add('keys-sub:' + k));
         }
 
         function refreshAllPortalViews(forceAll = false) {
@@ -7508,53 +7865,77 @@ window.loadClassroomsFromCloud = async function() {
             if (notificationsRealtimeListenerAttached) return;
             notificationsRealtimeListenerAttached = true;
             try {
-                // Real-time listener on portalData
+                // Real-time listener on portalData with differential sub-node checking (only re-normalizes changed sub-nodes)
                 onValue(dbRef(db, 'portalData'), (snapshot) => {
                     if (!snapshot.exists()) return;
                     if (isSavingPortalData) return;
                     lastCloudSyncTimestamp = Date.now();
                     const data = snapshot.val() || {};
-                    estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
-                    facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
-                    if (data.societies) {
+
+                    const didNodeChange = (key) => {
+                        const sig = computeFastNodeSignature(data[key]);
+                        if (_cloudNodeSnapshots[key] === sig) return false;
+                        _cloudNodeSnapshots[key] = sig;
+                        return true;
+                    };
+
+                    if (didNodeChange('estates')) {
+                        estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
+                    }
+                    if (didNodeChange('faculty')) {
+                        facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
+                    }
+                    if (data.societies && didNodeChange('societies')) {
                         societiesData = Array.isArray(data.societies) ? data.societies : (typeof data.societies === 'object' ? Object.values(data.societies) : societiesData);
                     }
-                    societyDocs = Array.isArray(data.docs) ? data.docs : (data.docs && typeof data.docs === 'object' ? Object.values(data.docs) : []);
-                    maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
-                    vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
-                    if (data.elecGasMeters !== undefined) elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
-                    if (data.elecGasLogins !== undefined) elecGasLoginsData = normalizeElecGasLoginsList(data.elecGasLogins);
-                    if (data.elecGasBills !== undefined) {
+                    if (didNodeChange('docs')) {
+                        societyDocs = Array.isArray(data.docs) ? data.docs : (data.docs && typeof data.docs === 'object' ? Object.values(data.docs) : []);
+                    }
+                    if (didNodeChange('maint')) {
+                        maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
+                    }
+                    if (didNodeChange('bills')) {
+                        vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
+                    }
+                    if (data.elecGasMeters !== undefined && didNodeChange('elecGasMeters')) {
+                        elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
+                    }
+                    if (data.elecGasLogins !== undefined && didNodeChange('elecGasLogins')) {
+                        elecGasLoginsData = normalizeElecGasLoginsList(data.elecGasLogins);
+                    }
+                    if (data.elecGasBills !== undefined && didNodeChange('elecGasBills')) {
                         elecGasBillsData = mergeElecGasBillsWithLocalCache(data.elecGasBills);
                     }
-                    societyBillsData = normalizeSocietyBillsData(data.socBills || {});
-                    if (data.users !== undefined) {
+                    if (didNodeChange('socBills')) {
+                        societyBillsData = normalizeSocietyBillsData(data.socBills || {});
+                    }
+                    if (data.users !== undefined && didNodeChange('users')) {
                         usersList = normalizeUsersList(data.users);
                     }
-                    if (data.watiConfig !== undefined) {
+                    if (data.watiConfig !== undefined && didNodeChange('watiConfig')) {
                         watiConfig = normalizeWatiConfig(data.watiConfig);
                         if (getCurrentlyVisibleModuleName() === 'admin-access') {
                             populateWatiConfigInputs();
                         }
                     }
                     if (!isSavingKeysInventory) {
-                        if (data.customKeyAreas !== undefined) {
+                        if (data.customKeyAreas !== undefined && didNodeChange('customKeyAreas')) {
                             customKeyAreasData = Array.isArray(data.customKeyAreas)
                                 ? data.customKeyAreas.filter(Boolean)
                                 : (data.customKeyAreas && typeof data.customKeyAreas === 'object' ? Object.values(data.customKeyAreas).filter(Boolean) : []);
                         }
-                        if (data.keys !== undefined) {
+                        if (data.keys !== undefined && didNodeChange('keys')) {
                             keysInventoryData = normalizeKeysInventoryList(data.keys);
                             syncIssuedKeysCollectionFromMaster();
                         }
                     }
-                    if (data.raihaan !== undefined) {
+                    if (data.raihaan !== undefined && didNodeChange('raihaan')) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
                     }
-                    if (data.classroomYearArchives !== undefined) {
+                    if (data.classroomYearArchives !== undefined && didNodeChange('classroomYearArchives')) {
                         classroomYearArchivesData = normalizeClassroomYearArchivesList(data.classroomYearArchives);
                     }
-                    if (data.notifications !== undefined && data.notifications !== null) {
+                    if (data.notifications !== undefined && data.notifications !== null && didNodeChange('notifications')) {
                         const incoming = normalizeNotificationsList(data.notifications);
                         if (incoming.length > 0) {
                             portalNotificationsData = mergeNotificationsArrays(incoming, portalNotificationsData);
@@ -7565,9 +7946,9 @@ window.loadClassroomsFromCloud = async function() {
                             });
                         }
                     }
-                   if (!isSavingAssets && data.estate_assets !== undefined) {
-    estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
-}
+                    if (!isSavingAssets && data.estate_assets !== undefined && didNodeChange('estate_assets')) {
+                        estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
+                    }
                     syncCurrentUserLivePermissions();
                     refreshAllPortalViews(false);
                     checkAndTriggerActiveModuleNotifications();
@@ -8068,10 +8449,11 @@ window.loadClassroomsFromCloud = async function() {
                     });
                     if (res.ok) {
                         const data = await res.json().catch(() => ({}));
-                        if (data && data.result !== false) {
+                        const hasBulkError = data && (data.result === false || (data.errors && String(data.errors).trim() !== ''));
+                        if (data && !hasBulkError) {
                             return { ok: true, sentCount: cleanPhones.length, endpointUsed: bulkUrl, response: data };
                         }
-                        lastErrorMsg = (data && (data.info || data.message || data.error)) || 'WATI returned result: false';
+                        lastErrorMsg = (data && (data.errors || data.info || data.message || data.error)) || 'WATI returned result: false';
                     } else {
                         const errText = await res.text().catch(() => '');
                         lastErrorMsg = `HTTP ${res.status}: ${errText.slice(0, 160)}`;
@@ -8513,7 +8895,7 @@ window.loadClassroomsFromCloud = async function() {
     isSavingPortalData = true;
     try {
         saveElecGasBillsLocalCache(elecGasBillsData);
-        const cleanPayload = JSON.parse(JSON.stringify({
+        const candidateNodes = {
             estates: estatesData || [],
             classrooms: classroomsData || [],
             raihaan: raihaanData || [],
@@ -8535,25 +8917,38 @@ window.loadClassroomsFromCloud = async function() {
             elecGasBills: elecGasBillsData || {},
             elecGasLogins: elecGasLoginsData || [],
             googleScriptUrl: GOOGLE_SCRIPT_URL || ''
-        }));
-        await Promise.allSettled([
-            set(dbRef(db, 'portalData'), cleanPayload),
-            set(dbRef(db, 'portalData/elecGasBills'), cleanPayload.elecGasBills),
-            set(dbRef(db, 'elecGasBills'), cleanPayload.elecGasBills),
-            set(dbRef(db, 'classrooms'), cleanPayload.classrooms),
-            set(dbRef(db, 'estate_assets'), cleanPayload.estate_assets),
-            set(dbRef(db, 'raihaan'), cleanPayload.raihaan),
-            set(dbRef(db, 'classroomYearArchives'), cleanPayload.classroomYearArchives),
-            set(dbRef(db, 'notifications'), cleanPayload.notifications),
-            set(dbRef(db, 'keys'), cleanPayload.keys),
-            set(dbRef(db, 'issued_keys'), cleanPayload.issued_keys)
+        };
+
+        const mirroredRootNodes = new Set([
+            'elecGasBills', 'classrooms', 'estate_assets', 'raihaan',
+            'classroomYearArchives', 'notifications', 'keys', 'issued_keys'
         ]);
+
+        const multiPathUpdates = {};
+        let changedCount = 0;
+
+        for (const [nodeKey, rawVal] of Object.entries(candidateNodes)) {
+            const sig = computeFastNodeSignature(rawVal);
+            if (_cloudNodeSnapshots[nodeKey] !== sig) {
+                const cleanVal = JSON.parse(sig);
+                multiPathUpdates[`portalData/${nodeKey}`] = cleanVal;
+                if (mirroredRootNodes.has(nodeKey)) {
+                    multiPathUpdates[nodeKey] = cleanVal;
+                }
+                _cloudNodeSnapshots[nodeKey] = sig;
+                changedCount++;
+            }
+        }
+
+        if (changedCount > 0) {
+            await dbUpdate(dbRef(db), multiPathUpdates);
+        }
     } catch (err) {
         console.error("Error saving to cloud:", err);
     } finally {
         setTimeout(() => {
             isSavingPortalData = false;
-        }, 2000);
+        }, 1200);
     }
 };
 
@@ -8850,13 +9245,17 @@ window.loadClassroomsFromCloud = async function() {
             }
 
             if (modName === 'elec-gas-bills') {
-                resetElecGasPeriodToCurrentQuarter();
-                renderElecGasModule();
-                dirtyPortalViewsSet.delete('mod:elec-gas-bills');
+                if (dirtyPortalViewsSet.has('mod:elec-gas-bills') || !document.getElementById('egElecTableBody')?.children.length) {
+                    resetElecGasPeriodToCurrentQuarter();
+                    renderElecGasModule();
+                    dirtyPortalViewsSet.delete('mod:elec-gas-bills');
+                }
                 openModuleNotificationsPopupIfAny('elec-gas-bills');
             } else if (modName === 'classroom-allocation') {
-                renderClassroomsTables();
-                dirtyPortalViewsSet.delete('mod:classroom-allocation');
+                if (dirtyPortalViewsSet.has('mod:classroom-allocation') || !document.getElementById('maleClassroomsTableBody')?.children.length) {
+                    renderClassroomsTables();
+                    dirtyPortalViewsSet.delete('mod:classroom-allocation');
+                }
                 openModuleNotificationsPopupIfAny('classroom-allocation');
             } else if (modName === 'dawat-estates') {
                 const subToRender = currentActiveDawatSubHeader || 'estate-details';
@@ -8867,8 +9266,15 @@ window.loadClassroomsFromCloud = async function() {
                 if (currentActiveDawatSubHeader) {
                     openModuleNotificationsPopupIfAny('dawat-estates', currentActiveDawatSubHeader);
                 }
+            } else if (modName === 'faculty-dir') {
+                if (dirtyPortalViewsSet.has('mod:faculty-dir') || !document.getElementById('facultyTableBody')?.children.length) {
+                    renderSpecificPortalModule(modName);
+                }
+            } else if (modName === 'inventory') {
+                if (dirtyPortalViewsSet.has('mod:inventory') || dirtyPortalViewsSet.has('keys-sub:' + activeKeysSubTab)) {
+                    renderSpecificPortalModule(modName);
+                }
             } else {
-                // Render faculty-dir, inventory, or admin-access on demand when opened
                 renderSpecificPortalModule(modName);
             }
         };
@@ -8910,7 +9316,9 @@ window.loadClassroomsFromCloud = async function() {
             }
 
             currentActiveDawatSubHeader = secName;
-            renderSpecificDawatSubHeader(secName);
+            if (dirtyPortalViewsSet.has('sub:' + secName) || dirtyPortalViewsSet.has('mod:dawat-estates')) {
+                renderSpecificDawatSubHeader(secName);
+            }
 
             const dawatModEl = document.getElementById('module-dawat-estates');
             if (dawatModEl && !dawatModEl.classList.contains('hidden')) {
@@ -10065,11 +10473,9 @@ await recordDawatEstatesNotification(
                 return;
             }
 
-            filteredList.forEach((f, idx) => {
-                const safeId = String(f.id).replace(/'/g, "\\'");
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-
+            const viewOnlyNow = isCurrentUserViewOnly();
+            renderTableRowsInChunks('facultyTableBody', filteredList, (f, idx) => {
+                const safeId = String(f.id).replace(/'/g, "\'");
                 const categoryBadge = f.category
                     ? `<span class="bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap">${f.category}</span>`
                     : `<span class="text-gray-400 text-xs italic">-</span>`;
@@ -10084,7 +10490,7 @@ await recordDawatEstatesNotification(
                     genderBadge = `<span class="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded-full">${f.gender}</span>`;
                 }
 
-                tr.innerHTML = `
+                return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-3 text-center font-semibold text-gray-500">${idx + 1}</td>
                     <td class="p-3 font-mono font-bold text-emerald-800">${f.its || '-'}</td>
                     <td class="p-3 font-medium text-gray-900">${f.name || '-'}</td>
@@ -10094,11 +10500,10 @@ await recordDawatEstatesNotification(
                     <td class="p-3 text-center space-x-2 whitespace-nowrap">
                         <button data-crud="true" onclick="openEditFaculty('${safeId}')" class="crud-action-btn text-blue-600 hover:text-blue-800" title="Edit Member"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button data-crud="true" onclick="deleteFaculty('${safeId}')" class="crud-action-btn text-red-600 hover:text-red-800" title="Delete Member"><i class="fa-solid fa-trash"></i></button>
-                        ${isCurrentUserViewOnly() ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
+                        ${viewOnlyNow ? '<span class="text-xs text-gray-400 italic">View Only</span>' : ''}
                     </td>
-                `;
-                tbody.appendChild(tr);
-            });
+                </tr>`;
+            }, 100, 150);
         };
 
         window.openAddFacultyModal = function() {
@@ -21569,7 +21974,23 @@ window.cleanDuplicateEstateAssets = async function() {
                     }
                 }
             });
-            renderKeysInventory();
+            // Only re-render the switched sub-tab if it is marked dirty or not yet rendered
+            if (tabName === 'dashboard') {
+                if (dirtyPortalViewsSet.has('keys-sub:dashboard') || !document.getElementById('keysAreaBreakdownGrid')?.children.length) {
+                    renderKeysDashboard();
+                    dirtyPortalViewsSet.delete('keys-sub:dashboard');
+                }
+            } else if (tabName === 'master') {
+                if (dirtyPortalViewsSet.has('keys-sub:master') || !document.getElementById('keysMasterTableBody')?.children.length) {
+                    renderKeysMasterTable();
+                    dirtyPortalViewsSet.delete('keys-sub:master');
+                }
+            } else if (tabName === 'people') {
+                if (dirtyPortalViewsSet.has('keys-sub:people') || !document.getElementById('keysPeopleTableBody')?.children.length) {
+                    renderKeysPeopleTracker();
+                    dirtyPortalViewsSet.delete('keys-sub:people');
+                }
+            }
         };
 
         window.renderKeysInventory = function() {
@@ -21586,13 +22007,19 @@ window.cleanDuplicateEstateAssets = async function() {
             const peopleBadge = document.getElementById('keysPeopleTabCountBadge');
             if (peopleBadge) peopleBadge.innerText = String(Array.isArray(facultyData) ? facultyData.length : 0);
 
+            ['dashboard', 'master', 'people'].forEach(t => dirtyPortalViewsSet.add('keys-sub:' + t));
+
             if (activeKeysSubTab === 'dashboard') {
                 renderKeysDashboard();
+                dirtyPortalViewsSet.delete('keys-sub:dashboard');
             } else if (activeKeysSubTab === 'master') {
                 renderKeysMasterTable();
+                dirtyPortalViewsSet.delete('keys-sub:master');
             } else if (activeKeysSubTab === 'people') {
                 renderKeysPeopleTracker();
+                dirtyPortalViewsSet.delete('keys-sub:people');
             }
+            dirtyPortalViewsSet.delete('mod:inventory');
         };
 
         function populateKeysAreaDropdowns() {
@@ -21616,6 +22043,27 @@ window.cleanDuplicateEstateAssets = async function() {
         // =========================================================================
         // TAB 1: DASHBOARD RENDERER & CUSTOM AREA LOGIC
         // =========================================================================
+
+        const KEY_AREA_GUIDE_META = {
+            'Academic & Admin Bldg': { code: 'AA', ranges: ['001-010 Master', '011-175 Gen', '176-405 Office'] },
+            'Mahad al-Zahra Bldg': { code: 'MZ', ranges: ['406-491 Gen', '492-539 Office'] },
+            'Religious Block': { code: 'RB', ranges: ['540-573 Gen', '574-580 Office'] },
+            'Mawaid & Kitchen Bldg': { code: 'KM', ranges: ['581-632 Gen', '633-646 Office'] },
+            'Maskan (Boys Hostel)': { code: 'BH', ranges: ['647-724 Gen', '725-751 Office'] },
+            'Rabwat (Girls Hostel)': { code: 'GH', ranges: ['752-839 Gen', '840-871 Office'] },
+            'Faculty Bldg': { code: 'FB', ranges: ['872-889 Gen'] },
+            'Compound Area': { code: 'CA', ranges: ['890-924 Gen'] },
+            'Najmi Bldg': { code: 'NJ', ranges: ['925-960 Gen', '961-980 Office'] },
+            'Lockers': { code: 'LK', ranges: ['981+ Gen'] }
+        };
+
+        function getAreaGuideMeta(areaName) {
+            const clean = String(areaName || '').trim().toLowerCase();
+            for (const [k, v] of Object.entries(KEY_AREA_GUIDE_META)) {
+                if (k.toLowerCase() === clean) return v;
+            }
+            return null;
+        }
 
         function getAreaIconClass(areaName) {
             const lower = String(areaName || '').toLowerCase();
@@ -21704,7 +22152,13 @@ window.cleanDuplicateEstateAssets = async function() {
                                     <span class="bg-emerald-100 text-emerald-800 p-2 rounded-lg text-sm shrink-0">
                                         <i class="${getAreaIconClass(areaName)}"></i>
                                     </span>
-                                    <h4 class="font-extrabold text-gray-900 text-xs sm:text-sm leading-snug break-words">${areaName}</h4>
+                                    <div>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <h4 class="font-extrabold text-gray-900 text-xs sm:text-sm leading-snug break-words">${areaName}</h4>
+                                            ${getAreaGuideMeta(areaName) ? `<span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold text-[10px] px-1.5 py-0.2 rounded" title="Building Prefix Code">${getAreaGuideMeta(areaName).code}</span>` : ''}
+                                        </div>
+                                        ${getAreaGuideMeta(areaName) ? `<div class="flex flex-wrap gap-1 mt-1">${getAreaGuideMeta(areaName).ranges.map(rg => `<span class="bg-slate-100 text-slate-700 border border-slate-300 font-mono text-[9.5px] font-bold px-1.5 py-0.2 rounded">${rg}</span>`).join('')}</div>` : ''}
+                                    </div>
                                 </div>
                                 <div class="flex items-center space-x-1 shrink-0">
                                     ${expiredBadge}
@@ -21742,6 +22196,8 @@ window.cleanDuplicateEstateAssets = async function() {
         };
 
         window.filterKeysMasterByArea = function(areaName) {
+            const codeMap = { 'AA': 'Academic & Admin Bldg', 'MZ': 'Mahad al-Zahra Bldg', 'RB': 'Religious Block', 'KM': 'Mawaid & Kitchen Bldg', 'BH': 'Maskan (Boys Hostel)', 'GH': 'Rabwat (Girls Hostel)', 'FB': 'Faculty Bldg', 'CA': 'Compound Area', 'NJ': 'Najmi Bldg', 'LK': 'Lockers' };
+            areaName = codeMap[String(areaName || '').trim().toUpperCase()] || areaName;
             populateKeysAreaDropdowns();
             const sel = document.getElementById('keysMasterAreaFilter');
             if (sel) sel.value = areaName || '';
@@ -21853,7 +22309,7 @@ window.cleanDuplicateEstateAssets = async function() {
                 return;
             }
 
-            tbody.innerHTML = filtered.map(k => {
+            renderTableRowsInChunks('keysMasterTableBody', filtered, (k) => {
                 const safeDocId = String(k.id).replace(/'/g, "\\'");
                 const isExpired = hasKeyExpiredIssuance(k, todayStr);
                 const activeHolders = Array.isArray(k.holders) ? k.holders.filter(h => h && h.status !== 'returned') : [];
@@ -21957,7 +22413,7 @@ window.cleanDuplicateEstateAssets = async function() {
                         </td>
                     </tr>
                 `;
-            }).join('');
+            }, 100, 150);
         };
 
         // Admin Edit / Add Key ID Modal Functions
@@ -22499,21 +22955,40 @@ Shukran`;
             const templateName = selRadio ? selRadio.value : 'key_issue_updated';
             const locationStr = formatKeyWatiLocationString(k);
 
+            const cleanLocVal = String(locationStr || '-').replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
             let customParams = [];
             if (templateName === 'key_issue_imtehan') {
+                const cleanNameVal = String(h.holderName || 'Member').replace(/[\r\n\t]+/g, ' ').trim();
+                const cleanIssueVal = formatKeyDateDdMmYyyySlash(h.issueDate) || '-';
+                const cleanExpVal = h.expiryDate ? formatKeyDateDdMmYyyySlash(h.expiryDate) : 'N/A';
                 customParams = [
-                    { name: "1", value: h.holderName || 'Member' },
-                    { name: "2", value: locationStr },
-                    { name: "3", value: formatKeyDateDdMmYyyySlash(h.issueDate) },
-                    { name: "4", value: h.expiryDate ? formatKeyDateDdMmYyyySlash(h.expiryDate) : 'N/A' }
+                    { name: "name", value: cleanNameVal },
+                    { name: "location", value: cleanLocVal },
+                    { name: "issuedate", value: cleanIssueVal },
+                    { name: "expirydate", value: cleanExpVal },
+                    { name: "issue_date", value: cleanIssueVal },
+                    { name: "expiry_date", value: cleanExpVal },
+                    { name: "1", value: cleanNameVal },
+                    { name: "2", value: cleanLocVal },
+                    { name: "3", value: cleanIssueVal },
+                    { name: "4", value: cleanExpVal }
                 ];
             } else {
-                const nameWithIts = h.holderIts ? `${h.holderName}-${h.holderIts}` : h.holderName;
+                const nameWithIts = h.holderIts ? `${h.holderName}-${h.holderIts}` : (h.holderName || 'Member');
+                const cleanNameVal = String(nameWithIts).replace(/[\r\n\t]+/g, ' ').trim();
+                const cleanIssueVal = formatKeyDateDdMmmYyyy(h.issueDate) || '-';
+                const cleanExpVal = h.expiryDate ? formatKeyDateDdMmmYyyy(h.expiryDate) : 'N/A';
                 customParams = [
-                    { name: "1", value: nameWithIts },
-                    { name: "2", value: locationStr },
-                    { name: "3", value: formatKeyDateDdMmmYyyy(h.issueDate) },
-                    { name: "4", value: h.expiryDate ? formatKeyDateDdMmmYyyy(h.expiryDate) : 'N/A' }
+                    { name: "name", value: cleanNameVal },
+                    { name: "location", value: cleanLocVal },
+                    { name: "issuedate", value: cleanIssueVal },
+                    { name: "expirydate", value: cleanExpVal },
+                    { name: "issue_date", value: cleanIssueVal },
+                    { name: "expiry_date", value: cleanExpVal },
+                    { name: "1", value: cleanNameVal },
+                    { name: "2", value: cleanLocVal },
+                    { name: "3", value: cleanIssueVal },
+                    { name: "4", value: cleanExpVal }
                 ];
             }
 
@@ -22566,6 +23041,14 @@ Shukran`;
             document.getElementById('ckrReturnDateInput').value = getLocalTodayDateString();
             document.getElementById('ckrSendWhatsappCheckbox').checked = true;
 
+            let phone = h.holderMobile || '';
+            if (!phone) {
+                const dirCheck = matchHolderAgainstDirectory(h.holderName, h.holderIts);
+                if (dirCheck.holderMobile) phone = dirCheck.holderMobile;
+            }
+            const ckrPhoneEl = document.getElementById('ckrRecipientPhoneInput');
+            if (ckrPhoneEl) ckrPhoneEl.value = normalizeWhatsAppPhone(phone);
+
             document.getElementById('modalConfirmKeyReturn')?.classList.remove('hidden');
         };
 
@@ -22575,6 +23058,7 @@ Shukran`;
             const holderId = document.getElementById('ckrHolderId')?.value;
             const returnDateIso = document.getElementById('ckrReturnDateInput')?.value || getLocalTodayDateString();
             const sendWa = document.getElementById('ckrSendWhatsappCheckbox')?.checked ?? true;
+            const inputPhone = (document.getElementById('ckrRecipientPhoneInput')?.value || '').trim();
 
             const k = keysInventoryData.find(item => String(item.id) === String(keyDocId));
             if (!k || !Array.isArray(k.holders)) return;
@@ -22596,6 +23080,7 @@ Shukran`;
                 if (!Array.isArray(k.history)) k.history = [];
                 k.history.push({
                     ...holderObj,
+                    holderMobile: inputPhone ? normalizeWhatsAppPhone(inputPhone) : (holderObj.holderMobile || ''),
                     status: 'returned',
                     returnDate: returnDateIso
                 });
@@ -22608,20 +23093,30 @@ Shukran`;
                 // Automatically send WATI WhatsApp notification using template: key_return
                 let waStatusNote = '';
                 if (sendWa) {
-                    let phone = holderObj.holderMobile || '';
+                    let phone = inputPhone || holderObj.holderMobile || '';
                     if (!phone) {
                         const dirCheck = matchHolderAgainstDirectory(holderObj.holderName, holderObj.holderIts);
                         if (dirCheck.holderMobile) phone = dirCheck.holderMobile;
                     }
                     const cleanPhone = normalizeWhatsAppPhone(phone);
                     if (cleanPhone && cleanPhone.length >= 10) {
+                        const cleanNameVal = String(holderObj.holderName || 'Member').replace(/[\r\n\t]+/g, ' ').trim();
+                        const cleanLocVal = String(formatKeyWatiLocationString(k) || '-').replace(/[\r\n\t]+/g, ' ').trim();
+                        const cleanRetDateVal = formatKeyDateDdMmmYyyy(returnDateIso) || '-';
                         const returnParams = [
-                            { name: "1", value: holderObj.holderName || 'Member' },
-                            { name: "2", value: formatKeyWatiLocationString(k) },
-                            { name: "3", value: formatKeyDateDdMmmYyyy(returnDateIso) }
+                            { name: "name", value: cleanNameVal },
+                            { name: "location", value: cleanLocVal },
+                            { name: "returndate", value: cleanRetDateVal },
+                            { name: "return_date", value: cleanRetDateVal },
+                            { name: "issuedate", value: cleanRetDateVal },
+                            { name: "1", value: cleanNameVal },
+                            { name: "2", value: cleanLocVal },
+                            { name: "3", value: cleanRetDateVal }
                         ];
                         const waRes = await dispatchWatiTemplateMessages([cleanPhone], returnParams, 'key_return', `Key_Return_${k.keyId}`);
-                        waStatusNote = waRes.ok ? ` & sent WATI key_return WhatsApp` : '';
+                        waStatusNote = waRes.ok ? ` & sent WATI key_return WhatsApp (+${cleanPhone})` : ` (WATI note: ${waRes.message})`;
+                    } else {
+                        waStatusNote = ' (No WhatsApp number provided for holder)';
                     }
                 }
 
@@ -22928,7 +23423,7 @@ Shukran`;
                 return;
             }
 
-            tbody.innerHTML = filtered.map((r, idx) => {
+            renderTableRowsInChunks('keysPeopleTableBody', filtered, (r, idx) => {
                 const unmatchedBadge = !r.isDirectoryMatch
                     ? `<span class="ml-2 bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded inline-flex items-center" title="Name not in Directory"><i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i>Not in Directory</span>`
                     : '';
@@ -22947,10 +23442,7 @@ Shukran`;
                             <span>${e.formattedTag}</span>
                         </button>`;
                     }).join('');
-                    keysDisplayHtml = `
-                        <div>${clickableBadges}</div>
-                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">${r.keysString}</div>
-                    `;
+                    keysDisplayHtml = `<div class="flex flex-wrap items-center gap-y-0.5">${clickableBadges}</div>`;
                 }
 
                 return `
@@ -22966,7 +23458,7 @@ Shukran`;
                         <td class="p-3">${keysDisplayHtml}</td>
                     </tr>
                 `;
-            }).join('');
+            }, 100, 150);
         };
 
         // =========================================================================

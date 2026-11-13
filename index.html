@@ -4069,14 +4069,28 @@
                         <input type="text" id="flatOwner" required class="w-full p-2 border rounded text-sm">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-3 bg-amber-50/60 p-2.5 rounded-lg border border-amber-200">
                     <div>
-                        <label class="text-xs font-semibold block mb-1">Electricity CA Number</label>
-                        <input type="text" id="flatElec" class="w-full p-2 border rounded text-sm">
+                        <label class="text-xs font-bold text-amber-950 block mb-1">Electricity CA Number</label>
+                        <input type="text" id="flatElec" placeholder="e.g. 152433211" class="w-full p-2 border rounded text-sm font-mono bg-white">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold block mb-1">Gas CA Number</label>
-                        <input type="text" id="flatGas" class="w-full p-2 border rounded text-sm">
+                        <label class="text-xs font-bold text-amber-950 block mb-1">Electricity Meter Number</label>
+                        <input type="text" id="flatElecMeterNo" placeholder="e.g. AE-8839201 / A8351780" class="w-full p-2 border rounded text-sm font-mono bg-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-orange-50/60 p-2.5 rounded-lg border border-orange-200">
+                    <div>
+                        <label class="text-xs font-bold text-orange-950 block mb-1">Gas CA Number</label>
+                        <input type="text" id="flatGas" placeholder="e.g. 100023491" class="w-full p-2 border rounded text-sm font-mono bg-white">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-orange-950 block mb-1">Gas Meter Number</label>
+                        <input type="text" id="flatGasMeterNo" placeholder="e.g. MGL-44102" class="w-full p-2 border rounded text-sm font-mono bg-white">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-orange-950 block mb-1">Gas BP Number</label>
+                        <input type="text" id="flatGasBpNo" placeholder="e.g. 1100223344" class="w-full p-2 border rounded text-sm font-mono bg-white">
                     </div>
                 </div>
 
@@ -5567,11 +5581,11 @@
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-700 block mb-1">CA Number (Account / Consumer No.) *</label>
-                    <input type="text" id="egMeterCaNumber" required placeholder="e.g. 152433211 or 100023491" class="w-full p-2.5 border rounded-lg text-sm font-mono">
+                    <input type="text" id="egMeterCaNumber" placeholder="e.g. 152433211 or 100023491" class="w-full p-2.5 border rounded-lg text-sm font-mono">
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-700 block mb-1">Meter Number *</label>
-                    <input type="text" id="egMeterNumber" required placeholder="e.g. AE-8839201 or MGL-44102" class="w-full p-2.5 border rounded-lg text-sm font-mono">
+                    <input type="text" id="egMeterNumber" placeholder="e.g. AE-8839201 or MGL-44102" class="w-full p-2.5 border rounded-lg text-sm font-mono">
                 </div>
                 <div id="egMeterBpNumberWrapper" class="hidden">
                     <label class="text-xs font-bold text-gray-700 block mb-1">BP Number</label>
@@ -8053,6 +8067,49 @@ function getOrCreateUtilityFolder_(name) {
         let societyBillsData = {};
         let estateAssetsData = [];
         let elecGasMetersData = [];
+        let elecGasBpNumbersData = {};
+        window._savingPortalDataTimer = null;
+
+        function loadElecGasBpMapCache() {
+            try {
+                const raw = localStorage.getItem('siyanat_elec_gas_bp_map');
+                const parsed = raw ? JSON.parse(raw) : {};
+                return (parsed && typeof parsed === 'object') ? parsed : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveElecGasBpMapCache(mapObj) {
+            try {
+                const merged = { ...loadElecGasBpMapCache(), ...(mapObj || {}) };
+                Object.keys(merged).forEach(k => {
+                    if (merged[k] === null || merged[k] === '__DELETED__') {
+                        delete merged[k];
+                    }
+                });
+                localStorage.setItem('siyanat_elec_gas_bp_map', JSON.stringify(merged));
+                elecGasBpNumbersData = merged;
+            } catch (e) {}
+        }
+
+        function getSavedBpNumberForGasMeter(m, gasIdxZeroBased) {
+            const directBp = String((m && (m.bpNumber || m.bpNo || m.bp)) || '').trim();
+            const map = { ...loadElecGasBpMapCache(), ...(elecGasBpNumbersData || {}) };
+            const mId = String((m && m.id) || `gas_${gasIdxZeroBased + 1}`).trim();
+            const lineKey = String((m && m.lineNumber) || `Line ${gasIdxZeroBased + 1}`).trim();
+            const caKey = String((m && m.caNumber) || '').trim();
+            if (directBp && directBp !== '-') {
+                // Persist into map so it can never be lost if an older client overwrites portalData/elecGasMeters
+                map[mId] = directBp;
+                if (lineKey) map[lineKey] = directBp;
+                if (caKey && !caKey.startsWith('MGL-CA-')) map[`ca_${caKey}`] = directBp;
+                try { localStorage.setItem('siyanat_elec_gas_bp_map', JSON.stringify(map)); } catch (e) {}
+                elecGasBpNumbersData = map;
+                return directBp;
+            }
+            return String(map[mId] || (lineKey && map[lineKey]) || (caKey && map[`ca_${caKey}`]) || map[`gas_${gasIdxZeroBased + 1}`] || '').trim();
+        }
         let elecGasBillsData = {};
         let elecGasLoginsData = [];
         let vacantBillsArchiveData = [];
@@ -8375,8 +8432,14 @@ function getOrCreateUtilityFolder_(name) {
                     <td class="p-3 font-bold text-emerald-800">${e.flatNo}</td>
                     <td class="p-3">${e.type} <span class="text-xs text-gray-500">(${e.sqft} SqFt)</span></td>
                     <td class="p-3">${e.owner}</td>
-                    <td class="p-3 text-xs font-mono">${e.elec || '-'}</td>
-                    <td class="p-3 text-xs font-mono">${e.gas || '-'}</td>
+                    <td class="p-3 text-xs font-mono">
+                        <div class="font-bold text-gray-900">CA: ${e.elec || '-'}</div>
+                        ${e.elecMeterNo ? `<div class="text-[11px] text-emerald-800 font-semibold">Meter: ${e.elecMeterNo}</div>` : ''}
+                    </td>
+                    <td class="p-3 text-xs font-mono">
+                        <div class="font-bold text-gray-900">CA: ${e.gas || '-'}</div>
+                        ${(e.gasMeterNo || e.gasBpNo) ? `<div class="text-[11px] text-orange-800 font-semibold">${e.gasMeterNo ? 'Mtr: ' + e.gasMeterNo : ''}${e.gasMeterNo && e.gasBpNo ? ' • ' : ''}${e.gasBpNo ? 'BP: ' + e.gasBpNo : ''}</div>` : ''}
+                    </td>
                     <td class="p-3">
                         ${e.isBachelor 
                             ? `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">Bachelor (${e.capacity} Beds)</span>`
@@ -9159,9 +9222,21 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     societyDocs = Array.isArray(data.docs) ? data.docs : (data.docs && typeof data.docs === 'object' ? Object.values(data.docs) : []);
                     maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
                     vacantBills = data.bills || {};
+                    if (data.elecGasBpNumbers && typeof data.elecGasBpNumbers === 'object') {
+                        elecGasBpNumbersData = { ...loadElecGasBpMapCache(), ...data.elecGasBpNumbers };
+                        saveElecGasBpMapCache(elecGasBpNumbersData);
+                    } else {
+                        elecGasBpNumbersData = loadElecGasBpMapCache();
+                    }
                     elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
                     elecGasLoginsData = normalizeElecGasLoginsList(data.elecGasLogins);
                     vacantBillsArchiveData = normalizeVacantBillsArchiveList(data.vacantBillsArchive, data.bills);
+                    if (data.facultyBldgMeters && typeof data.facultyBldgMeters === 'object') {
+                        facultyBldgMetersData = { ...loadFacultyBldgMetersCache(), ...data.facultyBldgMeters };
+                        saveFacultyBldgMetersCache(facultyBldgMetersData);
+                    } else {
+                        facultyBldgMetersData = loadFacultyBldgMetersCache();
+                    }
                     facultyBldgBillsData = normalizeFacultyBldgBillsData(data.facultyBldgBills);
 
                     let rawCloudEgBills = (data.elecGasBills && typeof data.elecGasBills === 'object') ? data.elecGasBills : {};
@@ -9557,14 +9632,30 @@ window.loadClassroomsFromCloud = async function() {
                     if (didNodeChange('bills')) {
                         vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
                     }
+                    if (data.elecGasBpNumbers !== undefined && data.elecGasBpNumbers && typeof data.elecGasBpNumbers === 'object') {
+                        elecGasBpNumbersData = { ...loadElecGasBpMapCache(), ...data.elecGasBpNumbers };
+                        saveElecGasBpMapCache(elecGasBpNumbersData);
+                    }
                     if (data.elecGasMeters !== undefined && didNodeChange('elecGasMeters')) {
+                        const rawIncomingSig = computeFastNodeSignature(data.elecGasMeters);
                         elecGasMetersData = ensureDefaultElecGasMeters(data.elecGasMeters);
+                        const healedSig = computeFastNodeSignature(elecGasMetersData);
+                        _cloudNodeSnapshots['elecGasMeters'] = healedSig;
+                        if (rawIncomingSig !== healedSig) {
+                            // Another tab/device with an older portal version stripped bpNumber; immediately heal Firebase!
+                            set(dbRef(db, 'portalData/elecGasMeters'), elecGasMetersData).catch(() => {});
+                            set(dbRef(db, 'elecGasMeters'), elecGasMetersData).catch(() => {});
+                        }
                     }
                     if (data.elecGasLogins !== undefined && didNodeChange('elecGasLogins')) {
                         elecGasLoginsData = normalizeElecGasLoginsList(data.elecGasLogins);
                     }
                     if (data.vacantBillsArchive !== undefined && didNodeChange('vacantBillsArchive')) {
                         vacantBillsArchiveData = normalizeVacantBillsArchiveList(data.vacantBillsArchive, vacantBills);
+                    }
+                    if (data.facultyBldgMeters !== undefined && data.facultyBldgMeters && typeof data.facultyBldgMeters === 'object') {
+                        facultyBldgMetersData = { ...loadFacultyBldgMetersCache(), ...data.facultyBldgMeters };
+                        saveFacultyBldgMetersCache(facultyBldgMetersData);
                     }
                     if (data.facultyBldgBills !== undefined && didNodeChange('facultyBldgBills')) {
                         facultyBldgBillsData = normalizeFacultyBldgBillsData(data.facultyBldgBills);
@@ -10313,9 +10404,10 @@ window.loadClassroomsFromCloud = async function() {
             } catch (errPersist) {
                 console.error("Error persisting estate notification to cloud:", errPersist);
             } finally {
-                setTimeout(() => {
+                if (window._savingPortalDataTimer) clearTimeout(window._savingPortalDataTimer);
+                window._savingPortalDataTimer = setTimeout(() => {
                     isSavingPortalData = false;
-                }, 1500);
+                }, 2000);
             }
         }
 
@@ -10578,15 +10670,17 @@ window.loadClassroomsFromCloud = async function() {
             watiConfig: watiConfig || {},
             estate_assets: estateAssetsData || [],
             elecGasMeters: elecGasMetersData || [],
+            elecGasBpNumbers: elecGasBpNumbersData || loadElecGasBpMapCache() || {},
             elecGasBills: elecGasBillsData || {},
             elecGasLogins: elecGasLoginsData || [],
             vacantBillsArchive: vacantBillsArchiveData || [],
             facultyBldgBills: facultyBldgBillsData || {},
+            facultyBldgMeters: facultyBldgMetersData || loadFacultyBldgMetersCache() || {},
             googleScriptUrl: GOOGLE_SCRIPT_URL || ''
         };
 
         const mirroredRootNodes = new Set([
-            'elecGasBills', 'classrooms', 'estate_assets', 'raihaan',
+            'elecGasMeters', 'elecGasBpNumbers', 'elecGasBills', 'classrooms', 'estate_assets', 'raihaan',
             'classroomYearArchives', 'notifications', 'keys', 'issued_keys'
         ]);
 
@@ -10612,9 +10706,10 @@ window.loadClassroomsFromCloud = async function() {
     } catch (err) {
         console.error("Error saving to cloud:", err);
     } finally {
-        setTimeout(() => {
+        if (window._savingPortalDataTimer) clearTimeout(window._savingPortalDataTimer);
+        window._savingPortalDataTimer = setTimeout(() => {
             isSavingPortalData = false;
-        }, 1200);
+        }, 2000);
     }
 };
 
@@ -11155,8 +11250,11 @@ window.loadClassroomsFromCloud = async function() {
             document.getElementById('flatType').value = flat.type;
             document.getElementById('flatSqft').value = flat.sqft;
             document.getElementById('flatOwner').value = flat.owner;
-            document.getElementById('flatElec').value = flat.elec;
-            document.getElementById('flatGas').value = flat.gas;
+            document.getElementById('flatElec').value = flat.elec || '';
+            if (document.getElementById('flatElecMeterNo')) document.getElementById('flatElecMeterNo').value = flat.elecMeterNo || '';
+            document.getElementById('flatGas').value = flat.gas || '';
+            if (document.getElementById('flatGasMeterNo')) document.getElementById('flatGasMeterNo').value = flat.gasMeterNo || '';
+            if (document.getElementById('flatGasBpNo')) document.getElementById('flatGasBpNo').value = flat.gasBpNo || '';
             document.getElementById('flatIsBachelor').checked = flat.isBachelor;
             document.getElementById('flatBedCapacity').value = flat.capacity || 4;
             toggleBachelorCapacityInput();
@@ -11176,8 +11274,11 @@ window.loadClassroomsFromCloud = async function() {
                 type: document.getElementById('flatType').value,
                 sqft: parseInt(document.getElementById('flatSqft').value),
                 owner: document.getElementById('flatOwner').value,
-                elec: document.getElementById('flatElec').value,
-                gas: document.getElementById('flatGas').value,
+                elec: (document.getElementById('flatElec')?.value || '').trim(),
+                elecMeterNo: (document.getElementById('flatElecMeterNo')?.value || '').trim(),
+                gas: (document.getElementById('flatGas')?.value || '').trim(),
+                gasMeterNo: (document.getElementById('flatGasMeterNo')?.value || '').trim(),
+                gasBpNo: (document.getElementById('flatGasBpNo')?.value || '').trim(),
                 isBachelor: isBachelor,
                 capacity: isBachelor ? parseInt(document.getElementById('flatBedCapacity').value) : 0,
                 archive: [],
@@ -11187,9 +11288,38 @@ window.loadClassroomsFromCloud = async function() {
             const flatDisplayLabel = `${flatObj.building}${flatObj.wing ? ' (' + flatObj.wing + ')' : ''} - Flat ${flatObj.flatNo}`;
             if(id) {
                 const idx = estatesData.findIndex(item => String(item.id) === String(id));
-                if(idx !== -1) estatesData[idx] = { ...estatesData[idx], ...flatObj };
+                if(idx !== -1) {
+                    estatesData[idx] = {
+                        ...estatesData[idx],
+                        building: flatObj.building,
+                        wing: flatObj.wing,
+                        flatNo: flatObj.flatNo,
+                        type: flatObj.type,
+                        sqft: flatObj.sqft,
+                        owner: flatObj.owner,
+                        elec: flatObj.elec,
+                        elecMeterNo: flatObj.elecMeterNo,
+                        gas: flatObj.gas,
+                        gasMeterNo: flatObj.gasMeterNo,
+                        gasBpNo: flatObj.gasBpNo,
+                        isBachelor: flatObj.isBachelor,
+                        capacity: flatObj.capacity
+                    };
+                }
             } else {
                 estatesData.push(flatObj);
+            }
+            // If this is a Faculty Bldg flat and a valid meter number was entered, sync to facultyBldgMetersData
+            if (String(flatObj.building || '').toLowerCase().includes('faculty')) {
+                const candidateMtr = flatObj.elecMeterNo || flatObj.elec;
+                if (candidateMtr && !/^(-|n\/a|na|nil|none)$/i.test(candidateMtr)) {
+                    if (typeof window.syncFacultyMeterFromEstates === 'function') {
+                        window.syncFacultyMeterFromEstates(flatObj.flatNo, candidateMtr);
+                    }
+                }
+            }
+            if (typeof window.renderElecGasModule === 'function') {
+                window.renderElecGasModule();
             }
             await saveCloudData();
 await recordDawatEstatesNotification(
@@ -19726,7 +19856,7 @@ window.cleanDuplicateEstateAssets = async function() {
                         lineNumber: isGas ? String(m.lineNumber || defaultLineNo).trim() : '',
                         caNumber: String(m.caNumber || '').trim(),
                         meterNumber: String(m.meterNumber || '').trim(),
-                        bpNumber: isGas ? String(m.bpNumber || '').trim() : '',
+                        bpNumber: isGas ? getSavedBpNumberForGasMeter(m, gasIdx - 1) : '',
                         areasCovered: isGas ? String(m.areasCovered || m.location || '').trim() : '',
                         location: String(m.location || m.areasCovered || '').trim()
                     };
@@ -19755,7 +19885,7 @@ window.cleanDuplicateEstateAssets = async function() {
                     lineNumber: `Line ${j}`,
                     caNumber: `MGL-CA-${padNum}`,
                     meterNumber: `MGL-MTR-${padNum}`,
-                    bpNumber: '',
+                    bpNumber: getSavedBpNumberForGasMeter({ id: `gas_${j}`, lineNumber: `Line ${j}` }, j - 1),
                     areasCovered: `Mahanagar Gas Meter #${j}`,
                     location: `Mahanagar Gas Meter #${j}`
                 });
@@ -20104,14 +20234,15 @@ window.cleanDuplicateEstateAssets = async function() {
 
                 const gasLineLabel = isGas ? (m.lineNumber || `Line ${Math.min(7, idx + 1)}`) : '';
                 const gasAreasCovered = isGas ? (m.areasCovered !== undefined ? m.areasCovered : (m.location || '')) : '';
+                const isBachMeter = Boolean(m.isBachelorFlatMeter) || String(m.id).startsWith('bach_');
                 const actionButtonsHtml = !viewOnly ? `
                     <div class="flex items-center space-x-0.5 shrink-0">
-                        <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="${isGas ? 'Edit Gas Line Details' : 'Edit CA Number, Meter No & Location'}">
+                        <button type="button" onclick="openEditElecGasMeterModal('${safeMeterId}')" class="crud-action-btn text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="${isBachMeter ? 'Edit CA, Meter & BP Details (Syncs with Dawat Estates)' : (isGas ? 'Edit Gas Line Details' : 'Edit CA Number, Meter No & Location')}">
                             <i class="fa-solid fa-pen-to-square text-xs"></i>
                         </button>
-                        <button type="button" onclick="deleteElecGasMeterFromRow('${safeMeterId}')" class="crud-action-btn text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50" title="Delete Meter Row">
+                        ${!isBachMeter ? `<button type="button" onclick="deleteElecGasMeterFromRow('${safeMeterId}')" class="crud-action-btn text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50" title="Delete Meter Row">
                             <i class="fa-solid fa-trash text-xs"></i>
-                        </button>
+                        </button>` : ''}
                     </div>` : '';
 
                 const mainDetailsHtml = isGas
@@ -20135,6 +20266,7 @@ window.cleanDuplicateEstateAssets = async function() {
                             <div class="w-full mt-0.5">
                                 <div class="eg-ca-text text-[12.5px] font-mono font-extrabold text-emerald-800 leading-snug w-full">CA: ${m.caNumber || '-'}</div>
                                 <div class="eg-mtr-text text-[11.5px] font-mono font-semibold text-gray-600 leading-snug w-full">Meter: ${m.meterNumber || '-'}</div>
+                                ${m.isBachelorFlatMeter && m.areasCovered ? `<div class="eg-loc-text text-[11px] font-bold text-teal-700 mt-0.5 leading-snug w-full">${m.areasCovered}</div>` : ''}
                             </div>
                         </div>`;
 
@@ -20205,6 +20337,51 @@ window.cleanDuplicateEstateAssets = async function() {
             if (form) form.reset();
 
             const deleteBtn = document.getElementById('btnDeleteEgMeter');
+            const utilSelectEl = document.getElementById('egMeterUtilityType');
+            const locInputEl = document.getElementById('egMeterLocation');
+            if (utilSelectEl) utilSelectEl.disabled = false;
+            if (locInputEl) locInputEl.readOnly = false;
+
+            if (meterId && (String(meterId).startsWith('bach_elec_') || String(meterId).startsWith('bach_gas_'))) {
+                const isGas = String(meterId).startsWith('bach_gas_');
+                const flatId = String(meterId).replace(/^bach_(elec|gas)_/, '');
+                const flat = (estatesData || []).find(f => String(f.id) === String(flatId));
+                if (!flat) return;
+
+                const wingStr = flat.wing ? ` (${flat.wing})` : '';
+                const flatTitle = `${flat.building || 'Building'}${wingStr} - Flat ${flat.flatNo || ''}`;
+                const cleanField = (v) => {
+                    const s = String(v || '').trim();
+                    return (/^(-|n\/a|na|nil|none)$/i.test(s)) ? '' : s;
+                };
+
+                document.getElementById('egMeterModalTitle').innerText = isGas
+                    ? `Edit Bachelor Flat Gas Details (${flatTitle})`
+                    : `Edit Bachelor Flat Electricity Details (${flatTitle})`;
+                document.getElementById('egMeterEditId').value = String(meterId);
+                if (utilSelectEl) {
+                    utilSelectEl.value = isGas ? 'gas' : 'electricity';
+                    utilSelectEl.disabled = true;
+                }
+                handleEgMeterUtilityTypeChange();
+                // Hide Line 1..7 selector for Bachelor Flats since line name is the Flat itself
+                document.getElementById('egMeterLineNumberWrapper')?.classList.add('hidden');
+                document.getElementById('egMeterCaNumber').value = isGas ? cleanField(flat.gas) : cleanField(flat.elec);
+                document.getElementById('egMeterNumber').value = isGas ? cleanField(flat.gasMeterNo) : cleanField(flat.elecMeterNo);
+                if (document.getElementById('egMeterBpNumber')) {
+                    document.getElementById('egMeterBpNumber').value = isGas ? cleanField(flat.gasBpNo) : '';
+                }
+                if (locInputEl) {
+                    locInputEl.value = flatTitle;
+                    locInputEl.readOnly = true;
+                }
+                const locLbl = document.getElementById('egMeterLocationLabel');
+                if (locLbl) locLbl.innerText = 'Bachelor Flat (Synced with Dawat Estates)';
+                if (deleteBtn) deleteBtn.classList.add('hidden');
+                document.getElementById('modalElecGasMeter').classList.remove('hidden');
+                return;
+            }
+
             if (meterId) {
                 const m = elecGasMetersData.find(item => String(item.id) === String(meterId));
                 if (!m) return;
@@ -20263,6 +20440,41 @@ window.cleanDuplicateEstateAssets = async function() {
             const areasCovered = isGas ? locationVal : '';
             const location = locationVal;
 
+            // Dual-Edit Handler: If editing a Bachelor Flat row (bach_elec_<flatId> or bach_gas_<flatId>), update estatesData directly!
+            if (editId.startsWith('bach_elec_') || editId.startsWith('bach_gas_')) {
+                const bIsGas = editId.startsWith('bach_gas_');
+                const flatId = editId.replace(/^bach_(elec|gas)_/, '');
+                const fIdx = (estatesData || []).findIndex(f => String(f.id) === String(flatId));
+                if (fIdx !== -1) {
+                    const flat = estatesData[fIdx];
+                    if (bIsGas) {
+                        flat.gas = caNumber || '-';
+                        flat.gasMeterNo = meterNumber || '';
+                        flat.gasBpNo = bpNumber || '';
+                    } else {
+                        flat.elec = caNumber || '-';
+                        flat.elecMeterNo = meterNumber || '';
+                    }
+                    estatesData[fIdx] = { ...flat };
+                    closeModal('modalElecGasMeter');
+                    renderElecGasModule();
+                    if (typeof renderEstateTable === 'function') renderEstateTable();
+                    if (typeof renderIntegratedView === 'function' && document.getElementById('integratedFlatSelect')?.value) renderIntegratedView();
+                    await saveCloudData();
+                    try {
+                        await set(dbRef(db, 'portalData/estates'), estatesData);
+                    } catch (errEst) {}
+                    const wingStr = flat.wing ? ` (${flat.wing})` : '';
+                    const flatTitle = `${flat.building || 'Building'}${wingStr} - Flat ${flat.flatNo || ''}`;
+                    await recordElecGasNotification(
+                        'edit-bachelor-meter',
+                        `Updated Bachelor Flat ${bIsGas ? 'Mahanagar Gas' : 'Adani Electricity'} details for "${flatTitle}" (CA: ${caNumber || '-'}, Meter: ${meterNumber || '-'}${bIsGas && bpNumber ? ', BP: ' + bpNumber : ''}) — Synced with Estates`
+                    );
+                    showAssetToast(`Saved & synced ${bIsGas ? 'Gas' : 'Electricity'} details for ${flatTitle} with Dawat Estates!`);
+                }
+                return;
+            }
+
             if (editId) {
                 const idx = elecGasMetersData.findIndex(m => String(m.id) === String(editId));
                 if (idx !== -1) {
@@ -20291,9 +20503,41 @@ window.cleanDuplicateEstateAssets = async function() {
                 });
             }
 
+            if (isGas) {
+                const targetMeter = editId
+                    ? elecGasMetersData.find(m => String(m.id) === String(editId))
+                    : elecGasMetersData[elecGasMetersData.length - 1];
+                const mIdKey = targetMeter ? String(targetMeter.id) : editId;
+                const gasList = elecGasMetersData.filter(m => m.utility === 'gas');
+                const gIdx = gasList.findIndex(m => String(m.id) === String(mIdKey));
+                const bpUpdate = { ...loadElecGasBpMapCache(), ...(elecGasBpNumbersData || {}) };
+                if (bpNumber) {
+                    if (mIdKey) bpUpdate[mIdKey] = bpNumber;
+                    if (lineNumber) bpUpdate[lineNumber] = bpNumber;
+                    if (caNumber && !caNumber.startsWith('MGL-CA-')) bpUpdate[`ca_${caNumber}`] = bpNumber;
+                    if (gIdx !== -1) bpUpdate[`gas_${gIdx + 1}`] = bpNumber;
+                } else {
+                    if (mIdKey) bpUpdate[mIdKey] = '__DELETED__';
+                    if (lineNumber) bpUpdate[lineNumber] = '__DELETED__';
+                    if (caNumber) bpUpdate[`ca_${caNumber}`] = '__DELETED__';
+                    if (gIdx !== -1) bpUpdate[`gas_${gIdx + 1}`] = '__DELETED__';
+                }
+                saveElecGasBpMapCache(bpUpdate);
+            }
+
             closeModal('modalElecGasMeter');
             renderElecGasModule();
             await saveCloudData();
+            try {
+                await Promise.all([
+                    set(dbRef(db, 'portalData/elecGasMeters'), elecGasMetersData),
+                    set(dbRef(db, 'elecGasMeters'), elecGasMetersData),
+                    set(dbRef(db, 'portalData/elecGasBpNumbers'), elecGasBpNumbersData || {}),
+                    set(dbRef(db, 'elecGasBpNumbers'), elecGasBpNumbersData || {})
+                ]);
+            } catch (eDirect) {
+                console.error("Direct meter save error:", eDirect);
+            }
             const displayTitle = isGas ? `${lineNumber} (${areasCovered})` : location;
             await recordElecGasNotification(
                 editId ? 'edit-meter' : 'add-meter',
@@ -26408,14 +26652,19 @@ Shukran`;
                 const resNames = Array.isArray(f.residents) && f.residents.length > 0
                     ? f.residents.map(r => r.name).join(', ')
                     : 'No residents assigned';
+                const cleanVal = (v) => {
+                    const s = String(v || '').trim();
+                    return (!s || /^(-|n\/a|na|nil|none)$/i.test(s)) ? '-' : s;
+                };
                 elecMeters.push({
                     id: `bach_elec_${f.id}`,
                     flatId: String(f.id),
                     isBachelorFlatMeter: true,
                     utility: 'electricity',
                     unitType: 'kWh',
-                    caNumber: String(f.elec || '-').trim() || '-',
-                    meterNumber: String(f.elecMeterNo || `Bachelor Flat (${resCount}/${f.capacity || 4} Beds)`).trim(),
+                    caNumber: cleanVal(f.elec),
+                    meterNumber: cleanVal(f.elecMeterNo),
+                    areasCovered: `Bachelor Flat (${resCount}/${f.capacity || 4} Beds) • ${resNames}`,
                     location: flatTitle,
                     residentsSummary: resNames,
                     flatObj: f
@@ -26476,7 +26725,96 @@ Shukran`;
             });
         }
 
+        let facultyBldgMetersData = {};
+
+        function loadFacultyBldgMetersCache() {
+            try {
+                const raw = localStorage.getItem('siyanat_faculty_bldg_meters');
+                const parsed = raw ? JSON.parse(raw) : {};
+                return (parsed && typeof parsed === 'object') ? parsed : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveFacultyBldgMetersCache(mapObj) {
+            try {
+                const merged = { ...loadFacultyBldgMetersCache(), ...(mapObj || {}) };
+                localStorage.setItem('siyanat_faculty_bldg_meters', JSON.stringify(merged));
+                facultyBldgMetersData = merged;
+            } catch (e) {}
+        }
+
+        function isValidUtilityIdentifier(val) {
+            const s = String(val || '').trim();
+            if (!s) return false;
+            return !/^(-|n\/a|na|nil|none|null|undefined)$/i.test(s);
+        }
+
+        window.syncFacultyMeterFromEstates = function(flatNo, meterVal) {
+            const fNo = String(flatNo || '').trim();
+            const mVal = String(meterVal || '').trim();
+            if (!fNo || !isValidUtilityIdentifier(mVal)) return;
+            const map = { ...loadFacultyBldgMetersCache(), ...(facultyBldgMetersData || {}) };
+            map[fNo] = mVal;
+            saveFacultyBldgMetersCache(map);
+            if (facultyBldgBillsData && typeof facultyBldgBillsData === 'object') {
+                Object.keys(facultyBldgBillsData).forEach(k => {
+                    if (facultyBldgBillsData[k] && String(facultyBldgBillsData[k].flatNo) === fNo) {
+                        facultyBldgBillsData[k].meterNo = mVal;
+                    }
+                });
+            }
+        };
+
+        window.saveFacultyBldgInlineMeterNo = async function(flatNo, newMeterVal) {
+            if (!guardEditingRights()) return;
+            const fNo = String(flatNo || '').trim();
+            const cleanMtr = String(newMeterVal || '').trim();
+            if (!fNo) return;
+
+            const map = { ...loadFacultyBldgMetersCache(), ...(facultyBldgMetersData || {}) };
+            map[fNo] = cleanMtr;
+            saveFacultyBldgMetersCache(map);
+
+            // Sync to Dawat Estates (estatesData) if matching Faculty Bldg flat exists
+            if (Array.isArray(estatesData)) {
+                estatesData.forEach(e => {
+                    if (!e) return;
+                    const b = String(e.building || '').trim().toLowerCase();
+                    if (b.includes('faculty') && String(e.flatNo || '').trim() === fNo) {
+                        e.elecMeterNo = cleanMtr;
+                        if (!isValidUtilityIdentifier(e.elec)) {
+                            e.elec = cleanMtr;
+                        }
+                    }
+                });
+            }
+
+            // Also update meterNo in any saved monthly bills for this flat so PDF immediately reflects the new Meter No!
+            if (facultyBldgBillsData && typeof facultyBldgBillsData === 'object') {
+                Object.keys(facultyBldgBillsData).forEach(k => {
+                    if (facultyBldgBillsData[k] && String(facultyBldgBillsData[k].flatNo) === fNo) {
+                        facultyBldgBillsData[k].meterNo = cleanMtr;
+                    }
+                });
+            }
+
+            renderEgFacultyBldgModule();
+            if (typeof renderEstateTable === 'function') renderEstateTable();
+            await saveCloudData();
+            try {
+                await Promise.all([
+                    set(dbRef(db, 'portalData/facultyBldgMeters'), facultyBldgMetersData || {}),
+                    set(dbRef(db, 'portalData/estates'), estatesData || []),
+                    set(dbRef(db, 'portalData/facultyBldgBills'), facultyBldgBillsData || {})
+                ]);
+            } catch (eSync) {}
+            showAssetToast(`Saved Meter No. "${cleanMtr || '-'}" for Faculty Bldg Flat ${fNo}`);
+        };
+
         function getFacultyBldgFlatsList() {
+            const savedMetersMap = { ...loadFacultyBldgMetersCache(), ...(facultyBldgMetersData || {}) };
             const estateFacFlats = (estatesData || []).filter(e => {
                 if (!e) return false;
                 const b = String(e.building || '').trim().toLowerCase();
@@ -26489,13 +26827,32 @@ Shukran`;
                 if (fNo) byFlatNo.set(fNo, e);
             });
 
+            const resolveFacultyMeterNo = (fNo, estMatch, fallbackDefault) => {
+                if (savedMetersMap[fNo] !== undefined && String(savedMetersMap[fNo]).trim() !== '' && isValidUtilityIdentifier(savedMetersMap[fNo])) {
+                    return String(savedMetersMap[fNo]).trim();
+                }
+                if (estMatch) {
+                    if (isValidUtilityIdentifier(estMatch.elecMeterNo)) return String(estMatch.elecMeterNo).trim();
+                    if (isValidUtilityIdentifier(estMatch.elec)) return String(estMatch.elec).trim();
+                }
+                return fallbackDefault || '';
+            };
+
             const merged = [];
             DEFAULT_FACULTY_BLDG_FLATS.forEach(defFlat => {
                 const estMatch = byFlatNo.get(defFlat.flatNo);
+                const resolvedMeter = resolveFacultyMeterNo(defFlat.flatNo, estMatch, defFlat.meterNo);
+                // Repair any existing saved bills for this flat that had N/A or empty meterNo
+                if (resolvedMeter && facultyBldgBillsData && typeof facultyBldgBillsData === 'object') {
+                    Object.keys(facultyBldgBillsData).forEach(k => {
+                        const r = facultyBldgBillsData[k];
+                        if (r && String(r.flatNo) === String(defFlat.flatNo) && !isValidUtilityIdentifier(r.meterNo)) {
+                            r.meterNo = resolvedMeter;
+                        }
+                    });
+                }
                 if (estMatch) {
                     byFlatNo.delete(defFlat.flatNo);
-                    const estElec = String(estMatch.elec || '').trim();
-                    const meterNo = (estElec && estElec !== '-') ? estElec : defFlat.meterNo;
                     merged.push({
                         id: String(estMatch.id || `fac_flat_${defFlat.flatNo}`),
                         flatNo: defFlat.flatNo,
@@ -26503,7 +26860,7 @@ Shukran`;
                         wing: estMatch.wing || '',
                         name: (estMatch.occupant && String(estMatch.occupant).trim() !== '') ? String(estMatch.occupant).trim() : defFlat.name,
                         contact: (estMatch.contact && String(estMatch.contact).trim() !== '') ? String(estMatch.contact).trim() : defFlat.contact,
-                        meterNo: meterNo,
+                        meterNo: resolvedMeter,
                         gasCa: String(estMatch.gas || '-').trim(),
                         defaultPrevBill: defFlat.defaultPrevBill || 0,
                         defaultLastPaid: defFlat.defaultLastPaid || 0,
@@ -26517,7 +26874,7 @@ Shukran`;
                         wing: '',
                         name: defFlat.name,
                         contact: defFlat.contact,
-                        meterNo: defFlat.meterNo,
+                        meterNo: resolvedMeter,
                         gasCa: '-',
                         defaultPrevBill: defFlat.defaultPrevBill || 0,
                         defaultLastPaid: defFlat.defaultLastPaid || 0,
@@ -26528,6 +26885,7 @@ Shukran`;
 
             // Also include any additional Faculty Bldg flats added in Estate Details beyond the standard 11
             byFlatNo.forEach((estMatch, fNo) => {
+                const resolvedMeter = resolveFacultyMeterNo(fNo, estMatch, '');
                 merged.push({
                     id: String(estMatch.id || `fac_flat_${fNo}`),
                     flatNo: fNo,
@@ -26535,7 +26893,7 @@ Shukran`;
                     wing: estMatch.wing || '',
                     name: String(estMatch.occupant || 'Unallocated').trim(),
                     contact: String(estMatch.contact || '-').trim(),
-                    meterNo: String(estMatch.elec || '-').trim(),
+                    meterNo: resolvedMeter,
                     gasCa: String(estMatch.gas || '-').trim(),
                     defaultPrevBill: 0,
                     defaultLastPaid: 0,
@@ -27820,10 +28178,10 @@ Shukran`;
                 const mIdx = monthIndices[0] || 0;
                 thead.innerHTML = `
                     <tr>
-                        <th class="p-3 w-12 text-center">#</th>
+                        <th class="p-3 w-10 text-center">#</th>
                         <th class="p-3">Flat No &amp; Faculty Occupant</th>
-                        <th class="p-3">Contact &amp; Meter No</th>
-                        <th class="p-3 text-center">Reading Dates</th>
+                        <th class="p-3 text-center min-w-[165px]">Meter No. (Editable)</th>
+                        <th class="p-3 text-center"> Reading Dates</th>
                         <th class="p-3 text-right">Units Consumed</th>
                         <th class="p-3 text-right">Prev. Bill &amp; Paid</th>
                         <th class="p-3 text-center min-w-[260px]">${EG_MONTH_NAMES[mIdx]} ${selYear} Bill, Letterhead PDF &amp; Edit</th>
@@ -27902,12 +28260,22 @@ Shukran`;
                             <td class="p-3">
                                 <div class="flex items-center space-x-2">
                                     <span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded text-xs">Flat ${f.flatNo}</span>
-                                    <span class="font-extrabold text-gray-900 text-sm">${f.name}</span>
+                                    <div>
+                                        <div class="font-extrabold text-gray-900 text-sm leading-snug">${f.name}</div>
+                                        <div class="text-[11px] font-mono text-gray-500"><i class="fa-solid fa-phone text-[9.5px] mr-1"></i>${f.contact || '-'}</div>
+                                    </div>
                                 </div>
                             </td>
-                            <td class="p-3 font-mono text-xs">
-                                <div class="font-bold text-emerald-900">Meter: ${f.meterNo || '-'}</div>
-                                <div class="text-gray-600"><i class="fa-solid fa-phone text-[10px] mr-1"></i>${f.contact || '-'}</div>
+                            <td class="p-3 text-center">
+                                <div class="inline-flex items-center space-x-1 bg-indigo-50/70 p-1 rounded-lg border border-indigo-200">
+                                    <input type="text" id="facInlineMeter_${safeFlatNo}" value="${(f.meterNo && f.meterNo !== '-') ? f.meterNo : ''}" placeholder="Add Meter No"
+                                        onchange="saveFacultyBldgInlineMeterNo('${safeFlatNo}', this.value)"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"
+                                        class="w-28 px-2 py-1 border border-indigo-300 rounded text-xs font-mono font-extrabold text-indigo-950 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none text-center"
+                                        ${viewOnly ? 'disabled' : ''}
+                                        title="Edit Meter No. for Flat ${f.flatNo}">
+                                    ${!viewOnly ? `<button type="button" onclick="saveFacultyBldgInlineMeterNo('${safeFlatNo}', document.getElementById('facInlineMeter_${safeFlatNo}')?.value || '')" class="crud-action-btn bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-[10px] font-bold transition shadow-sm" title="Save Meter No."><i class="fa-solid fa-check"></i></button>` : ''}
+                                </div>
                             </td>
                             <td class="p-3 text-center">${readingDatesHtml}</td>
                             <td class="p-3 text-right">${unitsHtml}</td>
@@ -27995,7 +28363,16 @@ Shukran`;
                             <td class="p-2 text-center font-bold text-gray-500 bg-white">${idx + 1}</td>
                             <td class="p-2.5 sticky left-0 bg-white z-10 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]">
                                 <div class="font-extrabold text-indigo-950 text-xs">Flat ${f.flatNo} — ${f.name}</div>
-                                <div class="text-[11px] font-mono text-gray-600">Meter: <strong>${f.meterNo || '-'}</strong> • ${f.contact || '-'}</div>
+                                <div class="text-[10.5px] font-mono text-gray-500 mb-1"><i class="fa-solid fa-phone text-[9px] mr-1"></i>${f.contact || '-'}</div>
+                                <div class="inline-flex items-center space-x-1">
+                                    <span class="text-[10px] font-bold text-gray-600">Meter:</span>
+                                    <input type="text" id="facGridMeter_${safeFlatNo}" value="${(f.meterNo && f.meterNo !== '-') ? f.meterNo : ''}" placeholder="Add Meter"
+                                        onchange="saveFacultyBldgInlineMeterNo('${safeFlatNo}', this.value)"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"
+                                        class="w-24 px-1.5 py-0.5 border border-indigo-300 rounded text-[11px] font-mono font-extrabold text-indigo-950 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                                        ${viewOnly ? 'disabled' : ''}>
+                                    ${!viewOnly ? `<button type="button" onclick="saveFacultyBldgInlineMeterNo('${safeFlatNo}', document.getElementById('facGridMeter_${safeFlatNo}')?.value || '')" class="crud-action-btn bg-indigo-600 hover:bg-indigo-700 text-white px-1.5 py-0.5 rounded text-[9.5px] font-bold" title="Save Meter No."><i class="fa-solid fa-check"></i></button>` : ''}
+                                </div>
                             </td>
                             ${cellsHtml}
                             <td class="p-2.5 text-right bg-indigo-50/40 border-l align-middle">
@@ -28073,7 +28450,7 @@ Shukran`;
             if (existingRec && existingRec.isSaved) {
                 document.getElementById('facOccupantNameInput').value = existingRec.occupantName || flatObj.name || '';
                 document.getElementById('facOccupantContactInput').value = existingRec.occupantContact || flatObj.contact || '';
-                document.getElementById('facMeterNoInput').value = existingRec.meterNo || flatObj.meterNo || '';
+                document.getElementById('facMeterNoInput').value = (isValidUtilityIdentifier(existingRec.meterNo) ? existingRec.meterNo : flatObj.meterNo) || '';
                 document.getElementById('facBillDateInput').value = existingRec.billDate || todayIso;
                 document.getElementById('facPresentReadingDateInput').value = existingRec.presentReadingDate || todayIso;
                 document.getElementById('facPrevReadingDateInput').value = existingRec.prevReadingDate || (earlierRec ? earlierRec.presentReadingDate : '');
@@ -28266,6 +28643,20 @@ Shukran`;
             }
             facultyBldgBillsData[key] = record;
 
+            if (record.meterNo && isValidUtilityIdentifier(record.meterNo)) {
+                window.syncFacultyMeterFromEstates(record.flatNo, record.meterNo);
+                if (Array.isArray(estatesData)) {
+                    estatesData.forEach(e => {
+                        if (!e) return;
+                        const b = String(e.building || '').trim().toLowerCase();
+                        if (b.includes('faculty') && String(e.flatNo || '').trim() === String(record.flatNo)) {
+                            e.elecMeterNo = record.meterNo;
+                            if (!isValidUtilityIdentifier(e.elec)) e.elec = record.meterNo;
+                        }
+                    });
+                }
+            }
+
             // Sync main Faculty Bldg view selectors to show the saved bill's month/year immediately
             if (document.getElementById('egFacYearSelect')) document.getElementById('egFacYearSelect').value = record.year;
             if (document.getElementById('egFacMonthSelect')) document.getElementById('egFacMonthSelect').value = String(record.monthIdx);
@@ -28334,7 +28725,7 @@ Shukran`;
                 : `<span style="color:#9ca3af; font-style:italic; font-size:10px;">Meter Photo</span>`;
 
             return `
-                <div style="position:relative; width:100%; height:100%; min-height:840px; background-image:url('${DEPT_LETTERHEAD_B64}'); background-size:100% 100%; background-repeat:no-repeat; padding: 14.8% 6.8% 10.5% 6.8%; box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; color:#111827;">
+                <div style="position:relative; width:100%; height:100%; min-height:1122px; background-image:url('${DEPT_LETTERHEAD_B64}'); background-size:100% 100%; background-repeat:no-repeat; padding: 212px 52px 48px 52px; box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; color:#111827;">
                     <!-- Top 2 Side-by-Side Boxes -->
                     <div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:10px;">
                         <!-- Left Box -->
@@ -28387,7 +28778,7 @@ Shukran`;
                                     <td style="border-bottom:1px solid #374151; border-right:1px solid #374151; padding:3.5px 5px; text-align:center;">Bill month</td>
                                     <td style="border-bottom:1px solid #374151; border-right:1px solid #374151; padding:3.5px 5px; text-align:center; font-weight:800;">${rec.billMonthLabel}</td>
                                     <td style="border-bottom:1px solid #374151; border-right:1px solid #374151; padding:3.5px 5px; text-align:center;">Meter No</td>
-                                    <td style="border-bottom:1px solid #374151; padding:3.5px 5px; text-align:center; font-weight:800;">${rec.meterNo || '-'}</td>
+                                    <td style="border-bottom:1px solid #374151; padding:3.5px 5px; text-align:center; font-weight:800;">${isValidUtilityIdentifier(rec.meterNo) ? rec.meterNo : ((getFacultyBldgFlatsList().find(f => String(f.flatNo) === String(rec.flatNo)) || {}).meterNo || '-')}</td>
                                 </tr>
                                 <tr>
                                     <td style="border-right:1px solid #374151; padding:3.5px 5px; text-align:center;">Unit Consumed</td>
@@ -28528,8 +28919,8 @@ Shukran`;
             doc.setTextColor(17, 24, 39);
             doc.setDrawColor(17, 24, 39);
 
-            // 2. Top Left Box: DAWAT E HADIYAH (x=14, y=42, width=76, height=32.5)
-            const lx = 14, ly = 42, lw = 76;
+            // 2. Top Left Box: DAWAT E HADIYAH (Centered vertically below 'Facilities Management' logo at y=56mm)
+            const lx = 14, ly = 56, lw = 76;
             const rowH = 6.5;
             doc.setLineWidth(0.45);
             doc.rect(lx, ly, lw, rowH * 5);
@@ -28537,6 +28928,10 @@ Shukran`;
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9.5);
             doc.text('DAWAT E HADIYAH', lx + lw / 2, ly + 4.4, { align: 'center' });
+
+            const resolvedPdfMeterNo = isValidUtilityIdentifier(rec.meterNo)
+                ? String(rec.meterNo).trim()
+                : ((getFacultyBldgFlatsList().find(f => String(f.flatNo) === String(rec.flatNo)) || {}).meterNo || '-');
 
             const leftRows = [
                 ['Flat no', String(rec.flatNo || '-')],
@@ -28548,18 +28943,24 @@ Shukran`;
             leftRows.forEach((r, idx) => {
                 const ry = ly + rowH * (idx + 1);
                 if (idx < 3) doc.line(lx, ry + rowH, lx + lw, ry + rowH);
-                const splitX = idx === 3 ? lx + 28 : lx + 19;
+                const splitX = idx === 3 ? lx + 28 : lx + 16.5;
                 doc.line(splitX, ry, splitX, ry + rowH);
                 doc.setFont('helvetica', idx === 3 ? 'bold' : 'normal');
                 doc.setFontSize(8.2);
                 doc.text(r[0], lx + 2, ry + 4.3);
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(idx === 1 && r[1].length > 26 ? 7.2 : 8.5);
-                doc.text(r[1], splitX + (lx + lw - splitX) / 2, ry + 4.3, { align: 'center' });
+                let valFontSz = 8.5;
+                doc.setFontSize(valFontSz);
+                const maxValW = (lx + lw - splitX) - 3.2;
+                while (valFontSz > 5.8 && doc.getTextWidth(String(r[1])) > maxValW) {
+                    valFontSz -= 0.25;
+                    doc.setFontSize(valFontSz);
+                }
+                doc.text(String(r[1]), splitX + (lx + lw - splitX) / 2, ry + 4.3, { align: 'center' });
             });
 
-            // 3. Top Right Box: Bill & Reading Metadata (x=94, y=42, width=102, height=32.5)
-            const rx = 94, ry0 = 42, rw = 102;
+            // 3. Top Right Box: Bill & Reading Metadata (x=94, y=56, width=102, height=32.5)
+            const rx = 94, ry0 = 56, rw = 102;
             const c1 = 27, c2 = 23, c3 = 27, c4 = 25;
             doc.setLineWidth(0.45);
             doc.rect(rx, ry0, rw, rowH * 5);
@@ -28572,7 +28973,7 @@ Shukran`;
                 ['Bill Date', formatBillDateShortDdMmmYy(rec.billDate), 'Type of Supply', 'Single Phase'],
                 ['Tariff Details', 'LT I (B)', 'Sanctioned Load (kW)', '7.00'],
                 ['Present Reading Date', formatBillDateShortDdMmmYy(rec.presentReadingDate), 'Previous Reading Date', formatBillDateShortDdMmmYy(rec.prevReadingDate)],
-                ['Bill month', String(rec.billMonthLabel || '-'), 'Meter No', String(rec.meterNo || '-')],
+                ['Bill month', String(rec.billMonthLabel || '-'), 'Meter No', resolvedPdfMeterNo],
                 ['Unit Consumed', String(rec.unitConsumed ?? 0), 'Current Month Bill', fmt2(rec.roundSumPayable)]
             ];
             rightRows.forEach((r, idx) => {
@@ -28596,8 +28997,8 @@ Shukran`;
                 }
             });
 
-            // 4. Main HEADS | Rate | Amount (Rs) Table (x=14, y=78, width=182)
-            const tx = 14, ty = 78, tw = 182;
+            // 4. Main HEADS | Rate | Amount (Rs) Table (x=14, y=92, width=182)
+            const tx = 14, ty = 92, tw = 182;
             const headH = 5.5;
             const bodyRowH = 4.55;
             const payDateSuffix = rec.paymentReceivedDate ? ` (${formatDateToDdMmmYyyy(rec.paymentReceivedDate)})` : '';

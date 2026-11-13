@@ -24038,7 +24038,7 @@ Shukran`;
                                 ${unmatchedBadge}
                             </div>
                             ${r.contact ? `<div class="text-[11px] text-gray-500 font-mono mt-0.5">${r.contact}</div>` : ''}
-                            ${(r.entries.length > 0 && canUserEditCurrentModule()) ? `
+                            ${(r.entries.length > 0 && (!isCurrentUserViewOnly('keys'))) ? `
                                 <div class="mt-1.5">
                                     <button
                                         type="button"

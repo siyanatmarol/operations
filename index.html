@@ -6235,8 +6235,13 @@ function getOrCreateUtilityFolder_(name) {
                 </div>
 
                 <div>
-                    <label class="text-xs font-bold text-gray-700 block mb-1">Details / Description <span class="text-gray-400 font-normal">(Leave blank or '-' for Unassigned Key IDs)</span></label>
-                    <input type="text" id="editKeyDetailsInput" placeholder="e.g. Offices Main Door - 1500 (or leave blank for future provision)" class="w-full p-2.5 border rounded-lg text-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-1 mb-1">
+                        <label class="text-xs font-bold text-gray-700">Details / Description <span class="text-emerald-700 font-semibold">(Press Enter for new line; leave blank or '-' for Unassigned)</span></label>
+                        <button type="button" onclick="autoSplitEditKeyDetailsLines()" class="text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded font-bold transition" title="Automatically split multiple key items onto separate lines">
+                            <i class="fa-solid fa-bars-staggered mr-1"></i>Auto-Split Lines
+                        </button>
+                    </div>
+                    <textarea id="editKeyDetailsInput" rows="4" placeholder="e.g. Nr Octagon Staircase 2&#10;Cupboard Upper Left - 82&#10;Cupboard Upper Right - 82" class="w-full p-2.5 border rounded-lg text-sm leading-relaxed focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
 
                 <div>
@@ -22219,6 +22224,37 @@ window.cleanDuplicateEstateAssets = async function() {
             return noFlr && noRm && noDet;
         }
 
+        function formatMultiLineKeyDetails(rawDetails) {
+            if (rawDetails === undefined || rawDetails === null) return "-";
+            let s = String(rawDetails).replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+            if (!s || s === "-") return "-";
+            // If already multi-line, clean each line while preserving explicit line breaks
+            if (s.includes("\n")) {
+                return s.split("\n").map(line => line.trim()).filter(Boolean).join("\n");
+            }
+            // Auto-restore line breaks when multiple key items on a single line end with "- <number>" followed by the next item
+            let formatted = s
+                .replace(/(Staircase\s+\d+)\s+(?=Cupboard\b)/gi, "$1\n")
+                .replace(/(Windows)\s+(?=Facing\b)/gi, "$1\n")
+                .replace(/(-\s*\d+)\s+(?=[A-Za-z(])/g, "$1\n");
+            return formatted;
+        }
+
+        window.autoSplitEditKeyDetailsLines = function() {
+            const el = document.getElementById("editKeyDetailsInput");
+            if (!el) return;
+            const raw = String(el.value || "").trim();
+            if (!raw || raw === "-") return;
+            // Split on existing newlines or after "- <digits>" or semicolon/pipe separators
+            let updated = raw
+                .replace(/\r\n/g, "\n")
+                .replace(/(Staircase\s+\d+)\s+(?=Cupboard\b)/gi, "$1\n")
+                .replace(/(Windows)\s+(?=Facing\b)/gi, "$1\n")
+                .replace(/(-\s*\d+)\s+(?=[A-Za-z(])/g, "$1\n")
+                .replace(/\s*;\s*/g, "\n");
+            el.value = updated;
+        };
+
         function normalizeKeysInventoryList(rawKeys) {
             let arr = [];
             if (Array.isArray(rawKeys)) {
@@ -22246,7 +22282,7 @@ window.cleanDuplicateEstateAssets = async function() {
                 const docId = String(item.id || `key_${keyIdClean.replace(/[^a-zA-Z0-9]/g, '_')}_${idx}`);
                 const floorClean = String(item.floor || '-').trim() || '-';
                 const roomClean = String(item.roomNo || item.room || '-').trim() || '-';
-                const detailsClean = String(item.details || '-').trim() || '-';
+                const detailsClean = formatMultiLineKeyDetails(item.details);
                 const storageClean = String(item.storageLocation || item.storage || '-').trim() || '-';
 
                 const isUnassigned = (floorClean === '-' && roomClean === '-' && (detailsClean === '-' || detailsClean.toLowerCase() === 'unassigned'));
@@ -22933,7 +22969,7 @@ window.cleanDuplicateEstateAssets = async function() {
 
                 const detailsDisplayHtml = isUnassigned
                     ? `<span class="inline-flex items-center bg-slate-100 text-slate-600 border border-slate-300 px-2.5 py-0.5 rounded-full text-xs font-semibold italic" title="Designated for this building for future provision"><i class="fa-regular fa-bookmark mr-1.5 text-slate-500"></i>Unassigned Key ID (Future Provision)</span>`
-                    : (k.details || '-');
+                    : `<div class="whitespace-pre-line leading-snug">${formatMultiLineKeyDetails(k.details)}</div>`;
 
                 return `
                     <tr class="key-id-row ${isExpired ? 'key-row-expired' : (isUnassigned ? 'key-row-unassigned' : '')}">
@@ -23038,7 +23074,7 @@ window.cleanDuplicateEstateAssets = async function() {
             const area = (document.getElementById('editKeyAreaSelect')?.value || DEFAULT_KEY_AREAS[0]).trim();
             const floor = (document.getElementById('editKeyFloorInput')?.value || '-').trim() || '-';
             const roomNo = (document.getElementById('editKeyRoomInput')?.value || '-').trim() || '-';
-            const details = (document.getElementById('editKeyDetailsInput')?.value || '-').trim() || '-';
+            const details = String(document.getElementById('editKeyDetailsInput')?.value || '-').replace(/\r\n/g, '\n').split('\n').map(l => l.trim()).filter(Boolean).join('\n') || '-';
             const storageLocation = (document.getElementById('editKeyStorageInput')?.value || '-').trim() || '-';
             const totalKeys = Math.max(0, parseInt(document.getElementById('editKeyTotalCountInput')?.value || '0', 10) || 0);
 
@@ -23142,8 +23178,10 @@ window.cleanDuplicateEstateAssets = async function() {
             if (document.getElementById('kirModalKeyIdBadge')) document.getElementById('kirModalKeyIdBadge').innerText = k.keyId;
             if (document.getElementById('kirModalAreaBadge')) document.getElementById('kirModalAreaBadge').innerText = k.area || '-';
             if (document.getElementById('kirModalDetailsSubtitle')) {
-                document.getElementById('kirModalDetailsSubtitle').innerText =
-                    `Floor: ${k.floor || '-'} | Room No: ${k.roomNo || '-'} | Details: ${k.details || '-'} | Storage: ${k.storageLocation || '-'}`;
+                const subEl = document.getElementById('kirModalDetailsSubtitle');
+                subEl.classList.add('whitespace-pre-line');
+                subEl.innerText =
+                    `Floor: ${k.floor || '-'} | Room No: ${k.roomNo || '-'} | Storage: ${k.storageLocation || '-'}\nDetails: ${formatMultiLineKeyDetails(k.details)}`;
             }
             if (document.getElementById('kirModalTotalCount')) document.getElementById('kirModalTotalCount').innerText = String(totalCount);
             if (document.getElementById('kirModalAvailableCount')) document.getElementById('kirModalAvailableCount').innerText = String(availCount);
@@ -24074,7 +24112,7 @@ Shukran`;
             // Populate Area filter dropdown
             const areaSel = document.getElementById('bulkCleanAreaFilterSelect');
             if (areaSel) {
-                const areas = Array.from(new Set((keysInventoryData || []).map(k => String(k.areaBuilding || '').trim()).filter(Boolean)));
+                const areas = Array.from(new Set((keysInventoryData || []).map(k => String(k.area || '').trim()).filter(Boolean)));
                 areaSel.innerHTML = '<option value="ALL">All Areas / Buildings</option>' +
                     areas.map(a => `<option value="${a.replace(/"/g, '&quot;')}">${a}</option>`).join('');
             }
@@ -24184,7 +24222,7 @@ Shukran`;
             const list = [];
             (keysInventoryData || []).forEach(k => {
                 if (!k || !Array.isArray(k.holders)) return;
-                if (areaVal !== 'ALL' && String(k.areaBuilding || '').trim() !== areaVal) return;
+                if (areaVal !== 'ALL' && String(k.area || '').trim() !== areaVal) return;
 
                 k.holders.forEach(h => {
                     if (!h || h.status === 'returned') return;
@@ -24198,7 +24236,7 @@ Shukran`;
                     }
 
                     const compositeKey = `${k.id}__${h.id}`;
-                    const corpus = `${k.keyId || ''} ${k.areaBuilding || ''} ${k.floor || ''} ${k.roomNo || ''} ${k.keyDetails || ''} ${hName} ${hIts} ${h.holderMobile || ''} ${h.issueDate || ''} ${h.expiryDate || ''}`.toLowerCase();
+                    const corpus = `${k.keyId || ''} ${k.area || ''} ${k.floor || ''} ${k.roomNo || ''} ${k.details || ''} ${hName} ${hIts} ${h.holderMobile || ''} ${h.issueDate || ''} ${h.expiryDate || ''}`.toLowerCase();
                     if (tokens.length > 0 && !tokens.every(t => corpus.includes(t))) return;
 
                     list.push({
@@ -24206,8 +24244,8 @@ Shukran`;
                         keyDocId: String(k.id),
                         holderId: String(h.id),
                         keyId: k.keyId || '-',
-                        areaBuilding: k.areaBuilding || '-',
-                        floorRoomDetails: [k.floor ? `Fl: ${k.floor}` : '', k.roomNo && k.roomNo !== '-' ? `Rm: ${k.roomNo}` : '', k.keyDetails || ''].filter(Boolean).join(' | '),
+                        areaBuilding: k.area || '-',
+                        floorRoomDetails: [k.floor ? `Fl: ${k.floor}` : '', k.roomNo && k.roomNo !== '-' ? `Rm: ${k.roomNo}` : '', k.details || ''].filter(Boolean).join(' | '),
                         holderName: hName,
                         holderIts: hIts || 'N/A',
                         holderMobile: h.holderMobile || '-',
@@ -24380,7 +24418,7 @@ Shukran`;
                 });
                 if (k.holders.length !== beforeLen) {
                     const activeCount = k.holders.filter(h => h && h.status !== 'returned').length;
-                    k.availableStoreStock = Math.max(0, (Number(k.totalKeys) || 0) - activeCount);
+                    k.keysInStore = Math.max(0, (Number(k.totalKeys) || 0) - activeCount);
                     k.updatedAt = getLocalTodayDateString();
                 }
             });
@@ -24488,7 +24526,7 @@ Shukran`;
 
                         const floorVal = String(getVal(['Floor', 'Flr']) || '-').trim() || '-';
                         const roomVal = String(getVal(['Room No.', 'Room No', 'Room Number', 'Room']) || '-').trim() || '-';
-                        const detailsVal = String(getVal(['Details', 'Description', 'Key Details']) || '-').trim() || '-';
+                        const detailsVal = formatMultiLineKeyDetails(getVal(['Details', 'Description', 'Key Details']));
                         const storageVal = String(getVal(['Storage Location', 'Storage', 'Cupboard']) || '-').trim() || '-';
 
                         const isRowUnassigned = (floorVal === '-' && roomVal === '-' && (detailsVal === '-' || detailsVal.toLowerCase() === 'unassigned'));

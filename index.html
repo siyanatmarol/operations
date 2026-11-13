@@ -2243,6 +2243,16 @@
                         </button>
                         <button
                             type="button"
+                            data-crud="true"
+                            onclick="openKeysBulkReassignCleanModal('')"
+                            class="crud-action-btn bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 shadow-sm"
+                            title="Bulk Reassign or Clear Mis-tagged Key Holders without re-importing Excel"
+                        >
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Clean / Reassign Holders</span>
+                        </button>
+                        <button
+                            type="button"
                             onclick="openKeysExportModal('master')"
                             class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 shadow-sm"
                             title="Export Master List, Master List with Active Key Holders, and/or People Tracker (Excel, PDF, or ZIP)"
@@ -2338,6 +2348,10 @@
                         </button>
                         <button type="button" id="btnKeysPeopleFilterHolding" onclick="setKeysPeopleFilterMode('holding')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 border hover:bg-emerald-50 transition">
                             Currently Holding Keys Only
+                        </button>
+                        <button type="button" data-crud="true" onclick="openKeysBulkReassignCleanModal('')" class="crud-action-btn bg-purple-700 hover:bg-purple-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Bulk Reassign or Clear Mis-tagged Key Holders (e.g. Zainab bai -> Mushtaq / Asif) without re-importing Excel">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Clean / Bulk Reassign Holders</span>
                         </button>
                         <button type="button" onclick="openKeysExportModal('people')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Export Master List, Master List with Active Key Holders, and/or People Tracker (Excel, PDF, or ZIP)">
                             <i class="fa-solid fa-file-export"></i>
@@ -6412,8 +6426,26 @@ function getOrCreateUtilityFolder_(name) {
                 </div>
 
                 <div>
-                    <label class="font-bold text-gray-700 block mb-1">Select Mass Issue / Return File (.xlsx, .xls, .csv) *</label>
+                    <label class="font-bold text-gray-700 block mb-1">1. Select Mass Issue / Return File (.xlsx, .xls, .csv) *</label>
                     <input type="file" id="keysMassIssueExcelFileInput" accept=".xlsx,.xls,.csv" class="w-full border p-2 rounded-lg bg-white text-xs">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="font-bold text-gray-700 block">2. Select Import Mode *</label>
+                    <label class="flex items-start space-x-2.5 p-2.5 border rounded-xl cursor-pointer hover:bg-amber-50/60 transition bg-white">
+                        <input type="radio" name="keysMassIssueImportMode" value="append" checked class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                        <div>
+                            <span class="font-extrabold text-gray-900 block">Update / Append to Existing Holders (Default)</span>
+                            <span class="text-gray-500 text-[11px]">Updates matching holders (by valid ITS or exact Name) with Expiry Dates and appends new issuances.</span>
+                        </div>
+                    </label>
+                    <label class="flex items-start space-x-2.5 p-2.5 border rounded-xl cursor-pointer hover:bg-red-50/60 transition bg-white">
+                        <input type="radio" name="keysMassIssueImportMode" value="replace_holders" class="mt-0.5 text-red-600 focus:ring-red-500">
+                        <div>
+                            <span class="font-extrabold text-red-800 block">Reset &amp; Replace All Active Key Holders with this Sheet</span>
+                            <span class="text-gray-500 text-[11px]">Clears all currently active key holders across all Key IDs first and rebuilds active issuances cleanly from this sheet.</span>
+                        </div>
+                    </label>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-3 border-t">
@@ -6421,6 +6453,98 @@ function getOrCreateUtilityFolder_(name) {
                     <button type="button" onclick="processKeysMassIssueExcelImport()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg font-extrabold shadow-sm">
                         Process Mass Issue / Return
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 8: Bulk Reassign / Clean Key Holders Modal (#modalKeysBulkReassignClean) -->
+    <div id="modalKeysBulkReassignClean" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-[78]">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col">
+            <div class="flex justify-between items-start border-b pb-3">
+                <div>
+                    <h3 class="text-lg font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-purple-700"></i>
+                        <span>Clean / Bulk Reassign Key Holders (No Excel Needed)</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Select keys falsely tagged to a holder (e.g., Zainab bai lokhandwala) and reassign them in 1 click to Mushtaq (Security), Asif Sheikh (Security), or any Directory member—keeping all Issue &amp; Expiry dates intact.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalKeysBulkReassignClean')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <!-- Step 1: Filter by Current Holder, Area, and Search -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-purple-50/70 border border-purple-200 p-3 rounded-xl text-xs">
+                <div class="sm:col-span-5">
+                    <label class="font-extrabold text-purple-950 uppercase tracking-wider block mb-1">1. Current Holder to Inspect / Clean</label>
+                    <select id="bulkCleanSourceHolderSelect" onchange="renderBulkCleanHoldersChecklist()" class="w-full border border-purple-300 rounded-lg px-2.5 py-2 text-xs font-bold bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </select>
+                </div>
+                <div class="sm:col-span-3">
+                    <label class="font-extrabold text-purple-950 uppercase tracking-wider block mb-1">Filter by Area</label>
+                    <select id="bulkCleanAreaFilterSelect" onchange="renderBulkCleanHoldersChecklist()" class="w-full border border-purple-300 rounded-lg px-2.5 py-2 text-xs font-semibold bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <option value="ALL">All Areas / Buildings</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-4">
+                    <label class="font-extrabold text-purple-950 uppercase tracking-wider block mb-1">Search Key ID / Details / Mobile</label>
+                    <input type="text" id="bulkCleanSearchInput" oninput="renderBulkCleanHoldersChecklist()" placeholder="e.g. GH/GF, AA/B1, 9819075252..." class="w-full border border-purple-300 rounded-lg px-2.5 py-2 text-xs bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Selection Controls Bar -->
+            <div class="flex flex-wrap justify-between items-center gap-2 text-xs px-1">
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="toggleAllBulkCleanCheckboxes(true)" class="bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold px-2.5 py-1 rounded-lg border border-purple-300 transition">
+                        Select All Visible
+                    </button>
+                    <button type="button" onclick="toggleAllBulkCleanCheckboxes(false)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2.5 py-1 rounded-lg border border-gray-300 transition">
+                        Deselect All
+                    </button>
+                    <span id="bulkCleanSelectionCounter" class="font-extrabold text-purple-900 ml-2">0 selected</span>
+                </div>
+                <div id="bulkCleanQuickSecurityChips" class="flex flex-wrap items-center gap-1.5"></div>
+            </div>
+
+            <!-- Scrollable Checklist Table -->
+            <div class="border border-slate-300 rounded-xl overflow-y-auto flex-1 min-h-[220px] max-h-[38vh]">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-800 text-white uppercase text-[10px] sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2.5 text-center w-10">
+                                <input type="checkbox" id="bulkCleanMasterCheckbox" onchange="toggleAllBulkCleanCheckboxes(this.checked)" class="h-4 w-4 rounded text-purple-700">
+                            </th>
+                            <th class="p-2.5">Key ID</th>
+                            <th class="p-2.5">Building / Floor / Room / Details</th>
+                            <th class="p-2.5">Current Holder &amp; Saved Mobile</th>
+                            <th class="p-2.5">Issue &amp; Expiry Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bulkCleanHoldersTableBody" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+
+            <!-- Step 2: Target Directory Member & Execute Buttons -->
+            <div class="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-xl space-y-2.5 text-xs">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <label class="font-extrabold text-emerald-950 uppercase tracking-wider">2. Choose New Assignee from Directory (Preserves Issue &amp; Expiry Dates)</label>
+                    <div id="bulkCleanTargetQuickButtons" class="flex flex-wrap items-center gap-1.5"></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                    <div class="sm:col-span-7">
+                        <select id="bulkCleanTargetDirectorySelect" class="w-full border border-emerald-400 rounded-lg px-3 py-2 text-xs font-bold bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none">
+                            <option value="">-- Select Directory Person to Reassign Selected Keys --</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-5 flex flex-wrap gap-2 justify-end">
+                        <button type="button" onclick="executeBulkReassignSelectedHolders()" class="flex-1 sm:flex-none bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg font-extrabold shadow-sm transition flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-user-check"></i>
+                            <span>Reassign Selected Keys</span>
+                        </button>
+                        <button type="button" onclick="executeBulkClearSelectedHolders()" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-lg font-extrabold shadow-sm transition flex items-center justify-center space-x-1.5" title="Remove selected false active holder entries and return copies to store">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Clear Selected</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -7233,6 +7357,85 @@ function getOrCreateUtilityFolder_(name) {
             }
         });
 
+        function isValidDirectoryIts(itsVal) {
+            if (itsVal === undefined || itsVal === null) return false;
+            const s = String(itsVal).trim();
+            if (!s) return false;
+            const lower = s.toLowerCase();
+            if (
+                lower === 'n/a' ||
+                lower === 'na' ||
+                lower === 'n.a.' ||
+                lower === 'n.a' ||
+                lower === 'none' ||
+                lower === 'nil' ||
+                lower === 'null' ||
+                lower === 'undefined' ||
+                lower === '-' ||
+                lower === '--' ||
+                /^0+$/.test(s)
+            ) {
+                return false;
+            }
+            return /\d/.test(s);
+        }
+
+        function normalizePhoneLast10(rawPhone) {
+            if (!rawPhone) return '';
+            const digits = String(rawPhone).replace(/\D/g, '');
+            if (digits.length < 10) return '';
+            return digits.slice(-10);
+        }
+
+        function stripTrailingItsFromHolderString(rawStr) {
+            const clean = String(rawStr || '').trim();
+            if (!clean) return { name: '', extractedIts: '' };
+            const naMatch = clean.match(/^(.*?)\s*-\s*(?:N\/A|NA|N\.A\.|N\.A|NONE|NIL|-+)\s*$/i);
+            if (naMatch) {
+                return { name: naMatch[1].trim(), extractedIts: '' };
+            }
+            const dashItsMatch = clean.match(/^(.*?)\s*-\s*(\d{3,12})\s*$/);
+            if (dashItsMatch) {
+                const cand = dashItsMatch[2].trim();
+                return {
+                    name: dashItsMatch[1].trim(),
+                    extractedIts: isValidDirectoryIts(cand) ? cand : ''
+                };
+            }
+            return { name: clean, extractedIts: '' };
+        }
+
+        function normalizeFacultyList(rawFaculty) {
+            let arr = [];
+            if (Array.isArray(rawFaculty)) {
+                arr = rawFaculty.filter(Boolean);
+            } else if (rawFaculty && typeof rawFaculty === 'object') {
+                arr = Object.values(rawFaculty).filter(Boolean);
+            }
+            const seenIds = new Set();
+            return arr.map((f, idx) => {
+                let rawId = (f.id !== undefined && f.id !== null) ? String(f.id).trim() : '';
+                if (!rawId || seenIds.has(rawId)) {
+                    const cleanNameSlug = String(f.name || 'member').trim().toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 18);
+                    const cleanPhoneSlug = String(f.contact || '').replace(/\D/g, '').slice(-6);
+                    rawId = `fac_${idx}_${cleanNameSlug}_${cleanPhoneSlug || idx}`;
+                    while (seenIds.has(rawId)) {
+                        rawId = `${rawId}_${Math.random().toString(36).slice(2, 6)}`;
+                    }
+                }
+                seenIds.add(rawId);
+                return {
+                    ...f,
+                    id: rawId,
+                    its: String(f.its !== undefined && f.its !== null ? f.its : '').trim() || 'N/A',
+                    name: String(f.name || '').trim(),
+                    category: String(f.category || 'Faculty').trim(),
+                    gender: String(f.gender || 'Male').trim(),
+                    contact: String(f.contact || '').trim()
+                };
+            });
+        }
+
         function normalizeEstateAssetsList(rawAssets) {
             if (!rawAssets) return [];
             const arr = Array.isArray(rawAssets)
@@ -7664,7 +7867,7 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                 if (snapshot && snapshot.exists()) {
                     const data = snapshot.val() || {};
                     estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
-                    facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
+                    facultyData = normalizeFacultyList(data.faculty);
                     societiesData = data.societies || societiesData;
                     societyDocs = Array.isArray(data.docs) ? data.docs : (data.docs && typeof data.docs === 'object' ? Object.values(data.docs) : []);
                     maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
@@ -7758,6 +7961,12 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     }
 
                     recordAllCloudNodeSnapshots(data);
+                    recheckKeysDirectoryMatches();
+                    const repairedFacultySig = computeFastNodeSignature(facultyData);
+                    const repairedKeysSig = computeFastNodeSignature(keysInventoryData);
+                    if (_cloudNodeSnapshots['faculty'] !== repairedFacultySig || _cloudNodeSnapshots['keys'] !== repairedKeysSig) {
+                        await saveCloudData();
+                    }
                 } else {
                     estatesData = [
                         { id: '1', building: 'Saifee Park', wing: 'Wing A', flatNo: '101', type: '2 BHK', sqft: 850, owner: 'Aljamea Trust', elec: '152433211', gas: '9823412', isBachelor: false, capacity: 0, occupant: 'Mulla Taher', its: '30492811', contact: '+91 9820011223', startDate: '2023-01-15', archive: [], residents: [] }
@@ -8044,7 +8253,8 @@ window.loadClassroomsFromCloud = async function() {
                         estatesData = Array.isArray(data.estates) ? data.estates : (data.estates && typeof data.estates === 'object' ? Object.values(data.estates) : []);
                     }
                     if (didNodeChange('faculty')) {
-                        facultyData = Array.isArray(data.faculty) ? data.faculty : (data.faculty && typeof data.faculty === 'object' ? Object.values(data.faculty) : []);
+                        facultyData = normalizeFacultyList(data.faculty);
+                        recheckKeysDirectoryMatches();
                     }
                     if (data.societies && didNodeChange('societies')) {
                         societiesData = Array.isArray(data.societies) ? data.societies : (typeof data.societies === 'object' ? Object.values(data.societies) : societiesData);
@@ -9894,7 +10104,7 @@ await recordDawatEstatesNotification(
                 if (!its || !contact) {
                     const matchedFac = facultyData.find(f => {
                         if (!f) return false;
-                        if (its && String(f.its || '').trim() === its) return true;
+                        if (isValidDirectoryIts(its) && isValidDirectoryIts(f.its) && String(f.its || '').trim() === its) return true;
                         if (name && String(f.name || '').trim().toLowerCase() === name.toLowerCase()) return true;
                         return false;
                     });
@@ -10068,7 +10278,7 @@ await recordDawatEstatesNotification(
                 const matchedFac = facultyData.find(f =>
                     f && (
                         String(f.name || '').trim().toLowerCase() === facName.toLowerCase() ||
-                        String(f.its || '').trim() === facName
+                        (isValidDirectoryIts(facName) && isValidDirectoryIts(f.its) && String(f.its || '').trim() === facName)
                     )
                 );
                 if (matchedFac) {
@@ -10728,10 +10938,22 @@ await recordDawatEstatesNotification(
                             e.contact = contact;
                         }
                     });
+                    if (oldName) {
+                        const oldNameLower = String(oldName).trim().toLowerCase();
+                        (keysInventoryData || []).forEach(k => {
+                            (k.holders || []).forEach(h => {
+                                if (h && String(h.holderName || '').trim().toLowerCase() === oldNameLower) {
+                                    h.holderName = name;
+                                    h.holderIts = isValidDirectoryIts(its) ? its : (String(its || '').trim().toUpperCase() === 'N/A' ? 'N/A' : '');
+                                    if (contact) h.holderMobile = contact;
+                                }
+                            });
+                        });
+                    }
                 }
             } else {
                 facultyData.push({
-                    id: Date.now().toString(),
+                    id: `fac_${Date.now()}_${facultyData.length}_${Math.random().toString(36).slice(2, 7)}`,
                     its,
                     name,
                     category,
@@ -11799,7 +12021,7 @@ await recordDawatEstatesNotification(
                         }
 
                         estatesData.push({
-                            id: Date.now().toString() + Math.random().toString().slice(2,5),
+                            id: `est_${Date.now()}_${estatesData.length}_${Math.random().toString(36).slice(2, 7)}`, 
                             building: buildingName,
                             wing: wingName,
                             flatNo: flatNo.toString().trim(),
@@ -11833,7 +12055,7 @@ await recordDawatEstatesNotification(
                     if (importMode === 'overwrite') {
                         facultyData = [];
                     }
-                    jsonData.forEach(row => {
+                    jsonData.forEach((row, idx) => {
                         const getVal = (keys) => {
                             for (let k of Object.keys(row)) {
                                 if (keys.some(key => k.trim().toLowerCase() === key.toLowerCase())) {
@@ -11842,13 +12064,13 @@ await recordDawatEstatesNotification(
                             }
                             return '';
                         };
-                        const itsVal = String(getVal(['ITS', 'ITS Number', 'ITS No']) || '00000000').trim();
+                        const itsVal = String(getVal(['ITS', 'ITS Number', 'ITS No']) || 'N/A').trim() || 'N/A';
                         const nameVal = String(getVal(['Name', 'Faculty Name', 'Full Name', 'Member Name']) || 'Directory Member').trim();
                         const catVal = String(getVal(['Category', 'Role', 'Designation']) || 'Faculty').trim();
                         const genderVal = String(getVal(['Gender', 'Sex']) || 'Male').trim();
                         const contactVal = String(getVal(['Contact', 'Contact Number', 'Mobile', 'Phone', 'Mobile Number']) || '-').trim();
                         facultyData.push({
-                            id: Date.now().toString() + Math.random().toString().slice(2,5),
+                            id: `fac_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 8)}`,
                             its: itsVal,
                             name: nameVal,
                             category: catVal,
@@ -11856,6 +12078,8 @@ await recordDawatEstatesNotification(
                             contact: contactVal
                         });
                     });
+                    facultyData = normalizeFacultyList(facultyData);
+                    recheckKeysDirectoryMatches();
                     renderFacultyTable();
                 }
 
@@ -17136,7 +17360,7 @@ await recordDawatEstatesNotification(
                         keysInventoryData = normalizeKeysInventoryList(src.keys);
                         syncIssuedKeysCollectionFromMaster();
                     }
-                    if (Array.isArray(src.faculty)) facultyData = src.faculty;
+                    if (src.faculty !== undefined) facultyData = normalizeFacultyList(src.faculty);
                     if (Array.isArray(src.societies)) societiesData = src.societies;
                     if (Array.isArray(src.docs)) societyDocs = src.docs;
                     if (Array.isArray(src.maint)) maintLogs = src.maint;
@@ -21788,38 +22012,38 @@ window.cleanDuplicateEstateAssets = async function() {
         }
 
         // Match a person name or ITS ID against the Directory (facultyData)
-        function matchHolderAgainstDirectory(rawNameOrCombo, rawIts = '') {
+        // Strictly ignores placeholder ITS values like "N/A", "-", "00000000" when matching by ITS,
+        // and self-heals holders that were previously overwritten to "Zainab bai lokhandwala" via their preserved mobile number.
+        function matchHolderAgainstDirectory(rawNameOrCombo, rawIts = '', rawMobile = '') {
             const cleanCombo = String(rawNameOrCombo || '').trim();
-            let candidateName = cleanCombo;
-            let candidateIts = String(rawIts || '').trim();
-
-            // Check if formatted like "Mulla Murtaza bhai...-30476900"
-            const dashItsMatch = cleanCombo.match(/^(.*?)\s*-\s*(\d{5,12})$/);
-            if (dashItsMatch) {
-                candidateName = dashItsMatch[1].trim();
-                if (!candidateIts) candidateIts = dashItsMatch[2].trim();
-            }
+            const parsed = stripTrailingItsFromHolderString(cleanCombo);
+            const candidateName = parsed.name;
+            const rawItsClean = String(rawIts || '').trim();
+            const candidateIts = isValidDirectoryIts(rawItsClean)
+                ? rawItsClean
+                : (parsed.extractedIts || '');
+            const mobile10 = normalizePhoneLast10(rawMobile);
 
             const dirList = Array.isArray(facultyData) ? facultyData : [];
             if (dirList.length === 0) {
                 return {
-                    matched: Boolean(candidateIts && candidateIts.length >= 6),
+                    matched: Boolean(candidateIts && candidateIts.length >= 4),
                     holderName: candidateName || cleanCombo,
-                    holderIts: candidateIts,
-                    holderMobile: ''
+                    holderIts: candidateIts || (rawItsClean.toUpperCase() === 'N/A' ? 'N/A' : ''),
+                    holderMobile: String(rawMobile || '').trim()
                 };
             }
 
-            // 1. Match by ITS ID if present
+            // 1. Match by valid numeric ITS ID ONLY if candidateIts is a real ITS/Staff ID (NEVER match on "N/A")
             if (candidateIts) {
-                const byIts = dirList.find(f => f && String(f.its || '').trim() === candidateIts);
+                const byIts = dirList.find(f => f && isValidDirectoryIts(f.its) && String(f.its || '').trim() === candidateIts);
                 if (byIts) {
                     return {
                         matched: true,
                         directoryId: String(byIts.id || ''),
                         holderName: String(byIts.name || candidateName).trim(),
                         holderIts: String(byIts.its || candidateIts).trim(),
-                        holderMobile: String(byIts.contact || '').trim()
+                        holderMobile: String(byIts.contact || rawMobile || '').trim()
                     };
                 }
             }
@@ -21827,19 +22051,61 @@ window.cleanDuplicateEstateAssets = async function() {
             // 2. Match by exact Name (case-insensitive)
             const nameLower = candidateName.toLowerCase();
             if (nameLower) {
-                const byName = dirList.find(f => {
+                const nameMatches = dirList.filter(f => {
                     if (!f || !f.name) return false;
                     const fNameLower = String(f.name).trim().toLowerCase();
                     const fComboLower = `${fNameLower}-${String(f.its || '').trim().toLowerCase()}`;
                     return fNameLower === nameLower || fComboLower === cleanCombo.toLowerCase();
                 });
+
+                let byName = nameMatches[0] || null;
+                if (nameMatches.length > 1 && mobile10) {
+                    const exactPhoneMatch = nameMatches.find(f => normalizePhoneLast10(f.contact) === mobile10);
+                    if (exactPhoneMatch) byName = exactPhoneMatch;
+                }
+
+                // Self-healing repair: if this holder has no valid ITS (e.g. "N/A") and was overwritten to "Zainab bai lokhandwala"
+                // (or another N/A contact) while h.holderMobile still holds the original holder's phone number (e.g. Mushtaq / Asif Sheikh),
+                // restore the true Directory member whose contact matches mobile10!
+                if (byName && !candidateIts && !isValidDirectoryIts(byName.its) && mobile10) {
+                    const byNamePhone10 = normalizePhoneLast10(byName.contact);
+                    if (byNamePhone10 && byNamePhone10 !== mobile10) {
+                        const phoneCandidates = dirList.filter(f => f && normalizePhoneLast10(f.contact) === mobile10);
+                        const byPhone = phoneCandidates.find(f => !isValidDirectoryIts(f.its)) || phoneCandidates[0];
+                        if (byPhone) {
+                            byName = byPhone;
+                        }
+                    }
+                }
+
                 if (byName) {
+                    const resolvedIts = isValidDirectoryIts(byName.its)
+                        ? String(byName.its).trim()
+                        : (String(byName.its || '').trim().toUpperCase() === 'N/A' ? 'N/A' : '');
                     return {
                         matched: true,
                         directoryId: String(byName.id || ''),
                         holderName: String(byName.name || candidateName).trim(),
-                        holderIts: String(byName.its || candidateIts).trim(),
-                        holderMobile: String(byName.contact || '').trim()
+                        holderIts: resolvedIts,
+                        holderMobile: String(byName.contact || rawMobile || '').trim()
+                    };
+                }
+            }
+
+            // 3. Fallback: if no valid ITS and name was blank or corrupted, match by 10-digit mobile number
+            if (!candidateIts && mobile10 && (!candidateName || nameLower === 'zainab bai lokhandwala')) {
+                const phoneCandidates = dirList.filter(f => f && normalizePhoneLast10(f.contact) === mobile10);
+                const byPhone = phoneCandidates.find(f => !isValidDirectoryIts(f.its)) || phoneCandidates[0];
+                if (byPhone) {
+                    const resolvedIts = isValidDirectoryIts(byPhone.its)
+                        ? String(byPhone.its).trim()
+                        : (String(byPhone.its || '').trim().toUpperCase() === 'N/A' ? 'N/A' : '');
+                    return {
+                        matched: true,
+                        directoryId: String(byPhone.id || ''),
+                        holderName: String(byPhone.name).trim(),
+                        holderIts: resolvedIts,
+                        holderMobile: String(byPhone.contact || rawMobile).trim()
                     };
                 }
             }
@@ -21848,8 +22114,8 @@ window.cleanDuplicateEstateAssets = async function() {
                 matched: false,
                 directoryId: '',
                 holderName: candidateName || cleanCombo,
-                holderIts: candidateIts,
-                holderMobile: ''
+                holderIts: candidateIts || (rawItsClean.toUpperCase() === 'N/A' ? 'N/A' : ''),
+                holderMobile: String(rawMobile || '').trim()
             };
         }
 
@@ -22005,7 +22271,10 @@ window.cleanDuplicateEstateAssets = async function() {
                 }
 
                 const holders = rawHolders.map((h, hIdx) => {
-                    const dirCheck = matchHolderAgainstDirectory(h.holderName || h.name || '', h.holderIts || h.its || '');
+                    const rawHName = String(h.holderName || h.name || '').trim();
+                    const rawHIts = String(h.holderIts || h.its || '').trim();
+                    const rawHMobile = String(h.holderMobile || h.mobile || '').trim();
+                    const dirCheck = matchHolderAgainstDirectory(rawHName, rawHIts, rawHMobile);
                     const hasExplicitMatchFlag = h.isDirectoryMatch !== undefined;
                     const isDirMatch = Array.isArray(facultyData) && facultyData.length > 0
                         ? dirCheck.matched
@@ -22014,9 +22283,9 @@ window.cleanDuplicateEstateAssets = async function() {
                     return {
                         id: String(h.id || `iss_${docId}_${hIdx}`),
                         keyId: keyIdClean,
-                        holderName: String(h.holderName || h.name || dirCheck.holderName || 'Unknown Holder').trim(),
-                        holderIts: String(h.holderIts || h.its || dirCheck.holderIts || '').trim(),
-                        holderMobile: String(h.holderMobile || h.mobile || dirCheck.holderMobile || '').trim(),
+                        holderName: String((dirCheck.matched && dirCheck.holderName) ? dirCheck.holderName : (rawHName || dirCheck.holderName || 'Unknown Holder')).trim(),
+                        holderIts: String((dirCheck.matched && dirCheck.holderIts !== undefined) ? dirCheck.holderIts : (rawHIts || dirCheck.holderIts || '')).trim(),
+                        holderMobile: String((dirCheck.matched && dirCheck.holderMobile) ? dirCheck.holderMobile : (rawHMobile || dirCheck.holderMobile || '')).trim(),
                         isDirectoryMatch: isDirMatch,
                         issueDate: parseFlexibleKeyDateToIso(h.issueDate, getLocalTodayDateString()),
                         expiryDate: parseFlexibleKeyDateToIso(h.expiryDate, ''),
@@ -22067,19 +22336,46 @@ window.cleanDuplicateEstateAssets = async function() {
         }
 
         function recheckKeysDirectoryMatches() {
-            if (!Array.isArray(facultyData) || facultyData.length === 0) return;
+            if (!Array.isArray(facultyData) || facultyData.length === 0) return false;
+            let anyRepaired = false;
             (keysInventoryData || []).forEach(k => {
                 (k.holders || []).forEach(h => {
-                    const m = matchHolderAgainstDirectory(h.holderName, h.holderIts);
+                    const m = matchHolderAgainstDirectory(h.holderName, h.holderIts, h.holderMobile);
                     h.isDirectoryMatch = m.matched;
                     if (m.matched) {
+                        if (h.holderName !== m.holderName) anyRepaired = true;
                         h.holderName = m.holderName;
-                        if (m.holderIts) h.holderIts = m.holderIts;
-                        if (!h.holderMobile && m.holderMobile) h.holderMobile = m.holderMobile;
+                        h.holderIts = m.holderIts || '';
+                        if (m.holderMobile) h.holderMobile = m.holderMobile;
                     }
                 });
+                // If a key has multiple N/A holders on the same issueDate where one lost its expiryDate due to the legacy N/A merge bug, restore the sibling expiryDate
+                if (Array.isArray(k.holders) && k.holders.length > 1) {
+                    const donor = k.holders.find(h => h && !isValidDirectoryIts(h.holderIts) && h.expiryDate && h.issueDate);
+                    if (donor) {
+                        k.holders.forEach(h => {
+                            if (h && h !== donor && !isValidDirectoryIts(h.holderIts) && !h.expiryDate && h.issueDate === donor.issueDate) {
+                                h.expiryDate = donor.expiryDate;
+                                anyRepaired = true;
+                            }
+                        });
+                    }
+                }
+                if (Array.isArray(k.history)) {
+                    k.history.forEach(ret => {
+                        if (!ret) return;
+                        const m = matchHolderAgainstDirectory(ret.holderName, ret.holderIts, ret.holderMobile);
+                        if (m.matched && ret.holderName !== m.holderName) {
+                            ret.holderName = m.holderName;
+                            ret.holderIts = m.holderIts || '';
+                            if (m.holderMobile) ret.holderMobile = m.holderMobile;
+                            anyRepaired = true;
+                        }
+                    });
+                }
             });
             syncIssuedKeysCollectionFromMaster();
+            return anyRepaired;
         }
 
         function syncIssuedKeysCollectionFromMaster() {
@@ -23593,7 +23889,7 @@ Shukran`;
         };
 
         function buildPeopleTrackerRowsData() {
-            // Map active key issuances to people by ITS ID or lowercase Name
+            // Map active key issuances to people by valid numeric ITS ID or exact lowercase Name (never group by 'N/A' ITS)
             const holdingsByIts = new Map();
             const holdingsByName = new Map();
             const unmatchedHoldersMap = new Map();
@@ -23603,28 +23899,30 @@ Shukran`;
                 k.holders.forEach(h => {
                     if (!h || h.status === 'returned') return;
                     const entry = {
+                        holderIssuanceId: String(h.id || ''),
                         keyDocId: String(k.id),
                         keyId: k.keyId,
                         issueDate: h.issueDate,
                         formattedTag: `${k.keyId} (${formatKeyDateDdMmmYyyy(h.issueDate)})`
                     };
                     const itsClean = String(h.holderIts || '').trim();
+                    const hasValidIts = isValidDirectoryIts(itsClean);
                     const nameClean = String(h.holderName || '').trim();
                     const nameLower = nameClean.toLowerCase();
 
                     let matchedInDir = false;
-                    if (itsClean && (facultyData || []).some(f => String(f.its || '').trim() === itsClean)) {
+                    if (hasValidIts && (facultyData || []).some(f => f && isValidDirectoryIts(f.its) && String(f.its || '').trim() === itsClean)) {
                         if (!holdingsByIts.has(itsClean)) holdingsByIts.set(itsClean, []);
                         holdingsByIts.get(itsClean).push(entry);
                         matchedInDir = true;
-                    } else if (nameLower && (facultyData || []).some(f => String(f.name || '').trim().toLowerCase() === nameLower)) {
+                    } else if (nameLower && (facultyData || []).some(f => f && String(f.name || '').trim().toLowerCase() === nameLower)) {
                         if (!holdingsByName.has(nameLower)) holdingsByName.set(nameLower, []);
                         holdingsByName.get(nameLower).push(entry);
                         matchedInDir = true;
                     }
 
                     if (!matchedInDir && nameClean) {
-                        const uKey = `${nameLower}__${itsClean}`;
+                        const uKey = `${nameLower}__${hasValidIts ? itsClean : ''}`;
                         if (!unmatchedHoldersMap.has(uKey)) {
                             unmatchedHoldersMap.set(uKey, {
                                 name: nameClean,
@@ -23643,12 +23941,21 @@ Shukran`;
             (facultyData || []).forEach(f => {
                 if (!f) return;
                 const itsClean = String(f.its || '').trim();
+                const hasValidIts = isValidDirectoryIts(itsClean);
                 const nameClean = String(f.name || '').trim();
                 const nameLower = nameClean.toLowerCase();
 
-                const byIts = itsClean && holdingsByIts.has(itsClean) ? holdingsByIts.get(itsClean) : [];
-                const byName = nameLower && holdingsByName.has(nameLower) ? holdingsByName.get(nameLower) : [];
-                const mergedEntries = [...byIts, ...byName];
+                const byIts = (hasValidIts && holdingsByIts.has(itsClean)) ? holdingsByIts.get(itsClean) : [];
+                const byName = (nameLower && holdingsByName.has(nameLower)) ? holdingsByName.get(nameLower) : [];
+                const seenIssIds = new Set();
+                const mergedEntries = [];
+                [...byIts, ...byName].forEach(e => {
+                    const uid = e.holderIssuanceId || `${e.keyDocId}_${e.issueDate}`;
+                    if (!seenIssIds.has(uid)) {
+                        seenIssIds.add(uid);
+                        mergedEntries.push(e);
+                    }
+                });
 
                 rows.push({
                     name: nameClean,
@@ -23731,6 +24038,19 @@ Shukran`;
                                 ${unmatchedBadge}
                             </div>
                             ${r.contact ? `<div class="text-[11px] text-gray-500 font-mono mt-0.5">${r.contact}</div>` : ''}
+                            ${(r.entries.length > 0 && canUserEditCurrentModule()) ? `
+                                <div class="mt-1.5">
+                                    <button
+                                        type="button"
+                                        onclick="openKeysBulkReassignCleanModal('${String(r.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')"
+                                        class="inline-flex items-center space-x-1 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 px-2 py-0.5 rounded text-[11px] font-extrabold transition shadow-sm"
+                                        title="Bulk reassign or clear keys held by ${String(r.name || '').replace(/"/g, '&quot;')}"
+                                    >
+                                        <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+                                        <span>Reassign / Clean (${r.entries.length})</span>
+                                    </button>
+                                </div>
+                            ` : ''}
                         </td>
                         <td class="p-3">${keysDisplayHtml}</td>
                     </tr>
@@ -23741,6 +24061,339 @@ Shukran`;
         // =========================================================================
         // EXCEL / CSV IMPORTS (MASTER KEYS IMPORT & MASS ISSUE/RETURN IMPORT) + EXPORTS
         // =========================================================================
+
+        // =========================================================================
+        // BULK REASSIGN / CLEAN MIS-TAGGED KEY HOLDERS (NO EXCEL RE-IMPORT NEEDED)
+        // =========================================================================
+        let bulkCleanSelectedEntriesSet = new Set();
+
+        window.openKeysBulkReassignCleanModal = function(preselectHolderName = '') {
+            if (!guardEditingRights()) return;
+            bulkCleanSelectedEntriesSet.clear();
+
+            // Populate Area filter dropdown
+            const areaSel = document.getElementById('bulkCleanAreaFilterSelect');
+            if (areaSel) {
+                const areas = Array.from(new Set((keysInventoryData || []).map(k => String(k.areaBuilding || '').trim()).filter(Boolean)));
+                areaSel.innerHTML = '<option value="ALL">All Areas / Buildings</option>' +
+                    areas.map(a => `<option value="${a.replace(/"/g, '&quot;')}">${a}</option>`).join('');
+            }
+
+            // Populate Target Directory dropdown + Quick buttons for Mushtaq / Asif / Security staff
+            populateBulkCleanTargetDirectoryDropdown();
+            // Populate Source Holder dropdown
+            populateBulkCleanSourceHolderDropdown(preselectHolderName);
+
+            const searchInp = document.getElementById('bulkCleanSearchInput');
+            if (searchInp) searchInp.value = '';
+
+            renderBulkCleanHoldersChecklist(true);
+            document.getElementById('modalKeysBulkReassignClean')?.classList.remove('hidden');
+        };
+
+        function populateBulkCleanTargetDirectoryDropdown() {
+            const targetSel = document.getElementById('bulkCleanTargetDirectorySelect');
+            const quickBar = document.getElementById('bulkCleanTargetQuickButtons');
+            if (!targetSel) return;
+
+            const sortedDir = [...(facultyData || [])].filter(Boolean).sort((a, b) =>
+                String(a.name || '').localeCompare(String(b.name || ''))
+            );
+
+            targetSel.innerHTML = '<option value="">-- Select Directory Person to Reassign Selected Keys --</option>' +
+                sortedDir.map(f => {
+                    const itsLabel = isValidDirectoryIts(f.its) ? f.its : 'N/A';
+                    const phoneLabel = f.contact ? ` (${f.contact})` : '';
+                    return `<option value="${String(f.id).replace(/"/g, '&quot;')}">${f.name} — ITS: ${itsLabel}${phoneLabel}</option>`;
+                }).join('');
+
+            if (quickBar) {
+                // Highlight Security / N/A staff (especially Mushtaq & Asif Sheikh) for 1-tap selection
+                const priorityStaff = sortedDir.filter(f => {
+                    const n = String(f.name || '').toLowerCase();
+                    return n.includes('mushtaq') || n.includes('asif') || n.includes('security') || n.includes('younus');
+                }).slice(0, 6);
+
+                if (priorityStaff.length > 0) {
+                    quickBar.innerHTML = '<span class="text-[11px] text-emerald-800 font-bold mr-1">Quick Pick:</span>' +
+                        priorityStaff.map(f => `
+                            <button type="button" onclick="selectBulkCleanTargetQuick('${String(f.id).replace(/'/g, "\\'")}')" class="bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-400 px-2 py-0.5 rounded-md text-[11px] font-extrabold transition shadow-sm">
+                                ${f.name}
+                            </button>
+                        `).join('');
+                } else {
+                    quickBar.innerHTML = '';
+                }
+            }
+        }
+
+        window.selectBulkCleanTargetQuick = function(dirId) {
+            const targetSel = document.getElementById('bulkCleanTargetDirectorySelect');
+            if (targetSel) {
+                targetSel.value = String(dirId);
+            }
+        };
+
+        function populateBulkCleanSourceHolderDropdown(preselectHolderName = '') {
+            const sourceSel = document.getElementById('bulkCleanSourceHolderSelect');
+            if (!sourceSel) return;
+
+            const holderCounts = new Map();
+            let totalNaHoldersCount = 0;
+
+            (keysInventoryData || []).forEach(k => {
+                if (!k || !Array.isArray(k.holders)) return;
+                k.holders.forEach(h => {
+                    if (!h || h.status === 'returned') return;
+                    const hName = String(h.holderName || 'Unknown Holder').trim();
+                    const hIts = String(h.holderIts || '').trim();
+                    if (!isValidDirectoryIts(hIts)) totalNaHoldersCount++;
+                    holderCounts.set(hName, (holderCounts.get(hName) || 0) + 1);
+                });
+            });
+
+            const sortedHolders = Array.from(holderCounts.entries()).sort((a, b) => b[1] - a[1]);
+
+            let optionsHtml = `<option value="__ALL_NA__">All Holders with N/A ITS (${totalNaHoldersCount} active key issues)</option>`;
+            optionsHtml += `<option value="__ALL__">All Active Key Holders (${Array.from(holderCounts.values()).reduce((a, b) => a + b, 0)} active key issues)</option>`;
+            sortedHolders.forEach(([name, count]) => {
+                optionsHtml += `<option value="${name.replace(/"/g, '&quot;')}">${name} (${count} keys)</option>`;
+            });
+
+            sourceSel.innerHTML = optionsHtml;
+
+            if (preselectHolderName && holderCounts.has(preselectHolderName)) {
+                sourceSel.value = preselectHolderName;
+            } else {
+                // Default to Zainab bai lokhandwala if she holds keys, otherwise __ALL_NA__
+                const zainabEntry = sortedHolders.find(([n]) => n.toLowerCase().includes('zainab'));
+                if (zainabEntry) {
+                    sourceSel.value = zainabEntry[0];
+                } else {
+                    sourceSel.value = '__ALL_NA__';
+                }
+            }
+        }
+
+        function getFilteredBulkCleanEntries() {
+            const sourceVal = document.getElementById('bulkCleanSourceHolderSelect')?.value || '__ALL_NA__';
+            const areaVal = document.getElementById('bulkCleanAreaFilterSelect')?.value || 'ALL';
+            const searchVal = String(document.getElementById('bulkCleanSearchInput')?.value || '').trim().toLowerCase();
+            const tokens = searchVal ? searchVal.split(/\s+/).filter(Boolean) : [];
+
+            const list = [];
+            (keysInventoryData || []).forEach(k => {
+                if (!k || !Array.isArray(k.holders)) return;
+                if (areaVal !== 'ALL' && String(k.areaBuilding || '').trim() !== areaVal) return;
+
+                k.holders.forEach(h => {
+                    if (!h || h.status === 'returned') return;
+                    const hName = String(h.holderName || '').trim();
+                    const hIts = String(h.holderIts || '').trim();
+
+                    if (sourceVal === '__ALL_NA__') {
+                        if (isValidDirectoryIts(hIts)) return;
+                    } else if (sourceVal !== '__ALL__') {
+                        if (hName.toLowerCase() !== sourceVal.toLowerCase()) return;
+                    }
+
+                    const compositeKey = `${k.id}__${h.id}`;
+                    const corpus = `${k.keyId || ''} ${k.areaBuilding || ''} ${k.floor || ''} ${k.roomNo || ''} ${k.keyDetails || ''} ${hName} ${hIts} ${h.holderMobile || ''} ${h.issueDate || ''} ${h.expiryDate || ''}`.toLowerCase();
+                    if (tokens.length > 0 && !tokens.every(t => corpus.includes(t))) return;
+
+                    list.push({
+                        compositeKey,
+                        keyDocId: String(k.id),
+                        holderId: String(h.id),
+                        keyId: k.keyId || '-',
+                        areaBuilding: k.areaBuilding || '-',
+                        floorRoomDetails: [k.floor ? `Fl: ${k.floor}` : '', k.roomNo && k.roomNo !== '-' ? `Rm: ${k.roomNo}` : '', k.keyDetails || ''].filter(Boolean).join(' | '),
+                        holderName: hName,
+                        holderIts: hIts || 'N/A',
+                        holderMobile: h.holderMobile || '-',
+                        issueDate: formatKeyDateDdMmmYyyy(h.issueDate),
+                        expiryDate: h.expiryDate ? formatKeyDateDdMmmYyyy(h.expiryDate) : '-'
+                    });
+                });
+            });
+            return list;
+        }
+
+        window.renderBulkCleanHoldersChecklist = function(autoSelectAll = false) {
+            const tbody = document.getElementById('bulkCleanHoldersTableBody');
+            if (!tbody) return;
+
+            const entries = getFilteredBulkCleanEntries();
+            if (autoSelectAll) {
+                bulkCleanSelectedEntriesSet.clear();
+                entries.forEach(e => bulkCleanSelectedEntriesSet.add(e.compositeKey));
+            }
+
+            if (entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400 italic">No active key issuances match the selected holder/filter.</td></tr>';
+                updateBulkCleanSelectionCounter(entries);
+                return;
+            }
+
+            tbody.innerHTML = entries.map(e => {
+                const isChecked = bulkCleanSelectedEntriesSet.has(e.compositeKey);
+                const safeComp = e.compositeKey.replace(/'/g, "\\'");
+                return `
+                    <tr class="hover:bg-purple-50/50 transition cursor-pointer" onclick="toggleSingleBulkCleanCheckbox('${safeComp}')">
+                        <td class="p-2.5 text-center" onclick="event.stopPropagation()">
+                            <input type="checkbox" data-comp="${e.compositeKey.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleSingleBulkCleanCheckbox('${safeComp}', this.checked)" class="h-4 w-4 rounded text-purple-700">
+                        </td>
+                        <td class="p-2.5 font-mono font-extrabold text-emerald-900 whitespace-nowrap">${e.keyId}</td>
+                        <td class="p-2.5">
+                            <div class="font-bold text-gray-800">${e.areaBuilding}</div>
+                            <div class="text-[11px] text-gray-500">${e.floorRoomDetails || '-'}</div>
+                        </td>
+                        <td class="p-2.5">
+                            <div class="font-extrabold text-gray-900">${e.holderName}-${e.holderIts}</div>
+                            <div class="font-mono text-[11px] text-purple-800 font-bold">Mobile: ${e.holderMobile}</div>
+                        </td>
+                        <td class="p-2.5 whitespace-nowrap">
+                            <div class="text-gray-800 font-semibold">Issued: ${e.issueDate}</div>
+                            <div class="text-[11px] text-gray-500">Expiry: ${e.expiryDate}</div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            updateBulkCleanSelectionCounter(entries);
+        };
+
+        window.toggleSingleBulkCleanCheckbox = function(compositeKey, forcedState = null) {
+            if (forcedState === true) {
+                bulkCleanSelectedEntriesSet.add(compositeKey);
+            } else if (forcedState === false) {
+                bulkCleanSelectedEntriesSet.delete(compositeKey);
+            } else {
+                if (bulkCleanSelectedEntriesSet.has(compositeKey)) {
+                    bulkCleanSelectedEntriesSet.delete(compositeKey);
+                } else {
+                    bulkCleanSelectedEntriesSet.add(compositeKey);
+                }
+            }
+            renderBulkCleanHoldersChecklist(false);
+        };
+
+        window.toggleAllBulkCleanCheckboxes = function(checkAll) {
+            const entries = getFilteredBulkCleanEntries();
+            entries.forEach(e => {
+                if (checkAll) bulkCleanSelectedEntriesSet.add(e.compositeKey);
+                else bulkCleanSelectedEntriesSet.delete(e.compositeKey);
+            });
+            renderBulkCleanHoldersChecklist(false);
+        };
+
+        function updateBulkCleanSelectionCounter(visibleEntries) {
+            const counterEl = document.getElementById('bulkCleanSelectionCounter');
+            const masterCb = document.getElementById('bulkCleanMasterCheckbox');
+            const visibleSelected = (visibleEntries || []).filter(e => bulkCleanSelectedEntriesSet.has(e.compositeKey)).length;
+            if (counterEl) {
+                counterEl.textContent = `${bulkCleanSelectedEntriesSet.size} selected (${visibleSelected} of ${(visibleEntries || []).length} visible)`;
+            }
+            if (masterCb) {
+                masterCb.checked = (visibleEntries || []).length > 0 && visibleSelected === visibleEntries.length;
+            }
+        }
+
+        window.executeBulkReassignSelectedHolders = async function() {
+            if (!guardEditingRights()) return;
+            if (bulkCleanSelectedEntriesSet.size === 0) {
+                showAssetToast("Please select at least one key issuance from the list first.", true);
+                return;
+            }
+            const targetDirId = document.getElementById('bulkCleanTargetDirectorySelect')?.value;
+            if (!targetDirId) {
+                showAssetToast("Please choose a Directory person to reassign the selected keys to.", true);
+                return;
+            }
+            const targetPerson = (facultyData || []).find(f => f && String(f.id) === String(targetDirId));
+            if (!targetPerson) {
+                showAssetToast("Selected Directory member could not be found.", true);
+                return;
+            }
+
+            const newName = String(targetPerson.name || '').trim();
+            const newIts = isValidDirectoryIts(targetPerson.its)
+                ? String(targetPerson.its).trim()
+                : (String(targetPerson.its || '').trim().toUpperCase() === 'N/A' ? 'N/A' : '');
+            const newMobile = String(targetPerson.contact || '').trim();
+
+            let updatedCount = 0;
+            (keysInventoryData || []).forEach(k => {
+                if (!k || !Array.isArray(k.holders)) return;
+                let keyModified = false;
+                k.holders.forEach(h => {
+                    if (!h || h.status === 'returned') return;
+                    const comp = `${k.id}__${h.id}`;
+                    if (bulkCleanSelectedEntriesSet.has(comp)) {
+                        h.holderName = newName;
+                        h.holderIts = newIts;
+                        if (newMobile) h.holderMobile = newMobile;
+                        h.directoryVerified = true;
+                        keyModified = true;
+                        updatedCount++;
+                    }
+                });
+                if (keyModified) {
+                    k.updatedAt = getLocalTodayDateString();
+                }
+            });
+
+            if (updatedCount > 0) {
+                bulkCleanSelectedEntriesSet.clear();
+                populateBulkCleanSourceHolderDropdown(newName);
+                renderBulkCleanHoldersChecklist(false);
+                renderKeysInventory();
+                await saveKeysInventoryToCloud();
+                showAssetToast(`Reassigned ${updatedCount} key issuance(s) to ${newName}!`);
+            }
+        };
+
+        window.executeBulkClearSelectedHolders = async function() {
+            if (!guardEditingRights()) return;
+            if (bulkCleanSelectedEntriesSet.size === 0) {
+                showAssetToast("Please select at least one key issuance to clear.", true);
+                return;
+            }
+            if (!confirm(`Are you sure you want to remove the ${bulkCleanSelectedEntriesSet.size} selected active key holder entry/entries and return those copies to store?`)) {
+                return;
+            }
+
+            const currentHolderVal = document.getElementById('bulkCleanSourceHolderSelect')?.value || '__ALL_NA__';
+            let clearedCount = 0;
+
+            (keysInventoryData || []).forEach(k => {
+                if (!k || !Array.isArray(k.holders)) return;
+                const beforeLen = k.holders.length;
+                k.holders = k.holders.filter(h => {
+                    if (!h || h.status === 'returned') return true;
+                    const comp = `${k.id}__${h.id}`;
+                    if (bulkCleanSelectedEntriesSet.has(comp)) {
+                        clearedCount++;
+                        return false;
+                    }
+                    return true;
+                });
+                if (k.holders.length !== beforeLen) {
+                    const activeCount = k.holders.filter(h => h && h.status !== 'returned').length;
+                    k.availableStoreStock = Math.max(0, (Number(k.totalKeys) || 0) - activeCount);
+                    k.updatedAt = getLocalTodayDateString();
+                }
+            });
+
+            if (clearedCount > 0) {
+                bulkCleanSelectedEntriesSet.clear();
+                populateBulkCleanSourceHolderDropdown(currentHolderVal);
+                renderBulkCleanHoldersChecklist(false);
+                renderKeysInventory();
+                await saveKeysInventoryToCloud();
+                showAssetToast(`Cleared ${clearedCount} false holder entry/entries and updated Keys in Store!`);
+            }
+        };
 
         window.openKeysMasterImportModal = function() {
             if (!guardEditingRights()) return;
@@ -23929,11 +24582,26 @@ Shukran`;
                         return;
                     }
 
+                    const modeRadio = document.querySelector('input[name="keysMassIssueImportMode"]:checked');
+                    const massImportMode = modeRadio ? modeRadio.value : 'append'; // 'append' | 'replace_holders'
+
+                    // First run self-healing on existing holders so any legacy N/A overwrites are restored before matching
+                    recheckKeysDirectoryMatches();
+
+                    if (massImportMode === 'replace_holders') {
+                        (keysInventoryData || []).forEach(k => {
+                            if (!k) return;
+                            k.holders = [];
+                            k.keysInStore = Math.max(0, Number(k.totalKeys) || 0);
+                        });
+                    }
+
                     let issuedCount = 0;
                     let updatedExistingCount = 0;
                     let returnedCount = 0;
                     let unmatchedCount = 0;
                     let lastSeenArea = '';
+                    const updatedHolderIdsInThisImport = new Set();
                     learnKeyPrefixesFromDataset(jsonData);
 
                     jsonData.forEach((row, idx) => {
@@ -23994,14 +24662,16 @@ Shukran`;
                         if (!Array.isArray(keyObj.history)) keyObj.history = [];
 
                         const dirMatch = matchHolderAgainstDirectory(issuedToVal);
-                        const targetNameLower = (dirMatch.holderName || issuedToVal).trim().toLowerCase();
-                        const targetIts = String(dirMatch.holderIts || '').trim();
+                        const parsedInputName = stripTrailingItsFromHolderString(issuedToVal).name;
+                        const targetNameLower = (dirMatch.holderName || parsedInputName || issuedToVal).trim().toLowerCase();
+                        const targetIts = isValidDirectoryIts(dirMatch.holderIts) ? String(dirMatch.holderIts).trim() : '';
 
                         if (isReturn) {
-                            // Match active holder on this key by Name or ITS
+                            // Match active holder on this key by valid numeric ITS or exact Name (never match on 'N/A' ITS)
                             let hIdx = keyObj.holders.findIndex(h => {
                                 if (!h || h.status === 'returned') return false;
-                                if (targetIts && String(h.holderIts || '').trim() === targetIts) return true;
+                                const hIts = isValidDirectoryIts(h.holderIts) ? String(h.holderIts).trim() : '';
+                                if (targetIts && hIts && hIts === targetIts) return true;
                                 if (targetNameLower && String(h.holderName || '').trim().toLowerCase() === targetNameLower) return true;
                                 return false;
                             });
@@ -24024,30 +24694,33 @@ Shukran`;
                             if (!issuedToVal) return;
                             if (!dirMatch.matched) unmatchedCount++;
 
-                            // Check if this holder is ALREADY in keyObj.holders (e.g. from Master List import without Expiry Date)
+                            // Check if this exact holder is ALREADY in keyObj.holders (not yet updated in this import batch)
                             const existingHolder = keyObj.holders.find(h => {
                                 if (!h || h.status === 'returned') return false;
-                                const samePerson = (targetIts && String(h.holderIts || '').trim() === targetIts) ||
+                                if (updatedHolderIdsInThisImport.has(String(h.id))) return false;
+                                const hIts = isValidDirectoryIts(h.holderIts) ? String(h.holderIts).trim() : '';
+                                const samePerson = (targetIts && hIts && hIts === targetIts) ||
                                                    (targetNameLower && String(h.holderName || '').trim().toLowerCase() === targetNameLower);
                                 if (!samePerson) return false;
-                                // Match if existing holder has no expiryDate yet or has the same issueDate
                                 return !h.expiryDate || h.issueDate === issueDateIso;
                             });
 
                             if (existingHolder) {
-                                // Update existing holder's Expiry Date & Issue Date in place without duplicating or double-deducting Keys in Store!
+                                // Update existing holder's Expiry Date & Issue Date in place without duplicating or double-deducting Keys in Store
                                 if (rawIssueDate) existingHolder.issueDate = issueDateIso;
                                 if (expiryDateIso) existingHolder.expiryDate = expiryDateIso;
                                 existingHolder.holderName = dirMatch.holderName || existingHolder.holderName;
-                                if (dirMatch.holderIts) existingHolder.holderIts = dirMatch.holderIts;
-                                if (dirMatch.holderMobile && !existingHolder.holderMobile) existingHolder.holderMobile = dirMatch.holderMobile;
+                                existingHolder.holderIts = dirMatch.holderIts || existingHolder.holderIts || '';
+                                if (dirMatch.holderMobile) existingHolder.holderMobile = dirMatch.holderMobile;
                                 existingHolder.isDirectoryMatch = dirMatch.matched;
+                                updatedHolderIdsInThisImport.add(String(existingHolder.id));
                                 updatedExistingCount++;
                             } else {
+                                const newHolderId = `iss_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 7)}`;
                                 keyObj.holders.push({
-                                    id: `iss_${Date.now()}_${idx}_${Math.random().toString().slice(2, 6)}`,
+                                    id: newHolderId,
                                     keyId: keyObj.keyId,
-                                    holderName: dirMatch.holderName || issuedToVal,
+                                    holderName: dirMatch.holderName || parsedInputName || issuedToVal,
                                     holderIts: dirMatch.holderIts || '',
                                     holderMobile: dirMatch.holderMobile || '',
                                     isDirectoryMatch: dirMatch.matched,
@@ -24058,6 +24731,7 @@ Shukran`;
                                     whatsappTemplateUsed: '',
                                     whatsappSentAt: ''
                                 });
+                                updatedHolderIdsInThisImport.add(newHolderId);
                                 issuedCount++;
                             }
 

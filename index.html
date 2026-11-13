@@ -2243,19 +2243,12 @@
                         </button>
                         <button
                             type="button"
-                            onclick="exportKeysMasterList('excel')"
-                            class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 shadow-sm"
+                            onclick="openKeysExportModal('master')"
+                            class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 shadow-sm"
+                            title="Export Master List, Master List with Active Key Holders, and/or People Tracker (Excel, PDF, or ZIP)"
                         >
-                            <i class="fa-solid fa-file-excel"></i>
-                            <span>Export Excel</span>
-                        </button>
-                        <button
-                            type="button"
-                            onclick="exportKeysMasterList('pdf')"
-                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 shadow-sm"
-                        >
-                            <i class="fa-solid fa-file-pdf"></i>
-                            <span>Export PDF</span>
+                            <i class="fa-solid fa-file-export"></i>
+                            <span>Export</span>
                         </button>
                         <button
                             type="button"
@@ -2346,13 +2339,9 @@
                         <button type="button" id="btnKeysPeopleFilterHolding" onclick="setKeysPeopleFilterMode('holding')" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-gray-700 border hover:bg-emerald-50 transition">
                             Currently Holding Keys Only
                         </button>
-                        <button type="button" onclick="exportKeysPeopleTracker('excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-sm">
-                            <i class="fa-solid fa-file-excel"></i>
-                            <span>Export Excel</span>
-                        </button>
-                        <button type="button" onclick="exportKeysPeopleTracker('pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-sm">
-                            <i class="fa-solid fa-file-pdf"></i>
-                            <span>Export PDF</span>
+                        <button type="button" onclick="openKeysExportModal('people')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Export Master List, Master List with Active Key Holders, and/or People Tracker (Excel, PDF, or ZIP)">
+                            <i class="fa-solid fa-file-export"></i>
+                            <span>Export</span>
                         </button>
                     </div>
                 </div>
@@ -6244,11 +6233,12 @@ function getOrCreateUtilityFolder_(name) {
                 <div class="grid grid-cols-2 gap-3 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
                     <div>
                         <label class="text-xs font-bold text-emerald-950 block mb-1">Total Keys Available <span class="text-red-600">*</span></label>
-                        <input type="number" min="0" id="editKeyTotalCountInput" required class="w-full p-2 border rounded-lg text-sm font-extrabold bg-white">
+                        <input type="number" min="0" id="editKeyTotalCountInput" required oninput="recalcEditModalKeysInStore()" class="w-full p-2 border rounded-lg text-sm font-extrabold bg-white">
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-emerald-950 block mb-1">Keys in Store <span class="text-red-600">*</span></label>
-                        <input type="number" min="0" id="editKeyInStoreInput" required class="w-full p-2 border rounded-lg text-sm font-extrabold bg-white">
+                        <label class="text-xs font-bold text-emerald-950 block mb-1">Keys in Store <span class="text-emerald-700 font-semibold">(Auto-Calculated)</span></label>
+                        <input type="number" min="0" id="editKeyInStoreInput" readonly tabindex="-1" class="w-full p-2 border border-emerald-200 rounded-lg text-sm font-extrabold bg-gray-100 text-emerald-900 cursor-not-allowed" title="Automatically calculated as Total Keys minus Active Issued Keys">
+                        <span id="editKeyInStoreFormulaHint" class="text-[10px] text-emerald-800 font-semibold block mt-0.5">Total (1) − Issued (0) = 1 in Store</span>
                     </div>
                 </div>
 
@@ -6261,6 +6251,79 @@ function getOrCreateUtilityFolder_(name) {
                         <button type="button" onclick="closeModal('modalEditKeyMaster')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-700">Cancel</button>
                         <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded-lg text-xs font-extrabold shadow-sm">Save Key Details</button>
                     </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5B: Export Keys Inventory Pop-Up Modal (#modalExportKeysInventory) -->
+    <div id="modalExportKeysInventory" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-[80]">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-emerald-200">
+            <div class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 text-white px-5 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fa-solid fa-file-export text-emerald-300 text-lg"></i>
+                    <div>
+                        <h3 class="font-extrabold text-base">Export Keys Inventory</h3>
+                        <p class="text-[11px] text-emerald-200">Select datasets to export in Excel (.xlsx), PDF (.pdf), or combined .zip</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('modalExportKeysInventory')" class="text-emerald-200 hover:text-white text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <form onsubmit="handleKeysExportModalSubmit(event)" class="p-5 space-y-4 text-xs sm:text-sm">
+                <div class="space-y-2.5">
+                    <label class="text-xs font-extrabold text-gray-700 uppercase tracking-wider block">1. Select Options to Export (Check one or more):</label>
+
+                    <label class="flex items-start space-x-3 p-3 rounded-xl border-2 border-gray-200 hover:border-emerald-500 bg-gray-50/70 cursor-pointer transition">
+                        <input type="checkbox" id="chkKeysExportMasterOnly" checked onchange="updateKeysExportModalHint()" class="mt-0.5 h-4 w-4 rounded text-emerald-700 focus:ring-emerald-600">
+                        <div>
+                            <span class="font-extrabold text-gray-900 block">Master List (Key ID &amp; Storage Only)</span>
+                            <span class="text-xs text-gray-500">All details of the Key ID (Building/Area, Floor, Room No., Details, Storage Location, Total Keys, Keys in Store) <strong>without current key holders data</strong>.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start space-x-3 p-3 rounded-xl border-2 border-gray-200 hover:border-teal-500 bg-gray-50/70 cursor-pointer transition">
+                        <input type="checkbox" id="chkKeysExportMasterWithHolders" onchange="updateKeysExportModalHint()" class="mt-0.5 h-4 w-4 rounded text-teal-700 focus:ring-teal-600">
+                        <div>
+                            <span class="font-extrabold text-gray-900 block">Master List with Active Key Holders</span>
+                            <span class="text-xs text-gray-500">All Master List key and storage details with an added <strong>Active Key Holders</strong> column showing all active key holders and dates.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start space-x-3 p-3 rounded-xl border-2 border-gray-200 hover:border-indigo-500 bg-gray-50/70 cursor-pointer transition">
+                        <input type="checkbox" id="chkKeysExportPeopleTracker" onchange="updateKeysExportModalHint()" class="mt-0.5 h-4 w-4 rounded text-indigo-700 focus:ring-indigo-600">
+                        <div>
+                            <span class="font-extrabold text-gray-900 block">People Tracker</span>
+                            <span class="text-xs text-gray-500">Full People Tracker sub-header data (Sr No, Name &amp; ITS ID, Contact Number, and all Currently Issued Key IDs with Issue Dates).</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="space-y-2 pt-2 border-t border-gray-200">
+                    <label class="text-xs font-extrabold text-gray-700 uppercase tracking-wider block">2. Select File Format:</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center space-x-2.5 p-3 border-2 border-emerald-300 bg-emerald-50/60 rounded-xl cursor-pointer hover:bg-emerald-100/60 transition">
+                            <input type="radio" name="keysExportFormatRadio" value="excel" checked class="text-emerald-700 focus:ring-emerald-600">
+                            <span class="font-extrabold text-emerald-950 text-xs"><i class="fa-solid fa-file-excel text-emerald-700 mr-1.5 text-sm"></i>Excel (.xlsx)</span>
+                        </label>
+                        <label class="flex items-center space-x-2.5 p-3 border-2 border-red-200 bg-red-50/50 rounded-xl cursor-pointer hover:bg-red-100/50 transition">
+                            <input type="radio" name="keysExportFormatRadio" value="pdf" class="text-red-700 focus:ring-red-600">
+                            <span class="font-extrabold text-red-950 text-xs"><i class="fa-solid fa-file-pdf text-red-600 mr-1.5 text-sm"></i>PDF (.pdf)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="keysExportModalZipNotice" class="hidden bg-indigo-50 border border-indigo-200 text-indigo-950 px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center space-x-2">
+                    <i class="fa-solid fa-file-zipper text-indigo-700 text-base shrink-0"></i>
+                    <span>Multiple options selected — files will be downloaded together as separate files inside a <strong>.zip</strong> folder.</span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-3 border-t">
+                    <button type="button" onclick="closeModal('modalExportKeysInventory')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" id="btnConfirmKeysExport" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded-lg text-xs font-extrabold shadow-md transition inline-flex items-center space-x-1.5">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -21994,8 +22057,8 @@ window.cleanDuplicateEstateAssets = async function() {
                     roomNo: roomClean,
                     details: detailsClean,
                     storageLocation: storageClean,
-                    totalKeys: totalKeysNum,
-                    keysInStore: (rawInStore !== undefined && rawInStore !== null && rawInStore !== '') ? keysInStoreNum : Math.max(0, totalKeysNum - holders.length),
+                    totalKeys: Math.max(totalKeysNum, holders.length),
+                    keysInStore: Math.max(0, Math.max(totalKeysNum, holders.length) - holders.length),
                     holders,
                     history: rawHistory,
                     updatedAt: String(item.updatedAt || getLocalTodayDateString())
@@ -22610,7 +22673,23 @@ window.cleanDuplicateEstateAssets = async function() {
             }, 100, 150);
         };
 
-        // Admin Edit / Add Key ID Modal Functions
+        // Admin Edit / Add Key ID Modal Functions (with strictly auto-calculated Keys in Store = Total Keys - Issued)
+        window.recalcEditModalKeysInStore = function() {
+            const editDocId = (document.getElementById('editKeyDocId')?.value || '').trim();
+            const existingRec = editDocId ? keysInventoryData.find(item => String(item.id) === String(editDocId)) : null;
+            const activeIssuedCount = (existingRec && Array.isArray(existingRec.holders))
+                ? existingRec.holders.filter(h => h && h.status !== 'returned').length
+                : 0;
+            const totalVal = Math.max(0, parseInt(document.getElementById('editKeyTotalCountInput')?.value || '0', 10) || 0);
+            const autoInStore = Math.max(0, totalVal - activeIssuedCount);
+            const storeEl = document.getElementById('editKeyInStoreInput');
+            if (storeEl) storeEl.value = autoInStore;
+            const hintEl = document.getElementById('editKeyInStoreFormulaHint');
+            if (hintEl) {
+                hintEl.innerText = `Total (${totalVal}) − Issued (${activeIssuedCount}) = ${autoInStore} in Store`;
+            }
+        };
+
         window.openEditKeyMasterModal = function(keyDocId = '') {
             if (keyDocId && !isUserAdmin) {
                 showAssetToast("Admin Privileges Required: Only Administrators can edit Key ID details.", true);
@@ -22635,7 +22714,7 @@ window.cleanDuplicateEstateAssets = async function() {
                 document.getElementById('editKeyDetailsInput').value = k.details || '';
                 document.getElementById('editKeyStorageInput').value = k.storageLocation || '';
                 document.getElementById('editKeyTotalCountInput').value = k.totalKeys ?? 1;
-                document.getElementById('editKeyInStoreInput').value = k.keysInStore ?? 1;
+                recalcEditModalKeysInStore();
                 if (delBtn) delBtn.classList.toggle('hidden', !isUserAdmin);
             } else {
                 document.getElementById('editKeyMasterModalTitle').innerText = 'Add New Key ID Record';
@@ -22643,7 +22722,7 @@ window.cleanDuplicateEstateAssets = async function() {
                 document.getElementById('editKeyFloorInput').value = '-';
                 document.getElementById('editKeyRoomInput').value = '-';
                 document.getElementById('editKeyTotalCountInput').value = 1;
-                document.getElementById('editKeyInStoreInput').value = 1;
+                recalcEditModalKeysInStore();
                 if (delBtn) delBtn.classList.add('hidden');
             }
 
@@ -22666,13 +22745,16 @@ window.cleanDuplicateEstateAssets = async function() {
             const details = (document.getElementById('editKeyDetailsInput')?.value || '-').trim() || '-';
             const storageLocation = (document.getElementById('editKeyStorageInput')?.value || '-').trim() || '-';
             const totalKeys = Math.max(0, parseInt(document.getElementById('editKeyTotalCountInput')?.value || '0', 10) || 0);
-            const keysInStore = Math.max(0, parseInt(document.getElementById('editKeyInStoreInput')?.value || '0', 10) || 0);
 
             if (!keyId) return;
 
             if (editDocId) {
                 const idx = keysInventoryData.findIndex(k => String(k.id) === String(editDocId));
                 if (idx !== -1) {
+                    const activeIssuedCount = Array.isArray(keysInventoryData[idx].holders)
+                        ? keysInventoryData[idx].holders.filter(h => h && h.status !== 'returned').length
+                        : 0;
+                    const keysInStore = Math.max(0, totalKeys - activeIssuedCount);
                     keysInventoryData[idx] = {
                         ...keysInventoryData[idx],
                         keyId,
@@ -22702,7 +22784,7 @@ window.cleanDuplicateEstateAssets = async function() {
                     details,
                     storageLocation,
                     totalKeys,
-                    keysInStore,
+                    keysInStore: totalKeys,
                     holders: [],
                     history: [],
                     updatedAt: getLocalTodayDateString()
@@ -23017,8 +23099,9 @@ window.cleanDuplicateEstateAssets = async function() {
                 whatsappSentAt: ''
             });
 
-            // Decrement Keys in Store
-            k.keysInStore = Math.max(0, (Number(k.keysInStore) || 0) - 1);
+            // Auto-calculate Keys in Store = Total Keys minus Active Issued Keys
+            const activeAfterIssue = k.holders.filter(h => h && h.status !== 'returned').length;
+            k.keysInStore = Math.max(0, (Number(k.totalKeys) || 0) - activeAfterIssue);
             k.updatedAt = getLocalTodayDateString();
 
             // Reset assignee fields
@@ -23279,9 +23362,9 @@ Shukran`;
                     returnDate: returnDateIso
                 });
 
-                // Increment Keys in Store (up to totalKeys)
-                const maxTotal = Math.max(0, Number(k.totalKeys) || 0);
-                k.keysInStore = Math.min(maxTotal, (Number(k.keysInStore) || 0) + 1);
+                // Auto-calculate Keys in Store = Total Keys minus Active Issued Keys
+                const activeAfterReturn = k.holders.filter(h => h && h.status !== 'returned').length;
+                k.keysInStore = Math.max(0, (Number(k.totalKeys) || 0) - activeAfterReturn);
                 k.updatedAt = getLocalTodayDateString();
 
                 // Automatically send WATI WhatsApp notification using template: key_return
@@ -23776,6 +23859,9 @@ Shukran`;
                         const existingIdx = keysInventoryData.findIndex(k => String(k.keyId).trim().toLowerCase() === keyIdVal.toLowerCase());
                         if (existingIdx !== -1) {
                             const existing = keysInventoryData[existingIdx];
+                            const mergedHolders = parsedHolders.length > 0 ? parsedHolders : (existing.holders || []);
+                            const activeMergedCount = mergedHolders.filter(h => h && h.status !== 'returned').length;
+                            const finalTotal = Math.max(totalVal, activeMergedCount);
                             keysInventoryData[existingIdx] = {
                                 ...existing,
                                 keyId: keyIdVal,
@@ -23784,12 +23870,14 @@ Shukran`;
                                 roomNo: roomVal,
                                 details: detailsVal,
                                 storageLocation: storageVal,
-                                totalKeys: totalVal,
-                                keysInStore: inStoreVal,
-                                holders: parsedHolders.length > 0 ? parsedHolders : (existing.holders || []),
+                                totalKeys: finalTotal,
+                                keysInStore: Math.max(0, finalTotal - activeMergedCount),
+                                holders: mergedHolders,
                                 updatedAt: getLocalTodayDateString()
                             };
                         } else {
+                            const activeParsedCount = parsedHolders.filter(h => h && h.status !== 'returned').length;
+                            const finalTotal = Math.max(totalVal, activeParsedCount);
                             keysInventoryData.push({
                                 id: `key_${Date.now()}_${idx}_${Math.random().toString().slice(2, 6)}`,
                                 keyId: keyIdVal,
@@ -23798,8 +23886,8 @@ Shukran`;
                                 roomNo: roomVal,
                                 details: detailsVal,
                                 storageLocation: storageVal,
-                                totalKeys: totalVal,
-                                keysInStore: inStoreVal,
+                                totalKeys: finalTotal,
+                                keysInStore: Math.max(0, finalTotal - activeParsedCount),
                                 holders: parsedHolders,
                                 history: [],
                                 updatedAt: getLocalTodayDateString()
@@ -23995,42 +24083,51 @@ Shukran`;
             reader.readAsArrayBuffer(fileInput.files[0]);
         };
 
-        window.exportKeysMasterList = function(format) {
-            const list = getFilteredKeysMasterList();
-            if (list.length === 0) {
-                showAssetToast("No Key ID records available to export.", true);
-                return;
+        window.openKeysExportModal = function(defaultSource = 'master') {
+            const cMaster = document.getElementById('chkKeysExportMasterOnly');
+            const cHolders = document.getElementById('chkKeysExportMasterWithHolders');
+            const cPeople = document.getElementById('chkKeysExportPeopleTracker');
+            if (defaultSource === 'people') {
+                if (cMaster) cMaster.checked = false;
+                if (cHolders) cHolders.checked = false;
+                if (cPeople) cPeople.checked = true;
+            } else {
+                if (cMaster) cMaster.checked = true;
+                if (cHolders) cHolders.checked = false;
+                if (cPeople) cPeople.checked = false;
             }
-            const columns = ["Key ID", "Area / Building", "Floor", "Room No.", "Details", "Storage Location", "Total Keys", "Keys in Store", "Active Key Holders"];
-            const rows = list.map(k => {
-                const holdersStr = (k.holders || [])
-                    .filter(h => h && h.status !== 'returned')
-                    .map(h => `${h.holderIts ? h.holderName + '-' + h.holderIts : h.holderName} (${formatKeyDateDdMmmYyyy(h.issueDate)}${h.expiryDate ? ', Exp: ' + formatKeyDateDdMmmYyyy(h.expiryDate) : ''})`)
-                    .join('; ');
-                return [
-                    k.keyId || '-',
-                    k.area || '-',
-                    k.floor || '-',
-                    k.roomNo || '-',
-                    k.details || '-',
-                    k.storageLocation || '-',
-                    Number(k.totalKeys) || 0,
-                    Number(k.keysInStore) || 0,
-                    holdersStr || 'All in Store'
-                ];
-            });
+            updateKeysExportModalHint();
+            document.getElementById('modalExportKeysInventory')?.classList.remove('hidden');
+        };
 
-            const dateStamp = getLocalTodayDateString();
+        window.updateKeysExportModalHint = function() {
+            const c1 = document.getElementById('chkKeysExportMasterOnly')?.checked;
+            const c2 = document.getElementById('chkKeysExportMasterWithHolders')?.checked;
+            const c3 = document.getElementById('chkKeysExportPeopleTracker')?.checked;
+            const count = [c1, c2, c3].filter(Boolean).length;
+            const zipNotice = document.getElementById('keysExportModalZipNotice');
+            if (zipNotice) {
+                zipNotice.classList.toggle('hidden', count <= 1);
+            }
+        };
+
+        function generateKeysExportFileEntry(columns, rows, sheetName, pdfTitle, baseFilename, format) {
             if (format === 'excel') {
                 const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Keys_Master_List");
-                XLSX.writeFile(wb, `Keys_Inventory_Master_List_${dateStamp}.xlsx`);
+                XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
+                const arrayBuf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                return {
+                    filename: `${baseFilename}.xlsx`,
+                    buffer: arrayBuf,
+                    mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                };
             } else {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'landscape' });
+                const dateStamp = getLocalTodayDateString();
                 doc.setFontSize(14);
-                doc.text("Keys Inventory — Master List", 14, 15);
+                doc.text(pdfTitle, 14, 15);
                 doc.setFontSize(9);
                 doc.text(`Exported on: ${formatKeyDateDdMmmYyyy(dateStamp)} | Aljamea-tus-Saifiyah Facilities Management Dept (Marol)`, 14, 21);
                 doc.autoTable({
@@ -24041,61 +24138,160 @@ Shukran`;
                     styles: { fontSize: 8 },
                     headStyles: { fillColor: [6, 95, 70] }
                 });
-                doc.save(`Keys_Inventory_Master_List_${dateStamp}.pdf`);
+                const arrayBuf = doc.output('arraybuffer');
+                return {
+                    filename: `${baseFilename}.pdf`,
+                    buffer: arrayBuf,
+                    mime: 'application/pdf'
+                };
             }
-            showAssetToast(`Exported Keys Master List (${format.toUpperCase()})`);
-        };
+        }
 
-        window.exportKeysPeopleTracker = function(format) {
-            const allRows = buildPeopleTrackerRowsData();
-            const q = (document.getElementById('keysPeopleSearchInput')?.value || '').toLowerCase().trim();
-            const tokens = q.split(/\s+/).filter(Boolean);
-            const filtered = allRows.filter(r => {
-                if (keysPeopleFilterMode === 'holding' && r.entries.length === 0) return false;
-                if (tokens.length > 0) {
-                    const corpus = `${r.nameAndIts} ${r.contact} ${r.keysString}`.toLowerCase();
-                    if (!tokens.every(t => corpus.includes(t))) return false;
-                }
-                return true;
-            });
+        window.handleKeysExportModalSubmit = async function(e) {
+            if (e) e.preventDefault();
+            const wantMasterOnly = Boolean(document.getElementById('chkKeysExportMasterOnly')?.checked);
+            const wantMasterWithHolders = Boolean(document.getElementById('chkKeysExportMasterWithHolders')?.checked);
+            const wantPeopleTracker = Boolean(document.getElementById('chkKeysExportPeopleTracker')?.checked);
 
-            if (filtered.length === 0) {
-                showAssetToast("No People Tracker records available to export.", true);
+            if (!wantMasterOnly && !wantMasterWithHolders && !wantPeopleTracker) {
+                showAssetToast("Please select at least one option to export.", true);
                 return;
             }
 
-            const columns = ["Sr No", "Name & ITS ID", "Currently Issued Key IDs (with Issue Date)"];
-            const rows = filtered.map((r, idx) => [
-                idx + 1,
-                r.nameAndIts,
-                r.keysString || '-'
-            ]);
+            const fmtRadio = document.querySelector('input[name="keysExportFormatRadio"]:checked');
+            const format = fmtRadio ? fmtRadio.value : 'excel';
+            const dateStamp = formatKeyDateDdMmmYyyy(getLocalTodayDateString());
+            const filesToDownload = [];
 
-            const dateStamp = getLocalTodayDateString();
-            if (format === 'excel') {
-                const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "People_Key_Tracker");
-                XLSX.writeFile(wb, `Keys_People_Tracker_${dateStamp}.xlsx`);
-            } else {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ orientation: 'landscape' });
-                doc.setFontSize(14);
-                doc.text("Keys Inventory — People Tracker", 14, 15);
-                doc.setFontSize(9);
-                doc.text(`Exported on: ${formatKeyDateDdMmmYyyy(dateStamp)} | Aljamea-tus-Saifiyah Facilities Management Dept (Marol)`, 14, 21);
-                doc.autoTable({
-                    head: [columns],
-                    body: rows,
-                    startY: 25,
-                    theme: 'grid',
-                    styles: { fontSize: 8.5 },
-                    headStyles: { fillColor: [6, 95, 70] }
+            const masterListSource = getFilteredKeysMasterList();
+
+            if (wantMasterOnly) {
+                const cols = ["Key ID", "Area / Building", "Floor", "Room No.", "Details", "Storage Location", "Total Keys", "Keys in Store"];
+                const rows = masterListSource.map(k => {
+                    const activeCount = Array.isArray(k.holders) ? k.holders.filter(h => h && h.status !== 'returned').length : 0;
+                    const tot = Math.max(0, Number(k.totalKeys) || 0);
+                    const inStore = Math.max(0, tot - activeCount);
+                    return [
+                        k.keyId || '-',
+                        k.area || '-',
+                        k.floor || '-',
+                        k.roomNo || '-',
+                        k.details || '-',
+                        k.storageLocation || '-',
+                        tot,
+                        inStore
+                    ];
                 });
-                doc.save(`Keys_People_Tracker_${dateStamp}.pdf`);
+                filesToDownload.push(
+                    generateKeysExportFileEntry(
+                        cols,
+                        rows,
+                        "Keys_Master_List",
+                        "Keys Inventory — Master List (Key ID & Storage Details)",
+                        `Keys_Master_List_${dateStamp}`,
+                        format
+                    )
+                );
             }
-            showAssetToast(`Exported People Tracker (${format.toUpperCase()})`);
+
+            if (wantMasterWithHolders) {
+                const cols = ["Key ID", "Area / Building", "Floor", "Room No.", "Details", "Storage Location", "Total Keys", "Keys in Store", "Active Key Holders"];
+                const rows = masterListSource.map(k => {
+                    const activeHolders = (k.holders || []).filter(h => h && h.status !== 'returned');
+                    const tot = Math.max(0, Number(k.totalKeys) || 0);
+                    const inStore = Math.max(0, tot - activeHolders.length);
+                    const holdersStr = activeHolders
+                        .map(h => `${h.holderIts ? h.holderName + '-' + h.holderIts : h.holderName} (${formatKeyDateDdMmmYyyy(h.issueDate)}${h.expiryDate ? ', Exp: ' + formatKeyDateDdMmmYyyy(h.expiryDate) : ''})`)
+                        .join('; ');
+                    return [
+                        k.keyId || '-',
+                        k.area || '-',
+                        k.floor || '-',
+                        k.roomNo || '-',
+                        k.details || '-',
+                        k.storageLocation || '-',
+                        tot,
+                        inStore,
+                        holdersStr || 'All in Store'
+                    ];
+                });
+                filesToDownload.push(
+                    generateKeysExportFileEntry(
+                        cols,
+                        rows,
+                        "Master_With_Active_Holders",
+                        "Keys Inventory — Master List with Active Key Holders",
+                        `Keys_Master_List_With_Active_Holders_${dateStamp}`,
+                        format
+                    )
+                );
+            }
+
+            if (wantPeopleTracker) {
+                const allRows = buildPeopleTrackerRowsData();
+                const q = (document.getElementById('keysPeopleSearchInput')?.value || '').toLowerCase().trim();
+                const tokens = q.split(/\s+/).filter(Boolean);
+                const filteredPeople = allRows.filter(r => {
+                    if (keysPeopleFilterMode === 'holding' && r.entries.length === 0) return false;
+                    if (tokens.length > 0) {
+                        const corpus = `${r.nameAndIts} ${r.contact} ${r.keysString}`.toLowerCase();
+                        if (!tokens.every(t => corpus.includes(t))) return false;
+                    }
+                    return true;
+                });
+                const cols = ["Sr No", "Name & ITS ID", "Contact Number", "Total Active Keys Held", "Currently Issued Key IDs (with Issue Date)"];
+                const rows = filteredPeople.map((r, idx) => [
+                    idx + 1,
+                    r.nameAndIts || '-',
+                    r.contact || '-',
+                    r.entries.length,
+                    r.keysString || '-'
+                ]);
+                filesToDownload.push(
+                    generateKeysExportFileEntry(
+                        cols,
+                        rows,
+                        "People_Tracker",
+                        "Keys Inventory — People Tracker",
+                        `Keys_People_Tracker_${dateStamp}`,
+                        format
+                    )
+                );
+            }
+
+            if (filesToDownload.length === 1) {
+                const single = filesToDownload[0];
+                const blob = new Blob([single.buffer], { type: single.mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = single.filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1200);
+                showAssetToast(`Downloaded ${single.filename}`);
+            } else {
+                const zip = new JSZip();
+                filesToDownload.forEach(item => {
+                    zip.file(item.filename, item.buffer);
+                });
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const zipFilename = `Keys_Inventory_Export_${dateStamp}.zip`;
+                const url = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = zipFilename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1200);
+                showAssetToast(`Downloaded ZIP bundle (${filesToDownload.length} files)`);
+            }
+
+            closeModal('modalExportKeysInventory');
         };
+
+        window.exportKeysMasterList = function() { window.openKeysExportModal('master'); };
+        window.exportKeysPeopleTracker = function() { window.openKeysExportModal('people'); };
 
         window.closeModal = function(modalId) {
             document.getElementById(modalId).classList.add('hidden');

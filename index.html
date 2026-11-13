@@ -481,6 +481,229 @@
                 box-shadow: 2px 0 6px -2px rgba(0, 0, 0, 0.1);
             }
 
+            /* ===================================================================== */
+            /* KEYS MODULE (#module-inventory) MOBILE APP OPTIMIZATION & -1PT SCALE  */
+            /* - Decreases all Keys module font sizes by 1pt ONLY in mobile app view */
+            /* - Removes Active Key Holders column in Master List to prevent tall rows*/
+            /* - Converts sub-tabs, KPI cards, area breakdown & filters to compact UI*/
+            /* ===================================================================== */
+            body.pwa-mode #module-inventory,
+            body.pwa-mode #modalKeyIssueReturn,
+            body.pwa-mode #modalEditKeyMaster,
+            body.pwa-mode #modalKeysExpiredAlert,
+            body.pwa-mode #modalKeysExport,
+            body.pwa-mode #modalKeysBulkReassignClean {
+                font-size: calc(0.875rem - 1pt) !important;
+            }
+            body.pwa-mode #module-inventory {
+                margin-top: 0 !important;
+            }
+            body.pwa-mode #module-inventory.space-y-6 > :not([hidden]) ~ :not([hidden]),
+            body.pwa-mode #sec-keys-dashboard.space-y-6 > :not([hidden]) ~ :not([hidden]),
+            body.pwa-mode #sec-keys-master.space-y-4 > :not([hidden]) ~ :not([hidden]),
+            body.pwa-mode #sec-keys-people.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0.55rem !important;
+            }
+            /* -1pt Typography Scaling across all text classes inside Keys Module in Mobile App */
+            body.pwa-mode #module-inventory .text-4xl {
+                font-size: calc(1.65rem - 1pt) !important;
+                line-height: 1.1 !important;
+            }
+            body.pwa-mode #module-inventory .text-2xl {
+                font-size: calc(1.25rem - 1pt) !important;
+                line-height: 1.2 !important;
+            }
+            body.pwa-mode #module-inventory .text-xl,
+            body.pwa-mode #modalKeyIssueReturn .text-xl {
+                font-size: calc(1.05rem - 1pt) !important;
+                line-height: 1.2 !important;
+            }
+            body.pwa-mode #module-inventory .text-lg,
+            body.pwa-mode #modalKeyIssueReturn .text-lg {
+                font-size: calc(0.95rem - 1pt) !important;
+                line-height: 1.2 !important;
+            }
+            body.pwa-mode #module-inventory .text-base,
+            body.pwa-mode #modalKeyIssueReturn .text-base {
+                font-size: calc(0.88rem - 1pt) !important;
+                line-height: 1.25 !important;
+            }
+            body.pwa-mode #module-inventory .text-sm,
+            body.pwa-mode #modalKeyIssueReturn .text-sm,
+            body.pwa-mode #modalEditKeyMaster .text-sm,
+            body.pwa-mode #modalKeysExport .text-sm {
+                font-size: calc(0.875rem - 1pt) !important;
+                line-height: 1.25 !important;
+            }
+            body.pwa-mode #module-inventory .text-xs,
+            body.pwa-mode #modalKeyIssueReturn .text-xs,
+            body.pwa-mode #modalEditKeyMaster .text-xs,
+            body.pwa-mode #modalKeysExport .text-xs {
+                font-size: calc(0.75rem - 1pt) !important;
+                line-height: 1.2 !important;
+            }
+            body.pwa-mode #module-inventory .text-\[11px\],
+            body.pwa-mode #modalKeyIssueReturn .text-\[11px\] {
+                font-size: calc(11px - 1pt) !important;
+                line-height: 1.15 !important;
+            }
+            body.pwa-mode #module-inventory .text-\[10px\],
+            body.pwa-mode #modalKeyIssueReturn .text-\[10px\] {
+                font-size: calc(10px - 1pt) !important;
+                line-height: 1.15 !important;
+            }
+            body.pwa-mode #module-inventory .text-\[9\.5px\],
+            body.pwa-mode #modalKeyIssueReturn .text-\[9\.5px\] {
+                font-size: calc(9.5px - 1pt) !important;
+                line-height: 1.1 !important;
+            }
+
+            /* Top Sub-Navigation Segmented Bar in Keys Module */
+            body.pwa-mode #module-inventory > div:first-child {
+                padding: 0.45rem !important;
+                gap: 0.4rem !important;
+                border-radius: 0.75rem !important;
+            }
+            body.pwa-mode #module-inventory > div:first-child > div:first-child {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 0.3rem !important;
+                width: 100% !important;
+            }
+            body.pwa-mode #module-inventory > div:first-child > div:first-child button {
+                padding: 0.4rem 0.3rem !important;
+                justify-content: center !important;
+                font-size: calc(0.75rem - 1pt) !important;
+                white-space: nowrap !important;
+                border-radius: 0.5rem !important;
+            }
+            body.pwa-mode #module-inventory > div:first-child > div:first-child button span[id*="CountBadge"] {
+                padding: 0.05rem 0.35rem !important;
+                font-size: calc(10px - 1pt) !important;
+            }
+            body.pwa-mode #module-inventory > div:first-child > div:last-child {
+                width: 100% !important;
+                justify-content: stretch !important;
+            }
+            body.pwa-mode #module-inventory #btnKeysExpiredHeaderAlert {
+                width: 100% !important;
+                justify-content: center !important;
+                padding: 0.35rem 0.6rem !important;
+                font-size: calc(0.75rem - 1pt) !important;
+                border-radius: 0.5rem !important;
+            }
+            body.pwa-mode #module-inventory button[onclick*="openKeysSchemaArchitectureModal"] {
+                display: none !important;
+            }
+
+            /* Tab 1: Keys Dashboard Compact KPI & 2-Column Area Grid */
+            body.pwa-mode #sec-keys-dashboard > div:first-child {
+                gap: 0.45rem !important;
+            }
+            body.pwa-mode #sec-keys-dashboard > div:first-child > div {
+                padding: 0.65rem 0.75rem !important;
+                border-radius: 0.75rem !important;
+            }
+            body.pwa-mode #sec-keys-dashboard > div:first-child > div > div:last-child {
+                margin-top: 0.45rem !important;
+                padding-top: 0.35rem !important;
+            }
+            body.pwa-mode #sec-keys-dashboard > div:nth-child(2) {
+                padding: 0.65rem !important;
+                border-radius: 0.75rem !important;
+            }
+            body.pwa-mode #keysAreaBreakdownGrid {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.45rem !important;
+            }
+            body.pwa-mode #keysAreaBreakdownGrid > div {
+                padding: 0.55rem !important;
+                border-radius: 0.65rem !important;
+                gap: 0.35rem !important;
+            }
+            body.pwa-mode #keysAreaBreakdownGrid > div > div:first-child span.p-2 {
+                padding: 0.3rem !important;
+            }
+
+            /* Tab 2: Keys Master List Compact Header, Action Grid, Filter Bar & Table */
+            body.pwa-mode #sec-keys-master > div:first-child,
+            body.pwa-mode #sec-keys-people > div:first-child {
+                padding: 0.55rem 0.65rem !important;
+                gap: 0.45rem !important;
+                border-radius: 0.75rem !important;
+            }
+            body.pwa-mode #sec-keys-master > div:first-child > div:last-child,
+            body.pwa-mode #sec-keys-people > div:first-child > div:last-child {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.35rem !important;
+                width: 100% !important;
+            }
+            body.pwa-mode #sec-keys-master > div:first-child > div:last-child button,
+            body.pwa-mode #sec-keys-people > div:first-child > div:last-child button {
+                width: 100% !important;
+                justify-content: center !important;
+                padding: 0.38rem 0.45rem !important;
+                font-size: calc(0.73rem - 1pt) !important;
+                border-radius: 0.5rem !important;
+            }
+            /* Compact Search & Filter Bar in Master List (Search on Row 1, Area + Status + Reset on Row 2) */
+            body.pwa-mode #sec-keys-master > div:nth-child(2) {
+                padding: 0.5rem 0.6rem !important;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.38rem !important;
+                border-radius: 0.75rem !important;
+            }
+            body.pwa-mode #sec-keys-master > div:nth-child(2) > div:first-child {
+                grid-column: span 2 / span 2 !important;
+            }
+            body.pwa-mode #sec-keys-master > div:nth-child(2) > div:last-child {
+                grid-column: span 2 / span 2 !important;
+            }
+            body.pwa-mode #sec-keys-master > div:nth-child(2) input,
+            body.pwa-mode #sec-keys-master > div:nth-child(2) select,
+            body.pwa-mode #sec-keys-master > div:nth-child(2) button,
+            body.pwa-mode #sec-keys-people input {
+                padding-top: 0.35rem !important;
+                padding-bottom: 0.35rem !important;
+                font-size: calc(0.78rem - 1pt) !important;
+            }
+
+            /* Remove Active Key Holders Column Completely in Mobile App View */
+            body.pwa-mode #sec-keys-master #thKeysMasterActiveHolders,
+            body.pwa-mode #sec-keys-master .keys-col-active-holders {
+                display: none !important;
+            }
+
+            /* Master List & People Tracker Table Refinements (-1pt font & compact row height) */
+            body.pwa-mode #module-inventory .keys-master-table,
+            body.pwa-mode #module-inventory .keys-master-table th,
+            body.pwa-mode #module-inventory .keys-master-table td {
+                font-size: calc(0.72rem - 1pt) !important;
+                padding: 0.32rem 0.35rem !important;
+                line-height: 1.2 !important;
+            }
+            body.pwa-mode #sec-keys-master #keysMasterTableBody td:first-child {
+                position: sticky !important;
+                left: 0 !important;
+                background-color: #ffffff !important;
+                z-index: 6 !important;
+                box-shadow: 2px 0 5px -2px rgba(15, 23, 42, 0.12) !important;
+            }
+            body.pwa-mode #sec-keys-master #keysMasterTableBody tr.key-row-expired td:first-child {
+                background-color: #fef2f2 !important;
+            }
+            body.pwa-mode #sec-keys-master #keysMasterTableBody tr.key-row-unassigned td:first-child {
+                background-color: #f8fafc !important;
+            }
+            body.pwa-mode #sec-keys-master #keysMasterTableBody button[onclick*="openKeyIssueReturnModal"] {
+                padding: 0.28rem 0.48rem !important;
+                font-size: calc(0.70rem - 1pt) !important;
+                border-radius: 0.45rem !important;
+            }
+
             /* Compact Electricity & Gas Main Column in Mobile App View so more Monthly columns fit on screen */
             body.pwa-mode #module-elec-gas-bills table {
                 min-width: 0 !important;
@@ -2285,7 +2508,7 @@
                                 <th class="p-3">Storage Location</th>
                                 <th class="p-3 text-center whitespace-nowrap">Total Keys</th>
                                 <th class="p-3 text-center whitespace-nowrap">Keys in Store</th>
-                                <th class="p-3 min-w-[240px]">Active Key Holders</th>
+                                <th id="thKeysMasterActiveHolders" class="p-3 min-w-[240px] keys-col-active-holders">Active Key Holders</th>
                                 <th class="p-3 text-center whitespace-nowrap">Action</th>
                             </tr>
                         </thead>
@@ -23278,6 +23501,22 @@ window.cleanDuplicateEstateAssets = async function() {
             if (typeof window.updatePwaBottomNavPermissions === 'function') {
                 window.updatePwaBottomNavPermissions();
             }
+            // Dynamically sync Keys Master List table column (removes Active Key Holders column in Mobile App view)
+            const nowKeysMobile = window.isKeysMobileAppView ? window.isKeysMobileAppView() : false;
+            if (window._lastKeysMobileAppState !== nowKeysMobile) {
+                window._lastKeysMobileAppState = nowKeysMobile;
+                const thHolders = document.getElementById('thKeysMasterActiveHolders');
+                if (thHolders) thHolders.classList.toggle('hidden', nowKeysMobile);
+                if (typeof window.renderKeysMasterTable === 'function' && document.getElementById('keysMasterTableBody')?.children.length) {
+                    window.renderKeysMasterTable();
+                }
+            }
+        };
+
+        window.isKeysMobileAppView = function() {
+            const isMobileScreen = (window.innerWidth <= 768) || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+            const isAppMode = document.body.classList.contains('pwa-mode') || (typeof window.isPwaStandalone === 'function' && window.isPwaStandalone());
+            return Boolean(isMobileScreen && isAppMode);
         };
 
         // Real-time device and orientation adaptation on window resize
@@ -24449,11 +24688,17 @@ window.cleanDuplicateEstateAssets = async function() {
             if (!tbody) return;
             tbody.innerHTML = '';
 
+            const hideActiveHoldersCol = typeof window.isKeysMobileAppView === 'function' && window.isKeysMobileAppView();
+            const thHolders = document.getElementById('thKeysMasterActiveHolders');
+            if (thHolders) {
+                thHolders.classList.toggle('hidden', hideActiveHoldersCol);
+            }
+
             const filtered = getFilteredKeysMasterList();
             const todayStr = getLocalTodayDateString();
 
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-gray-400 text-xs italic">No Key ID records match your search or filter criteria.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="${hideActiveHoldersCol ? 9 : 10}" class="p-8 text-center text-gray-400 text-xs italic">No Key ID records match your search or filter criteria.</td></tr>`;
                 return;
             }
 
@@ -24548,7 +24793,7 @@ window.cleanDuplicateEstateAssets = async function() {
                         <td class="p-3 text-center">
                             <span class="px-2.5 py-1 rounded-full text-xs font-extrabold ${storeBadgeClass}">${storeCount}</span>
                         </td>
-                        <td class="p-3">${holdersCellHtml}</td>
+                        ${hideActiveHoldersCol ? '' : `<td class="p-3 keys-col-active-holders">${holdersCellHtml}</td>`}
                         <td class="p-3 text-center whitespace-nowrap">
                             <button
                                 type="button"

@@ -20233,7 +20233,7 @@ window.cleanDuplicateEstateAssets = async function() {
                     : '';
 
                 const gasLineLabel = isGas ? (m.lineNumber || `Line ${Math.min(7, idx + 1)}`) : '';
-                const gasAreasCovered = isGas ? (m.areasCovered !== undefined ? m.areasCovered : (m.location || '')) : '';
+                const gasAreasCovered = (isGas && !m.isBachelorFlatMeter) ? (m.areasCovered !== undefined ? m.areasCovered : (m.location || '')) : '';
                 const isBachMeter = Boolean(m.isBachelorFlatMeter) || String(m.id).startsWith('bach_');
                 const actionButtonsHtml = !viewOnly ? `
                     <div class="flex items-center space-x-0.5 shrink-0">
@@ -26647,11 +26647,8 @@ Shukran`;
             const gasMeters = [];
             bachFlats.forEach((f, idx) => {
                 const wingStr = f.wing ? ` (${f.wing})` : '';
-                const flatTitle = `${f.building || 'Building'}${wingStr} - Flat ${f.flatNo || ''}`;
-                const resCount = Array.isArray(f.residents) ? f.residents.length : 0;
-                const resNames = Array.isArray(f.residents) && f.residents.length > 0
-                    ? f.residents.map(r => r.name).join(', ')
-                    : 'No residents assigned';
+                const typeStr = f.type ? ` • ${f.type}` : '';
+                const flatTitle = `${f.building || 'Building'}${wingStr} - Flat ${f.flatNo || ''}${typeStr}`;
                 const cleanVal = (v) => {
                     const s = String(v || '').trim();
                     return (!s || /^(-|n\/a|na|nil|none)$/i.test(s)) ? '-' : s;
@@ -26664,9 +26661,8 @@ Shukran`;
                     unitType: 'kWh',
                     caNumber: cleanVal(f.elec),
                     meterNumber: cleanVal(f.elecMeterNo),
-                    areasCovered: `Bachelor Flat (${resCount}/${f.capacity || 4} Beds) • ${resNames}`,
+                    areasCovered: '',
                     location: flatTitle,
-                    residentsSummary: resNames,
                     flatObj: f
                 });
                 gasMeters.push({
@@ -26676,12 +26672,11 @@ Shukran`;
                     utility: 'gas',
                     unitType: 'SCM',
                     lineNumber: flatTitle,
-                    caNumber: String(f.gas || '-').trim() || '-',
-                    meterNumber: String(f.gasMeterNo || '-').trim() || '-',
-                    bpNumber: String(f.gasBpNo || '-').trim() || '-',
-                    areasCovered: `Bachelor Flat (${resCount}/${f.capacity || 4} Beds) • ${resNames}`,
+                    caNumber: cleanVal(f.gas),
+                    meterNumber: cleanVal(f.gasMeterNo),
+                    bpNumber: cleanVal(f.gasBpNo),
+                    areasCovered: '',
                     location: flatTitle,
-                    residentsSummary: resNames,
                     flatObj: f
                 });
             });
@@ -27247,9 +27242,8 @@ Shukran`;
             const allElec = bach.elecMeters;
             const allGas = bach.gasMeters;
 
-            const totalResidents = getBachelorFlatsFromEstates().reduce((acc, f) => acc + (Array.isArray(f.residents) ? f.residents.length : 0), 0);
             if (document.getElementById('egBachResidentsSummaryLabel')) {
-                document.getElementById('egBachResidentsSummaryLabel').innerText = `${allElec.length} Flats • ${totalResidents} Active Residents`;
+                document.getElementById('egBachResidentsSummaryLabel').innerText = `${allElec.length} Bachelor Flats`;
             }
 
             if (document.getElementById('egBachCardElecCount')) document.getElementById('egBachCardElecCount').innerText = String(allElec.length);
@@ -28725,7 +28719,21 @@ Shukran`;
                 : `<span style="color:#9ca3af; font-style:italic; font-size:10px;">Meter Photo</span>`;
 
             return `
-                <div style="position:relative; width:100%; height:100%; min-height:1122px; background-image:url('${DEPT_LETTERHEAD_B64}'); background-size:100% 100%; background-repeat:no-repeat; padding: 212px 52px 48px 52px; box-sizing:border-box; font-family: Arial, Helvetica, sans-serif; color:#111827;">
+                <div class="fac-letterhead-times-root" style="position:relative; width:100%; height:100%; min-height:1122px; background-image:url('${DEPT_LETTERHEAD_B64}'); background-size:100% 100%; background-repeat:no-repeat; padding: 212px 52px 96px 52px; box-sizing:border-box; font-family: 'Times New Roman', Times, serif !important; color:#111827;">
+                    <style>
+                        .fac-letterhead-times-root,
+                        .fac-letterhead-times-root table,
+                        .fac-letterhead-times-root th,
+                        .fac-letterhead-times-root td,
+                        .fac-letterhead-times-root div,
+                        .fac-letterhead-times-root span,
+                        .fac-letterhead-times-root strong {
+                            font-family: 'Times New Roman', Times, serif !important;
+                        }
+                    </style>
+                    <!-- Locked Header & Footer Protection Overlays (Header & Footer remain untouched and locked) -->
+                    <div style="position:absolute; top:0; left:0; right:0; height:208px; pointer-events:none; user-select:none; z-index:2;" title="Locked Department Letterhead Header"></div>
+                    <div style="position:absolute; bottom:0; left:0; right:0; height:92px; pointer-events:none; user-select:none; z-index:2;" title="Locked Department Letterhead Footer"></div>
                     <!-- Top 2 Side-by-Side Boxes -->
                     <div style="display:flex; justify-content:space-between; gap:14px; margin-bottom:10px;">
                         <!-- Left Box -->
@@ -28925,7 +28933,7 @@ Shukran`;
             doc.setLineWidth(0.45);
             doc.rect(lx, ly, lw, rowH * 5);
             doc.line(lx, ly + rowH, lx + lw, ly + rowH);
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(9.5);
             doc.text('DAWAT E HADIYAH', lx + lw / 2, ly + 4.4, { align: 'center' });
 
@@ -28945,10 +28953,10 @@ Shukran`;
                 if (idx < 3) doc.line(lx, ry + rowH, lx + lw, ry + rowH);
                 const splitX = idx === 3 ? lx + 28 : lx + 16.5;
                 doc.line(splitX, ry, splitX, ry + rowH);
-                doc.setFont('helvetica', idx === 3 ? 'bold' : 'normal');
+                doc.setFont('times', idx === 3 ? 'bold' : 'normal');
                 doc.setFontSize(8.2);
                 doc.text(r[0], lx + 2, ry + 4.3);
-                doc.setFont('helvetica', 'bold');
+                doc.setFont('times', 'bold');
                 let valFontSz = 8.5;
                 doc.setFontSize(valFontSz);
                 const maxValW = (lx + lw - splitX) - 3.2;
@@ -28979,16 +28987,16 @@ Shukran`;
             rightRows.forEach((r, idx) => {
                 const yCur = ry0 + rowH * idx;
                 if (idx < 4) doc.line(rx, yCur + rowH, rx + rw, yCur + rowH);
-                doc.setFont('helvetica', 'normal');
+                doc.setFont('times', 'normal');
                 doc.setFontSize(7.5);
                 doc.text(r[0], rx + c1 / 2, yCur + 4.3, { align: 'center' });
-                doc.setFont('helvetica', 'bold');
+                doc.setFont('times', 'bold');
                 doc.setFontSize(8.2);
                 doc.text(r[1], rx + c1 + c2 / 2, yCur + 4.3, { align: 'center' });
-                doc.setFont('helvetica', 'normal');
+                doc.setFont('times', 'normal');
                 doc.setFontSize(7.4);
                 doc.text(r[2], rx + c1 + c2 + c3 / 2, yCur + 4.3, { align: 'center' });
-                doc.setFont('helvetica', 'bold');
+                doc.setFont('times', 'bold');
                 doc.setFontSize(8.2);
                 if (idx === 4) {
                     doc.text(r[3], rx + rw - 2, yCur + 4.3, { align: 'right' });
@@ -29033,7 +29041,7 @@ Shukran`;
             doc.line(tx + 118, ty, tx + 118, ty + headH);
             doc.line(tx + 152, ty, tx + 152, ty + headH);
 
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(8.5);
             doc.text('HEADS', tx + 59, ty + 3.9, { align: 'center' });
             doc.text('Rate', tx + 135, ty + 3.9, { align: 'center' });
@@ -29041,19 +29049,19 @@ Shukran`;
 
             chargeLines.forEach((line, idx) => {
                 const lyRow = ty + headH + idx * bodyRowH;
-                doc.setFont('helvetica', line.bold ? 'bold' : 'normal');
+                doc.setFont('times', line.bold ? 'bold' : 'normal');
                 doc.setFontSize(8.2);
                 if (line.sr) {
                     doc.text(line.sr, tx + 6, lyRow + 3.4, { align: 'center' });
                 }
                 doc.text(line.label, tx + 14, lyRow + 3.4);
                 if (line.rate) {
-                    doc.setFont('helvetica', 'normal');
+                    doc.setFont('times', 'normal');
                     doc.setFontSize(line.rate.includes('Refer') ? 7.0 : 8.0);
                     doc.text(line.rate, tx + 135, lyRow + 3.4, { align: 'center' });
                 }
                 if (line.amt !== '') {
-                    doc.setFont('helvetica', line.bold ? 'bold' : 'normal');
+                    doc.setFont('times', line.bold ? 'bold' : 'normal');
                     doc.setFontSize(8.2);
                     doc.text(String(line.amt), tx + tw - 2, lyRow + 3.4, { align: 'right' });
                 }
@@ -29064,7 +29072,7 @@ Shukran`;
             doc.setLineWidth(0.45);
             doc.line(tx, roundY, tx + tw, roundY);
             doc.line(tx + 118, roundY, tx + 118, roundY + roundRowH);
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(8.8);
             doc.text('Round Sum Payable with this bill', tx + 2, roundY + 4.2);
             doc.text(fmt2(rec.roundSumPayable), tx + tw - 2, roundY + 4.2, { align: 'right' });
@@ -29074,7 +29082,7 @@ Shukran`;
             const msgH = 7.0;
             doc.setLineWidth(0.45);
             doc.rect(tx, msgY, tw, msgH);
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(8.0);
             doc.text('IMPORTANT MESSAGE: Please pay this bill to the accounts department by cheque or Demand draft in favour of Dawat E Hadiyah.', tx + 2, msgY + 4.6);
 
@@ -29084,10 +29092,10 @@ Shukran`;
             const mtrW = 92;
             doc.rect(tx, mtrY, mtrW, mtrH);
             doc.line(tx + 32, mtrY, tx + 32, mtrY + mtrH);
-            doc.setFont('helvetica', 'normal');
+            doc.setFont('times', 'normal');
             doc.setFontSize(8.0);
             doc.text('Meter Reading as on', tx + 16, mtrY + 6.8, { align: 'center' });
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.text(formatBillDateSlashDdMmYyyy(rec.presentReadingDate), tx + 16, mtrY + 11.2, { align: 'center' });
 
             if (rec.meterPhotoDataUrl && String(rec.meterPhotoDataUrl).startsWith('data:image/')) {
@@ -29098,7 +29106,7 @@ Shukran`;
                     console.warn("Could not embed meter photo in PDF:", imgErr);
                 }
             } else {
-                doc.setFont('helvetica', 'italic');
+                doc.setFont('times', 'italic');
                 doc.setFontSize(7.5);
                 doc.setTextColor(150, 150, 150);
                 doc.text('Meter Reading Photo', tx + 62, mtrY + 9.2, { align: 'center' });
@@ -29116,7 +29124,7 @@ Shukran`;
             doc.line(tx, tarY + tarTitleH, tx + tw, tarY + tarTitleH);
             doc.line(tx, tarY + tarTitleH + tarHeadH, tx + tw, tarY + tarTitleH + tarHeadH);
 
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(8.2);
             doc.text('YOUR TARIFF STRUCTURE EFFECTIVE FROM 01.04.2024', tx + tw / 2, tarY + 3.6, { align: 'center' });
 
@@ -29143,7 +29151,7 @@ Shukran`;
                 ['301-500', '135.00', '7.10', '2.60', '1.50'],
                 ['>500', '160.00', '8.15', '2.60', '1.70']
             ];
-            doc.setFont('helvetica', 'normal');
+            doc.setFont('times', 'normal');
             doc.setFontSize(8.0);
             slabs.forEach((s, idx) => {
                 const sy = tarY + tarTitleH + tarHeadH + idx * tarRowH;
@@ -29161,7 +29169,7 @@ Shukran`;
             doc.setLineWidth(0.45);
             doc.rect(lx, botY, lw, botH);
             doc.line(lx + 48, botY, lx + 48, botY + botH);
-            doc.setFont('helvetica', 'bold');
+            doc.setFont('times', 'bold');
             doc.setFontSize(8.2);
             doc.text('LAST PAYMENT DETAILS', lx + 2, botY + 4.1);
             doc.text(fmt2(rec.paymentReceived), lx + lw - 2, botY + 4.1, { align: 'right' });

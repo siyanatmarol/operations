@@ -30005,172 +30005,41 @@ Shukran`;
             showAssetToast(`Exported Faculty Bldg Bills Summary (${format.toUpperCase()})`);
         };
 
-        window.closeModal = function(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
+                  window.closeModal = function(modalId) {
+            document.getElementById(modalId)?.classList.add('hidden');
         };
-    </script>
 
-    <!-- ===================================================================== -->
-    <!-- MODAL: UNIVERSAL IN-APP MEDIA & PDF VIEWER (#modalInAppMediaViewer)   -->
-    <!-- Opens all PDFs, Photos & Videos directly inside the webpage/app       -->
-    <!-- ===================================================================== -->
-    <div id="modalInAppMediaViewer" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 z-[90]">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full h-[92vh] flex flex-col overflow-hidden border-2 border-emerald-600">
-            <!-- Top Bar -->
-            <div class="bg-emerald-950 text-white px-4 py-3 flex flex-wrap justify-between items-center gap-2 shrink-0">
-                <div class="flex items-center space-x-2.5 min-w-0">
-                    <span id="inAppViewerTypeBadge" class="bg-amber-400 text-emerald-950 text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shrink-0">PDF Viewer</span>
-                    <h3 id="inAppViewerTitle" class="font-extrabold text-sm sm:text-base truncate">Document Preview</h3>
-                </div>
-                <div class="flex items-center space-x-2 shrink-0">
-                    <a id="inAppViewerDownloadBtn" href="#" download class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1.5 shadow-sm">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Download File</span>
-                    </a>
-                    <button type="button" onclick="closeInAppMediaViewer()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm">
-                        <i class="fa-solid fa-xmark text-sm"></i>
-                        <span>Close</span>
-                    </button>
-                </div>
-            </div>
-            <!-- Viewer Body -->
-            <div id="inAppMediaViewerBody" class="flex-grow bg-slate-900 relative overflow-auto flex items-center justify-center p-2">
-                <!-- Populated dynamically with iframe/img/video/PDF.js canvas -->
-            </div>
-        </div>
-    </div>
+        // =====================================================================
+        // BRIDGE HELPERS FOR WATI & APPS SCRIPT WEB APP URL
+        // =====================================================================
+        function formatWhatsappPhoneForWati(rawPhone) {
+            return normalizeWhatsAppPhone(rawPhone);
+        }
 
-    <!-- ===================================================================== -->
-    <!-- MODAL: EDIT CLASSROOM TIMETABLE TEMPLATE (#modalEditTimetableTemplate)-->
-    <!-- ===================================================================== -->
-    <div id="modalEditTimetableTemplate" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col border-2 border-indigo-600">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2 shrink-0">
-                <div>
-                    <h3 class="text-lg sm:text-xl font-extrabold text-indigo-950 flex items-center space-x-2">
-                        <i class="fa-solid fa-clock-rotate-left text-indigo-700"></i>
-                        <span>Edit Classroom Timetable Template</span>
-                    </h3>
-                    <p class="text-xs text-gray-600 mt-0.5">Edit Period Numbers / Labels and their Monday–Friday &amp; Saturday timings. Saving automatically updates all Classroom Timetables and adjusts all already-allotted classes &amp; events.</p>
-                </div>
-                <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
-            </div>
+        function getResolvedWatiBaseUrl(rawEndpoint, rawToken) {
+            const candidates = resolveWatiCandidateBaseUrls(rawEndpoint, rawToken);
+            return (Array.isArray(candidates) && candidates.length > 0)
+                ? candidates[0]
+                : 'https://live-mt-server.wati.io/310385';
+        }
 
-            <div class="overflow-y-auto flex-grow border rounded-xl">
-                <table class="w-full text-left text-xs sm:text-sm border-collapse">
-                    <thead class="bg-indigo-950 text-white uppercase text-[11px] sticky top-0 z-10">
-                        <tr>
-                            <th class="p-2.5 text-center w-16">Slot ID</th>
-                            <th class="p-2.5">Period Number / Header Label</th>
-                            <th class="p-2.5 w-28">Short Badge</th>
-                            <th class="p-2.5">Mon – Fri Timing (Standard)</th>
-                            <th class="p-2.5">Saturday Timing (يوم السبت)</th>
-                            <th class="p-2.5 text-center w-28">Rule</th>
-                        </tr>
-                    </thead>
-                    <tbody id="editTimetableTemplateTableBody" class="divide-y bg-white"></tbody>
-                </table>
-            </div>
+        function getActiveFacultyAppsScriptUrl() {
+            const inputEl = document.getElementById('egAutoFetchScriptUrlInput');
+            const candidates = [
+                inputEl && inputEl.value ? inputEl.value.trim() : '',
+                typeof egAutoFetchConfig !== 'undefined' && egAutoFetchConfig ? egAutoFetchConfig.scriptUrl : '',
+                localStorage.getItem('siyanat_eg_autofetch_script_url'),
+                localStorage.getItem('siyanat_google_script_url'),
+                typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : ''
+            ];
+            for (const c of candidates) {
+                if (c && typeof c === 'string' && c.trim().startsWith('https://script.google.com/')) {
+                    return c.trim();
+                }
+            }
+            return GOOGLE_SCRIPT_URL;
+        }
 
-            <div class="flex flex-wrap justify-between items-center gap-3 pt-2 border-t shrink-0">
-                <button type="button" onclick="resetTimetableTemplateToDefault()" class="px-3.5 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1.5">
-                    <i class="fa-solid fa-rotate-left"></i>
-                    <span>Restore Default Timings</span>
-                </button>
-                <div class="flex items-center space-x-2">
-                    <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-                    <button type="button" onclick="saveEditedTimetableTemplate()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-5 py-2 rounded-lg text-xs sm:text-sm font-extrabold transition shadow-md inline-flex items-center space-x-1.5">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        <span>Save &amp; Apply Across All Classrooms</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- MODAL: STATEMENT FOR ACCOUNTS (#modalFacultyAccountsStatement)        -->
-    <!-- ===================================================================== -->
-    <div id="modalFacultyAccountsStatement" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col border-2 border-amber-500">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2 shrink-0">
-                <div>
-                    <h3 class="text-lg sm:text-xl font-extrabold text-gray-900 flex items-center space-x-2">
-                        <i class="fa-solid fa-file-invoice text-amber-600"></i>
-                        <span>Faculty Building — Statement for Accounts</span>
-                    </h3>
-                    <p class="text-xs text-gray-600 mt-0.5">Select billing month to preview and download the Statement for Accounts on official Department Letterhead PDF.</p>
-                </div>
-                <button type="button" onclick="closeModal('modalFacultyAccountsStatement')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
-            </div>
-
-            <!-- Controls Bar -->
-            <div class="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
-                <div class="flex flex-wrap items-center gap-2">
-                    <label class="text-xs font-extrabold text-amber-950 uppercase">Select Month:</label>
-                    <select id="facStmtMonthSelect" onchange="renderFacultyAccountsStatementPreview()" class="p-1.5 border border-amber-300 rounded-lg text-xs font-extrabold bg-white text-gray-900">
-                        <option value="0">January</option>
-                        <option value="1">February</option>
-                        <option value="2">March</option>
-                        <option value="3">April</option>
-                        <option value="4">May</option>
-                        <option value="5">June</option>
-                        <option value="6">July</option>
-                        <option value="7">August</option>
-                        <option value="8">September</option>
-                        <option value="9">October</option>
-                        <option value="10">November</option>
-                        <option value="11">December</option>
-                    </select>
-                    <select id="facStmtYearSelect" onchange="renderFacultyAccountsStatementPreview()" class="p-1.5 border border-amber-300 rounded-lg text-xs font-extrabold bg-white text-gray-900">
-                        <option value="2027">2027</option>
-                        <option value="2026" selected>2026</option>
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
-                    </select>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" onclick="viewFacultyAccountsStatementPdfInApp()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-extrabold px-3.5 py-2 rounded-lg transition inline-flex items-center space-x-1.5 shadow-sm">
-                        <i class="fa-solid fa-eye"></i>
-                        <span>Preview Letterhead PDF in App</span>
-                    </button>
-                    <button type="button" onclick="downloadFacultyAccountsStatementPdf()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-4 py-2 rounded-lg transition inline-flex items-center space-x-1.5 shadow-md">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        <span>Download Statement PDF</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Statement Preview Table -->
-            <div class="overflow-y-auto flex-grow border rounded-xl bg-white p-4 space-y-3">
-                <div class="text-center border-b pb-2">
-                    <h4 class="text-base font-extrabold text-gray-900 uppercase tracking-wide" style="font-family:'Times New Roman', Times, serif;">Faculty Building Electricity Bills Amount Details</h4>
-                    <p id="facStmtSecondHeaderLabel" class="text-sm font-bold text-indigo-900 mt-0.5" style="font-family:'Times New Roman', Times, serif;">Nov-2026</p>
-                </div>
-                <p class="text-[11px] text-gray-500">
-                    <i class="fa-solid fa-circle-info text-amber-600 mr-1"></i>Allocated flats automatically pull Resident Name, ITS No., and Bill Amount for the selected month. If any flat is Vacant, toggle the <strong>Allocated / Vacant</strong> switch in its row so its Name, ITS No., and Amount remain blank as required.
-                </p>
-                <div class="overflow-x-auto border rounded-lg">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead class="bg-gray-100 border-b-2 border-gray-300 text-gray-800 uppercase text-[11px]">
-                            <tr>
-                                <th class="p-2.5 border-r text-center w-24">Flat Number</th>
-                                <th class="p-2.5 border-r">Name</th>
-                                <th class="p-2.5 border-r text-center w-32">ITS No.</th>
-                                <th class="p-2.5 border-r text-right w-32">Amount (Rs.)</th>
-                                <th class="p-2.5 border-r text-center w-32">Cheque No.</th>
-                                <th class="p-2.5 text-center w-28">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="facStmtPreviewTableBody" class="divide-y"></tbody>
-                        <tfoot id="facStmtPreviewTableFoot" class="bg-amber-50 font-extrabold border-t-2 border-gray-400 text-xs"></tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
         // =====================================================================
         // 1. UNIVERSAL IN-APP MEDIA & PDF VIEWER IMPLEMENTATION
         // =====================================================================
@@ -30238,7 +30107,7 @@ Shukran`;
                 bodyEl.innerHTML = `
                     <div class="w-full h-full flex flex-col items-center justify-center p-2 overflow-auto">
                         <img src="${imgSrc}" alt="${title}" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-slate-700 bg-white"
-                             onerror="if('${driveId}'){this.outerHTML='<iframe src=\'https://drive.google.com/file/d/${driveId}/preview\' class=\'w-full h-full rounded-lg border-0 bg-white\'></iframe>';}">
+                             onerror="if('${driveId}'){this.outerHTML='<iframe src=\\'https://drive.google.com/file/d/${driveId}/preview\\' class=\\'w-full h-full rounded-lg border-0 bg-white\\'></iframe>';}">
                     </div>
                 `;
             } else if (mediaType === 'video') {
@@ -30246,14 +30115,13 @@ Shukran`;
                     bodyEl.innerHTML = `
                         <div class="w-full h-full flex flex-col items-center justify-center">
                             <video src="https://drive.google.com/uc?export=download&id=${driveId}" controls autoplay class="max-w-full max-h-[78vh] rounded-lg shadow-2xl bg-black"
-                                   onerror="this.outerHTML='<iframe src=\'https://drive.google.com/file/d/${driveId}/preview\' class=\'w-full h-full rounded-lg border-0 bg-black\' allow=\'autoplay\'></iframe>';"></video>
+                                   onerror="this.outerHTML='<iframe src=\\'https://drive.google.com/file/d/${driveId}/preview\\' class=\\'w-full h-full rounded-lg border-0 bg-black\\' allow=\\'autoplay\\'></iframe>';"></video>
                         </div>
                     `;
                 } else {
                     bodyEl.innerHTML = `<video src="${url}" controls autoplay class="max-w-full max-h-[80vh] rounded-lg shadow-2xl bg-black"></video>`;
                 }
             } else {
-                // PDF Viewer (Drive /preview embed or direct PDF iframe)
                 const embedUrl = driveId
                     ? `https://drive.google.com/file/d/${driveId}/preview`
                     : url;
@@ -30272,7 +30140,6 @@ Shukran`;
             if (modal) modal.classList.add('hidden');
         };
 
-        // Global interceptor: Catch any remaining <a target="_blank"> media/PDF links so nothing opens a separate Chrome tab
         document.addEventListener('click', function(evt) {
             const anchor = evt.target.closest('a[target="_blank"]');
             if (!anchor) return;
@@ -30285,23 +30152,30 @@ Shukran`;
         }, true);
 
         // =====================================================================
-        // 2. CLASSROOM TIMETABLE TEMPLATE EDITOR IMPLEMENTATION
+        // 2. CLASSROOM TIMETABLE TEMPLATE EDITOR IMPLEMENTATION (FIXED)
         // =====================================================================
         window.openEditTimetableTemplateModal = function() {
-            if (isCurrentUserViewOnly('classroom-allocation')) {
+            if (typeof isCurrentUserViewOnly === 'function' && isCurrentUserViewOnly('classroom-allocation')) {
                 showAssetToast("View Only: Editing rights are required to modify the Timetable Template.", true);
                 return;
             }
             renderEditTimetableTemplateTable();
-            document.getElementById('modalEditTimetableTemplate')?.classList.remove('hidden');
+            const modal = document.getElementById('modalEditTimetableTemplate');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
         };
 
         function renderEditTimetableTemplateTable() {
             const tbody = document.getElementById('editTimetableTemplateTableBody');
             if (!tbody) return;
 
-            // Display in chronological order (P1 -> P10 -> EX1 -> EX2) so editing is intuitive
-            const chronological = [...TIMETABLE_COLUMNS].reverse();
+            const activeCols = (Array.isArray(TIMETABLE_COLUMNS) && TIMETABLE_COLUMNS.length > 0)
+                ? TIMETABLE_COLUMNS
+                : DEFAULT_TIMETABLE_COLUMNS;
+            const chronological = [...activeCols].reverse();
+
             tbody.innerHTML = chronological.map((col) => {
                 const ruleBadge = col.isExtra
                     ? `<span class="bg-teal-100 text-teal-900 border border-teal-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Extra Slot</span>`
@@ -30313,23 +30187,23 @@ Shukran`;
                     <tr class="hover:bg-indigo-50/40 border-b" data-tt-key="${col.key}">
                         <td class="p-2.5 text-center font-mono font-extrabold text-indigo-900 bg-gray-50">${col.key}</td>
                         <td class="p-2.5">
-                            <input type="text" id="ttEditLabel_${col.key}" value="${col.label}"
+                            <input type="text" id="ttEditLabel_${col.key}" value="${String(col.label || '').replace(/"/g, '&quot;')}"
                                 oninput="autoSyncTtShortLabel('${col.key}', this.value)"
                                 class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                 placeholder="e.g. Period 1">
                         </td>
                         <td class="p-2.5">
-                            <input type="text" id="ttEditShort_${col.key}" value="${col.shortLabel}"
+                            <input type="text" id="ttEditShort_${col.key}" value="${String(col.shortLabel || '').replace(/"/g, '&quot;')}"
                                 class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-mono font-bold text-indigo-900 text-center focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                 placeholder="e.g. P1">
                         </td>
                         <td class="p-2.5">
-                            <input type="text" id="ttEditStdTime_${col.key}" value="${col.stdTime}"
+                            <input type="text" id="ttEditStdTime_${col.key}" value="${String(col.stdTime || '').replace(/"/g, '&quot;')}"
                                 class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-mono text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                 placeholder="${col.isExtra ? 'Dynamic / Optional' : 'e.g. 08:50 - 09:25'}">
                         </td>
                         <td class="p-2.5">
-                            <input type="text" id="ttEditSatTime_${col.key}" value="${col.satTime}"
+                            <input type="text" id="ttEditSatTime_${col.key}" value="${String(col.satTime || '').replace(/"/g, '&quot;')}"
                                 class="w-full p-1.5 border border-amber-300 rounded-lg text-xs font-mono text-amber-950 bg-amber-50/30 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                 placeholder="${col.isExtra ? 'Dynamic / Optional' : 'e.g. 08:15 - 08:50'}">
                         </td>
@@ -30358,7 +30232,7 @@ Shukran`;
         };
 
         window.saveEditedTimetableTemplate = async function() {
-            if (!guardEditingRights()) return;
+            if (!guardEditingRights('classroom-allocation')) return;
             const updatedCols = DEFAULT_TIMETABLE_COLUMNS.map(defCol => {
                 const k = defCol.key;
                 const lbl = (document.getElementById(`ttEditLabel_${k}`)?.value || '').trim() || defCol.label;
@@ -30381,9 +30255,8 @@ Shukran`;
 
             closeModal('modalEditTimetableTemplate');
 
-            // Refresh all Classroom Allocation tables & open Timetable views so all allotted classes/events reflect the new periods & timings!
             renderClassroomsTables();
-            if (!document.getElementById('modalEditSchedule')?.classList.contains('hidden')) {
+            if (!document.getElementById('modalClassroomSchedule')?.classList.contains('hidden')) {
                 const roomId = document.getElementById('scheduleClassroomId')?.value;
                 const allocId = document.getElementById('scheduleEditAllocId')?.value || '';
                 const room = classroomsData.find(c => String(c.id) === String(roomId));
@@ -30436,20 +30309,11 @@ Shukran`;
             const monthFormatted = formatFacultyBillMonthMmmYyyy(rec.year, rec.monthIdx);
             const dueFormatted = formatFacultyBillDueDateDdMmmYyyy(rec.dueDate);
 
-            return `Salaam
-${occupantName}
-${flatDetails}
-
-Your electricity bill for the month of ${monthFormatted} is attached herewith, based on the meter reading.
-
-Request you to pay the bill amount by submitting a cheque or demand draft in the name of Dawat e Hadiyah, to the Accounts Dept before ${dueFormatted}.
-
-Dept of Facilities Management,
-Aljamea-tus-Saifiyah - Mumbai (Marol)`;
+            return `Salaam\n${occupantName}\n${flatDetails}\n\nYour electricity bill for the month of ${monthFormatted} is attached herewith, based on the meter reading.\n\nRequest you to pay the bill amount by submitting a cheque or demand draft in the name of Dawat e Hadiyah, to the Accounts Dept before ${dueFormatted}.\n\nDept of Facilities Management,\nAljamea-tus-Saifiyah - Mumbai (Marol)`;
         }
 
         window.promptAndSaveFacultyMemberEmail = async function(flatNo) {
-            if (!guardEditingRights()) return '';
+            if (!guardEditingRights('elec-gas-bills')) return '';
             const allFlats = getFacultyBldgFlatsList();
             const f = allFlats.find(x => String(x.flatNo) === String(flatNo));
             if (!f) return '';
@@ -30459,7 +30323,6 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
             const cleanEmail = String(entered).trim();
             if (!cleanEmail) return '';
 
-            // Update Directory (facultyData)
             const dirMatch = matchDirectoryMemberForFacultyFlat(f.name, f.contact, f.its);
             if (dirMatch) {
                 dirMatch.email = cleanEmail;
@@ -30475,7 +30338,6 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
                 });
             }
 
-            // Update Estates if present
             if (Array.isArray(estatesData)) {
                 estatesData.forEach(e => {
                     if (e && String(e.building || '').toLowerCase().includes('faculty') && String(e.flatNo) === String(flatNo)) {
@@ -30484,7 +30346,6 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
                 });
             }
 
-            // Update saved bills for this flat
             if (facultyBldgBillsData && typeof facultyBldgBillsData === 'object') {
                 Object.keys(facultyBldgBillsData).forEach(k => {
                     if (facultyBldgBillsData[k] && String(facultyBldgBillsData[k].flatNo) === String(flatNo)) {
@@ -30501,7 +30362,7 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
         };
 
         window.toggleFacultyBillSentFlag = async function(flatNo, year, monthIdx, channel) {
-            if (!guardEditingRights()) return;
+            if (!guardEditingRights('elec-gas-bills')) return;
             const rec = getFacultyBldgBillRecord(flatNo, year, monthIdx);
             if (!rec) return;
             if (channel === 'whatsapp') {
@@ -30516,7 +30377,7 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
         };
 
         window.sendFacultyBldgBillEmail = async function(flatNo, year, monthIdx, btnEl = null) {
-            if (!guardEditingRights()) return;
+            if (!guardEditingRights('elec-gas-bills')) return;
             const rec = getFacultyBldgBillRecord(flatNo, year, monthIdx);
             if (!rec || !rec.isSaved) {
                 showAssetToast("Please add and save bill details for this flat first.", true);
@@ -30547,9 +30408,11 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
                 const doc = generateFacultyBillJsPdfDoc(rec);
                 const dataUri = doc.output('datauristring');
                 const pdfBase64 = dataUri.split(',')[1];
+                const targetScriptUrl = getActiveFacultyAppsScriptUrl();
 
-                const resp = await fetch(GOOGLE_SCRIPT_URL, {
+                const resp = await fetch(targetScriptUrl, {
                     method: 'POST',
+                    redirect: 'follow',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({
                         action: 'sendFacultyBillEmail',
@@ -30561,7 +30424,7 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
                     })
                 });
                 const resJson = await resp.json();
-                if (resJson && resJson.status === 'success') {
+                if (resJson && (resJson.status === 'success' || resJson.ok === true)) {
                     rec.emailSent = true;
                     rec.emailSentAt = new Date().toISOString();
                     rec.occupantEmail = recipientEmail;
@@ -30569,13 +30432,11 @@ Aljamea-tus-Saifiyah - Mumbai (Marol)`;
                     await saveCloudData();
                     showAssetToast(`Email sent from fm.marol@jameasaifiyah.edu to ${recipientEmail} with attached PDF (${pdfFileName})!`);
                 } else {
-                    throw new Error((resJson && resJson.message) || 'Please update your Google Apps Script deployment with the v6 Code.gs (includes sendFacultyBillEmail).');
+                    throw new Error((resJson && resJson.message) || 'Apps Script returned an error. Ensure GmailApp permission is authorized in Apps Script editor.');
                 }
             } catch (err) {
                 console.error("Send Faculty Bill Email error:", err);
-                alert(`Could not send email automatically via Apps Script: ${err.message || err}
-
-Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps Script and clicked Deploy -> Manage Deployments -> Edit -> New Version.`);
+                alert(`Could not send email automatically via Apps Script: ${err.message || err}\n\nNote: In your Google Apps Script editor, click "Run" once on any function to authorize GmailApp.sendEmail permissions if prompted, then Deploy -> New Version.`);
             } finally {
                 if (btnEl) {
                     btnEl.disabled = false;
@@ -30585,7 +30446,7 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
         };
 
         window.sendFacultyBldgBillWhatsApp = async function(flatNo, year, monthIdx, btnEl = null) {
-            if (!guardEditingRights()) return;
+            if (!guardEditingRights('elec-gas-bills')) return;
             const rec = getFacultyBldgBillRecord(flatNo, year, monthIdx);
             if (!rec || !rec.isSaved) {
                 showAssetToast("Please add and save bill details for this flat first.", true);
@@ -30594,8 +30455,13 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
 
             const allFlats = getFacultyBldgFlatsList();
             const flatObj = allFlats.find(f => String(f.flatNo) === String(flatNo)) || {};
-            const rawContact = rec.occupantContact || flatObj.contact || '';
-            const formattedPhone = formatWhatsappPhoneForWati(rawContact);
+            let rawContact = rec.occupantContact || flatObj.contact || '';
+            let formattedPhone = formatWhatsappPhoneForWati(rawContact);
+            if (!formattedPhone) {
+                const enteredPhone = prompt(`Enter 10-digit or 12-digit WhatsApp number for ${rec.occupantName || flatObj.name || ('Flat ' + flatNo)}:`, '91');
+                if (!enteredPhone) return;
+                formattedPhone = formatWhatsappPhoneForWati(enteredPhone);
+            }
             if (!formattedPhone) {
                 showAssetToast(`No valid WhatsApp number found for Flat ${flatNo} (${rec.occupantName}).`, true);
                 return;
@@ -30615,25 +30481,23 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
             }
 
             try {
-                // Step 1: Generate the official Department Letterhead PDF in browser
                 const doc = generateFacultyBillJsPdfDoc(rec);
                 const dataUri = doc.output('datauristring');
                 const pdfBase64 = dataUri.split(',')[1];
                 const pdfBlob = doc.output('blob');
 
-                const baseUrl = getResolvedWatiBaseUrl(watiConfig.apiEndpoint, watiConfig.accessToken);
-                let tokenHeader = String(watiConfig.accessToken || '').trim();
-                if (!tokenHeader.toLowerCase().startsWith('bearer ')) {
-                    tokenHeader = `Bearer ${tokenHeader}`;
-                }
+                const cfg = normalizeWatiConfig(watiConfig);
+                const rawToken = String(cfg.accessToken || DEFAULT_WATI_ACCESS_TOKEN).trim();
+                const baseUrl = getResolvedWatiBaseUrl(cfg.apiEndpoint, rawToken);
+                const tokenHeader = /^Bearer\s+/i.test(rawToken) ? rawToken : `Bearer ${rawToken}`;
                 const billTemplateName = (watiConfig.facultyBillTemplateName || 'faculty_elec_bill_pdf').trim();
+                const targetScriptUrl = getActiveFacultyAppsScriptUrl();
 
-                // Step 2: Upload PDF to fm.marol Google Drive to get a Direct Binary PDF Download URL (https://drive.google.com/uc?export=download&id=...)
-                // AND trigger server-side WATI relay if v6 Apps Script is deployed
                 let directDownloadUrl = '';
                 try {
-                    const uploadResp = await fetch(GOOGLE_SCRIPT_URL, {
+                    const uploadResp = await fetch(targetScriptUrl, {
                         method: 'POST',
+                        redirect: 'follow',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({
                             action: 'sendFacultyBillWhatsAppPdf',
@@ -30664,8 +30528,6 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
                     console.warn("Drive upload for WhatsApp PDF warning:", eUp);
                 }
 
-                // Step 3: Send directly from browser to WATI Document Template API (faculty_elec_bill_pdf)
-                // Passing the direct PDF download stream URL so WATI attaches the actual downloadable PDF in the Document Header!
                 const customParams = [
                     { name: "1", value: occupantName },
                     { name: "2", value: flatDetails },
@@ -30710,7 +30572,6 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
                     }
                 } catch (eW1) {}
 
-                // Step 4: Also attempt WATI sendSessionFile with multipart FormData (if 24-hour customer session window is active, this delivers the binary PDF + full caption immediately even before the template is approved!)
                 try {
                     const fd = new FormData();
                     fd.append('file', pdfBlob, pdfFileName);
@@ -30728,7 +30589,7 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
                 rec.whatsappSentAt = new Date().toISOString();
                 renderEgFacultyBldgModule();
                 await saveCloudData();
-                showAssetToast(`WhatsApp Bill PDF dispatched to ${occupantName} (${formattedPhone})!`);
+                showAssetToast(`WhatsApp Bill PDF dispatched to ${occupantName} (+${formattedPhone})!`);
             } catch (err) {
                 console.error("Send Faculty Bill WhatsApp error:", err);
                 showAssetToast("Error sending WhatsApp Bill: " + (err.message || err), true);
@@ -30743,7 +30604,7 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
         // =====================================================================
         // 4. STATEMENT FOR ACCOUNTS MODAL & LETTERHEAD PDF GENERATOR
         // =====================================================================
-        let facStmtVacantOverrides = {}; // { flatNo: boolean }
+        let facStmtVacantOverrides = {};
 
         window.openFacultyAccountsStatementModal = function() {
             const curMonth = document.getElementById('egFacMonthSelect')?.value ?? String(new Date().getMonth());
@@ -30785,7 +30646,6 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
                 const billAmt = (rec && rec.isSaved) ? (parseFloat(rec.roundSumPayable) || 0) : 0;
 
                 if (isVacant) {
-                    // Requirement: "only allocated flats data to be included in the statement, if a flat is vacant the flat number should be mentioned but the name, its, amount left blank"
                     return {
                         flatNo: String(f.flatNo),
                         name: '',
@@ -30825,7 +30685,7 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
             if (!tbody || !tfoot) return;
 
             tbody.innerHTML = rows.map(r => {
-                const safeFNo = String(r.flatNo).replace(/'/g, "\'");
+                const safeFNo = String(r.flatNo).replace(/'/g, "\\'");
                 return `
                     <tr class="border-b ${r.isVacant ? 'bg-gray-50 text-gray-400' : 'hover:bg-amber-50/30'}">
                         <td class="p-2.5 border-r text-center font-mono font-extrabold text-gray-900">${r.flatNo}</td>
@@ -30856,7 +30716,6 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-            // 1. Official Department Letterhead background (210mm x 297mm)
             try {
                 doc.addImage(DEPT_LETTERHEAD_B64, 'JPEG', 0, 0, 210, 297);
             } catch (e) {
@@ -30866,11 +30725,9 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
             doc.setTextColor(17, 24, 39);
             doc.setFont('times', 'bold');
 
-            // 1st Header: Faculty Building Electricity Bills Amount Details (centered below letterhead top logo at y=60mm)
             doc.setFontSize(13.5);
             doc.text('Faculty Building Electricity Bills Amount Details', 105, 62, { align: 'center' });
 
-            // 2nd Header: Current Month (e.g. November 2026 / Nov-2026)
             doc.setFontSize(11.5);
             doc.text(`${monthHeader} (${shortMonthHeader})`, 105, 69, { align: 'center' });
 
@@ -30882,10 +30739,9 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
                 r.isVacant ? '' : (r.name || ''),
                 r.isVacant ? '' : (r.its || ''),
                 r.isVacant ? '' : (r.amountNum > 0 ? fmtAmt(r.amountNum) : ''),
-                '' // Cheque No. left blank in all rows
+                ''
             ]);
 
-            // Last Row: Total Amount auto-calculated
             tableBody.push([
                 '',
                 'TOTAL AMOUNT',
@@ -30959,5 +30815,159 @@ Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps 
         };
     </script>
 
+    <!-- ===================================================================== -->
+    <!-- MODAL: UNIVERSAL IN-APP MEDIA & PDF VIEWER (#modalInAppMediaViewer)   -->
+    <!-- ===================================================================== -->
+    <div id="modalInAppMediaViewer" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 z-[90]">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full h-[92vh] flex flex-col overflow-hidden border-2 border-emerald-600">
+            <div class="bg-emerald-950 text-white px-4 py-3 flex flex-wrap justify-between items-center gap-2 shrink-0">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                    <span id="inAppViewerTypeBadge" class="bg-amber-400 text-emerald-950 text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shrink-0">PDF Viewer</span>
+                    <h3 id="inAppViewerTitle" class="font-extrabold text-sm sm:text-base truncate">Document Preview</h3>
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                    <a id="inAppViewerDownloadBtn" href="#" download class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download File</span>
+                    </a>
+                    <button type="button" onclick="closeInAppMediaViewer()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                        <span>Close</span>
+                    </button>
+                </div>
+            </div>
+            <div id="inAppMediaViewerBody" class="flex-grow bg-slate-900 relative overflow-auto flex items-center justify-center p-2"></div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL: EDIT CLASSROOM TIMETABLE TEMPLATE (#modalEditTimetableTemplate)-->
+    <!-- ===================================================================== -->
+    <div id="modalEditTimetableTemplate" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col border-2 border-indigo-600">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2 shrink-0">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-extrabold text-indigo-950 flex items-center space-x-2">
+                        <i class="fa-solid fa-clock-rotate-left text-indigo-700"></i>
+                        <span>Edit Classroom Timetable Template</span>
+                    </h3>
+                    <p class="text-xs text-gray-600 mt-0.5">Edit Period Numbers / Labels and their Monday–Friday &amp; Saturday timings. Saving automatically updates all Classroom Timetables and adjusts all already-allotted classes &amp; events.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <div class="overflow-y-auto flex-grow border rounded-xl">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                    <thead class="bg-indigo-950 text-white uppercase text-[11px] sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2.5 text-center w-16">Slot ID</th>
+                            <th class="p-2.5">Period Number / Header Label</th>
+                            <th class="p-2.5 w-28">Short Badge</th>
+                            <th class="p-2.5">Mon – Fri Timing (Standard)</th>
+                            <th class="p-2.5">Saturday Timing (يوم السبت)</th>
+                            <th class="p-2.5 text-center w-28">Rule</th>
+                        </tr>
+                    </thead>
+                    <tbody id="editTimetableTemplateTableBody" class="divide-y bg-white"></tbody>
+                </table>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-center gap-3 pt-2 border-t shrink-0">
+                <button type="button" onclick="resetTimetableTemplateToDefault()" class="px-3.5 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1.5">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Restore Default Timings</span>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="button" onclick="saveEditedTimetableTemplate()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-5 py-2 rounded-lg text-xs sm:text-sm font-extrabold transition shadow-md inline-flex items-center space-x-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save &amp; Apply Across All Classrooms</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL: STATEMENT FOR ACCOUNTS (#modalFacultyAccountsStatement)        -->
+    <!-- ===================================================================== -->
+    <div id="modalFacultyAccountsStatement" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col border-2 border-amber-500">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2 shrink-0">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-invoice text-amber-600"></i>
+                        <span>Faculty Building — Statement for Accounts</span>
+                    </h3>
+                    <p class="text-xs text-gray-600 mt-0.5">Select billing month to preview and download the Statement for Accounts on official Department Letterhead PDF.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalFacultyAccountsStatement')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <div class="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <label class="text-xs font-extrabold text-amber-950 uppercase">Select Month:</label>
+                    <select id="facStmtMonthSelect" onchange="renderFacultyAccountsStatementPreview()" class="p-1.5 border border-amber-300 rounded-lg text-xs font-extrabold bg-white text-gray-900">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                    <select id="facStmtYearSelect" onchange="renderFacultyAccountsStatementPreview()" class="p-1.5 border border-amber-300 rounded-lg text-xs font-extrabold bg-white text-gray-900">
+                        <option value="2027">2027</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="viewFacultyAccountsStatementPdfInApp()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-extrabold px-3.5 py-2 rounded-lg transition inline-flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-eye"></i>
+                        <span>Preview Letterhead PDF in App</span>
+                    </button>
+                    <button type="button" onclick="downloadFacultyAccountsStatementPdf()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-4 py-2 rounded-lg transition inline-flex items-center space-x-1.5 shadow-md">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Download Statement PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto flex-grow border rounded-xl bg-white p-4 space-y-3">
+                <div class="text-center border-b pb-2">
+                    <h4 class="text-base font-extrabold text-gray-900 uppercase tracking-wide" style="font-family:'Times New Roman', Times, serif;">Faculty Building Electricity Bills Amount Details</h4>
+                    <p id="facStmtSecondHeaderLabel" class="text-sm font-bold text-indigo-900 mt-0.5" style="font-family:'Times New Roman', Times, serif;">Nov-2026</p>
+                </div>
+                <p class="text-[11px] text-gray-500">
+                    <i class="fa-solid fa-circle-info text-amber-600 mr-1"></i>Allocated flats automatically pull Resident Name, ITS No., and Bill Amount for the selected month. If any flat is Vacant, toggle the <strong>Allocated / Vacant</strong> switch in its row so its Name, ITS No., and Amount remain blank as required.
+                </p>
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-gray-100 border-b-2 border-gray-300 text-gray-800 uppercase text-[11px]">
+                            <tr>
+                                <th class="p-2.5 border-r text-center w-24">Flat Number</th>
+                                <th class="p-2.5 border-r">Name</th>
+                                <th class="p-2.5 border-r text-center w-32">ITS No.</th>
+                                <th class="p-2.5 border-r text-right w-32">Amount (Rs.)</th>
+                                <th class="p-2.5 border-r text-center w-32">Cheque No.</th>
+                                <th class="p-2.5 text-center w-28">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="facStmtPreviewTableBody" class="divide-y"></tbody>
+                        <tfoot id="facStmtPreviewTableFoot" class="bg-amber-50 font-extrabold border-t-2 border-gray-400 text-xs"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
-</html>
+</html>              
+                                                          

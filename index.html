@@ -1790,9 +1790,13 @@
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
                         <input type="text" id="classroomSearchInput" oninput="debouncePortalSearch('classrooms', renderClassroomsTables)" placeholder="Search Classroom, Location, Darajah..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm">
                     </div>
-                    <button type="button" id="btnEditTimetableTemplateHeader" onclick="openEditTimetableTemplateModal()" class="crud-action-btn bg-indigo-700 hover:bg-indigo-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Edit Timetable Period Numbers & Timings across all Classroom Timetables">
+                    <button type="button" id="btnEditTimetableTemplateHeader" onclick="openEditTimetableTemplateModal()" class="crud-action-btn bg-indigo-700 hover:bg-indigo-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Edit Timetable Period Numbers, Timings & Valid Days across all Classroom Timetables">
                         <i class="fa-solid fa-clock-rotate-left text-amber-300"></i>
                         <span>Edit TT Template</span>
+                    </button>
+                    <button type="button" id="btnMassAllocateClassPeriodsHeader" onclick="openEditTimetableTemplateModal(); setTimeout(() => document.getElementById('massAllocSectionBox')?.scrollIntoView({behavior:'smooth'}), 120);" class="crud-action-btn bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Mass Allocate or Remove Periods & Timings Across All Allocated Standard Classes at Once">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                        <span>Mass Class Periods</span>
                     </button>
                     <button type="button" id="btnExportClassroomsHeader" onclick="exportClassroomsToExcel()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Download Classroom Allocation & Darajah/Event Details (.xlsx)">
                         <i class="fa-solid fa-file-excel"></i>
@@ -6259,9 +6263,9 @@ function doPost(e) {
       );
       var emailSubject = String(data.subject || ("Electricity Bill - " + pdfFilename.replace(".pdf", "")));
       var emailBody = String(data.body || "");
+      // Uses the default Google Account display name ("Facilities Management Office Aljamea Marol") without overriding it
       GmailApp.sendEmail(toEmail, emailSubject, emailBody, {
-        attachments: [pdfBlob],
-        name: "Dept of Facilities Management, Aljamea-tus-Saifiyah - Mumbai (Marol)"
+        attachments: [pdfBlob]
       });
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
@@ -6290,7 +6294,8 @@ function doPost(e) {
       var viewUrl = waFile.getUrl();
 
       var watiRelayResult = null;
-      if (data.action === "sendFacultyBillWhatsAppPdf" && data.watiBaseUrl && data.watiToken && data.whatsappNumber) {
+      // Only relay server-side if explicitly requested via data.relayFromServer === true (prevents duplicate WhatsApp dispatch!)
+      if (data.action === "sendFacultyBillWhatsAppPdf" && data.relayFromServer === true && data.watiBaseUrl && data.watiToken && data.whatsappNumber) {
         watiRelayResult = relayFacultyBillPdfToWatiServerSide_(data, waBlob, directDownloadUrl);
       }
 
@@ -6614,20 +6619,32 @@ function relayFacultyBillPdfToWatiServerSide_(data, pdfBlob, directDownloadUrl) 
   if (token.toLowerCase().indexOf("bearer ") !== 0) token = "Bearer " + token;
   var phone = String(data.whatsappNumber || "").replace(/\D/g, "");
   var templateName = String(data.templateName || "faculty_elec_bill_pdf").trim();
-  var customParams = Array.isArray(data.customParams) ? data.customParams : [];
+  var customParams = Array.isArray(data.customParams) ? data.customParams.slice() : [];
+  var pdfFilename = String(data.filename || "Electricity_Bill.pdf").trim();
+  var pdfDownloadUrlWithSuffix = directDownloadUrl + "&file=" + encodeURIComponent(pdfFilename);
+
+  var hasMediaParam = customParams.some(function(p) { return p && p.name === "media"; });
+  if (!hasMediaParam && directDownloadUrl) {
+    customParams.push({ name: "media", value: pdfDownloadUrlWithSuffix });
+  }
 
   var results = {};
-  // A) Send WATI Document Template (works 24/7 even outside 24hr customer window when template header is Document PDF)
+  var templateSucceeded = false;
+  // A) Send WATI Document Template ONCE with actual Drive PDF URL
   try {
     var payload = {
       template_name: templateName,
       broadcast_name: "faculty_bill_" + new Date().getTime(),
-      receivers: [{
-        whatsappNumber: phone,
-        customParams: customParams
-      }]
+      parameters: customParams,
+      header: {
+        type: "document",
+        document: {
+          link: pdfDownloadUrlWithSuffix,
+          filename: pdfFilename
+        }
+      }
     };
-    var tplResp = UrlFetchApp.fetch(baseUrl + "/api/v1/sendTemplateMessages", {
+    var tplResp = UrlFetchApp.fetch(baseUrl + "/api/v1/sendTemplateMessage?whatsappNumber=" + encodeURIComponent(phone), {
       method: "post",
       contentType: "application/json",
       headers: { "Authorization": token },
@@ -6636,12 +6653,17 @@ function relayFacultyBillPdfToWatiServerSide_(data, pdfBlob, directDownloadUrl) 
     });
     results.templateStatus = tplResp.getResponseCode();
     results.templateBody = tplResp.getContentText();
+    var parsedTpl = {};
+    try { parsedTpl = JSON.parse(results.templateBody || "{}"); } catch (eJ) {}
+    if (results.templateStatus >= 200 && results.templateStatus < 300 && parsedTpl.result !== false) {
+      templateSucceeded = true;
+    }
   } catch (eTpl) {
     results.templateError = eTpl.toString();
   }
 
-  // B) Also attempt WATI sendSessionFile with raw PDF binary + caption (delivers instant downloadable PDF if 24h session is open)
-  if (data.sendSessionFileFallback) {
+  // B) Fallback ONLY if template call above did NOT succeed (prevents duplicate WhatsApp messages!)
+  if (!templateSucceeded && data.sendSessionFileFallback) {
     try {
       var captionEncoded = encodeURIComponent(String(data.caption || ""));
       var sfResp = UrlFetchApp.fetch(baseUrl + "/api/v1/sendSessionFile/" + phone + "?caption=" + captionEncoded, {
@@ -14496,24 +14518,49 @@ await recordDawatEstatesNotification(
         // Timetable columns (Right-to-Left layout):
         // Period 11 renamed to Extra 1 (EX1), and Extra 2 (EX2) added after it on the far left.
         // Both Extra 1 and Extra 2 have no fixed time in the header; each day cell provides a dynamic "+ Add Time" / "Edit Time" option.
+        const ALL_TIMETABLE_DAY_KEYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
         const DEFAULT_TIMETABLE_COLUMNS = [
-            { key: 'EX2', label: 'Extra 2',   shortLabel: 'Extra 2', stdTime: '',              satTime: '',              saturdayOnly: false, isExtra: true },
-            { key: 'EX1', label: 'Extra 1',   shortLabel: 'Extra 1', stdTime: '',              satTime: '',              saturdayOnly: false, isExtra: true },
-            { key: 'P10', label: 'Period 10', shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00', saturdayOnly: false, isExtra: false },
-            { key: 'P9',  label: 'Period 9',  shortLabel: 'P9',      stdTime: '14:35 - 15:10', satTime: '00:00 - 00:00', saturdayOnly: false, isExtra: false },
-            { key: 'P8',  label: 'Period 8',  shortLabel: 'P8',      stdTime: '14:00 - 14:35', satTime: '12:40 - 13:15', saturdayOnly: false, isExtra: false },
-            { key: 'P7',  label: 'Period 7',  shortLabel: 'P7',      stdTime: '12:05 - 12:40', satTime: '12:05 - 12:40', saturdayOnly: false, isExtra: false },
-            { key: 'P6',  label: 'Period 6',  shortLabel: 'P6',      stdTime: '11:30 - 12:05', satTime: '11:30 - 12:05', saturdayOnly: false, isExtra: false },
-            { key: 'P5',  label: 'Period 5',  shortLabel: 'P5',      stdTime: '10:55 - 11:30', satTime: '10:55 - 11:30', saturdayOnly: false, isExtra: false },
-            { key: 'P4',  label: 'Period 4',  shortLabel: 'P4',      stdTime: '10:00 - 10:35', satTime: '10:00 - 10:35', saturdayOnly: false, isExtra: false },
-            { key: 'P3',  label: 'Period 3',  shortLabel: 'P3',      stdTime: '09:25 - 10:00', satTime: '09:25 - 10:00', saturdayOnly: false, isExtra: false },
-            { key: 'P2',  label: 'Period 2',  shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25', saturdayOnly: false, isExtra: false },
-            { key: 'P1',  label: 'Period 1',  shortLabel: 'P1',      stdTime: '-',             satTime: '08:15 - 08:50', saturdayOnly: true,  isExtra: false }
+            { key: 'EX2', label: 'Extra 2',   shortLabel: 'Extra 2', stdTime: '',              satTime: '',              saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: true },
+            { key: 'EX1', label: 'Extra 1',   shortLabel: 'Extra 1', stdTime: '',              satTime: '',              saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: true },
+            { key: 'P10', label: 'Period 10', shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P9',  label: 'Period 9',  shortLabel: 'P9',      stdTime: '14:35 - 15:10', satTime: '00:00 - 00:00', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P8',  label: 'Period 8',  shortLabel: 'P8',      stdTime: '14:00 - 14:35', satTime: '12:40 - 13:15', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P7',  label: 'Period 7',  shortLabel: 'P7',      stdTime: '12:05 - 12:40', satTime: '12:05 - 12:40', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P6',  label: 'Period 6',  shortLabel: 'P6',      stdTime: '11:30 - 12:05', satTime: '11:30 - 12:05', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P5',  label: 'Period 5',  shortLabel: 'P5',      stdTime: '10:55 - 11:30', satTime: '10:55 - 11:30', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P4',  label: 'Period 4',  shortLabel: 'P4',      stdTime: '10:00 - 10:35', satTime: '10:00 - 10:35', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P3',  label: 'Period 3',  shortLabel: 'P3',      stdTime: '09:25 - 10:00', satTime: '09:25 - 10:00', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P2',  label: 'Period 2',  shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25', saturdayOnly: false, validDays: ['Mon','Tue','Wed','Thu','Fri','Sat'], isExtra: false },
+            { key: 'P1',  label: 'Period 1',  shortLabel: 'P1',      stdTime: '-',             satTime: '08:15 - 08:50', saturdayOnly: true,  validDays: ['Sat'],                               isExtra: false }
         ];
+
+        function isPeriodColumnValidForDay(col, dayOrKey) {
+            if (!col) return false;
+            const rawKey = typeof dayOrKey === 'string' ? dayOrKey : (dayOrKey && dayOrKey.key ? dayOrKey.key : '');
+            const dKeyCap = rawKey ? (rawKey.charAt(0).toUpperCase() + rawKey.slice(1, 3).toLowerCase()) : '';
+            if (Array.isArray(col.validDays)) {
+                return col.validDays.some(d => String(d).toLowerCase() === dKeyCap.toLowerCase());
+            }
+            if (col.saturdayOnly) {
+                return dKeyCap === 'Sat';
+            }
+            return true;
+        }
+
+        function formatPeriodValidDaysBadgeText(col) {
+            if (!col) return '';
+            const vDays = Array.isArray(col.validDays) ? col.validDays : (col.saturdayOnly ? ['Sat'] : ALL_TIMETABLE_DAY_KEYS);
+            if (vDays.length === 6) return '';
+            if (vDays.length === 0) return '(Disabled)';
+            if (vDays.length === 1 && String(vDays[0]).toLowerCase() === 'sat') return '(Sat Only)';
+            if (vDays.length === 5 && !vDays.some(d => String(d).toLowerCase() === 'sat')) return '(Mon–Fri Only)';
+            return `(${vDays.join(', ')})`;
+        }
 
         function normalizeTimetableTemplateColumns(rawCols) {
             if (!Array.isArray(rawCols) || rawCols.length === 0) {
-                return DEFAULT_TIMETABLE_COLUMNS.map(c => ({ ...c }));
+                return DEFAULT_TIMETABLE_COLUMNS.map(c => ({ ...c, validDays: [...c.validDays] }));
             }
             const byKey = new Map();
             rawCols.forEach(c => {
@@ -14521,21 +14568,31 @@ await recordDawatEstatesNotification(
             });
             return DEFAULT_TIMETABLE_COLUMNS.map(defCol => {
                 const custom = byKey.get(defCol.key);
-                if (!custom) return { ...defCol };
+                if (!custom) return { ...defCol, validDays: [...defCol.validDays] };
                 const cleanLabel = String(custom.label !== undefined ? custom.label : defCol.label).trim() || defCol.label;
                 let cleanShort = String(custom.shortLabel !== undefined ? custom.shortLabel : '').trim();
                 if (!cleanShort) {
-                    // Derive shortLabel from label if user edited Period Number/Name (e.g. "Period 4" -> "P4", or custom number)
                     const mNum = cleanLabel.match(/^Period\s*(\d+.*)$/i);
                     cleanShort = mNum ? `P${mNum[1].trim()}` : cleanLabel;
                 }
+                let validDays;
+                if (Array.isArray(custom.validDays)) {
+                    const lowerSet = new Set(custom.validDays.map(d => String(d).trim().toLowerCase()));
+                    validDays = ALL_TIMETABLE_DAY_KEYS.filter(d => lowerSet.has(d.toLowerCase()));
+                } else if (custom.saturdayOnly !== undefined) {
+                    validDays = custom.saturdayOnly ? ['Sat'] : [...ALL_TIMETABLE_DAY_KEYS];
+                } else {
+                    validDays = [...defCol.validDays];
+                }
+                const isSatOnly = (validDays.length === 1 && validDays[0] === 'Sat');
                 return {
                     key: defCol.key,
                     label: cleanLabel,
                     shortLabel: cleanShort,
                     stdTime: custom.stdTime !== undefined ? String(custom.stdTime).trim() : defCol.stdTime,
                     satTime: custom.satTime !== undefined ? String(custom.satTime).trim() : defCol.satTime,
-                    saturdayOnly: custom.saturdayOnly !== undefined ? Boolean(custom.saturdayOnly) : defCol.saturdayOnly,
+                    saturdayOnly: isSatOnly,
+                    validDays: validDays,
                     isExtra: custom.isExtra !== undefined ? Boolean(custom.isExtra) : defCol.isExtra
                 };
             });
@@ -14757,7 +14814,7 @@ await recordDawatEstatesNotification(
                 headRow1 += `
                     <th class="p-2 ${isReadOnly ? '' : 'cursor-pointer hover:bg-emerald-100'} transition select-none" ${isReadOnly ? '' : `onclick="toggleColumnScheduleSlots('${col.key}')"`} title="${isReadOnly ? col.label : `Click to toggle ${col.label}`}">
                         <div class="text-xs">${col.label}</div>
-                        ${col.saturdayOnly ? '<div class="text-[9px] text-amber-800 font-semibold">(Sat Only)</div>' : ''}
+                        ${formatPeriodValidDaysBadgeText(col) ? `<div class="text-[9px] text-amber-800 font-semibold">${formatPeriodValidDaysBadgeText(col)}</div>` : ''}
                         ${col.isExtra ? '<div class="text-[9px] text-teal-700 font-semibold">(Custom Time)</div>' : ''}
                     </th>
                 `;
@@ -14797,7 +14854,7 @@ await recordDawatEstatesNotification(
                 TIMETABLE_COLUMNS.forEach(col => {
                     const slotId = `${day.key}_${col.key}`;
 
-                    if (col.saturdayOnly && !day.isSaturday) {
+                    if (!isPeriodColumnValidForDay(col, day)) {
                         bodyHtml += `
                             <td class="p-2 align-middle bg-gray-100/70 text-gray-300 select-none" title="Not applicable Monday–Friday">
                                 <span class="text-xs font-mono">&mdash;</span>
@@ -15056,7 +15113,7 @@ await recordDawatEstatesNotification(
             const daySummaries = [];
 
             TIMETABLE_DAYS.forEach(day => {
-                const availableColsForDay = chronologicalCols.filter(col => !col.saturdayOnly || day.isSaturday);
+                const availableColsForDay = chronologicalCols.filter(col => isPeriodColumnValidForDay(col, day));
                 const pickedCols = availableColsForDay.filter(col => normalizedSlots.includes(`${day.key}_${col.key}`));
                 if (pickedCols.length > 0) {
                     const pList = pickedCols.map(col => {
@@ -15089,7 +15146,7 @@ await recordDawatEstatesNotification(
             const dayEntries = [];
 
             TIMETABLE_DAYS.forEach(day => {
-                const availableColsForDay = chronologicalCols.filter(col => !col.saturdayOnly || day.isSaturday);
+                const availableColsForDay = chronologicalCols.filter(col => isPeriodColumnValidForDay(col, day));
                 const pickedCols = availableColsForDay.filter(col => normalizedSlots.includes(`${day.key}_${col.key}`));
                 if (pickedCols.length === 0) return;
 
@@ -16479,7 +16536,7 @@ await recordDawatEstatesNotification(
             if (!dayObj || dayObj.isSunday) return [];
             // Chronological order left-to-right: P1 (Sat only), P2..P10, Extra 1, Extra 2
             const cols = [...TIMETABLE_COLUMNS].reverse();
-            return cols.filter(c => !c.saturdayOnly || dayObj.isSaturday);
+            return cols.filter(c => isPeriodColumnValidForDay(c, dayObj));
         }
 
         function getStandardPresetPeriodKeysForDay(dayObj) {
@@ -18175,7 +18232,7 @@ await recordDawatEstatesNotification(
                     if (typeof s === 'string' && s.endsWith('_P11')) return s.replace(/_P11$/, '_EX1');
                     return s;
                 });
-                const availableCols = chronologicalCols.filter(col => !col.saturdayOnly || dayObj.isSaturday);
+                const availableCols = chronologicalCols.filter(col => isPeriodColumnValidForDay(col, dayObj));
                 const picked = availableCols.filter(col => normalizedSlots.includes(`${dayObj.key}_${col.key}`));
                 if (picked.length === 0) return '-';
                 return picked.map(col => {
@@ -18694,7 +18751,7 @@ await recordDawatEstatesNotification(
                 headRow1 += `
                     <th class="p-2">
                         <div class="text-xs">${col.label}</div>
-                        ${col.saturdayOnly ? '<div class="text-[9px] text-amber-800 font-semibold">(Sat Only)</div>' : ''}
+                        ${formatPeriodValidDaysBadgeText(col) ? `<div class="text-[9px] text-amber-800 font-semibold">${formatPeriodValidDaysBadgeText(col)}</div>` : ''}
                         ${col.isExtra ? '<div class="text-[9px] text-teal-700 font-semibold">(Custom Time)</div>' : ''}
                     </th>
                 `;
@@ -18732,7 +18789,7 @@ await recordDawatEstatesNotification(
                 TIMETABLE_COLUMNS.forEach(col => {
                     const slotId = `${day.key}_${col.key}`;
 
-                    if (col.saturdayOnly && !day.isSaturday) {
+                    if (!isPeriodColumnValidForDay(col, day)) {
                         bodyHtml += `
                             <td class="p-2 align-middle bg-gray-100/70 text-gray-300 select-none">
                                 <span class="text-xs font-mono">&mdash;</span>
@@ -18876,7 +18933,7 @@ await recordDawatEstatesNotification(
                 headRow1 += `
                     <th class="p-1.5">
                         <div class="text-[11px]">${col.label}</div>
-                        ${col.saturdayOnly ? '<div class="text-[9px] text-amber-800 font-semibold">(Sat Only)</div>' : ''}
+                        ${formatPeriodValidDaysBadgeText(col) ? `<div class="text-[9px] text-amber-800 font-semibold">${formatPeriodValidDaysBadgeText(col)}</div>` : ''}
                         ${col.isExtra ? '<div class="text-[9px] text-teal-700 font-semibold">(Custom Time)</div>' : ''}
                     </th>
                 `;
@@ -18911,7 +18968,7 @@ await recordDawatEstatesNotification(
                 TIMETABLE_COLUMNS.forEach(col => {
                     const slotId = `${day.key}_${col.key}`;
 
-                    if (col.saturdayOnly && !day.isSaturday) {
+                    if (!isPeriodColumnValidForDay(col, day)) {
                         bodyHtml += `
                             <td class="p-1.5 align-middle bg-gray-100/70 text-gray-300 select-none">
                                 <span class="text-xs font-mono">&mdash;</span>
@@ -19167,7 +19224,7 @@ await recordDawatEstatesNotification(
 
                     const rowCells = TIMETABLE_COLUMNS.map(col => {
                         const slotId = `${day.key}_${col.key}`;
-                        if (col.saturdayOnly && !day.isSaturday) {
+                        if (!isPeriodColumnValidForDay(col, day)) {
                             return '—';
                         }
                         const occ = slotOccupantMap[slotId];
@@ -30005,7 +30062,7 @@ Shukran`;
             showAssetToast(`Exported Faculty Bldg Bills Summary (${format.toUpperCase()})`);
         };
 
-                  window.closeModal = function(modalId) {
+        window.closeModal = function(modalId) {
             document.getElementById(modalId)?.classList.add('hidden');
         };
 
@@ -30107,7 +30164,7 @@ Shukran`;
                 bodyEl.innerHTML = `
                     <div class="w-full h-full flex flex-col items-center justify-center p-2 overflow-auto">
                         <img src="${imgSrc}" alt="${title}" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-slate-700 bg-white"
-                             onerror="if('${driveId}'){this.outerHTML='<iframe src=\\'https://drive.google.com/file/d/${driveId}/preview\\' class=\\'w-full h-full rounded-lg border-0 bg-white\\'></iframe>';}">
+                             onerror="if('${driveId}'){this.outerHTML='<iframe src=\'https://drive.google.com/file/d/${driveId}/preview\' class=\'w-full h-full rounded-lg border-0 bg-white\'></iframe>';}">
                     </div>
                 `;
             } else if (mediaType === 'video') {
@@ -30115,7 +30172,7 @@ Shukran`;
                     bodyEl.innerHTML = `
                         <div class="w-full h-full flex flex-col items-center justify-center">
                             <video src="https://drive.google.com/uc?export=download&id=${driveId}" controls autoplay class="max-w-full max-h-[78vh] rounded-lg shadow-2xl bg-black"
-                                   onerror="this.outerHTML='<iframe src=\\'https://drive.google.com/file/d/${driveId}/preview\\' class=\\'w-full h-full rounded-lg border-0 bg-black\\' allow=\\'autoplay\\'></iframe>';"></video>
+                                   onerror="this.outerHTML='<iframe src=\'https://drive.google.com/file/d/${driveId}/preview\' class=\'w-full h-full rounded-lg border-0 bg-black\' allow=\'autoplay\'></iframe>';"></video>
                         </div>
                     `;
                 } else {
@@ -30152,7 +30209,8 @@ Shukran`;
         }, true);
 
         // =====================================================================
-        // 2. CLASSROOM TIMETABLE TEMPLATE EDITOR IMPLEMENTATION (FIXED)
+        // 2. CLASSROOM TIMETABLE TEMPLATE EDITOR WITH PER-DAY VALIDITY CHECKBOXES
+        //    + MASS ALLOCATION OF PERIODS TO ALL ALLOCATED STANDARD CLASSES
         // =====================================================================
         window.openEditTimetableTemplateModal = function() {
             if (typeof isCurrentUserViewOnly === 'function' && isCurrentUserViewOnly('classroom-allocation')) {
@@ -30160,6 +30218,7 @@ Shukran`;
                 return;
             }
             renderEditTimetableTemplateTable();
+            renderMassAllocatePeriodsCheckboxes();
             const modal = document.getElementById('modalEditTimetableTemplate');
             if (modal) {
                 modal.classList.remove('hidden');
@@ -30177,40 +30236,72 @@ Shukran`;
             const chronological = [...activeCols].reverse();
 
             tbody.innerHTML = chronological.map((col) => {
-                const ruleBadge = col.isExtra
-                    ? `<span class="bg-teal-100 text-teal-900 border border-teal-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Extra Slot</span>`
-                    : (col.saturdayOnly
-                        ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Sat Only</span>`
-                        : `<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Mon – Sat</span>`);
+                const validDays = Array.isArray(col.validDays)
+                    ? col.validDays
+                    : (col.saturdayOnly ? ['Sat'] : ALL_TIMETABLE_DAY_KEYS);
+
+                const dayCheckboxesHtml = ALL_TIMETABLE_DAY_KEYS.map(dKey => {
+                    const checked = validDays.some(d => String(d).toLowerCase() === dKey.toLowerCase()) ? 'checked' : '';
+                    return `
+                        <label class="inline-flex flex-col items-center justify-center px-1.5 py-1 rounded border text-[10px] font-extrabold cursor-pointer select-none transition ${checked ? 'bg-indigo-50 border-indigo-400 text-indigo-950' : 'bg-gray-50 border-gray-200 text-gray-500'}">
+                            <input type="checkbox" name="ttValidDay_${col.key}" value="${dKey}" ${checked}
+                                onchange="this.parentElement.className = this.checked ? 'inline-flex flex-col items-center justify-center px-1.5 py-1 rounded border text-[10px] font-extrabold cursor-pointer select-none transition bg-indigo-50 border-indigo-400 text-indigo-950' : 'inline-flex flex-col items-center justify-center px-1.5 py-1 rounded border text-[10px] font-extrabold cursor-pointer select-none transition bg-gray-50 border-gray-200 text-gray-500'"
+                                class="h-3.5 w-3.5 rounded text-indigo-600 focus:ring-indigo-500 mb-0.5">
+                            <span>${dKey}</span>
+                        </label>
+                    `;
+                }).join('');
 
                 return `
                     <tr class="hover:bg-indigo-50/40 border-b" data-tt-key="${col.key}">
-                        <td class="p-2.5 text-center font-mono font-extrabold text-indigo-900 bg-gray-50">${col.key}</td>
-                        <td class="p-2.5">
+                        <td class="p-2 text-center font-mono font-extrabold text-indigo-900 bg-gray-50">${col.key}</td>
+                        <td class="p-2">
                             <input type="text" id="ttEditLabel_${col.key}" value="${String(col.label || '').replace(/"/g, '&quot;')}"
                                 oninput="autoSyncTtShortLabel('${col.key}', this.value)"
                                 class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                 placeholder="e.g. Period 1">
                         </td>
-                        <td class="p-2.5">
+                        <td class="p-2">
                             <input type="text" id="ttEditShort_${col.key}" value="${String(col.shortLabel || '').replace(/"/g, '&quot;')}"
                                 class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-mono font-bold text-indigo-900 text-center focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                 placeholder="e.g. P1">
                         </td>
-                        <td class="p-2.5">
+                        <td class="p-2">
                             <input type="text" id="ttEditStdTime_${col.key}" value="${String(col.stdTime || '').replace(/"/g, '&quot;')}"
                                 class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-mono text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                 placeholder="${col.isExtra ? 'Dynamic / Optional' : 'e.g. 08:50 - 09:25'}">
                         </td>
-                        <td class="p-2.5">
+                        <td class="p-2">
                             <input type="text" id="ttEditSatTime_${col.key}" value="${String(col.satTime || '').replace(/"/g, '&quot;')}"
                                 class="w-full p-1.5 border border-amber-300 rounded-lg text-xs font-mono text-amber-950 bg-amber-50/30 focus:ring-2 focus:ring-amber-500 focus:outline-none"
                                 placeholder="${col.isExtra ? 'Dynamic / Optional' : 'e.g. 08:15 - 08:50'}">
                         </td>
-                        <td class="p-2.5 text-center">${ruleBadge}</td>
+                        <td class="p-2">
+                            <div class="flex items-center justify-center gap-1 flex-wrap">
+                                ${dayCheckboxesHtml}
+                            </div>
+                        </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        function renderMassAllocatePeriodsCheckboxes() {
+            const container = document.getElementById('massAllocPeriodsCheckboxContainer');
+            if (!container) return;
+
+            const activeCols = (Array.isArray(TIMETABLE_COLUMNS) && TIMETABLE_COLUMNS.length > 0)
+                ? TIMETABLE_COLUMNS
+                : DEFAULT_TIMETABLE_COLUMNS;
+            const chronological = [...activeCols].reverse();
+
+            container.innerHTML = chronological.map(col => `
+                <label class="inline-flex items-center space-x-1.5 bg-white px-2.5 py-1.5 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer hover:bg-emerald-50 transition shadow-sm">
+                    <input type="checkbox" name="massAllocPeriodKey" value="${col.key}" class="rounded text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5">
+                    <span>${col.shortLabel || col.key}</span>
+                    <span class="text-[10px] text-gray-500 font-mono">(${col.stdTime && col.stdTime !== '-' ? col.stdTime : (col.satTime || 'Extra')})</span>
+                </label>
+            `).join('');
         }
 
         window.autoSyncTtShortLabel = function(colKey, newLabelVal) {
@@ -30226,9 +30317,10 @@ Shukran`;
         };
 
         window.resetTimetableTemplateToDefault = function() {
-            TIMETABLE_COLUMNS = DEFAULT_TIMETABLE_COLUMNS.map(c => ({ ...c }));
+            TIMETABLE_COLUMNS = DEFAULT_TIMETABLE_COLUMNS.map(c => ({ ...c, validDays: [...c.validDays] }));
             renderEditTimetableTemplateTable();
-            showAssetToast("Restored default Period Numbers & Timings in editor. Click Save to apply.");
+            renderMassAllocatePeriodsCheckboxes();
+            showAssetToast("Restored default Period Numbers, Timings & Day Rules in editor. Click Save to apply.");
         };
 
         window.saveEditedTimetableTemplate = async function() {
@@ -30239,12 +30331,16 @@ Shukran`;
                 const sh = (document.getElementById(`ttEditShort_${k}`)?.value || '').trim() || defCol.shortLabel;
                 const stdT = (document.getElementById(`ttEditStdTime_${k}`)?.value ?? defCol.stdTime).trim();
                 const satT = (document.getElementById(`ttEditSatTime_${k}`)?.value ?? defCol.satTime).trim();
+                const checkedDays = Array.from(document.querySelectorAll(`input[name="ttValidDay_${k}"]:checked`)).map(cb => cb.value);
+
                 return {
                     ...defCol,
                     label: lbl,
                     shortLabel: sh,
                     stdTime: stdT,
-                    satTime: satT
+                    satTime: satT,
+                    validDays: checkedDays,
+                    saturdayOnly: (checkedDays.length === 1 && checkedDays[0] === 'Sat')
                 };
             });
 
@@ -30280,7 +30376,103 @@ Shukran`;
                     set(dbRef(db, 'timetableTemplate'), TIMETABLE_COLUMNS)
                 ]);
             } catch (eSync) {}
-            showAssetToast("Timetable Template saved & applied across all Classroom Timetables and allotted classes/events!");
+            showAssetToast("Timetable Template & Day Rules saved across all Classroom Timetables!");
+        };
+
+        // Mass Allocate or Unallocate Selected Period(s) & Day(s) across All Allocated Standard Classes
+        window.executeMassPeriodAllocationToAllocatedClasses = async function(mode = 'add') {
+            if (!guardEditingRights('classroom-allocation')) return;
+
+            const selectedPeriods = Array.from(document.querySelectorAll('input[name="massAllocPeriodKey"]:checked')).map(cb => cb.value);
+            const selectedDays = Array.from(document.querySelectorAll('input[name="massAllocDayKey"]:checked')).map(cb => cb.value);
+            const genderScope = document.getElementById('massAllocScopeSelect')?.value || 'all';
+            const customTimeVal = (document.getElementById('massAllocExtraTimeInput')?.value || '').trim();
+
+            if (selectedPeriods.length === 0) {
+                showAssetToast("Please tick at least one Period (e.g. P1) to mass-allocate.", true);
+                return;
+            }
+            if (selectedDays.length === 0) {
+                showAssetToast("Please tick at least one Day (e.g. Mon–Sat) to mass-allocate.", true);
+                return;
+            }
+
+            // Automatically tick the corresponding day checkboxes in the template table above when adding
+            if (mode === 'add') {
+                selectedPeriods.forEach(pKey => {
+                    selectedDays.forEach(dKey => {
+                        const dayCb = document.querySelector(`input[name="ttValidDay_${pKey}"][value="${dKey}"]`);
+                        if (dayCb && !dayCb.checked) {
+                            dayCb.checked = true;
+                            dayCb.dispatchEvent(new Event('change'));
+                        }
+                    });
+                });
+            }
+
+            let updatedRoomsCount = 0;
+            let updatedAllocationsCount = 0;
+
+            (classroomsData || []).forEach(room => {
+                if (!room || !Array.isArray(room.allocations)) return;
+                if (genderScope !== 'all' && String(room.type || '').toLowerCase() !== genderScope.toLowerCase()) return;
+
+                let roomModified = false;
+                room.allocations.forEach(alloc => {
+                    if (!alloc || (alloc.allocationType || 'class') !== 'class') return;
+
+                    const existingSlots = Array.isArray(alloc.slots) ? [...alloc.slots] : [];
+                    const slotSet = new Set(existingSlots);
+                    if (!alloc.customTimings || typeof alloc.customTimings !== 'object') {
+                        alloc.customTimings = {};
+                    }
+                    let allocChanged = false;
+
+                    selectedDays.forEach(dKey => {
+                        selectedPeriods.forEach(pKey => {
+                            const slotId = `${dKey}_${pKey}`;
+                            if (mode === 'remove') {
+                                if (slotSet.has(slotId)) {
+                                    slotSet.delete(slotId);
+                                    delete alloc.customTimings[slotId];
+                                    allocChanged = true;
+                                }
+                            } else {
+                                const bookedMap = getBookedSlotsMapForClassroom(room, alloc.id);
+                                if (!bookedMap[slotId]) {
+                                    if (!slotSet.has(slotId)) {
+                                        slotSet.add(slotId);
+                                        allocChanged = true;
+                                    }
+                                    if ((pKey === 'EX1' || pKey === 'EX2') && customTimeVal) {
+                                        alloc.customTimings[slotId] = customTimeVal;
+                                        allocChanged = true;
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    if (allocChanged) {
+                        alloc.slots = Array.from(slotSet);
+                        alloc.updatedAt = new Date().toISOString().split('T')[0];
+                        updatedAllocationsCount++;
+                        roomModified = true;
+                    }
+                });
+
+                if (roomModified) {
+                    syncRoomAllocatedStatusFromClasses(room);
+                    updatedRoomsCount++;
+                }
+            });
+
+            // Save template + updated classroom allocations together
+            await window.saveEditedTimetableTemplate();
+            await saveClassroomsToCloud();
+
+            const actionWord = mode === 'remove' ? 'Removed' : 'Allocated';
+            showAssetToast(`${actionWord} ${selectedPeriods.join(', ')} (${selectedDays.join(', ')}) across ${updatedAllocationsCount} Allocated Classes in ${updatedRoomsCount} Classrooms!`);
         };
 
         // =====================================================================
@@ -30430,13 +30622,13 @@ Shukran`;
                     rec.occupantEmail = recipientEmail;
                     renderEgFacultyBldgModule();
                     await saveCloudData();
-                    showAssetToast(`Email sent from fm.marol@jameasaifiyah.edu to ${recipientEmail} with attached PDF (${pdfFileName})!`);
+                    showAssetToast(`Email sent to ${recipientEmail} with attached PDF (${pdfFileName})!`);
                 } else {
-                    throw new Error((resJson && resJson.message) || 'Apps Script returned an error. Ensure GmailApp permission is authorized in Apps Script editor.');
+                    throw new Error((resJson && resJson.message) || 'Apps Script returned an error.');
                 }
             } catch (err) {
                 console.error("Send Faculty Bill Email error:", err);
-                alert(`Could not send email automatically via Apps Script: ${err.message || err}\n\nNote: In your Google Apps Script editor, click "Run" once on any function to authorize GmailApp.sendEmail permissions if prompted, then Deploy -> New Version.`);
+                alert(`Could not send email automatically via Apps Script: ${err.message || err}`);
             } finally {
                 if (btnEl) {
                     btnEl.disabled = false;
@@ -30445,6 +30637,7 @@ Shukran`;
             }
         };
 
+        // FIXED: Sends WhatsApp ONLY ONCE and attaches the ACTUAL generated PDF bill (not the WATI sample PDF)
         window.sendFacultyBldgBillWhatsApp = async function(flatNo, year, monthIdx, btnEl = null) {
             if (!guardEditingRights('elec-gas-bills')) return;
             const rec = getFacultyBldgBillRecord(flatNo, year, monthIdx);
@@ -30493,6 +30686,7 @@ Shukran`;
                 const billTemplateName = (watiConfig.facultyBillTemplateName || 'faculty_elec_bill_pdf').trim();
                 const targetScriptUrl = getActiveFacultyAppsScriptUrl();
 
+                // Step 1: Upload the generated Bill PDF to Google Drive ONLY (using action: 'uploadFacultyBillPdfForWhatsApp' so Apps Script does NOT send a duplicate WATI message)
                 let directDownloadUrl = '';
                 try {
                     const uploadResp = await fetch(targetScriptUrl, {
@@ -30500,57 +30694,46 @@ Shukran`;
                         redirect: 'follow',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({
-                            action: 'sendFacultyBillWhatsAppPdf',
+                            action: 'uploadFacultyBillPdfForWhatsApp',
                             filename: pdfFileName,
                             mimeType: 'application/pdf',
-                            pdfBase64: pdfBase64,
                             base64: pdfBase64,
-                            watiBaseUrl: baseUrl,
-                            watiToken: tokenHeader,
-                            whatsappNumber: formattedPhone,
-                            templateName: billTemplateName,
-                            caption: fullCaptionText,
-                            sendSessionFileFallback: true,
-                            customParams: [
-                                { name: "1", value: occupantName },
-                                { name: "2", value: flatDetails },
-                                { name: "3", value: monthFormatted },
-                                { name: "4", value: dueFormatted }
-                            ]
+                            pdfBase64: pdfBase64
                         })
                     });
                     const upJson = await uploadResp.json();
-                    if (upJson && upJson.status === 'success') {
-                        directDownloadUrl = upJson.directDownloadUrl || (upJson.fileId ? `https://drive.google.com/uc?export=download&id=${upJson.fileId}` : '');
+                    if (upJson && (upJson.status === 'success' || upJson.fileId)) {
+                        const fileId = upJson.fileId || extractGoogleDriveFileId(upJson.fileUrl || '');
+                        // Append &file=...pdf so WATI's document header validator recognizes it as a .pdf URL and replaces the sample PDF
+                        directDownloadUrl = fileId
+                            ? `https://drive.google.com/uc?export=download&id=${fileId}&file=${encodeURIComponent(pdfFileName)}`
+                            : (upJson.directDownloadUrl || '');
                         rec.billPdfDriveUrl = upJson.fileUrl || directDownloadUrl;
                     }
                 } catch (eUp) {
                     console.warn("Drive upload for WhatsApp PDF warning:", eUp);
                 }
 
-                const customParams = [
+                // Step 2: Send ONCE via WATI Template Message with "media" parameter + header.document.link
+                const templateParams = [
                     { name: "1", value: occupantName },
                     { name: "2", value: flatDetails },
                     { name: "3", value: monthFormatted },
                     { name: "4", value: dueFormatted }
                 ];
                 if (directDownloadUrl) {
-                    customParams.push({ name: "media_url", value: directDownloadUrl });
-                    customParams.push({ name: "document_url", value: directDownloadUrl });
+                    templateParams.push({ name: "media", value: directDownloadUrl });
                 }
 
                 let sentOk = false;
                 try {
-                    const tplPayload = {
+                    const singleTplPayload = {
                         template_name: billTemplateName,
                         broadcast_name: `fac_bill_${rec.flatNo}_${Date.now()}`,
-                        receivers: [{
-                            whatsappNumber: formattedPhone,
-                            customParams: customParams
-                        }]
+                        parameters: templateParams
                     };
                     if (directDownloadUrl) {
-                        tplPayload.header = {
+                        singleTplPayload.header = {
                             type: "document",
                             document: {
                                 link: directDownloadUrl,
@@ -30558,21 +30741,25 @@ Shukran`;
                             }
                         };
                     }
-                    const r1 = await fetch(`${baseUrl}/api/v1/sendTemplateMessages`, {
+
+                    const rSingle = await fetch(`${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${encodeURIComponent(formattedPhone)}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': tokenHeader
                         },
-                        body: JSON.stringify(tplPayload)
+                        body: JSON.stringify(singleTplPayload)
                     });
-                    const j1 = await r1.json().catch(() => ({}));
-                    if (r1.ok && j1.result !== false) {
+                    const jSingle = await rSingle.json().catch(() => ({}));
+                    if (rSingle.ok && jSingle.result !== false) {
                         sentOk = true;
                     }
-                } catch (eW1) {}
+                } catch (eSingle) {
+                    console.warn("Single template call warning:", eSingle);
+                }
 
-                try {
+                // Fallback ONLY if the template call above did not succeed (prevents duplicate messages!)
+                if (!sentOk) {
                     const fd = new FormData();
                     fd.append('file', pdfBlob, pdfFileName);
                     const sfRes = await fetch(`${baseUrl}/api/v1/sendSessionFile/${encodeURIComponent(formattedPhone)}?caption=${encodeURIComponent(fullCaptionText)}`, {
@@ -30583,13 +30770,13 @@ Shukran`;
                     if (sfRes.ok) {
                         sentOk = true;
                     }
-                } catch (eSf) {}
+                }
 
                 rec.whatsappSent = true;
                 rec.whatsappSentAt = new Date().toISOString();
                 renderEgFacultyBldgModule();
                 await saveCloudData();
-                showAssetToast(`WhatsApp Bill PDF dispatched to ${occupantName} (+${formattedPhone})!`);
+                showAssetToast(`WhatsApp Bill PDF sent once to ${occupantName} (+${formattedPhone})!`);
             } catch (err) {
                 console.error("Send Faculty Bill WhatsApp error:", err);
                 showAssetToast("Error sending WhatsApp Bill: " + (err.message || err), true);
@@ -30842,46 +31029,107 @@ Shukran`;
 
     <!-- ===================================================================== -->
     <!-- MODAL: EDIT CLASSROOM TIMETABLE TEMPLATE (#modalEditTimetableTemplate)-->
+    <!-- Includes Per-Day Validity Checkboxes + Mass Period Allocation Tool    -->
     <!-- ===================================================================== -->
-    <div id="modalEditTimetableTemplate" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col border-2 border-indigo-600">
+    <div id="modalEditTimetableTemplate" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-2 sm:p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full p-4 sm:p-6 space-y-4 max-h-[94vh] flex flex-col border-2 border-indigo-600">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2 shrink-0">
                 <div>
                     <h3 class="text-lg sm:text-xl font-extrabold text-indigo-950 flex items-center space-x-2">
                         <i class="fa-solid fa-clock-rotate-left text-indigo-700"></i>
-                        <span>Edit Classroom Timetable Template</span>
+                        <span>Edit Classroom Timetable Template &amp; Mass Period Allocation</span>
                     </h3>
-                    <p class="text-xs text-gray-600 mt-0.5">Edit Period Numbers / Labels and their Monday–Friday &amp; Saturday timings. Saving automatically updates all Classroom Timetables and adjusts all already-allotted classes &amp; events.</p>
+                    <p class="text-xs text-gray-600 mt-0.5">Edit Period Labels, Timings, and tick which Days (Mon–Sat) each Period is valid for. Use the Mass Allocation box below to push new periods to all Allocated Classes at once.</p>
                 </div>
                 <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
             </div>
 
-            <div class="overflow-y-auto flex-grow border rounded-xl">
-                <table class="w-full text-left text-xs sm:text-sm border-collapse">
-                    <thead class="bg-indigo-950 text-white uppercase text-[11px] sticky top-0 z-10">
-                        <tr>
-                            <th class="p-2.5 text-center w-16">Slot ID</th>
-                            <th class="p-2.5">Period Number / Header Label</th>
-                            <th class="p-2.5 w-28">Short Badge</th>
-                            <th class="p-2.5">Mon – Fri Timing (Standard)</th>
-                            <th class="p-2.5">Saturday Timing (يوم السبت)</th>
-                            <th class="p-2.5 text-center w-28">Rule</th>
-                        </tr>
-                    </thead>
-                    <tbody id="editTimetableTemplateTableBody" class="divide-y bg-white"></tbody>
-                </table>
+            <div class="overflow-y-auto flex-grow space-y-4 pr-1">
+                <!-- Part 1: Period Numbers, Timings & Valid Days Checkboxes -->
+                <div class="border rounded-xl overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-indigo-950 text-white uppercase text-[11px] sticky top-0 z-10">
+                            <tr>
+                                <th class="p-2.5 text-center w-14">Slot</th>
+                                <th class="p-2.5 w-36">Period Label</th>
+                                <th class="p-2.5 w-20 text-center">Badge</th>
+                                <th class="p-2.5 w-36">Mon–Fri Timing</th>
+                                <th class="p-2.5 w-36">Saturday Timing</th>
+                                <th class="p-2.5 text-center min-w-[230px]">Valid Days (Tick Days Enabled)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editTimetableTemplateTableBody" class="divide-y bg-white"></tbody>
+                    </table>
+                </div>
+
+                <!-- Part 2: Mass Allocate Period(s) to All Allocated Standard Classes -->
+                <div id="massAllocSectionBox" class="bg-emerald-50/90 border-2 border-emerald-400 rounded-xl p-4 space-y-3 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200 pb-2">
+                        <div>
+                            <h4 class="text-sm font-extrabold text-emerald-950 flex items-center space-x-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-emerald-700"></i>
+                                <span>Mass Allocate / Unallocate Period(s) Across All Allocated Standard Classes</span>
+                            </h4>
+                            <p class="text-[11px] text-emerald-800 mt-0.5">Easily add (or remove) newly enabled periods (like Period 1 on Mon–Fri, or Extra 1/2 with custom time) to all existing Allocated Darajah/Standard Classes without opening each class manually.</p>
+                        </div>
+                        <select id="massAllocScopeSelect" class="p-1.5 border border-emerald-400 rounded-lg text-xs font-extrabold bg-white text-emerald-950">
+                            <option value="all">All Allocated Classes (Male &amp; Female)</option>
+                            <option value="Male">Male Allocated Classes Only</option>
+                            <option value="Female">Female Allocated Classes Only</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-extrabold text-emerald-950 uppercase block">1. Tick Period(s) to Mass-Allocate:</label>
+                        <div id="massAllocPeriodsCheckboxContainer" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end pt-1">
+                        <div class="md:col-span-5 space-y-1.5">
+                            <div class="flex items-center space-x-3">
+                                <label class="text-[11px] font-extrabold text-emerald-950 uppercase">2. Tick Target Days:</label>
+                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocDayKey]').forEach(cb => cb.checked = true)" class="text-[10px] font-bold text-emerald-800 underline">Select All Days</button>
+                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocDayKey]').forEach(cb => cb.checked = false)" class="text-[10px] font-bold text-gray-600 underline">Clear Days</button>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Mon" checked class="rounded text-emerald-600"><span>Mon</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Tue" checked class="rounded text-emerald-600"><span>Tue</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Wed" checked class="rounded text-emerald-600"><span>Wed</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Thu" checked class="rounded text-emerald-600"><span>Thu</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Fri" checked class="rounded text-emerald-600"><span>Fri</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Sat" checked class="rounded text-emerald-600"><span>Sat</span></label>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-3">
+                            <label class="text-[10px] font-bold text-emerald-950 uppercase block mb-1">Optional Extra 1/2 Time</label>
+                            <input type="text" id="massAllocExtraTimeInput" placeholder="e.g. 16:00 - 16:45" class="w-full p-1.5 border border-emerald-300 rounded-lg text-xs font-mono bg-white">
+                        </div>
+
+                        <div class="md:col-span-4 flex flex-wrap justify-end items-center gap-2">
+                            <button type="button" onclick="executeMassPeriodAllocationToAllocatedClasses('remove')" class="bg-red-100 hover:bg-red-200 text-red-900 border border-red-300 px-3 py-2 rounded-lg text-xs font-extrabold transition inline-flex items-center space-x-1">
+                                <i class="fa-solid fa-calendar-minus"></i>
+                                <span>Remove</span>
+                            </button>
+                            <button type="button" onclick="executeMassPeriodAllocationToAllocatedClasses('add')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-xs font-extrabold transition shadow inline-flex items-center space-x-1.5">
+                                <i class="fa-solid fa-bolt"></i>
+                                <span>Allocate to All Classes &amp; Save</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex flex-wrap justify-between items-center gap-3 pt-2 border-t shrink-0">
                 <button type="button" onclick="resetTimetableTemplateToDefault()" class="px-3.5 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1.5">
                     <i class="fa-solid fa-rotate-left"></i>
-                    <span>Restore Default Timings</span>
+                    <span>Restore Default Timings &amp; Rules</span>
                 </button>
                 <div class="flex items-center space-x-2">
                     <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
                     <button type="button" onclick="saveEditedTimetableTemplate()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-5 py-2 rounded-lg text-xs sm:text-sm font-extrabold transition shadow-md inline-flex items-center space-x-1.5">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        <span>Save &amp; Apply Across All Classrooms</span>
+                        <span>Save Template &amp; Day Rules</span>
                     </button>
                 </div>
             </div>
@@ -30969,5 +31217,4 @@ Shukran`;
     </div>
 
 </body>
-</html>              
-                                                          
+</html>

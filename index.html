@@ -1790,6 +1790,10 @@
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
                         <input type="text" id="classroomSearchInput" oninput="debouncePortalSearch('classrooms', renderClassroomsTables)" placeholder="Search Classroom, Location, Darajah..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm">
                     </div>
+                    <button type="button" id="btnEditTimetableTemplateHeader" onclick="openEditTimetableTemplateModal()" class="crud-action-btn bg-indigo-700 hover:bg-indigo-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Edit Timetable Period Numbers & Timings across all Classroom Timetables">
+                        <i class="fa-solid fa-clock-rotate-left text-amber-300"></i>
+                        <span>Edit TT Template</span>
+                    </button>
                     <button type="button" id="btnExportClassroomsHeader" onclick="exportClassroomsToExcel()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Download Classroom Allocation & Darajah/Event Details (.xlsx)">
                         <i class="fa-solid fa-file-excel"></i>
                         <span>Export Excel</span>
@@ -2643,7 +2647,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                     <div class="md:col-span-5 relative">
                         <i class="fa-solid fa-magnifying-glass text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 text-xs"></i>
-                        <input type="text" id="facultySearch" oninput="debouncePortalSearch('faculty', renderFacultyTable)" placeholder="Dynamic search by Name, ITS Number, Category, Gender, or Contact..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <input type="text" id="facultySearch" oninput="debouncePortalSearch('faculty', renderFacultyTable)" placeholder="Dynamic search by Name, ITS Number, Category, Gender, Contact, or Email..." class="w-full pl-8 pr-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                     <div class="md:col-span-3 relative" id="facultyCategoryDropdownWrap">
                         <button type="button" onclick="toggleFacultyCategoryDropdown()" class="w-full p-2 border rounded-lg text-sm bg-white font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-between focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -2717,6 +2721,7 @@
                                 <th class="p-3">Category</th>
                                 <th class="p-3">Gender</th>
                                 <th class="p-3">Contact Number</th>
+                                <th class="p-3">Email Address</th>
                                 <th class="p-3 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -3640,6 +3645,10 @@
                                 <option value="2023">2023</option>
                             </select>
                         </div>
+                        <button type="button" onclick="openFacultyAccountsStatementModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm border border-amber-400" title="Select a Month and Download Official Statement for Accounts on Department Letterhead PDF">
+                            <i class="fa-solid fa-file-invoice text-white"></i>
+                            <span>Statement for Accounts</span>
+                        </button>
                         <button type="button" onclick="exportFacultyBldgBillsReport('excel')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
                             <i class="fa-solid fa-file-excel"></i>
                             <span>Export Excel</span>
@@ -4783,6 +4792,10 @@
                 <div>
                     <label class="text-xs font-semibold block mb-1">Contact Number *</label>
                     <input type="text" id="facultyContact" required class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold block mb-1">Email Address <span class="text-gray-400 font-normal">(Auto-pulled to Faculty Bldg Bills)</span></label>
+                    <input type="email" id="facultyEmail" placeholder="e.g. member@jameasaifiyah.edu" class="w-full p-2 border rounded text-sm font-mono">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" onclick="closeModal('modalFaculty')" class="px-4 py-2 border rounded text-sm">Cancel</button>
@@ -6163,7 +6176,13 @@
                     </div>
                     <textarea id="autoFetchAppsScriptTextarea" readonly class="w-full h-72 p-3 font-mono text-[11px] bg-slate-900 text-emerald-300 rounded-xl border border-slate-700 focus:outline-none">
 // ============================================================================
-// COMPLETE Code.gs (v5) FOR SIYANAT MAROL PORTAL (fm.marol@jameasaifiyah.edu)
+// COMPLETE Code.gs (v6) FOR SIYANAT MAROL PORTAL (fm.marol@jameasaifiyah.edu)
+// NEW IN v6:
+//  - sendFacultyBillEmail: Sends Faculty Bldg Electricity Bill Email from fm.marol@jameasaifiyah.edu
+//    with the official Department Letterhead Bill attached as an ACTUAL DOWNLOADABLE PDF FILE.
+//  - uploadFacultyBillPdfForWhatsApp / sendFacultyBillWhatsAppPdf: Uploads Bill PDF to Drive &
+//    returns a direct binary PDF stream URL (https://drive.google.com/uc?export=download&id=...)
+//    and/or relays the PDF file directly to WATI API so WhatsApp delivers a downloadable PDF file!
 // 1) Preserves your exact original Siyanat_Marol_Uploads Drive Uploader (images, videos, PDFs)
 // 2) Full-Year (Jan–Dec 2026, including May–Nov 2026) Auto-Fetch for Adani Electricity & Mahanagar Gas:
 //    - Step 1 lists all matching email messages across all 12 months using lightweight headers ONLY (~1.5s)
@@ -6222,6 +6241,65 @@ function doPost(e) {
         threadsScanned: syncResult.threadsScanned,
         discoveredCaCount: 0,
         message: syncResult.message
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 6. Send Faculty Building Electricity Bill Email from fm.marol@jameasaifiyah.edu with actual PDF file attachment
+    if (data.action === "sendFacultyBillEmail") {
+      var toEmail = String(data.toEmail || "").trim();
+      if (!toEmail) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Missing recipient email address." }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      var pdfFilename = String(data.filename || "Electricity_Bill.pdf").trim();
+      var pdfBlob = Utilities.newBlob(
+        Utilities.base64Decode(data.pdfBase64),
+        "application/pdf",
+        pdfFilename
+      );
+      var emailSubject = String(data.subject || ("Electricity Bill - " + pdfFilename.replace(".pdf", "")));
+      var emailBody = String(data.body || "");
+      GmailApp.sendEmail(toEmail, emailSubject, emailBody, {
+        attachments: [pdfBlob],
+        name: "Dept of Facilities Management, Aljamea-tus-Saifiyah - Mumbai (Marol)"
+      });
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        sentTo: toEmail,
+        filename: pdfFilename
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 7. Upload Faculty Bill PDF for WhatsApp & optionally relay to WATI (Document Template + Session File)
+    if (data.action === "uploadFacultyBillPdfForWhatsApp" || data.action === "sendFacultyBillWhatsAppPdf") {
+      var waFolder = getOrCreateUtilityFolder_("Siyanat_Faculty_Bills_PDFs");
+      var waFileName = String(data.filename || ("Electricity_Bill_" + new Date().getTime() + ".pdf")).trim();
+      var existingIter = waFolder.getFilesByName(waFileName);
+      while (existingIter.hasNext()) {
+        try { existingIter.next().setTrashed(true); } catch (eDel) {}
+      }
+      var waBlob = Utilities.newBlob(
+        Utilities.base64Decode(data.pdfBase64),
+        "application/pdf",
+        waFileName
+      );
+      var waFile = waFolder.createFile(waBlob);
+      waFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      var fId = waFile.getId();
+      var directDownloadUrl = "https://drive.google.com/uc?export=download&id=" + fId;
+      var viewUrl = waFile.getUrl();
+
+      var watiRelayResult = null;
+      if (data.action === "sendFacultyBillWhatsAppPdf" && data.watiBaseUrl && data.watiToken && data.whatsappNumber) {
+        watiRelayResult = relayFacultyBillPdfToWatiServerSide_(data, waBlob, directDownloadUrl);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        fileId: fId,
+        fileUrl: viewUrl,
+        directDownloadUrl: directDownloadUrl,
+        watiRelay: watiRelayResult
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -6520,6 +6598,65 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
     threadsScanned: indexRes.threadsScanned || 0,
     message: "Indexed " + (indexRes.totalAttachments || 0) + " candidate bill message(s)."
   };
+}
+
+function getOrCreateUtilityFolder_(folderName) {
+  var folders = DriveApp.getFoldersByName(folderName);
+  if (folders.hasNext()) return folders.next();
+  var f = DriveApp.createFolder(folderName);
+  try { f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+  return f;
+}
+
+function relayFacultyBillPdfToWatiServerSide_(data, pdfBlob, directDownloadUrl) {
+  var baseUrl = String(data.watiBaseUrl || "").replace(/\/+$/, "");
+  var token = String(data.watiToken || "").trim();
+  if (token.toLowerCase().indexOf("bearer ") !== 0) token = "Bearer " + token;
+  var phone = String(data.whatsappNumber || "").replace(/\D/g, "");
+  var templateName = String(data.templateName || "faculty_elec_bill_pdf").trim();
+  var customParams = Array.isArray(data.customParams) ? data.customParams : [];
+
+  var results = {};
+  // A) Send WATI Document Template (works 24/7 even outside 24hr customer window when template header is Document PDF)
+  try {
+    var payload = {
+      template_name: templateName,
+      broadcast_name: "faculty_bill_" + new Date().getTime(),
+      receivers: [{
+        whatsappNumber: phone,
+        customParams: customParams
+      }]
+    };
+    var tplResp = UrlFetchApp.fetch(baseUrl + "/api/v1/sendTemplateMessages", {
+      method: "post",
+      contentType: "application/json",
+      headers: { "Authorization": token },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    results.templateStatus = tplResp.getResponseCode();
+    results.templateBody = tplResp.getContentText();
+  } catch (eTpl) {
+    results.templateError = eTpl.toString();
+  }
+
+  // B) Also attempt WATI sendSessionFile with raw PDF binary + caption (delivers instant downloadable PDF if 24h session is open)
+  if (data.sendSessionFileFallback) {
+    try {
+      var captionEncoded = encodeURIComponent(String(data.caption || ""));
+      var sfResp = UrlFetchApp.fetch(baseUrl + "/api/v1/sendSessionFile/" + phone + "?caption=" + captionEncoded, {
+        method: "post",
+        headers: { "Authorization": token },
+        payload: { file: pdfBlob },
+        muteHttpExceptions: true
+      });
+      results.sessionFileStatus = sfResp.getResponseCode();
+      results.sessionFileBody = sfResp.getContentText();
+    } catch (eSf) {
+      results.sessionFileError = eSf.toString();
+    }
+  }
+  return results;
 }
 
 function setupDailyTrigger() {
@@ -9004,7 +9141,8 @@ function getOrCreateUtilityFolder_(name) {
                     name: String(f.name || '').trim(),
                     category: String(f.category || 'Faculty').trim(),
                     gender: String(f.gender || 'Male').trim(),
-                    contact: String(f.contact || '').trim()
+                    contact: String(f.contact || '').trim(),
+                    email: String(f.email || '').trim()
                 };
             });
         }
@@ -9497,6 +9635,10 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     }
 
                     const raiSnap = raiRes.status === 'fulfilled' ? raiRes.value : null;
+                    if (data.timetableTemplate) {
+                        TIMETABLE_COLUMNS = normalizeTimetableTemplateColumns(data.timetableTemplate);
+                        try { localStorage.setItem('siyanat_timetable_template_v1', JSON.stringify(TIMETABLE_COLUMNS)); } catch (e) {}
+                    }
                     if (data.raihaan) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
                     } else if (raiSnap && raiSnap.exists()) {
@@ -9908,6 +10050,10 @@ window.loadClassroomsFromCloud = async function() {
                             keysInventoryData = normalizeKeysInventoryList(data.keys);
                             syncIssuedKeysCollectionFromMaster();
                         }
+                    }
+                    if (data.timetableTemplate !== undefined && didNodeChange('timetableTemplate')) {
+                        TIMETABLE_COLUMNS = normalizeTimetableTemplateColumns(data.timetableTemplate);
+                        try { localStorage.setItem('siyanat_timetable_template_v1', JSON.stringify(TIMETABLE_COLUMNS)); } catch (e) {}
                     }
                     if (data.raihaan !== undefined && didNodeChange('raihaan')) {
                         raihaanData = normalizeRaihaanList(data.raihaan);
@@ -10899,6 +11045,7 @@ window.loadClassroomsFromCloud = async function() {
             vacantBillsArchive: vacantBillsArchiveData || [],
             facultyBldgBills: facultyBldgBillsData || {},
             facultyBldgMeters: facultyBldgMetersData || loadFacultyBldgMetersCache() || {},
+            timetableTemplate: TIMETABLE_COLUMNS || DEFAULT_TIMETABLE_COLUMNS,
             googleScriptUrl: GOOGLE_SCRIPT_URL || ''
         };
 
@@ -11410,7 +11557,7 @@ window.loadClassroomsFromCloud = async function() {
                 });
             } else if (section === 'faculty') {
                 fileName = "Directory_Records";
-                columns = ["Sr. No.", "ITS Number", "Name", "Category", "Gender", "Contact Number"];
+                columns = ["Sr. No.", "ITS Number", "Name", "Category", "Gender", "Contact Number", "Email Address"];
                 const exportList = getFilteredDirectoryList();
                 data = exportList.map((f, idx) => [
                     idx + 1,
@@ -11418,7 +11565,8 @@ window.loadClassroomsFromCloud = async function() {
                     f.name || '-',
                     f.category || '-',
                     f.gender || '-',
-                    f.contact || '-'
+                    f.contact || '-',
+                    f.email || '-'
                 ]);
             }
 
@@ -12343,12 +12491,15 @@ await recordDawatEstatesNotification(
             filteredLogs.forEach(m => {
                 function renderMedia(url, direct, type, label) {
                     if(!url) return '';
+                    const safeUrl = String(url).replace(/'/g, "\'");
+                    const safeDirect = String(direct || url).replace(/'/g, "\'");
+                    const safeTitle = `${m.flat || 'Maintenance'} — ${label}`.replace(/'/g, "\'");
                     if(type === 'video') {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-36 object-cover rounded border"></video></div>`;
+                        return `<div class="mt-2"><div class="flex justify-between items-center mb-0.5"><span class="text-[10px] font-bold text-gray-500">${label}:</span><button type="button" onclick="openInAppMediaViewer('${safeUrl}', '${safeTitle} Video', 'video')" class="text-[10px] text-emerald-700 font-bold hover:underline"><i class="fa-solid fa-expand mr-0.5"></i>View in App</button></div><video src="${url}" controls class="w-full h-36 object-cover rounded border cursor-pointer" onclick="openInAppMediaViewer('${safeUrl}', '${safeTitle} Video', 'video')"></video></div>`;
                     } else if(type === 'pdf') {
-                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
+                        return `<div class="mt-2 p-1.5 bg-gray-50 border rounded text-[11px] flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><button type="button" onclick="openInAppMediaViewer('${safeUrl}', '${safeTitle} PDF', 'pdf')" class="text-emerald-700 font-bold hover:underline">View PDF</button></div>`;
                     } else {
-                        return `<div class="mt-2"><span class="text-[10px] font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-36 object-cover rounded border"></div>`;
+                        return `<div class="mt-2"><div class="flex justify-between items-center mb-0.5"><span class="text-[10px] font-bold text-gray-500">${label}:</span><button type="button" onclick="openInAppMediaViewer('${safeDirect}', '${safeTitle} Photo', 'image')" class="text-[10px] text-emerald-700 font-bold hover:underline"><i class="fa-solid fa-magnifying-glass-plus mr-0.5"></i>View Photo</button></div><img src="${direct || url}" onclick="openInAppMediaViewer('${safeDirect}', '${safeTitle} Photo', 'image')" class="w-full h-36 object-cover rounded border cursor-pointer hover:opacity-90 transition" title="Click to view full photo in webpage"></div>`;
                     }
                 }
 
@@ -12438,7 +12589,7 @@ await recordDawatEstatesNotification(
                     return false;
                 }
                 if (searchTokens.length > 0) {
-                    const corpus = `${f.name || ''} ${f.its || ''} ${fCat} ${fGender} ${f.contact || ''}`.toLowerCase();
+                    const corpus = `${f.name || ''} ${f.its || ''} ${fCat} ${fGender} ${f.contact || ''} ${f.email || ''}`.toLowerCase();
                     if (!searchTokens.every(tok => corpus.includes(tok))) {
                         return false;
                     }
@@ -12506,7 +12657,7 @@ await recordDawatEstatesNotification(
             if (femaleCountEl) femaleCountEl.innerText = filteredFemaleCount;
 
             if (filteredList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400 text-xs italic">No directory records match your search or filter criteria.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-400 text-xs italic">No directory records match your search or filter criteria.</td></tr>';
                 return;
             }
 
@@ -12527,6 +12678,10 @@ await recordDawatEstatesNotification(
                     genderBadge = `<span class="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded-full">${f.gender}</span>`;
                 }
 
+                const emailHtml = (f.email && String(f.email).trim() !== '' && String(f.email).trim() !== '-')
+                    ? `<span class="font-mono text-xs text-indigo-900 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">${f.email}</span>`
+                    : `<span class="text-gray-400 text-xs italic">-</span>`;
+
                 return `<tr class="border-b hover:bg-gray-50">
                     <td class="p-3 text-center font-semibold text-gray-500">${idx + 1}</td>
                     <td class="p-3 font-mono font-bold text-emerald-800">${f.its || '-'}</td>
@@ -12534,6 +12689,7 @@ await recordDawatEstatesNotification(
                     <td class="p-3">${categoryBadge}</td>
                     <td class="p-3">${genderBadge}</td>
                     <td class="p-3 text-gray-600">${f.contact || '-'}</td>
+                    <td class="p-3">${emailHtml}</td>
                     <td class="p-3 text-center space-x-2 whitespace-nowrap">
                         <button data-crud="true" onclick="openEditFaculty('${safeId}')" class="crud-action-btn text-blue-600 hover:text-blue-800" title="Edit Member"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button data-crud="true" onclick="deleteFaculty('${safeId}')" class="crud-action-btn text-red-600 hover:text-red-800" title="Delete Member"><i class="fa-solid fa-trash"></i></button>
@@ -12547,6 +12703,7 @@ await recordDawatEstatesNotification(
             document.getElementById('facultyForm').reset();
             if (document.getElementById('facultyCategory')) document.getElementById('facultyCategory').value = 'Faculty';
             if (document.getElementById('facultyGender')) document.getElementById('facultyGender').value = 'Male';
+            if (document.getElementById('facultyEmail')) document.getElementById('facultyEmail').value = '';
             document.getElementById('facultyModalTitle').innerText = 'Add Directory Member';
             document.getElementById('facultyForm').dataset.editId = '';
             document.getElementById('modalFaculty').classList.remove('hidden');
@@ -12565,6 +12722,9 @@ await recordDawatEstatesNotification(
                 document.getElementById('facultyGender').value = fac.gender || 'Male';
             }
             document.getElementById('facultyContact').value = fac.contact || '';
+            if (document.getElementById('facultyEmail')) {
+                document.getElementById('facultyEmail').value = fac.email || '';
+            }
             document.getElementById('facultyModalTitle').innerText = 'Edit Directory Member';
             document.getElementById('facultyForm').dataset.editId = fac.id;
             
@@ -12579,18 +12739,20 @@ await recordDawatEstatesNotification(
             const category = document.getElementById('facultyCategory') ? document.getElementById('facultyCategory').value : 'Faculty';
             const gender = document.getElementById('facultyGender') ? document.getElementById('facultyGender').value : 'Male';
             const contact = document.getElementById('facultyContact').value.trim();
+            const email = document.getElementById('facultyEmail') ? document.getElementById('facultyEmail').value.trim() : '';
 
             if (editId) {
                 const idx = facultyData.findIndex(f => String(f.id) === String(editId));
                 if (idx !== -1) {
                     const oldName = facultyData[idx].name;
-                    facultyData[idx] = { ...facultyData[idx], its, name, category, gender, contact };
+                    facultyData[idx] = { ...facultyData[idx], its, name, category, gender, contact, email };
 
                     estatesData.forEach(e => {
                         if (e.occupant === oldName) {
                             e.occupant = name;
                             e.its = its;
                             e.contact = contact;
+                            if (email) e.email = email;
                         }
                     });
                     if (oldName) {
@@ -12613,7 +12775,8 @@ await recordDawatEstatesNotification(
                     name,
                     category,
                     gender,
-                    contact
+                    contact,
+                    email
                 });
             }
 
@@ -12622,6 +12785,9 @@ await recordDawatEstatesNotification(
             closeModal('modalFaculty');
             renderFacultyTable();
             renderAllocationTable();
+            if (typeof renderEgFacultyBldgModule === 'function' && activeElecGasSubTab === 'faculty') {
+                renderEgFacultyBldgModule();
+            }
             if (typeof renderKeysInventory === 'function' && getCurrentlyVisibleModuleName() === 'inventory') {
                 renderKeysInventory();
             }
@@ -12972,19 +13138,32 @@ await recordDawatEstatesNotification(
 
                 const safeKey = p.key;
 
+                const safeFileUrl = String(pData.fileUrl || '').replace(/'/g, "\'");
+                const safePeriodTitle = `${currentSummarySocName} — ${p.label} (${selYear}) Receipt`.replace(/'/g, "\'");
                 tbodyReg.innerHTML += `
                     <tr class="hover:bg-gray-50 border-b">
                         <td class="p-2.5 font-bold text-gray-800">${p.label}</td>
-                        <td class="p-2.5"><input type="date" value="${pData.date || ''}" onchange="updateRegularBillRow('${safeKey}', 'date', this.value)" class="crud-input p-1 border rounded text-xs bg-white"></td>
-                        <td class="p-2.5"><input type="number" placeholder="0" value="${pData.amount || ''}" onchange="updateRegularBillRow('${safeKey}', 'amount', this.value)" class="crud-input p-1 border rounded text-xs w-28 bg-white font-bold text-emerald-900"></td>
+                        <td class="p-2.5">
+                            <input type="date" min="1990-01-01" max="2099-12-31" value="${pData.date || ''}"
+                                onblur="updateRegularBillRow('${safeKey}', 'date', this.value, this)"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"
+                                class="crud-input p-1 border rounded text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </td>
+                        <td class="p-2.5">
+                            <input type="number" placeholder="0" value="${pData.amount || ''}"
+                                oninput="recalcRegularBillsModalTotalsLive('${safeKey}', this.value)"
+                                onblur="updateRegularBillRow('${safeKey}', 'amount', this.value, this)"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"
+                                class="crud-input p-1 border rounded text-xs w-28 bg-white font-bold text-emerald-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </td>
                         <td class="p-2.5">
                             ${pData.fileUrl 
-                                ? `<a href="${pData.fileUrl}" target="_blank" class="text-emerald-700 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
+                                ? `<button type="button" onclick="openInAppMediaViewer('${safeFileUrl}', '${safePeriodTitle}', 'pdf')" class="text-emerald-700 font-bold hover:underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF</button>` 
                                 : '<span class="text-gray-400 italic">No File</span>'}
                             <input data-crud="true" type="file" accept=".pdf,image/*" onchange="uploadRegularBillFile('${safeKey}', this)" class="crud-action-btn block text-[10px] mt-1">
                         </td>
                         <td class="p-2.5 text-center">
-                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Auto-Saved</span>
+                            <span id="regBillSaveBadge_${safeKey}" class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Auto-Saved</span>
                         </td>
                     </tr>
                 `;
@@ -13002,6 +13181,8 @@ await recordDawatEstatesNotification(
                 currentData.other.forEach((b, idx) => {
                     if (!b) return;
                     otherSum += (parseFloat(b.amount) || 0);
+                    const safeOtherUrl = String(b.fileUrl || '').replace(/'/g, "\'");
+                    const safeOtherTitle = `${currentSummarySocName} — ${b.desc || 'Other Bill'} (${b.date || selYear})`.replace(/'/g, "\'");
                     tbodyOther.innerHTML += `
                         <tr class="hover:bg-gray-50 border-b">
                             <td class="p-2.5">${b.date || '-'}</td>
@@ -13009,7 +13190,7 @@ await recordDawatEstatesNotification(
                             <td class="p-2.5 text-gray-800">${b.desc || '-'}</td>
                             <td class="p-2.5">
                                 ${b.fileUrl 
-                                    ? `<a href="${b.fileUrl}" target="_blank" class="text-amber-800 font-bold hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i>View PDF</a>` 
+                                    ? `<button type="button" onclick="openInAppMediaViewer('${safeOtherUrl}', '${safeOtherTitle}', 'pdf')" class="text-amber-800 font-bold hover:underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF</button>` 
                                     : '<span class="text-gray-400 italic">None</span>'}
                             </td>
                             <td class="p-2.5 text-center space-x-2">
@@ -13029,7 +13210,56 @@ await recordDawatEstatesNotification(
             renderSocietyOverviewMetric();
         };
 
-        window.updateRegularBillRow = async function(periodKey, field, value) {
+        // Helper: Normalize partial/typo years in <input type="date"> (e.g. 0026-11-05 or 0206-11-05 -> 2026-11-05)
+        function normalizeTypedIsoDateValue(rawVal, fallbackYear) {
+            const v = String(rawVal || '').trim();
+            if (!v) return '';
+            const parts = v.split('-');
+            if (parts.length !== 3) return v;
+            let yr = parseInt(parts[0], 10);
+            const mo = parts[1];
+            const dy = parts[2];
+            if (isNaN(yr)) return v;
+            if (yr > 0 && yr < 100) {
+                yr = 2000 + yr;
+            } else if (yr >= 200 && yr < 300) {
+                // e.g. 0202 or 0206 when user was typing 2026
+                yr = parseInt(fallbackYear || '2026', 10) || 2026;
+            } else if (yr < 1900) {
+                const last2 = String(parts[0]).slice(-2);
+                const last2Num = parseInt(last2, 10);
+                yr = (last2Num >= 20 && last2Num <= 35) ? (2000 + last2Num) : (parseInt(fallbackYear || '2026', 10) || 2026);
+            }
+            return `${String(yr).padStart(4, '0')}-${mo}-${dy}`;
+        }
+
+        window.recalcRegularBillsModalTotalsLive = function(periodKey, liveAmountVal) {
+            const selYear = document.getElementById('billsSummaryYearSelect')?.value || '2026';
+            const { record } = ensureSocietyBillRecord(currentSummarySocName, selYear);
+            if (!record.regular[periodKey] || typeof record.regular[periodKey] !== 'object') {
+                record.regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
+            }
+            record.regular[periodKey].amount = liveAmountVal;
+
+            let regularSum = 0;
+            if (record.regular && typeof record.regular === 'object') {
+                Object.values(record.regular).forEach(b => {
+                    if (b) regularSum += (parseFloat(b.amount) || 0);
+                });
+            }
+            let otherSum = 0;
+            if (Array.isArray(record.other)) {
+                record.other.forEach(b => {
+                    if (b) otherSum += (parseFloat(b.amount) || 0);
+                });
+            }
+            const regSumEl = document.getElementById('regularBillsTotalSum');
+            if (regSumEl) regSumEl.innerText = `₹${regularSum.toLocaleString('en-IN')}`;
+            const grandSumEl = document.getElementById('grandBillsTotalSum');
+            if (grandSumEl) grandSumEl.innerText = `₹${(regularSum + otherSum).toLocaleString('en-IN')}`;
+        };
+
+        window.updateRegularBillRow = async function(periodKey, field, value, inputEl = null) {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
             const { record } = ensureSocietyBillRecord(currentSummarySocName, selYear);
 
@@ -13037,19 +13267,62 @@ await recordDawatEstatesNotification(
                 record.regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
             }
 
-            record.regular[periodKey][field] = value;
+            let finalVal = value;
+            if (field === 'date' && value) {
+                finalVal = normalizeTypedIsoDateValue(value, selYear);
+                if (inputEl && finalVal !== value) {
+                    inputEl.value = finalVal;
+                }
+            }
+
+            if (String(record.regular[periodKey][field] ?? '') === String(finalVal ?? '')) {
+                return;
+            }
+
+            record.regular[periodKey][field] = finalVal;
+
+            // Update totals in place WITHOUT destroying tbodyReg.innerHTML (prevents focus loss & date typing glitch!)
+            let regularSum = 0;
+            if (record.regular && typeof record.regular === 'object') {
+                Object.values(record.regular).forEach(b => {
+                    if (b) regularSum += (parseFloat(b.amount) || 0);
+                });
+            }
+            let otherSum = 0;
+            if (Array.isArray(record.other)) {
+                record.other.forEach(b => {
+                    if (b) otherSum += (parseFloat(b.amount) || 0);
+                });
+            }
+            const regSumEl = document.getElementById('regularBillsTotalSum');
+            if (regSumEl) regSumEl.innerText = `₹${regularSum.toLocaleString('en-IN')}`;
+            const grandSumEl = document.getElementById('grandBillsTotalSum');
+            if (grandSumEl) grandSumEl.innerText = `₹${(regularSum + otherSum).toLocaleString('en-IN')}`;
+
+            const badgeEl = document.getElementById(`regBillSaveBadge_${periodKey}`);
+            if (badgeEl) {
+                badgeEl.innerText = 'Saved ✓';
+                badgeEl.className = 'text-[10px] bg-emerald-600 text-white font-extrabold px-1.5 py-0.5 rounded transition';
+                setTimeout(() => {
+                    if (badgeEl) {
+                        badgeEl.innerText = 'Auto-Saved';
+                        badgeEl.className = 'text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded transition';
+                    }
+                }, 1500);
+            }
+
+            renderSocietyOverviewMetric();
+            renderSocieties();
+
             const fieldSummary = field === 'amount'
-                ? `Amount set to ₹${(parseFloat(value) || 0).toLocaleString('en-IN')}`
-                : `Date set to ${value || 'Cleared'}`;
+                ? `Amount set to ₹${(parseFloat(finalVal) || 0).toLocaleString('en-IN')}`
+                : `Date set to ${finalVal || 'Cleared'}`;
             await saveCloudData();
-await recordDawatEstatesNotification(
+            await recordDawatEstatesNotification(
                 'society',
                 'edit-regular-bill',
                 `Updated regular maintenance bill (${periodKey}) for "${currentSummarySocName}" (${selYear}) — ${fieldSummary}`
             );
-
-            renderBillsSummaryModalContent();
-            renderSocieties();
         };
 
         window.uploadRegularBillFile = async function(periodKey, inputEl) {
@@ -13283,10 +13556,10 @@ await recordDawatEstatesNotification(
                         <td class="px-4 py-3 text-gray-500 font-medium whitespace-nowrap align-middle">${d.date || '-'}</td>
                         <td class="px-4 py-3 text-gray-600 align-middle break-words whitespace-normal leading-relaxed">${d.notes || '-'}</td>
                         <td class="px-4 py-3 text-center whitespace-nowrap align-middle">
-                            <a href="${d.fileUrl}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded inline-flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap">
-                                <i class="fa-solid fa-file-pdf"></i>
-                                <span>Open File</span>
-                            </a>
+                            <button type="button" onclick="openInAppMediaViewer('${String(d.fileUrl || '').replace(/'/g, "\'")}', '${String(d.title || 'Society Document').replace(/'/g, "\'")}')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded inline-flex items-center justify-center space-x-1.5 shadow-sm whitespace-nowrap">
+                                <i class="fa-solid fa-eye"></i>
+                                <span>View File</span>
+                            </button>
                         </td>
                     </tr>
                 `).join('');
@@ -13482,9 +13755,12 @@ await recordDawatEstatesNotification(
                 flatMaintLogs.forEach(m => {
                     function renderMedia(url, direct, type, label) {
                         if(!url) return '';
-                        if(type === 'video') return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><video src="${url}" controls class="w-full h-40 object-cover rounded border"></video></div>`;
-                        if(type === 'pdf') return `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><a href="${url}" target="_blank" class="text-emerald-700 font-bold hover:underline">Open</a></div>`;
-                        return `<div class="mt-2"><span class="text-xs font-bold text-gray-500">${label}:</span><img src="${direct || url}" class="w-full h-40 object-cover rounded border"></div>`;
+                        const safeUrl = String(url).replace(/'/g, "\'");
+                        const safeDirect = String(direct || url).replace(/'/g, "\'");
+                        const safeTitle = `${m.flat || 'Maintenance'} — ${label}`.replace(/'/g, "\'");
+                        if(type === 'video') return `<div class="mt-2"><div class="flex justify-between items-center mb-0.5"><span class="text-xs font-bold text-gray-500">${label}:</span><button type="button" onclick="openInAppMediaViewer('${safeUrl}', '${safeTitle} Video', 'video')" class="text-[10px] text-emerald-700 font-bold hover:underline">View in App</button></div><video src="${url}" controls class="w-full h-40 object-cover rounded border cursor-pointer"></video></div>`;
+                        if(type === 'pdf') return `<div class="mt-2 p-2 bg-gray-50 border rounded text-xs flex justify-between items-center"><span><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> ${label} PDF</span><button type="button" onclick="openInAppMediaViewer('${safeUrl}', '${safeTitle} PDF', 'pdf')" class="text-emerald-700 font-bold hover:underline">View PDF</button></div>`;
+                        return `<div class="mt-2"><div class="flex justify-between items-center mb-0.5"><span class="text-xs font-bold text-gray-500">${label}:</span><button type="button" onclick="openInAppMediaViewer('${safeDirect}', '${safeTitle} Photo', 'image')" class="text-[10px] text-emerald-700 font-bold hover:underline">View Photo</button></div><img src="${direct || url}" onclick="openInAppMediaViewer('${safeDirect}', '${safeTitle} Photo', 'image')" class="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-90 transition"></div>`;
                     }
 
                     logsGrid.innerHTML += `
@@ -13552,7 +13828,7 @@ await recordDawatEstatesNotification(
                             <td class="p-3 text-gray-700">${a.warranty || '-'}</td>
                             <td class="p-3 text-center whitespace-nowrap">
                                 ${a.billUrl
-                                    ? `<a href="${a.billUrl}" target="_blank" rel="noopener noreferrer" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded text-xs inline-flex items-center space-x-1 transition"><i class="fa-solid fa-file-pdf text-red-600"></i><span>View Bill</span></a>`
+                                    ? `<button type="button" onclick="openInAppMediaViewer('${String(a.billUrl).replace(/'/g, "\'")}', '${String((a.assetName || 'Asset') + ' Bill').replace(/'/g, "\'")}', 'pdf')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded text-xs inline-flex items-center space-x-1 transition"><i class="fa-solid fa-file-pdf text-red-600"></i><span>View Bill</span></button>`
                                     : '<span class="text-gray-400 text-xs italic">No Bill</span>'}
                             </td>
                         `;
@@ -13726,13 +14002,15 @@ await recordDawatEstatesNotification(
                         const catVal = String(getVal(['Category', 'Role', 'Designation']) || 'Faculty').trim();
                         const genderVal = String(getVal(['Gender', 'Sex']) || 'Male').trim();
                         const contactVal = String(getVal(['Contact', 'Contact Number', 'Mobile', 'Phone', 'Mobile Number']) || '-').trim();
+                        const emailVal = String(getVal(['Email', 'Email Address', 'E-mail', 'Email ID', 'Mail']) || '').trim();
                         facultyData.push({
                             id: `fac_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 8)}`,
                             its: itsVal,
                             name: nameVal,
                             category: catVal,
                             gender: genderVal,
-                            contact: contactVal
+                            contact: contactVal,
+                            email: emailVal
                         });
                     });
                     facultyData = normalizeFacultyList(facultyData);
@@ -14218,7 +14496,7 @@ await recordDawatEstatesNotification(
         // Timetable columns (Right-to-Left layout):
         // Period 11 renamed to Extra 1 (EX1), and Extra 2 (EX2) added after it on the far left.
         // Both Extra 1 and Extra 2 have no fixed time in the header; each day cell provides a dynamic "+ Add Time" / "Edit Time" option.
-        const TIMETABLE_COLUMNS = [
+        const DEFAULT_TIMETABLE_COLUMNS = [
             { key: 'EX2', label: 'Extra 2',   shortLabel: 'Extra 2', stdTime: '',              satTime: '',              saturdayOnly: false, isExtra: true },
             { key: 'EX1', label: 'Extra 1',   shortLabel: 'Extra 1', stdTime: '',              satTime: '',              saturdayOnly: false, isExtra: true },
             { key: 'P10', label: 'Period 10', shortLabel: 'P10',     stdTime: '15:10 - 15:45', satTime: '00:00 - 00:00', saturdayOnly: false, isExtra: false },
@@ -14232,6 +14510,48 @@ await recordDawatEstatesNotification(
             { key: 'P2',  label: 'Period 2',  shortLabel: 'P2',      stdTime: '08:50 - 09:25', satTime: '08:50 - 09:25', saturdayOnly: false, isExtra: false },
             { key: 'P1',  label: 'Period 1',  shortLabel: 'P1',      stdTime: '-',             satTime: '08:15 - 08:50', saturdayOnly: true,  isExtra: false }
         ];
+
+        function normalizeTimetableTemplateColumns(rawCols) {
+            if (!Array.isArray(rawCols) || rawCols.length === 0) {
+                return DEFAULT_TIMETABLE_COLUMNS.map(c => ({ ...c }));
+            }
+            const byKey = new Map();
+            rawCols.forEach(c => {
+                if (c && c.key) byKey.set(String(c.key).trim(), c);
+            });
+            return DEFAULT_TIMETABLE_COLUMNS.map(defCol => {
+                const custom = byKey.get(defCol.key);
+                if (!custom) return { ...defCol };
+                const cleanLabel = String(custom.label !== undefined ? custom.label : defCol.label).trim() || defCol.label;
+                let cleanShort = String(custom.shortLabel !== undefined ? custom.shortLabel : '').trim();
+                if (!cleanShort) {
+                    // Derive shortLabel from label if user edited Period Number/Name (e.g. "Period 4" -> "P4", or custom number)
+                    const mNum = cleanLabel.match(/^Period\s*(\d+.*)$/i);
+                    cleanShort = mNum ? `P${mNum[1].trim()}` : cleanLabel;
+                }
+                return {
+                    key: defCol.key,
+                    label: cleanLabel,
+                    shortLabel: cleanShort,
+                    stdTime: custom.stdTime !== undefined ? String(custom.stdTime).trim() : defCol.stdTime,
+                    satTime: custom.satTime !== undefined ? String(custom.satTime).trim() : defCol.satTime,
+                    saturdayOnly: custom.saturdayOnly !== undefined ? Boolean(custom.saturdayOnly) : defCol.saturdayOnly,
+                    isExtra: custom.isExtra !== undefined ? Boolean(custom.isExtra) : defCol.isExtra
+                };
+            });
+        }
+
+        function loadCachedTimetableTemplate() {
+            try {
+                const raw = localStorage.getItem('siyanat_timetable_template_v1');
+                if (raw) {
+                    return normalizeTimetableTemplateColumns(JSON.parse(raw));
+                }
+            } catch (e) {}
+            return DEFAULT_TIMETABLE_COLUMNS.map(c => ({ ...c }));
+        }
+
+        let TIMETABLE_COLUMNS = loadCachedTimetableTemplate();
 
         const TIMETABLE_DAYS = [
             { key: 'Mon', arLabel: 'يوم الاثنين', enLabel: 'Monday',    isSaturday: false },
@@ -14778,28 +15098,28 @@ await recordDawatEstatesNotification(
                 pickedCols.forEach(col => {
                     const slotKey = `${day.key}_${col.key}`;
                     if (col.isExtra) {
-                        const customT = (customTimings && customTimings[slotKey]) ? customTimings[slotKey].trim() : '';
+                        const customT = (customTimings && customTimings[slotKey]) ? customTimings[slotKey].trim() : (day.isSaturday ? col.satTime : col.stdTime);
                         extraParts.push(customT ? `${col.shortLabel} (${customT})` : col.shortLabel);
                     } else {
                         const num = parseInt(String(col.key).replace('P', ''), 10);
-                        if (!isNaN(num)) stdNumbers.push(num);
+                        if (!isNaN(num)) stdNumbers.push({ num, shortLabel: col.shortLabel || `P${num}` });
                     }
                 });
 
-                stdNumbers.sort((a, b) => a - b);
+                stdNumbers.sort((a, b) => a.num - b.num);
                 const rangeParts = [];
                 let i = 0;
                 while (i < stdNumbers.length) {
-                    let start = stdNumbers[i];
-                    let end = start;
-                    while (i + 1 < stdNumbers.length && stdNumbers[i + 1] === end + 1) {
-                        end = stdNumbers[i + 1];
+                    let startObj = stdNumbers[i];
+                    let endObj = startObj;
+                    while (i + 1 < stdNumbers.length && stdNumbers[i + 1].num === endObj.num + 1) {
+                        endObj = stdNumbers[i + 1];
                         i++;
                     }
-                    if (start === end) {
-                        rangeParts.push(`P${start}`);
+                    if (startObj.num === endObj.num) {
+                        rangeParts.push(startObj.shortLabel);
                     } else {
-                        rangeParts.push(`P${start}-P${end}`);
+                        rangeParts.push(`${startObj.shortLabel}-${endObj.shortLabel}`);
                     }
                     i++;
                 }
@@ -19335,7 +19655,7 @@ await recordDawatEstatesNotification(
                     const assetRows = flatAssets.map(asset => {
                         const safeAssetId = String(asset.id).replace(/'/g, "\\'");
                         const billHtml = asset.billUrl
-                            ? `<a href="${asset.billUrl}" target="_blank" rel="noopener noreferrer" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded text-xs inline-flex items-center space-x-1 transition"><i class="fa-solid fa-file-pdf text-red-600"></i><span>View Bill</span></a>`
+                            ? `<button type="button" onclick="openInAppMediaViewer('${String(asset.billUrl).replace(/'/g, "\'")}', '${String((asset.flatLabel || '') + ' — ' + (asset.assetName || 'Asset') + ' Bill').replace(/'/g, "\'")}', 'pdf')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold px-2.5 py-1 rounded text-xs inline-flex items-center space-x-1 transition"><i class="fa-solid fa-file-pdf text-red-600"></i><span>View Bill</span></button>`
                             : `<span class="text-gray-400 italic text-xs">No Bill</span>`;
 
                         return `
@@ -19574,7 +19894,7 @@ await recordDawatEstatesNotification(
             const existingBillEl = document.getElementById('assetExistingBillNotice');
             if (existingBillEl) {
                 if (asset.billUrl) {
-                    existingBillEl.innerHTML = `<a href="${asset.billUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>Current Bill Attached (View)</a>`;
+                    existingBillEl.innerHTML = `<button type="button" onclick="openInAppMediaViewer('${String(asset.billUrl).replace(/'/g, "\'")}', '${String((asset.assetName || 'Asset') + ' Bill').replace(/'/g, "\'")}', 'pdf')" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>Current Bill Attached (View in App)</button>`;
                     existingBillEl.classList.remove('hidden');
                 } else {
                     existingBillEl.innerHTML = '';
@@ -19622,7 +19942,7 @@ await recordDawatEstatesNotification(
             const existingBillEl = document.getElementById('assetExistingBillNotice');
             if (existingBillEl) {
                 if (asset.billUrl) {
-                    existingBillEl.innerHTML = `<a href="${asset.billUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>Cloned Bill Attached (View)</a>`;
+                    existingBillEl.innerHTML = `<button type="button" onclick="openInAppMediaViewer('${String(asset.billUrl).replace(/'/g, "\'")}', '${String((asset.assetName || 'Asset') + ' Bill').replace(/'/g, "\'")}', 'pdf')" class="text-emerald-800 font-bold underline"><i class="fa-solid fa-paperclip mr-1"></i>Cloned Bill Attached (View in App)</button>`;
                     existingBillEl.classList.remove('hidden');
                 } else {
                     existingBillEl.innerHTML = '';
@@ -20406,15 +20726,18 @@ window.cleanDuplicateEstateAssets = async function() {
                         const pdf2Url = (subBillsArr[1] && subBillsArr[1].fileUrl) ? subBillsArr[1].fileUrl : (rec.fileUrl2 || '');
 
                         let pdfBadgesHtml = '';
+                        const safePdf1 = String(pdf1Url || '').replace(/'/g, "\'");
+                        const safePdf2 = String(pdf2Url || '').replace(/'/g, "\'");
+                        const safeMeterTitle = `${m.location || m.caNumber || 'Utility'} — ${EG_MONTH_NAMES[mIdx]} ${selYear}`.replace(/'/g, "\'");
                         if (pdf1Url && pdf2Url) {
                             pdfBadgesHtml = `
                                 <div class="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
-                                    <a href="${pdf1Url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open 1st Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 1</span></a>
-                                    <a href="${pdf2Url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open 2nd Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 2</span></a>
+                                    <button type="button" onclick="event.stopPropagation(); openInAppMediaViewer('${safePdf1}', '${safeMeterTitle} (Bill 1 PDF)', 'pdf');" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="View 1st Bill PDF in Webpage"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 1</span></button>
+                                    <button type="button" onclick="event.stopPropagation(); openInAppMediaViewer('${safePdf2}', '${safeMeterTitle} (Bill 2 PDF)', 'pdf');" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="View 2nd Bill PDF in Webpage"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 2</span></button>
                                 </div>
                             `;
                         } else if (pdf1Url) {
-                            pdfBadgesHtml = `<a href="${pdf1Url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="mt-0.5 inline-flex items-center space-x-1 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="Open Attached Bill PDF"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`;
+                            pdfBadgesHtml = `<button type="button" onclick="event.stopPropagation(); openInAppMediaViewer('${safePdf1}', '${safeMeterTitle} Bill PDF', 'pdf');" class="mt-0.5 inline-flex items-center space-x-1 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="View Attached Bill PDF in Webpage"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></button>`;
                         } else {
                             pdfBadgesHtml = `<span class="text-[9px] text-emerald-900 font-semibold block mt-0.5">No PDF</span>`;
                         }
@@ -21011,7 +21334,7 @@ window.cleanDuplicateEstateAssets = async function() {
             if (isCurrentUserViewOnly('elec-gas-bills')) {
                 const rec = getElecGasBillRecord(meterId, year, monthIdx);
                 if (rec && rec.fileUrl) {
-                    window.open(rec.fileUrl, '_blank', 'noopener,noreferrer');
+                    openInAppMediaViewer(rec.fileUrl, 'Utility Bill PDF', 'pdf');
                 } else {
                     showAssetToast("View Only Access: Editing rights are required to update utility bills.", true);
                 }
@@ -21112,8 +21435,9 @@ window.cleanDuplicateEstateAssets = async function() {
                 if (clearBtn) clearBtn.classList.remove('hidden');
                 if (existingPdfEl) {
                     if (b1Pdf) {
+                        const safeB1Pdf = String(b1Pdf).replace(/'/g, "\'");
                         existingPdfEl.innerHTML = `
-                            <a href="${b1Pdf}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-extrabold underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF 1</a>
+                            <button type="button" onclick="openInAppMediaViewer('${safeB1Pdf}', 'Bill PDF 1', 'pdf')" class="text-emerald-800 font-extrabold underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF 1</button>
                             <button type="button" onclick="deleteEgBillPdfInModal(1)" class="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-0.5 rounded font-extrabold text-[10px] inline-flex items-center space-x-1 transition" title="Delete attached PDF 1">
                                 <i class="fa-solid fa-trash-can"></i><span>Delete PDF 1</span>
                             </button>
@@ -21126,8 +21450,9 @@ window.cleanDuplicateEstateAssets = async function() {
                 }
                 if (existingPdf2El) {
                     if (b2Pdf) {
+                        const safeB2Pdf = String(b2Pdf).replace(/'/g, "\'");
                         existingPdf2El.innerHTML = `
-                            <a href="${b2Pdf}" target="_blank" rel="noopener noreferrer" class="text-orange-800 font-extrabold underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF 2</a>
+                            <button type="button" onclick="openInAppMediaViewer('${safeB2Pdf}', 'Bill PDF 2', 'pdf')" class="text-orange-800 font-extrabold underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF 2</button>
                             <button type="button" onclick="deleteEgBillPdfInModal(2)" class="bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-2 py-0.5 rounded font-extrabold text-[10px] inline-flex items-center space-x-1 transition" title="Delete attached PDF 2">
                                 <i class="fa-solid fa-trash-can"></i><span>Delete PDF 2</span>
                             </button>
@@ -27053,6 +27378,42 @@ Shukran`;
             showAssetToast(`Saved Meter No. "${cleanMtr || '-'}" for Faculty Bldg Flat ${fNo}`);
         };
 
+        function matchDirectoryMemberForFacultyFlat(occupantName, contactStr, itsStr) {
+            const cleanIts = String(itsStr || '').trim();
+            const cleanName = String(occupantName || '').trim().toLowerCase();
+            const cleanPhone = String(contactStr || '').replace(/\D/g, '').slice(-10);
+
+            if (!Array.isArray(facultyData) || facultyData.length === 0) return null;
+
+            // 1. Match by ITS Number
+            if (cleanIts && cleanIts !== '-' && cleanIts.toUpperCase() !== 'N/A') {
+                const byIts = facultyData.find(f => f && String(f.its || '').trim() === cleanIts);
+                if (byIts) return byIts;
+            }
+            // 2. Match by 10-digit Mobile Number
+            if (cleanPhone && cleanPhone.length >= 10) {
+                const byPhone = facultyData.find(f => f && String(f.contact || '').replace(/\D/g, '').slice(-10) === cleanPhone);
+                if (byPhone) return byPhone;
+            }
+            // 3. Match by exact or normalized Name
+            if (cleanName && cleanName !== 'vacant' && cleanName !== 'unallocated' && cleanName !== '-') {
+                const byExactName = facultyData.find(f => f && String(f.name || '').trim().toLowerCase() === cleanName);
+                if (byExactName) return byExactName;
+
+                const stripTitles = (s) => s.replace(/\b(shk|shaikh|mulla|m|bhai|bs|b|dr)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+                const normTarget = stripTitles(cleanName);
+                if (normTarget.length >= 4) {
+                    const byNormName = facultyData.find(f => {
+                        if (!f || !f.name) return false;
+                        const nf = stripTitles(String(f.name).toLowerCase());
+                        return nf === normTarget || nf.includes(normTarget) || normTarget.includes(nf);
+                    });
+                    if (byNormName) return byNormName;
+                }
+            }
+            return null;
+        }
+
         function getFacultyBldgFlatsList() {
             const savedMetersMap = { ...loadFacultyBldgMetersCache(), ...(facultyBldgMetersData || {}) };
             const estateFacFlats = (estatesData || []).filter(e => {
@@ -27082,7 +27443,6 @@ Shukran`;
             DEFAULT_FACULTY_BLDG_FLATS.forEach(defFlat => {
                 const estMatch = byFlatNo.get(defFlat.flatNo);
                 const resolvedMeter = resolveFacultyMeterNo(defFlat.flatNo, estMatch, defFlat.meterNo);
-                // Repair any existing saved bills for this flat that had N/A or empty meterNo
                 if (resolvedMeter && facultyBldgBillsData && typeof facultyBldgBillsData === 'object') {
                     Object.keys(facultyBldgBillsData).forEach(k => {
                         const r = facultyBldgBillsData[k];
@@ -27091,6 +27451,26 @@ Shukran`;
                         }
                     });
                 }
+
+                // Determine if flat is explicitly marked vacant in Estates
+                const explicitlyVacantInEstates = estMatch
+                    ? (!estMatch.occupant || String(estMatch.occupant).trim() === '' || String(estMatch.occupant).trim().toLowerCase() === 'vacant')
+                    : false;
+
+                const occName = estMatch
+                    ? (explicitlyVacantInEstates ? '' : String(estMatch.occupant).trim())
+                    : defFlat.name;
+                const occContact = (estMatch && estMatch.contact && String(estMatch.contact).trim() !== '')
+                    ? String(estMatch.contact).trim()
+                    : (explicitlyVacantInEstates ? '' : defFlat.contact);
+                const rawIts = (estMatch && estMatch.its && String(estMatch.its).trim() !== '' && String(estMatch.its).trim() !== '-')
+                    ? String(estMatch.its).trim()
+                    : '';
+
+                const dirMember = matchDirectoryMemberForFacultyFlat(occName || defFlat.name, occContact || defFlat.contact, rawIts);
+                const resolvedIts = rawIts || (dirMember && dirMember.its && dirMember.its !== 'N/A' ? dirMember.its : '');
+                const resolvedEmail = (dirMember && dirMember.email ? String(dirMember.email).trim() : '') || (estMatch && estMatch.email ? String(estMatch.email).trim() : '');
+
                 if (estMatch) {
                     byFlatNo.delete(defFlat.flatNo);
                     merged.push({
@@ -27098,8 +27478,12 @@ Shukran`;
                         flatNo: defFlat.flatNo,
                         building: estMatch.building || 'Faculty Bldg',
                         wing: estMatch.wing || '',
-                        name: (estMatch.occupant && String(estMatch.occupant).trim() !== '') ? String(estMatch.occupant).trim() : defFlat.name,
-                        contact: (estMatch.contact && String(estMatch.contact).trim() !== '') ? String(estMatch.contact).trim() : defFlat.contact,
+                        name: explicitlyVacantInEstates ? 'Vacant' : (occName || defFlat.name),
+                        isVacant: explicitlyVacantInEstates,
+                        its: explicitlyVacantInEstates ? '' : resolvedIts,
+                        contact: explicitlyVacantInEstates ? '' : occContact,
+                        email: explicitlyVacantInEstates ? '' : resolvedEmail,
+                        directoryMemberId: dirMember ? dirMember.id : '',
                         meterNo: resolvedMeter,
                         gasCa: String(estMatch.gas || '-').trim(),
                         defaultPrevBill: defFlat.defaultPrevBill || 0,
@@ -27113,7 +27497,11 @@ Shukran`;
                         building: 'Faculty Bldg',
                         wing: '',
                         name: defFlat.name,
+                        isVacant: false,
+                        its: resolvedIts,
                         contact: defFlat.contact,
+                        email: resolvedEmail,
+                        directoryMemberId: dirMember ? dirMember.id : '',
                         meterNo: resolvedMeter,
                         gasCa: '-',
                         defaultPrevBill: defFlat.defaultPrevBill || 0,
@@ -27126,13 +27514,25 @@ Shukran`;
             // Also include any additional Faculty Bldg flats added in Estate Details beyond the standard 11
             byFlatNo.forEach((estMatch, fNo) => {
                 const resolvedMeter = resolveFacultyMeterNo(fNo, estMatch, '');
+                const isVac = !estMatch.occupant || String(estMatch.occupant).trim() === '' || String(estMatch.occupant).trim().toLowerCase() === 'vacant';
+                const occName = isVac ? 'Vacant' : String(estMatch.occupant).trim();
+                const occContact = isVac ? '' : String(estMatch.contact || '-').trim();
+                const rawIts = isVac ? '' : String(estMatch.its || '').trim();
+                const dirMember = isVac ? null : matchDirectoryMemberForFacultyFlat(occName, occContact, rawIts);
+                const resolvedIts = rawIts || (dirMember && dirMember.its && dirMember.its !== 'N/A' ? dirMember.its : '');
+                const resolvedEmail = (dirMember && dirMember.email ? String(dirMember.email).trim() : '') || (estMatch.email ? String(estMatch.email).trim() : '');
+
                 merged.push({
                     id: String(estMatch.id || `fac_flat_${fNo}`),
                     flatNo: fNo,
                     building: estMatch.building || 'Faculty Bldg',
                     wing: estMatch.wing || '',
-                    name: String(estMatch.occupant || 'Unallocated').trim(),
-                    contact: String(estMatch.contact || '-').trim(),
+                    name: occName,
+                    isVacant: isVac,
+                    its: resolvedIts,
+                    contact: occContact,
+                    email: resolvedEmail,
+                    directoryMemberId: dirMember ? dirMember.id : '',
                     meterNo: resolvedMeter,
                     gasCa: String(estMatch.gas || '-').trim(),
                     defaultPrevBill: 0,
@@ -27795,19 +28195,39 @@ Shukran`;
                             ? `<span class="inline-flex items-center bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded-full text-xs font-extrabold"><i class="fa-solid fa-circle-check mr-1.5"></i>Paid</span>`
                             : `<span class="inline-flex items-center bg-red-100 text-red-800 border border-red-300 px-3 py-1 rounded-full text-xs font-extrabold"><i class="fa-solid fa-clock mr-1.5"></i>Not Paid</span>`;
 
-                        const elecBtnHtml = !viewOnly
-                            ? `<button type="button" onclick="openVacantFlatBillModal('${safeFlatId}', 'electricity', '${ymVal}')" class="crud-action-btn ml-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm">
-                                <i class="fa-solid ${elecRec ? 'fa-pen-to-square' : 'fa-plus'}"></i>
-                                <span>${elecRec ? 'Edit Details' : 'Add Details'}</span>
+                        const elecPdfUrl = (elecRec && elecRec.fileUrl) ? elecRec.fileUrl : (leg.elecFileUrl || '');
+                        const gasPdfUrl = (gasRec && gasRec.fileUrl) ? gasRec.fileUrl : (leg.gasFileUrl || '');
+                        const safeElecPdfUrl = String(elecPdfUrl || '').replace(/'/g, "\'");
+                        const safeGasPdfUrl = String(gasPdfUrl || '').replace(/'/g, "\'");
+                        const safeFlatTitle = `${f.building}${f.wing ? ' (' + f.wing + ')' : ''} - Flat ${f.flatNo} (${EG_MONTH_NAMES[selMonthIdx]} ${selYear})`.replace(/'/g, "\'");
+
+                        const elecPdfBtnHtml = elecPdfUrl
+                            ? `<button type="button" onclick="openInAppMediaViewer('${safeElecPdfUrl}', '${safeFlatTitle} — Electricity Bill PDF', 'pdf')" class="ml-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm" title="View Electricity Bill PDF in Webpage">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>View PDF</span>
                             </button>`
                             : '';
 
-                        const gasBtnHtml = !viewOnly
-                            ? `<button type="button" onclick="openVacantFlatBillModal('${safeFlatId}', 'gas', '${ymVal}')" class="crud-action-btn ml-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm">
+                        const gasPdfBtnHtml = gasPdfUrl
+                            ? `<button type="button" onclick="openInAppMediaViewer('${safeGasPdfUrl}', '${safeFlatTitle} — Gas Bill PDF', 'pdf')" class="ml-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm" title="View Gas Bill PDF in Webpage">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                <span>View PDF</span>
+                            </button>`
+                            : '';
+
+                        const elecBtnHtml = (!viewOnly
+                            ? `<button type="button" onclick="openVacantFlatBillModal('${safeFlatId}', 'electricity', '${ymVal}')" class="crud-action-btn ml-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm">
+                                <i class="fa-solid ${elecRec ? 'fa-pen-to-square' : 'fa-plus'}"></i>
+                                <span>${elecRec ? 'Edit Details' : 'Add Details'}</span>
+                            </button>`
+                            : '') + elecPdfBtnHtml;
+
+                        const gasBtnHtml = (!viewOnly
+                            ? `<button type="button" onclick="openVacantFlatBillModal('${safeFlatId}', 'gas', '${ymVal}')" class="crud-action-btn ml-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm">
                                 <i class="fa-solid ${gasRec ? 'fa-pen-to-square' : 'fa-plus'}"></i>
                                 <span>${gasRec ? 'Edit Details' : 'Add Details'}</span>
                             </button>`
-                            : '';
+                            : '') + gasPdfBtnHtml;
 
                         return `
                             <tr class="hover:bg-gray-50 border-b">
@@ -27918,7 +28338,8 @@ Shukran`;
                 if (delBtn) delBtn.classList.remove('hidden');
                 if (pdfLinkEl) {
                     if (existingRec.fileUrl) {
-                        pdfLinkEl.innerHTML = `<a href="${existingRec.fileUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-800 font-extrabold underline"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF</a>`;
+                        const safeVacPdf = String(existingRec.fileUrl).replace(/'/g, "\'");
+                        pdfLinkEl.innerHTML = `<button type="button" onclick="openInAppMediaViewer('${safeVacPdf}', '${String(flatTitle + ' Bill PDF').replace(/'/g, "\'")}', 'pdf')" class="text-emerald-800 font-extrabold underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF in Webpage</button>`;
                         pdfLinkEl.classList.remove('hidden');
                     } else {
                         pdfLinkEl.innerHTML = '';
@@ -28161,7 +28582,7 @@ Shukran`;
                     ? `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Paid</span>`
                     : `<span class="bg-red-100 text-red-800 border border-red-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Not Paid</span>`;
                 const pdfCell = r.fileUrl
-                    ? `<a href="${r.fileUrl}" target="_blank" rel="noopener noreferrer" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded text-[11px] font-bold inline-flex items-center space-x-1"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></a>`
+                    ? `<button type="button" onclick="openInAppMediaViewer('${String(r.fileUrl).replace(/'/g, "\'")}', '${String((r.flatLabel || 'Vacant Flat') + ' — ' + EG_MONTH_NAMES[Number(r.monthIdx) || 0] + ' ' + r.year + ' PDF').replace(/'/g, "\'")}', 'pdf')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded text-[11px] font-bold inline-flex items-center space-x-1"><i class="fa-solid fa-file-pdf text-red-600"></i><span>View PDF</span></button>`
                     : `<span class="text-gray-400 italic text-[11px]">None</span>`;
                 const actionsCell = !viewOnly
                     ? `<div class="inline-flex items-center space-x-1.5">
@@ -28458,27 +28879,59 @@ Shukran`;
                            <div class="text-[11px] text-emerald-700 font-bold">Paid: ₹${(parseFloat(rec.paymentReceived) || 0).toLocaleString('en-IN')}</div>`
                         : `<span class="text-gray-400 italic text-xs">-</span>`;
 
+                    const resolvedEmail = (rec && rec.occupantEmail) ? rec.occupantEmail : (f.email || '');
+                    const resolvedIts = (rec && rec.occupantIts) ? rec.occupantIts : (f.its || '');
+                    const waSent = !!(rec && rec.whatsappSent);
+                    const emSent = !!(rec && rec.emailSent);
+
+                    const waTickHtml = waSent
+                        ? `<span onclick="toggleFacultyBillSentFlag('${safeFlatNo}', '${selYear}', ${mIdx}, 'whatsapp')" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-500 shadow-sm cursor-pointer" title="WhatsApp Sent (${rec.whatsappSentAt ? formatDateToDdMmmYyyy(rec.whatsappSentAt.slice(0,10)) : 'Sent'}) — Click to toggle"><i class="fa-solid fa-check text-[11px] font-extrabold"></i></span>`
+                        : `<span onclick="toggleFacultyBillSentFlag('${safeFlatNo}', '${selYear}', ${mIdx}, 'whatsapp')" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-300 border border-gray-300 cursor-pointer hover:border-emerald-400" title="WhatsApp not sent yet — Click to mark/unmark"><i class="fa-solid fa-check text-[10px]"></i></span>`;
+
+                    const emTickHtml = emSent
+                        ? `<span onclick="toggleFacultyBillSentFlag('${safeFlatNo}', '${selYear}', ${mIdx}, 'email')" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-500 shadow-sm cursor-pointer" title="Email Sent (${rec.emailSentAt ? formatDateToDdMmmYyyy(rec.emailSentAt.slice(0,10)) : 'Sent'}) — Click to toggle"><i class="fa-solid fa-check text-[11px] font-extrabold"></i></span>`
+                        : `<span onclick="toggleFacultyBillSentFlag('${safeFlatNo}', '${selYear}', ${mIdx}, 'email')" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-300 border border-gray-300 cursor-pointer hover:border-emerald-400" title="Email not sent yet — Click to mark/unmark"><i class="fa-solid fa-check text-[10px]"></i></span>`;
+
                     let actionCellHtml = '';
                     if (isSaved) {
                         const amtRounded = parseFloat(rec.roundSumPayable) || 0;
                         actionCellHtml = `
-                            <div class="flex flex-wrap items-center justify-center gap-2 bg-emerald-50 border-2 border-emerald-500 rounded-xl p-2 shadow-sm">
-                                <div class="text-left pr-2 border-r border-emerald-300">
-                                    <span class="text-[10px] font-extrabold uppercase text-emerald-800 block">Payable Amount</span>
-                                    <span class="text-base font-extrabold text-emerald-950">₹${amtRounded.toLocaleString('en-IN')}</span>
+                            <div class="flex flex-col items-center justify-center gap-2 bg-emerald-50 border-2 border-emerald-500 rounded-xl p-2.5 shadow-sm">
+                                <div class="flex flex-wrap items-center justify-center gap-1.5 w-full">
+                                    <div class="text-left pr-2 border-r border-emerald-300">
+                                        <span class="text-[10px] font-extrabold uppercase text-emerald-800 block">Payable Amount</span>
+                                        <span class="text-base font-extrabold text-emerald-950">₹${amtRounded.toLocaleString('en-IN')}</span>
+                                    </div>
+                                    <button type="button" onclick="openFacultyBillPdfPreviewModal('${safeFlatNo}', '${selYear}', ${mIdx})" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1" title="View Bill on Official Department Letterhead in Webpage/App">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                        <span>View PDF</span>
+                                    </button>
+                                    <button type="button" onclick="downloadFacultyBillLetterheadPdf('${safeFlatNo}', '${selYear}', ${mIdx})" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1" title="Download Official Department Letterhead PDF">
+                                        <i class="fa-solid fa-download"></i>
+                                        <span>Download</span>
+                                    </button>
+                                    ${!viewOnly ? `<button type="button" onclick="openFacultyBldgBillModal('${safeFlatNo}', '${selYear}', ${mIdx})" class="crud-action-btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1" title="Edit Bill Details">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                        <span>Edit</span>
+                                    </button>` : ''}
                                 </div>
-                                <button type="button" onclick="openFacultyBillPdfPreviewModal('${safeFlatNo}', '${selYear}', ${mIdx})" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1" title="View Bill on Official Department Letterhead in Webpage/App">
-                                    <i class="fa-solid fa-file-pdf"></i>
-                                    <span>View PDF</span>
-                                </button>
-                                <button type="button" onclick="downloadFacultyBillLetterheadPdf('${safeFlatNo}', '${selYear}', ${mIdx})" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1" title="Download Official Department Letterhead PDF">
-                                    <i class="fa-solid fa-download"></i>
-                                    <span>Download</span>
-                                </button>
-                                ${!viewOnly ? `<button type="button" onclick="openFacultyBldgBillModal('${safeFlatNo}', '${selYear}', ${mIdx})" class="crud-action-btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold px-2.5 py-1.5 rounded-lg shadow-sm transition inline-flex items-center space-x-1" title="Edit Bill Details">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                    <span>Edit</span>
-                                </button>` : ''}
+                                ${!viewOnly ? `
+                                <div class="flex flex-wrap items-center justify-center gap-2 pt-1.5 border-t border-emerald-200 w-full">
+                                    <div class="inline-flex items-center space-x-1 bg-white px-1.5 py-1 rounded-lg border border-green-300 shadow-sm">
+                                        <button type="button" onclick="sendFacultyBldgBillWhatsApp('${safeFlatNo}', '${selYear}', ${mIdx}, this)" class="bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-md transition inline-flex items-center space-x-1" title="Send Bill PDF & Message via WATI WhatsApp to ${f.contact || 'Resident'}">
+                                            <i class="fa-brands fa-whatsapp text-xs"></i>
+                                            <span>Send WhatsApp</span>
+                                        </button>
+                                        ${waTickHtml}
+                                    </div>
+                                    <div class="inline-flex items-center space-x-1 bg-white px-1.5 py-1 rounded-lg border border-blue-300 shadow-sm">
+                                        <button type="button" onclick="sendFacultyBldgBillEmail('${safeFlatNo}', '${selYear}', ${mIdx}, this)" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-md transition inline-flex items-center space-x-1" title="Send Bill PDF Attachment from fm.marol@jameasaifiyah.edu to ${resolvedEmail || 'Resident Email'}">
+                                            <i class="fa-solid fa-envelope text-xs"></i>
+                                            <span>Send Email</span>
+                                        </button>
+                                        ${emTickHtml}
+                                    </div>
+                                </div>` : ''}
                             </div>
                         `;
                     } else {
@@ -28493,15 +28946,24 @@ Shukran`;
                         `;
                     }
 
+                    const emailSubLine = resolvedEmail
+                        ? `<div class="text-[11px] font-mono text-indigo-700 truncate max-w-[230px]" title="${resolvedEmail}"><i class="fa-regular fa-envelope text-[9.5px] mr-1"></i>${resolvedEmail}</div>`
+                        : `<div class="text-[10.5px] italic text-amber-700 cursor-pointer hover:underline" onclick="promptAndSaveFacultyMemberEmail('${safeFlatNo}')" title="Click to add email in Directory"><i class="fa-regular fa-envelope text-[9.5px] mr-1"></i>+ Add Email in Directory</div>`;
+
+                    const itsBadgeLine = resolvedIts
+                        ? `<span class="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded ml-1">ITS: ${resolvedIts}</span>`
+                        : '';
+
                     return `
                         <tr class="hover:bg-gray-50 border-b align-middle">
                             <td class="p-3 text-center font-bold text-gray-500">${idx + 1}</td>
                             <td class="p-3">
-                                <div class="flex items-center space-x-2">
-                                    <span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded text-xs">Flat ${f.flatNo}</span>
+                                <div class="flex items-start space-x-2">
+                                    <span class="bg-indigo-100 text-indigo-950 border border-indigo-300 font-mono font-extrabold px-2.5 py-0.5 rounded text-xs shrink-0 mt-0.5">Flat ${f.flatNo}</span>
                                     <div>
-                                        <div class="font-extrabold text-gray-900 text-sm leading-snug">${f.name}</div>
+                                        <div class="font-extrabold text-gray-900 text-sm leading-snug">${f.name}${itsBadgeLine}</div>
                                         <div class="text-[11px] font-mono text-gray-500"><i class="fa-solid fa-phone text-[9.5px] mr-1"></i>${f.contact || '-'}</div>
+                                        ${emailSubLine}
                                     </div>
                                 </div>
                             </td>
@@ -28582,6 +29044,12 @@ Shukran`;
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                             </button>` : ''}
                                         </div>
+                                        ${!viewOnly ? `<div class="flex items-center justify-center gap-1 pt-0.5">
+                                            <button type="button" onclick="sendFacultyBldgBillWhatsApp('${safeFlatNo}', '${selYear}', ${mIdx}, this)" class="bg-green-600 hover:bg-green-700 text-white text-[9.5px] font-bold px-1.5 py-0.5 rounded inline-flex items-center space-x-0.5" title="Send WhatsApp"><i class="fa-brands fa-whatsapp"></i><span>WA</span></button>
+                                            ${rec.whatsappSent ? '<i class="fa-solid fa-circle-check text-emerald-700 text-[11px]" title="WhatsApp Sent"></i>' : ''}
+                                            <button type="button" onclick="sendFacultyBldgBillEmail('${safeFlatNo}', '${selYear}', ${mIdx}, this)" class="bg-blue-600 hover:bg-blue-700 text-white text-[9.5px] font-bold px-1.5 py-0.5 rounded inline-flex items-center space-x-0.5" title="Send Email"><i class="fa-solid fa-envelope"></i><span>Mail</span></button>
+                                            ${rec.emailSent ? '<i class="fa-solid fa-circle-check text-emerald-700 text-[11px]" title="Email Sent"></i>' : ''}
+                                        </div>` : ''}
                                     </div>
                                 </td>
                             `;
@@ -28849,10 +29317,18 @@ Shukran`;
             const monthIdx = parseInt(document.getElementById('facReplicaMonthSelect')?.value ?? document.getElementById('facBillMonthIdxHidden')?.value ?? '0', 10);
 
             const calc = recalculateFacultyBillReplica();
+            const prevSaved = getFacultyBldgBillRecord(flatNo, year, monthIdx);
+            const flatMeta = getFacultyBldgFlatsList().find(f => String(f.flatNo) === String(flatNo));
             return {
                 flatNo: String(flatNo),
                 year: String(year),
                 monthIdx: monthIdx,
+                occupantEmail: (prevSaved && prevSaved.occupantEmail) || (flatMeta && flatMeta.email) || '',
+                occupantIts: (prevSaved && prevSaved.occupantIts) || (flatMeta && flatMeta.its) || '',
+                whatsappSent: prevSaved ? Boolean(prevSaved.whatsappSent) : false,
+                whatsappSentAt: prevSaved ? (prevSaved.whatsappSentAt || '') : '',
+                emailSent: prevSaved ? Boolean(prevSaved.emailSent) : false,
+                emailSentAt: prevSaved ? (prevSaved.emailSentAt || '') : '',
                 occupantName: (document.getElementById('facOccupantNameInput')?.value || '').trim(),
                 occupantContact: (document.getElementById('facOccupantContactInput')?.value || '').trim(),
                 meterNo: (document.getElementById('facMeterNoInput')?.value || '').trim(),
@@ -29533,5 +30009,955 @@ Shukran`;
             document.getElementById(modalId).classList.add('hidden');
         };
     </script>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL: UNIVERSAL IN-APP MEDIA & PDF VIEWER (#modalInAppMediaViewer)   -->
+    <!-- Opens all PDFs, Photos & Videos directly inside the webpage/app       -->
+    <!-- ===================================================================== -->
+    <div id="modalInAppMediaViewer" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4 z-[90]">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full h-[92vh] flex flex-col overflow-hidden border-2 border-emerald-600">
+            <!-- Top Bar -->
+            <div class="bg-emerald-950 text-white px-4 py-3 flex flex-wrap justify-between items-center gap-2 shrink-0">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                    <span id="inAppViewerTypeBadge" class="bg-amber-400 text-emerald-950 text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shrink-0">PDF Viewer</span>
+                    <h3 id="inAppViewerTitle" class="font-extrabold text-sm sm:text-base truncate">Document Preview</h3>
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                    <a id="inAppViewerDownloadBtn" href="#" download class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download File</span>
+                    </a>
+                    <button type="button" onclick="closeInAppMediaViewer()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1 shadow-sm">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                        <span>Close</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Viewer Body -->
+            <div id="inAppMediaViewerBody" class="flex-grow bg-slate-900 relative overflow-auto flex items-center justify-center p-2">
+                <!-- Populated dynamically with iframe/img/video/PDF.js canvas -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL: EDIT CLASSROOM TIMETABLE TEMPLATE (#modalEditTimetableTemplate)-->
+    <!-- ===================================================================== -->
+    <div id="modalEditTimetableTemplate" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col border-2 border-indigo-600">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2 shrink-0">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-extrabold text-indigo-950 flex items-center space-x-2">
+                        <i class="fa-solid fa-clock-rotate-left text-indigo-700"></i>
+                        <span>Edit Classroom Timetable Template</span>
+                    </h3>
+                    <p class="text-xs text-gray-600 mt-0.5">Edit Period Numbers / Labels and their Monday–Friday &amp; Saturday timings. Saving automatically updates all Classroom Timetables and adjusts all already-allotted classes &amp; events.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <div class="overflow-y-auto flex-grow border rounded-xl">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                    <thead class="bg-indigo-950 text-white uppercase text-[11px] sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2.5 text-center w-16">Slot ID</th>
+                            <th class="p-2.5">Period Number / Header Label</th>
+                            <th class="p-2.5 w-28">Short Badge</th>
+                            <th class="p-2.5">Mon – Fri Timing (Standard)</th>
+                            <th class="p-2.5">Saturday Timing (يوم السبت)</th>
+                            <th class="p-2.5 text-center w-28">Rule</th>
+                        </tr>
+                    </thead>
+                    <tbody id="editTimetableTemplateTableBody" class="divide-y bg-white"></tbody>
+                </table>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-center gap-3 pt-2 border-t shrink-0">
+                <button type="button" onclick="resetTimetableTemplateToDefault()" class="px-3.5 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-bold transition inline-flex items-center space-x-1.5">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Restore Default Timings</span>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="closeModal('modalEditTimetableTemplate')" class="px-4 py-2 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="button" onclick="saveEditedTimetableTemplate()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-5 py-2 rounded-lg text-xs sm:text-sm font-extrabold transition shadow-md inline-flex items-center space-x-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save &amp; Apply Across All Classrooms</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL: STATEMENT FOR ACCOUNTS (#modalFacultyAccountsStatement)        -->
+    <!-- ===================================================================== -->
+    <div id="modalFacultyAccountsStatement" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 sm:p-6 space-y-4 max-h-[92vh] flex flex-col border-2 border-amber-500">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-2 shrink-0">
+                <div>
+                    <h3 class="text-lg sm:text-xl font-extrabold text-gray-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-invoice text-amber-600"></i>
+                        <span>Faculty Building — Statement for Accounts</span>
+                    </h3>
+                    <p class="text-xs text-gray-600 mt-0.5">Select billing month to preview and download the Statement for Accounts on official Department Letterhead PDF.</p>
+                </div>
+                <button type="button" onclick="closeModal('modalFacultyAccountsStatement')" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <label class="text-xs font-extrabold text-amber-950 uppercase">Select Month:</label>
+                    <select id="facStmtMonthSelect" onchange="renderFacultyAccountsStatementPreview()" class="p-1.5 border border-amber-300 rounded-lg text-xs font-extrabold bg-white text-gray-900">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                    <select id="facStmtYearSelect" onchange="renderFacultyAccountsStatementPreview()" class="p-1.5 border border-amber-300 rounded-lg text-xs font-extrabold bg-white text-gray-900">
+                        <option value="2027">2027</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="viewFacultyAccountsStatementPdfInApp()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-extrabold px-3.5 py-2 rounded-lg transition inline-flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-eye"></i>
+                        <span>Preview Letterhead PDF in App</span>
+                    </button>
+                    <button type="button" onclick="downloadFacultyAccountsStatementPdf()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold px-4 py-2 rounded-lg transition inline-flex items-center space-x-1.5 shadow-md">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Download Statement PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statement Preview Table -->
+            <div class="overflow-y-auto flex-grow border rounded-xl bg-white p-4 space-y-3">
+                <div class="text-center border-b pb-2">
+                    <h4 class="text-base font-extrabold text-gray-900 uppercase tracking-wide" style="font-family:'Times New Roman', Times, serif;">Faculty Building Electricity Bills Amount Details</h4>
+                    <p id="facStmtSecondHeaderLabel" class="text-sm font-bold text-indigo-900 mt-0.5" style="font-family:'Times New Roman', Times, serif;">Nov-2026</p>
+                </div>
+                <p class="text-[11px] text-gray-500">
+                    <i class="fa-solid fa-circle-info text-amber-600 mr-1"></i>Allocated flats automatically pull Resident Name, ITS No., and Bill Amount for the selected month. If any flat is Vacant, toggle the <strong>Allocated / Vacant</strong> switch in its row so its Name, ITS No., and Amount remain blank as required.
+                </p>
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead class="bg-gray-100 border-b-2 border-gray-300 text-gray-800 uppercase text-[11px]">
+                            <tr>
+                                <th class="p-2.5 border-r text-center w-24">Flat Number</th>
+                                <th class="p-2.5 border-r">Name</th>
+                                <th class="p-2.5 border-r text-center w-32">ITS No.</th>
+                                <th class="p-2.5 border-r text-right w-32">Amount (Rs.)</th>
+                                <th class="p-2.5 border-r text-center w-32">Cheque No.</th>
+                                <th class="p-2.5 text-center w-28">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="facStmtPreviewTableBody" class="divide-y"></tbody>
+                        <tfoot id="facStmtPreviewTableFoot" class="bg-amber-50 font-extrabold border-t-2 border-gray-400 text-xs"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // 1. UNIVERSAL IN-APP MEDIA & PDF VIEWER IMPLEMENTATION
+        // =====================================================================
+        function extractGoogleDriveFileId(url) {
+            const s = String(url || '').trim();
+            if (!s) return '';
+            const m1 = s.match(/\/file\/d\/([a-zA-Z0-9_-]{15,})/);
+            if (m1) return m1[1];
+            const m2 = s.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+            if (m2) return m2[1];
+            const m3 = s.match(/googleusercontent\.com\/d\/([a-zA-Z0-9_-]{15,})/);
+            if (m3) return m3[1];
+            return '';
+        }
+
+        function inferMediaTypeFromUrl(url, explicitType = '') {
+            if (explicitType) return explicitType.toLowerCase();
+            const s = String(url || '').toLowerCase();
+            if (s.startsWith('data:image/') || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(s) || s.includes('googleusercontent.com/d/')) {
+                return 'image';
+            }
+            if (s.startsWith('data:video/') || /\.(mp4|webm|ogg|mov)(\?|$)/i.test(s)) {
+                return 'video';
+            }
+            return 'pdf';
+        }
+
+        window.openInAppMediaViewer = function(url, title = 'Document Preview', explicitType = '') {
+            if (!url) {
+                showAssetToast("No file URL attached to view.", true);
+                return;
+            }
+            const modal = document.getElementById('modalInAppMediaViewer');
+            const titleEl = document.getElementById('inAppViewerTitle');
+            const badgeEl = document.getElementById('inAppViewerTypeBadge');
+            const downloadBtn = document.getElementById('inAppViewerDownloadBtn');
+            const bodyEl = document.getElementById('inAppMediaViewerBody');
+            if (!modal || !bodyEl) return;
+
+            const mediaType = inferMediaTypeFromUrl(url, explicitType);
+            const driveId = extractGoogleDriveFileId(url);
+
+            if (titleEl) titleEl.innerText = title || 'Document Preview';
+            if (badgeEl) {
+                badgeEl.innerText = mediaType === 'image' ? 'Photo Viewer' : (mediaType === 'video' ? 'Video Player' : 'PDF Document');
+                badgeEl.className = mediaType === 'image'
+                    ? 'bg-teal-400 text-slate-950 text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shrink-0'
+                    : (mediaType === 'video'
+                        ? 'bg-purple-400 text-slate-950 text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shrink-0'
+                        : 'bg-amber-400 text-emerald-950 text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shrink-0');
+            }
+
+            let downloadHref = url;
+            if (driveId) {
+                downloadHref = `https://drive.google.com/uc?export=download&id=${driveId}`;
+            }
+            if (downloadBtn) {
+                downloadBtn.href = downloadHref;
+                downloadBtn.setAttribute('download', (title || 'Document').replace(/[^a-zA-Z0-9_.-]/g, '_'));
+            }
+
+            bodyEl.innerHTML = '';
+            if (mediaType === 'image') {
+                const imgSrc = driveId ? `https://lh3.googleusercontent.com/d/${driveId}` : url;
+                bodyEl.innerHTML = `
+                    <div class="w-full h-full flex flex-col items-center justify-center p-2 overflow-auto">
+                        <img src="${imgSrc}" alt="${title}" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-slate-700 bg-white"
+                             onerror="if('${driveId}'){this.outerHTML='<iframe src=\'https://drive.google.com/file/d/${driveId}/preview\' class=\'w-full h-full rounded-lg border-0 bg-white\'></iframe>';}">
+                    </div>
+                `;
+            } else if (mediaType === 'video') {
+                if (driveId) {
+                    bodyEl.innerHTML = `
+                        <div class="w-full h-full flex flex-col items-center justify-center">
+                            <video src="https://drive.google.com/uc?export=download&id=${driveId}" controls autoplay class="max-w-full max-h-[78vh] rounded-lg shadow-2xl bg-black"
+                                   onerror="this.outerHTML='<iframe src=\'https://drive.google.com/file/d/${driveId}/preview\' class=\'w-full h-full rounded-lg border-0 bg-black\' allow=\'autoplay\'></iframe>';"></video>
+                        </div>
+                    `;
+                } else {
+                    bodyEl.innerHTML = `<video src="${url}" controls autoplay class="max-w-full max-h-[80vh] rounded-lg shadow-2xl bg-black"></video>`;
+                }
+            } else {
+                // PDF Viewer (Drive /preview embed or direct PDF iframe)
+                const embedUrl = driveId
+                    ? `https://drive.google.com/file/d/${driveId}/preview`
+                    : url;
+                bodyEl.innerHTML = `
+                    <iframe src="${embedUrl}" class="w-full h-full rounded-lg border-0 bg-white shadow-inner" allow="autoplay"></iframe>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeInAppMediaViewer = function() {
+            const modal = document.getElementById('modalInAppMediaViewer');
+            const bodyEl = document.getElementById('inAppMediaViewerBody');
+            if (bodyEl) bodyEl.innerHTML = '';
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // Global interceptor: Catch any remaining <a target="_blank"> media/PDF links so nothing opens a separate Chrome tab
+        document.addEventListener('click', function(evt) {
+            const anchor = evt.target.closest('a[target="_blank"]');
+            if (!anchor) return;
+            const href = anchor.getAttribute('href') || '';
+            if (!href || href === '#' || href.startsWith('javascript:')) return;
+            evt.preventDefault();
+            evt.stopPropagation();
+            const label = (anchor.innerText || anchor.getAttribute('title') || 'Document Preview').trim();
+            openInAppMediaViewer(href, label);
+        }, true);
+
+        // =====================================================================
+        // 2. CLASSROOM TIMETABLE TEMPLATE EDITOR IMPLEMENTATION
+        // =====================================================================
+        window.openEditTimetableTemplateModal = function() {
+            if (isCurrentUserViewOnly('classroom-allocation')) {
+                showAssetToast("View Only: Editing rights are required to modify the Timetable Template.", true);
+                return;
+            }
+            renderEditTimetableTemplateTable();
+            document.getElementById('modalEditTimetableTemplate')?.classList.remove('hidden');
+        };
+
+        function renderEditTimetableTemplateTable() {
+            const tbody = document.getElementById('editTimetableTemplateTableBody');
+            if (!tbody) return;
+
+            // Display in chronological order (P1 -> P10 -> EX1 -> EX2) so editing is intuitive
+            const chronological = [...TIMETABLE_COLUMNS].reverse();
+            tbody.innerHTML = chronological.map((col) => {
+                const ruleBadge = col.isExtra
+                    ? `<span class="bg-teal-100 text-teal-900 border border-teal-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Extra Slot</span>`
+                    : (col.saturdayOnly
+                        ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Sat Only</span>`
+                        : `<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Mon – Sat</span>`);
+
+                return `
+                    <tr class="hover:bg-indigo-50/40 border-b" data-tt-key="${col.key}">
+                        <td class="p-2.5 text-center font-mono font-extrabold text-indigo-900 bg-gray-50">${col.key}</td>
+                        <td class="p-2.5">
+                            <input type="text" id="ttEditLabel_${col.key}" value="${col.label}"
+                                oninput="autoSyncTtShortLabel('${col.key}', this.value)"
+                                class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                placeholder="e.g. Period 1">
+                        </td>
+                        <td class="p-2.5">
+                            <input type="text" id="ttEditShort_${col.key}" value="${col.shortLabel}"
+                                class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-mono font-bold text-indigo-900 text-center focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                placeholder="e.g. P1">
+                        </td>
+                        <td class="p-2.5">
+                            <input type="text" id="ttEditStdTime_${col.key}" value="${col.stdTime}"
+                                class="w-full p-1.5 border border-gray-300 rounded-lg text-xs font-mono text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                placeholder="${col.isExtra ? 'Dynamic / Optional' : 'e.g. 08:50 - 09:25'}">
+                        </td>
+                        <td class="p-2.5">
+                            <input type="text" id="ttEditSatTime_${col.key}" value="${col.satTime}"
+                                class="w-full p-1.5 border border-amber-300 rounded-lg text-xs font-mono text-amber-950 bg-amber-50/30 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                                placeholder="${col.isExtra ? 'Dynamic / Optional' : 'e.g. 08:15 - 08:50'}">
+                        </td>
+                        <td class="p-2.5 text-center">${ruleBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.autoSyncTtShortLabel = function(colKey, newLabelVal) {
+            const shortInp = document.getElementById(`ttEditShort_${colKey}`);
+            if (!shortInp) return;
+            const clean = String(newLabelVal || '').trim();
+            const m = clean.match(/^Period\s*(\d+.*)$/i);
+            if (m) {
+                shortInp.value = `P${m[1].trim()}`;
+            } else if (clean) {
+                shortInp.value = clean.length <= 10 ? clean : clean.slice(0, 8);
+            }
+        };
+
+        window.resetTimetableTemplateToDefault = function() {
+            TIMETABLE_COLUMNS = DEFAULT_TIMETABLE_COLUMNS.map(c => ({ ...c }));
+            renderEditTimetableTemplateTable();
+            showAssetToast("Restored default Period Numbers & Timings in editor. Click Save to apply.");
+        };
+
+        window.saveEditedTimetableTemplate = async function() {
+            if (!guardEditingRights()) return;
+            const updatedCols = DEFAULT_TIMETABLE_COLUMNS.map(defCol => {
+                const k = defCol.key;
+                const lbl = (document.getElementById(`ttEditLabel_${k}`)?.value || '').trim() || defCol.label;
+                const sh = (document.getElementById(`ttEditShort_${k}`)?.value || '').trim() || defCol.shortLabel;
+                const stdT = (document.getElementById(`ttEditStdTime_${k}`)?.value ?? defCol.stdTime).trim();
+                const satT = (document.getElementById(`ttEditSatTime_${k}`)?.value ?? defCol.satTime).trim();
+                return {
+                    ...defCol,
+                    label: lbl,
+                    shortLabel: sh,
+                    stdTime: stdT,
+                    satTime: satT
+                };
+            });
+
+            TIMETABLE_COLUMNS = normalizeTimetableTemplateColumns(updatedCols);
+            try {
+                localStorage.setItem('siyanat_timetable_template_v1', JSON.stringify(TIMETABLE_COLUMNS));
+            } catch (e) {}
+
+            closeModal('modalEditTimetableTemplate');
+
+            // Refresh all Classroom Allocation tables & open Timetable views so all allotted classes/events reflect the new periods & timings!
+            renderClassroomsTables();
+            if (!document.getElementById('modalEditSchedule')?.classList.contains('hidden')) {
+                const roomId = document.getElementById('scheduleClassroomId')?.value;
+                const allocId = document.getElementById('scheduleEditAllocId')?.value || '';
+                const room = classroomsData.find(c => String(c.id) === String(roomId));
+                const checkedNow = Array.from(document.querySelectorAll('input[name="timetableSlotCheckbox"]:checked')).map(cb => cb.value);
+                buildTimetableGridTemplate(room, allocId, currentModalReadOnly);
+                checkedNow.forEach(val => {
+                    const cb = document.getElementById(`cb-${val}`);
+                    if (cb && !cb.disabled) cb.checked = true;
+                });
+                enforceExtra1BeforeExtra2Rules(room, allocId);
+                updateScheduleSelectAllState();
+            }
+            if (!document.getElementById('modalAllClassesTimetable')?.classList.contains('hidden')) {
+                openAllClassesTimetableModal(currentAllClassesTimetableGender);
+            }
+
+            await saveCloudData();
+            try {
+                await Promise.all([
+                    set(dbRef(db, 'portalData/timetableTemplate'), TIMETABLE_COLUMNS),
+                    set(dbRef(db, 'timetableTemplate'), TIMETABLE_COLUMNS)
+                ]);
+            } catch (eSync) {}
+            showAssetToast("Timetable Template saved & applied across all Classroom Timetables and allotted classes/events!");
+        };
+
+        // =====================================================================
+        // 3. FACULTY BLDG BILLS: SEND EMAIL, SEND WHATSAPP & ACCOUNTS STATEMENT
+        // =====================================================================
+        function formatFacultyBillMonthMmmYyyy(year, monthIdx) {
+            const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const m = shortMonths[Number(monthIdx) || 0] || 'Nov';
+            return `${m}-${year}`;
+        }
+
+        function formatFacultyBillDueDateDdMmmYyyy(isoDateStr) {
+            const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            if (!isoDateStr) return '-';
+            const parts = String(isoDateStr).trim().split('-');
+            if (parts.length !== 3) return isoDateStr;
+            const mIdx = parseInt(parts[1], 10) - 1;
+            const dNum = String(parseInt(parts[2], 10)).padStart(2, '0');
+            if (mIdx < 0 || mIdx > 11 || isNaN(parseInt(parts[2], 10))) return isoDateStr;
+            return `${dNum} ${shortMonths[mIdx]} ${parts[0]}`;
+        }
+
+        function buildFacultyBillExactMessageText(rec, flatObj) {
+            const occupantName = (rec && rec.occupantName) ? rec.occupantName : (flatObj ? flatObj.name : 'Resident');
+            const flatDetails = `Faculty Bldg - Flat ${rec.flatNo}`;
+            const monthFormatted = formatFacultyBillMonthMmmYyyy(rec.year, rec.monthIdx);
+            const dueFormatted = formatFacultyBillDueDateDdMmmYyyy(rec.dueDate);
+
+            return `Salaam
+${occupantName}
+${flatDetails}
+
+Your electricity bill for the month of ${monthFormatted} is attached herewith, based on the meter reading.
+
+Request you to pay the bill amount by submitting a cheque or demand draft in the name of Dawat e Hadiyah, to the Accounts Dept before ${dueFormatted}.
+
+Dept of Facilities Management,
+Aljamea-tus-Saifiyah - Mumbai (Marol)`;
+        }
+
+        window.promptAndSaveFacultyMemberEmail = async function(flatNo) {
+            if (!guardEditingRights()) return '';
+            const allFlats = getFacultyBldgFlatsList();
+            const f = allFlats.find(x => String(x.flatNo) === String(flatNo));
+            if (!f) return '';
+
+            const entered = prompt(`Enter Email Address for ${f.name} (Flat ${f.flatNo}) to save in Directory & Faculty Bldg Bills:`, f.email || '');
+            if (entered === null) return '';
+            const cleanEmail = String(entered).trim();
+            if (!cleanEmail) return '';
+
+            // Update Directory (facultyData)
+            const dirMatch = matchDirectoryMemberForFacultyFlat(f.name, f.contact, f.its);
+            if (dirMatch) {
+                dirMatch.email = cleanEmail;
+            } else {
+                facultyData.push({
+                    id: `fac_${Date.now()}_${facultyData.length}`,
+                    its: f.its || 'N/A',
+                    name: f.name,
+                    category: 'Faculty',
+                    gender: 'Male',
+                    contact: f.contact || '-',
+                    email: cleanEmail
+                });
+            }
+
+            // Update Estates if present
+            if (Array.isArray(estatesData)) {
+                estatesData.forEach(e => {
+                    if (e && String(e.building || '').toLowerCase().includes('faculty') && String(e.flatNo) === String(flatNo)) {
+                        e.email = cleanEmail;
+                    }
+                });
+            }
+
+            // Update saved bills for this flat
+            if (facultyBldgBillsData && typeof facultyBldgBillsData === 'object') {
+                Object.keys(facultyBldgBillsData).forEach(k => {
+                    if (facultyBldgBillsData[k] && String(facultyBldgBillsData[k].flatNo) === String(flatNo)) {
+                        facultyBldgBillsData[k].occupantEmail = cleanEmail;
+                    }
+                });
+            }
+
+            renderEgFacultyBldgModule();
+            if (typeof renderFacultyTable === 'function') renderFacultyTable();
+            await saveCloudData();
+            showAssetToast(`Saved email "${cleanEmail}" in Directory for ${f.name} (Flat ${f.flatNo})`);
+            return cleanEmail;
+        };
+
+        window.toggleFacultyBillSentFlag = async function(flatNo, year, monthIdx, channel) {
+            if (!guardEditingRights()) return;
+            const rec = getFacultyBldgBillRecord(flatNo, year, monthIdx);
+            if (!rec) return;
+            if (channel === 'whatsapp') {
+                rec.whatsappSent = !rec.whatsappSent;
+                rec.whatsappSentAt = rec.whatsappSent ? new Date().toISOString() : '';
+            } else {
+                rec.emailSent = !rec.emailSent;
+                rec.emailSentAt = rec.emailSent ? new Date().toISOString() : '';
+            }
+            renderEgFacultyBldgModule();
+            await saveCloudData();
+        };
+
+        window.sendFacultyBldgBillEmail = async function(flatNo, year, monthIdx, btnEl = null) {
+            if (!guardEditingRights()) return;
+            const rec = getFacultyBldgBillRecord(flatNo, year, monthIdx);
+            if (!rec || !rec.isSaved) {
+                showAssetToast("Please add and save bill details for this flat first.", true);
+                return;
+            }
+
+            const allFlats = getFacultyBldgFlatsList();
+            const flatObj = allFlats.find(f => String(f.flatNo) === String(flatNo)) || {};
+            let recipientEmail = (rec.occupantEmail || flatObj.email || '').trim();
+
+            if (!recipientEmail) {
+                recipientEmail = await promptAndSaveFacultyMemberEmail(flatNo);
+                if (!recipientEmail) return;
+            }
+
+            const monthFormatted = formatFacultyBillMonthMmmYyyy(rec.year, rec.monthIdx);
+            const emailBody = buildFacultyBillExactMessageText(rec, flatObj);
+            const emailSubject = `Electricity Bill for the month of ${monthFormatted} - Faculty Bldg Flat ${rec.flatNo}`;
+            const pdfFileName = `Electricity_Bill_Flat_${rec.flatNo}_${monthFormatted}.pdf`;
+
+            const origHtml = btnEl ? btnEl.innerHTML : '';
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Sending...</span>`;
+            }
+
+            try {
+                const doc = generateFacultyBillJsPdfDoc(rec);
+                const dataUri = doc.output('datauristring');
+                const pdfBase64 = dataUri.split(',')[1];
+
+                const resp = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'sendFacultyBillEmail',
+                        toEmail: recipientEmail,
+                        subject: emailSubject,
+                        body: emailBody,
+                        pdfBase64: pdfBase64,
+                        filename: pdfFileName
+                    })
+                });
+                const resJson = await resp.json();
+                if (resJson && resJson.status === 'success') {
+                    rec.emailSent = true;
+                    rec.emailSentAt = new Date().toISOString();
+                    rec.occupantEmail = recipientEmail;
+                    renderEgFacultyBldgModule();
+                    await saveCloudData();
+                    showAssetToast(`Email sent from fm.marol@jameasaifiyah.edu to ${recipientEmail} with attached PDF (${pdfFileName})!`);
+                } else {
+                    throw new Error((resJson && resJson.message) || 'Please update your Google Apps Script deployment with the v6 Code.gs (includes sendFacultyBillEmail).');
+                }
+            } catch (err) {
+                console.error("Send Faculty Bill Email error:", err);
+                alert(`Could not send email automatically via Apps Script: ${err.message || err}
+
+Make sure you have pasted the updated Code.gs (v6) in your fm.marol Google Apps Script and clicked Deploy -> Manage Deployments -> Edit -> New Version.`);
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = origHtml;
+                }
+            }
+        };
+
+        window.sendFacultyBldgBillWhatsApp = async function(flatNo, year, monthIdx, btnEl = null) {
+            if (!guardEditingRights()) return;
+            const rec = getFacultyBldgBillRecord(flatNo, year, monthIdx);
+            if (!rec || !rec.isSaved) {
+                showAssetToast("Please add and save bill details for this flat first.", true);
+                return;
+            }
+
+            const allFlats = getFacultyBldgFlatsList();
+            const flatObj = allFlats.find(f => String(f.flatNo) === String(flatNo)) || {};
+            const rawContact = rec.occupantContact || flatObj.contact || '';
+            const formattedPhone = formatWhatsappPhoneForWati(rawContact);
+            if (!formattedPhone) {
+                showAssetToast(`No valid WhatsApp number found for Flat ${flatNo} (${rec.occupantName}).`, true);
+                return;
+            }
+
+            const occupantName = rec.occupantName || flatObj.name || 'Resident';
+            const flatDetails = `Faculty Bldg - Flat ${rec.flatNo}`;
+            const monthFormatted = formatFacultyBillMonthMmmYyyy(rec.year, rec.monthIdx);
+            const dueFormatted = formatFacultyBillDueDateDdMmmYyyy(rec.dueDate);
+            const fullCaptionText = buildFacultyBillExactMessageText(rec, flatObj);
+            const pdfFileName = `Electricity_Bill_Flat_${rec.flatNo}_${monthFormatted}.pdf`;
+
+            const origHtml = btnEl ? btnEl.innerHTML : '';
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Sending WA...</span>`;
+            }
+
+            try {
+                // Step 1: Generate the official Department Letterhead PDF in browser
+                const doc = generateFacultyBillJsPdfDoc(rec);
+                const dataUri = doc.output('datauristring');
+                const pdfBase64 = dataUri.split(',')[1];
+                const pdfBlob = doc.output('blob');
+
+                const baseUrl = getResolvedWatiBaseUrl(watiConfig.apiEndpoint, watiConfig.accessToken);
+                let tokenHeader = String(watiConfig.accessToken || '').trim();
+                if (!tokenHeader.toLowerCase().startsWith('bearer ')) {
+                    tokenHeader = `Bearer ${tokenHeader}`;
+                }
+                const billTemplateName = (watiConfig.facultyBillTemplateName || 'faculty_elec_bill_pdf').trim();
+
+                // Step 2: Upload PDF to fm.marol Google Drive to get a Direct Binary PDF Download URL (https://drive.google.com/uc?export=download&id=...)
+                // AND trigger server-side WATI relay if v6 Apps Script is deployed
+                let directDownloadUrl = '';
+                try {
+                    const uploadResp = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({
+                            action: 'sendFacultyBillWhatsAppPdf',
+                            filename: pdfFileName,
+                            mimeType: 'application/pdf',
+                            pdfBase64: pdfBase64,
+                            base64: pdfBase64,
+                            watiBaseUrl: baseUrl,
+                            watiToken: tokenHeader,
+                            whatsappNumber: formattedPhone,
+                            templateName: billTemplateName,
+                            caption: fullCaptionText,
+                            sendSessionFileFallback: true,
+                            customParams: [
+                                { name: "1", value: occupantName },
+                                { name: "2", value: flatDetails },
+                                { name: "3", value: monthFormatted },
+                                { name: "4", value: dueFormatted }
+                            ]
+                        })
+                    });
+                    const upJson = await uploadResp.json();
+                    if (upJson && upJson.status === 'success') {
+                        directDownloadUrl = upJson.directDownloadUrl || (upJson.fileId ? `https://drive.google.com/uc?export=download&id=${upJson.fileId}` : '');
+                        rec.billPdfDriveUrl = upJson.fileUrl || directDownloadUrl;
+                    }
+                } catch (eUp) {
+                    console.warn("Drive upload for WhatsApp PDF warning:", eUp);
+                }
+
+                // Step 3: Send directly from browser to WATI Document Template API (faculty_elec_bill_pdf)
+                // Passing the direct PDF download stream URL so WATI attaches the actual downloadable PDF in the Document Header!
+                const customParams = [
+                    { name: "1", value: occupantName },
+                    { name: "2", value: flatDetails },
+                    { name: "3", value: monthFormatted },
+                    { name: "4", value: dueFormatted }
+                ];
+                if (directDownloadUrl) {
+                    customParams.push({ name: "media_url", value: directDownloadUrl });
+                    customParams.push({ name: "document_url", value: directDownloadUrl });
+                }
+
+                let sentOk = false;
+                try {
+                    const tplPayload = {
+                        template_name: billTemplateName,
+                        broadcast_name: `fac_bill_${rec.flatNo}_${Date.now()}`,
+                        receivers: [{
+                            whatsappNumber: formattedPhone,
+                            customParams: customParams
+                        }]
+                    };
+                    if (directDownloadUrl) {
+                        tplPayload.header = {
+                            type: "document",
+                            document: {
+                                link: directDownloadUrl,
+                                filename: pdfFileName
+                            }
+                        };
+                    }
+                    const r1 = await fetch(`${baseUrl}/api/v1/sendTemplateMessages`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': tokenHeader
+                        },
+                        body: JSON.stringify(tplPayload)
+                    });
+                    const j1 = await r1.json().catch(() => ({}));
+                    if (r1.ok && j1.result !== false) {
+                        sentOk = true;
+                    }
+                } catch (eW1) {}
+
+                // Step 4: Also attempt WATI sendSessionFile with multipart FormData (if 24-hour customer session window is active, this delivers the binary PDF + full caption immediately even before the template is approved!)
+                try {
+                    const fd = new FormData();
+                    fd.append('file', pdfBlob, pdfFileName);
+                    const sfRes = await fetch(`${baseUrl}/api/v1/sendSessionFile/${encodeURIComponent(formattedPhone)}?caption=${encodeURIComponent(fullCaptionText)}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': tokenHeader },
+                        body: fd
+                    });
+                    if (sfRes.ok) {
+                        sentOk = true;
+                    }
+                } catch (eSf) {}
+
+                rec.whatsappSent = true;
+                rec.whatsappSentAt = new Date().toISOString();
+                renderEgFacultyBldgModule();
+                await saveCloudData();
+                showAssetToast(`WhatsApp Bill PDF dispatched to ${occupantName} (${formattedPhone})!`);
+            } catch (err) {
+                console.error("Send Faculty Bill WhatsApp error:", err);
+                showAssetToast("Error sending WhatsApp Bill: " + (err.message || err), true);
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = origHtml;
+                }
+            }
+        };
+
+        // =====================================================================
+        // 4. STATEMENT FOR ACCOUNTS MODAL & LETTERHEAD PDF GENERATOR
+        // =====================================================================
+        let facStmtVacantOverrides = {}; // { flatNo: boolean }
+
+        window.openFacultyAccountsStatementModal = function() {
+            const curMonth = document.getElementById('egFacMonthSelect')?.value ?? String(new Date().getMonth());
+            const curYear = document.getElementById('egFacYearSelect')?.value || String(new Date().getFullYear());
+
+            if (document.getElementById('facStmtMonthSelect')) document.getElementById('facStmtMonthSelect').value = String(curMonth);
+            if (document.getElementById('facStmtYearSelect')) document.getElementById('facStmtYearSelect').value = String(curYear);
+
+            facStmtVacantOverrides = {};
+            renderFacultyAccountsStatementPreview();
+            document.getElementById('modalFacultyAccountsStatement')?.classList.remove('hidden');
+        };
+
+        window.toggleFacStmtFlatVacantOverride = function(flatNo) {
+            const allFlats = getFacultyBldgFlatsList();
+            const f = allFlats.find(x => String(x.flatNo) === String(flatNo));
+            const currentVacant = (facStmtVacantOverrides[flatNo] !== undefined)
+                ? facStmtVacantOverrides[flatNo]
+                : Boolean(f && f.isVacant);
+            facStmtVacantOverrides[flatNo] = !currentVacant;
+            renderFacultyAccountsStatementPreview();
+        };
+
+        function collectFacultyAccountsStatementRows() {
+            const selMonthIdx = parseInt(document.getElementById('facStmtMonthSelect')?.value || '0', 10);
+            const selYear = document.getElementById('facStmtYearSelect')?.value || String(new Date().getFullYear());
+            const monthHeader = `${EG_MONTH_NAMES[selMonthIdx]} ${selYear}`;
+            const shortMonthHeader = formatFacultyBillMonthMmmYyyy(selYear, selMonthIdx);
+
+            const allFlats = getFacultyBldgFlatsList();
+            let totalAmount = 0;
+
+            const rows = allFlats.map(f => {
+                const isVacant = (facStmtVacantOverrides[f.flatNo] !== undefined)
+                    ? facStmtVacantOverrides[f.flatNo]
+                    : Boolean(f.isVacant);
+
+                const rec = getFacultyBldgBillRecord(f.flatNo, selYear, selMonthIdx);
+                const billAmt = (rec && rec.isSaved) ? (parseFloat(rec.roundSumPayable) || 0) : 0;
+
+                if (isVacant) {
+                    // Requirement: "only allocated flats data to be included in the statement, if a flat is vacant the flat number should be mentioned but the name, its, amount left blank"
+                    return {
+                        flatNo: String(f.flatNo),
+                        name: '',
+                        its: '',
+                        amountNum: 0,
+                        amountDisplay: '',
+                        chequeNo: '',
+                        isVacant: true
+                    };
+                }
+
+                totalAmount += billAmt;
+                const resolvedName = (rec && rec.occupantName) ? rec.occupantName : (f.name || '');
+                const resolvedIts = (rec && rec.occupantIts) ? rec.occupantIts : (f.its || '');
+
+                return {
+                    flatNo: String(f.flatNo),
+                    name: resolvedName,
+                    its: resolvedIts,
+                    amountNum: billAmt,
+                    amountDisplay: billAmt > 0 ? billAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+                    chequeNo: '',
+                    isVacant: false
+                };
+            });
+
+            return { selMonthIdx, selYear, monthHeader, shortMonthHeader, rows, totalAmount };
+        }
+
+        window.renderFacultyAccountsStatementPreview = function() {
+            const { monthHeader, shortMonthHeader, rows, totalAmount } = collectFacultyAccountsStatementRows();
+            const hdrEl = document.getElementById('facStmtSecondHeaderLabel');
+            if (hdrEl) hdrEl.innerText = `${monthHeader} (${shortMonthHeader})`;
+
+            const tbody = document.getElementById('facStmtPreviewTableBody');
+            const tfoot = document.getElementById('facStmtPreviewTableFoot');
+            if (!tbody || !tfoot) return;
+
+            tbody.innerHTML = rows.map(r => {
+                const safeFNo = String(r.flatNo).replace(/'/g, "\'");
+                return `
+                    <tr class="border-b ${r.isVacant ? 'bg-gray-50 text-gray-400' : 'hover:bg-amber-50/30'}">
+                        <td class="p-2.5 border-r text-center font-mono font-extrabold text-gray-900">${r.flatNo}</td>
+                        <td class="p-2.5 border-r font-bold text-gray-900">${r.name || '<span class="text-gray-300 italic">(Blank - Vacant)</span>'}</td>
+                        <td class="p-2.5 border-r text-center font-mono text-gray-800">${r.its || ''}</td>
+                        <td class="p-2.5 border-r text-right font-mono font-extrabold text-emerald-950">${r.amountDisplay ? 'Rs. ' + r.amountDisplay : ''}</td>
+                        <td class="p-2.5 border-r text-center text-gray-300 italic"></td>
+                        <td class="p-2.5 text-center">
+                            <button type="button" onclick="toggleFacStmtFlatVacantOverride('${safeFNo}')" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold border transition ${r.isVacant ? 'bg-rose-100 text-rose-800 border-rose-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'}" title="Click to toggle Allocated vs Vacant for Statement">
+                                ${r.isVacant ? 'Vacant (Blank)' : 'Allocated'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="3" class="p-2.5 border-r text-right uppercase font-extrabold text-gray-900">Total Amount:</td>
+                    <td class="p-2.5 border-r text-right font-mono font-extrabold text-emerald-950 text-sm">Rs. ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td colspan="2" class="p-2.5"></td>
+                </tr>
+            `;
+        };
+
+        function generateFacultyAccountsStatementJsPdfDoc() {
+            const { monthHeader, shortMonthHeader, rows, totalAmount } = collectFacultyAccountsStatementRows();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+            // 1. Official Department Letterhead background (210mm x 297mm)
+            try {
+                doc.addImage(DEPT_LETTERHEAD_B64, 'JPEG', 0, 0, 210, 297);
+            } catch (e) {
+                console.warn("Letterhead image warning:", e);
+            }
+
+            doc.setTextColor(17, 24, 39);
+            doc.setFont('times', 'bold');
+
+            // 1st Header: Faculty Building Electricity Bills Amount Details (centered below letterhead top logo at y=60mm)
+            doc.setFontSize(13.5);
+            doc.text('Faculty Building Electricity Bills Amount Details', 105, 62, { align: 'center' });
+
+            // 2nd Header: Current Month (e.g. November 2026 / Nov-2026)
+            doc.setFontSize(11.5);
+            doc.text(`${monthHeader} (${shortMonthHeader})`, 105, 69, { align: 'center' });
+
+            const fmtAmt = (v) => (Number(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const tableHead = [['Flat No.', 'Name', 'ITS No.', 'Amount (Rs.)', 'Cheque No.']];
+            const tableBody = rows.map(r => [
+                r.flatNo,
+                r.isVacant ? '' : (r.name || ''),
+                r.isVacant ? '' : (r.its || ''),
+                r.isVacant ? '' : (r.amountNum > 0 ? fmtAmt(r.amountNum) : ''),
+                '' // Cheque No. left blank in all rows
+            ]);
+
+            // Last Row: Total Amount auto-calculated
+            tableBody.push([
+                '',
+                'TOTAL AMOUNT',
+                '',
+                fmtAmt(totalAmount),
+                ''
+            ]);
+
+            doc.autoTable({
+                startY: 75,
+                margin: { left: 16, right: 16 },
+                head: tableHead,
+                body: tableBody,
+                theme: 'grid',
+                styles: {
+                    font: 'times',
+                    fontSize: 10,
+                    cellPadding: 3.2,
+                    textColor: [17, 24, 39],
+                    lineColor: [17, 24, 39],
+                    lineWidth: 0.3,
+                    valign: 'middle'
+                },
+                headStyles: {
+                    fillColor: [243, 244, 246],
+                    textColor: [17, 24, 39],
+                    fontStyle: 'bold',
+                    halign: 'center',
+                    lineWidth: 0.4
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 22, fontStyle: 'bold' },
+                    1: { halign: 'left', cellWidth: 68 },
+                    2: { halign: 'center', cellWidth: 30 },
+                    3: { halign: 'right', cellWidth: 32, fontStyle: 'bold' },
+                    4: { halign: 'center', cellWidth: 26 }
+                },
+                didParseCell: function(data) {
+                    if (data.section === 'body' && data.row.index === tableBody.length - 1) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.fillColor = [243, 244, 246];
+                        data.cell.styles.fontSize = 10.5;
+                        if (data.column.index === 1) {
+                            data.cell.styles.halign = 'right';
+                        }
+                    }
+                }
+            });
+
+            return { doc, shortMonthHeader };
+        }
+
+        window.downloadFacultyAccountsStatementPdf = function() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showAssetToast("PDF library is loading, please try again.", true);
+                return;
+            }
+            const { doc, shortMonthHeader } = generateFacultyAccountsStatementJsPdfDoc();
+            doc.save(`Faculty_Bldg_Statement_for_Accounts_${shortMonthHeader}.pdf`);
+            showAssetToast(`Downloaded Statement for Accounts PDF (${shortMonthHeader}) on Department Letterhead!`);
+        };
+
+        window.viewFacultyAccountsStatementPdfInApp = function() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showAssetToast("PDF library is loading, please try again.", true);
+                return;
+            }
+            const { doc, shortMonthHeader } = generateFacultyAccountsStatementJsPdfDoc();
+            const blobUrl = doc.output('bloburl');
+            openInAppMediaViewer(blobUrl, `Statement for Accounts — ${shortMonthHeader} (Letterhead PDF)`, 'pdf');
+        };
+    </script>
+
 </body>
 </html>

@@ -1794,9 +1794,13 @@
                         <i class="fa-solid fa-clock-rotate-left text-amber-300"></i>
                         <span>Edit TT Template</span>
                     </button>
-                    <button type="button" id="btnMassAllocateClassPeriodsHeader" onclick="openEditTimetableTemplateModal(); setTimeout(() => document.getElementById('massAllocSectionBox')?.scrollIntoView({behavior:'smooth'}), 120);" class="crud-action-btn bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Mass Allocate or Remove Periods & Timings Across All Allocated Standard Classes at Once">
+                    <button type="button" id="btnMassAllocateClassPeriodsHeader" onclick="openEditTimetableTemplateModal('add'); setTimeout(() => document.getElementById('massAllocSectionBox')?.scrollIntoView({behavior:'smooth'}), 120);" class="crud-action-btn bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Mass Allocate Periods & Timings Across Allocated Standard Classes at Once">
                         <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-                        <span>Mass Class Periods</span>
+                        <span>Mass Add Periods</span>
+                    </button>
+                    <button type="button" id="btnMassRemoveClassPeriodsHeader" onclick="openEditTimetableTemplateModal('remove'); setTimeout(() => document.getElementById('massAllocSectionBox')?.scrollIntoView({behavior:'smooth'}), 120);" class="crud-action-btn bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Mass Remove Periods Across Allocated Standard Classes at Once">
+                        <i class="fa-solid fa-calendar-minus text-amber-200"></i>
+                        <span>Mass Remove Periods</span>
                     </button>
                     <button type="button" id="btnExportClassroomsHeader" onclick="exportClassroomsToExcel()" class="hidden bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-sm font-bold transition flex items-center space-x-1.5 shadow-sm whitespace-nowrap" title="Download Classroom Allocation & Darajah/Event Details (.xlsx)">
                         <i class="fa-solid fa-file-excel"></i>
@@ -6618,14 +6622,17 @@ function relayFacultyBillPdfToWatiServerSide_(data, pdfBlob, directDownloadUrl) 
   var token = String(data.watiToken || "").trim();
   if (token.toLowerCase().indexOf("bearer ") !== 0) token = "Bearer " + token;
   var phone = String(data.whatsappNumber || "").replace(/\D/g, "");
-  var templateName = String(data.templateName || "faculty_elec_bill_pdf").trim();
+  var templateName = String(data.templateName || "faculty_elec_bill_pdf_1").trim();
+  if (templateName === "faculty_elec_bill_pdf") templateName = "faculty_elec_bill_pdf_1";
   var customParams = Array.isArray(data.customParams) ? data.customParams.slice() : [];
   var pdfFilename = String(data.filename || "Electricity_Bill.pdf").trim();
-  var pdfDownloadUrlWithSuffix = directDownloadUrl + "&file=" + encodeURIComponent(pdfFilename);
+  var pdfDownloadUrlWithSuffix = directDownloadUrl.indexOf("&file=") !== -1
+    ? directDownloadUrl
+    : (directDownloadUrl + "&file=" + encodeURIComponent(pdfFilename));
 
-  var hasMediaParam = customParams.some(function(p) { return p && p.name === "media"; });
-  if (!hasMediaParam && directDownloadUrl) {
-    customParams.push({ name: "media", value: pdfDownloadUrlWithSuffix });
+  var hasParam5 = customParams.some(function(p) { return p && String(p.name) === "5"; });
+  if (!hasParam5 && directDownloadUrl) {
+    customParams.unshift({ name: "5", value: pdfDownloadUrlWithSuffix });
   }
 
   var results = {};
@@ -9479,14 +9486,17 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     apiEndpoint: "https://live-mt-server.wati.io",
                     accessToken: DEFAULT_WATI_ACCESS_TOKEN,
                     templateName: "classroom_portal_alert",
+                    facultyBillTemplateName: "faculty_elec_bill_pdf_1",
                     notifyActorSelf: false
                 };
             }
+            const rawFacTpl = String(rawCfg.facultyBillTemplateName || "").trim();
             return {
                 enabled: rawCfg.enabled !== undefined ? Boolean(rawCfg.enabled) : true,
                 apiEndpoint: String(rawCfg.apiEndpoint || "https://live-mt-server.wati.io").trim(),
                 accessToken: String(rawCfg.accessToken || DEFAULT_WATI_ACCESS_TOKEN).trim(),
                 templateName: String(rawCfg.templateName || "classroom_portal_alert").trim(),
+                facultyBillTemplateName: (rawFacTpl && rawFacTpl !== "faculty_elec_bill_pdf") ? rawFacTpl : "faculty_elec_bill_pdf_1",
                 notifyActorSelf: Boolean(rawCfg.notifyActorSelf)
             };
         }
@@ -30212,18 +30222,73 @@ Shukran`;
         // 2. CLASSROOM TIMETABLE TEMPLATE EDITOR WITH PER-DAY VALIDITY CHECKBOXES
         //    + MASS ALLOCATION OF PERIODS TO ALL ALLOCATED STANDARD CLASSES
         // =====================================================================
-        window.openEditTimetableTemplateModal = function() {
+        window.openEditTimetableTemplateModal = function(initialMassMode = '') {
             if (typeof isCurrentUserViewOnly === 'function' && isCurrentUserViewOnly('classroom-allocation')) {
                 showAssetToast("View Only: Editing rights are required to modify the Timetable Template.", true);
                 return;
             }
             renderEditTimetableTemplateTable();
             renderMassAllocatePeriodsCheckboxes();
+            renderMassAllocateClassroomsCheckboxes();
+            if (initialMassMode === 'remove' || initialMassMode === 'add') {
+                setMassPeriodModeUI(initialMassMode);
+            }
             const modal = document.getElementById('modalEditTimetableTemplate');
             if (modal) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             }
+        };
+
+        window.setMassPeriodModeUI = function(mode = 'add') {
+            const box = document.getElementById('massAllocSectionBox');
+            const badge = document.getElementById('massAllocModeBadge');
+            if (!box) return;
+            if (mode === 'remove') {
+                box.className = "bg-rose-50/90 border-2 border-rose-400 rounded-xl p-4 space-y-3 shadow-sm transition";
+                if (badge) {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-rose-600 text-white";
+                    badge.innerText = "Mass Remove Mode Ready";
+                }
+            } else {
+                box.className = "bg-emerald-50/90 border-2 border-emerald-400 rounded-xl p-4 space-y-3 shadow-sm transition";
+                if (badge) {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-emerald-700 text-white";
+                    badge.innerText = "Mass Add / Remove Ready";
+                }
+            }
+        };
+
+        window.renderMassAllocateClassroomsCheckboxes = function() {
+            const container = document.getElementById('massAllocClassroomsCheckboxContainer');
+            if (!container) return;
+            const genderScope = document.getElementById('massAllocScopeSelect')?.value || 'all';
+            const allocatedRooms = (classroomsData || []).filter(room => {
+                if (!room || !Array.isArray(room.allocations)) return false;
+                if (genderScope !== 'all' && String(room.type || '').toLowerCase() !== genderScope.toLowerCase()) return false;
+                return room.allocations.some(a => a && (a.allocationType || 'class') === 'class');
+            });
+
+            if (allocatedRooms.length === 0) {
+                container.innerHTML = `<span class="text-xs text-gray-500 italic">No allocated standard classrooms found for the selected gender filter.</span>`;
+                return;
+            }
+
+            container.innerHTML = allocatedRooms.map(room => {
+                const classNames = room.allocations
+                    .filter(a => a && (a.allocationType || 'class') === 'class')
+                    .map(a => a.standardEventName || 'Class')
+                    .join(', ');
+                const badgeColor = room.type === 'Female' ? 'text-pink-700 bg-pink-50 border-pink-200' : 'text-blue-700 bg-blue-50 border-blue-200';
+                return `
+                    <label class="inline-flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border border-gray-300 text-xs font-bold text-gray-900 cursor-pointer hover:bg-emerald-50 transition shadow-sm">
+                        <input type="checkbox" name="massAllocClassroomId" value="${room.id}" checked class="rounded text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5">
+                        <span class="font-mono font-extrabold text-indigo-950">${room.classroomNumber}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded border ${badgeColor}">${room.type || 'Male'}</span>
+                        <span class="text-[11px] text-emerald-900 truncate max-w-[150px]" title="${String(classNames).replace(/"/g, '&quot;')}">${classNames}</span>
+                    </label>
+                `;
+            }).join('');
         };
 
         function renderEditTimetableTemplateTable() {
@@ -30379,7 +30444,7 @@ Shukran`;
             showAssetToast("Timetable Template & Day Rules saved across all Classroom Timetables!");
         };
 
-        // Mass Allocate or Unallocate Selected Period(s) & Day(s) across All Allocated Standard Classes
+        // Mass Allocate or Mass Remove Selected Period(s) & Day(s) across Selected / All Allocated Standard Classes
         window.executeMassPeriodAllocationToAllocatedClasses = async function(mode = 'add') {
             if (!guardEditingRights('classroom-allocation')) return;
 
@@ -30387,13 +30452,21 @@ Shukran`;
             const selectedDays = Array.from(document.querySelectorAll('input[name="massAllocDayKey"]:checked')).map(cb => cb.value);
             const genderScope = document.getElementById('massAllocScopeSelect')?.value || 'all';
             const customTimeVal = (document.getElementById('massAllocExtraTimeInput')?.value || '').trim();
+            const alsoDisableInTemplateOnRemove = document.getElementById('massRemoveDisableTemplateDaysCheckbox')?.checked ?? false;
+
+            const roomCheckboxes = Array.from(document.querySelectorAll('input[name="massAllocClassroomId"]'));
+            const selectedRoomIds = new Set(roomCheckboxes.filter(cb => cb.checked).map(cb => String(cb.value)));
 
             if (selectedPeriods.length === 0) {
-                showAssetToast("Please tick at least one Period (e.g. P1) to mass-allocate.", true);
+                showAssetToast(`Please tick at least one Period (e.g. P1) to mass-${mode === 'remove' ? 'remove' : 'allocate'}.`, true);
                 return;
             }
             if (selectedDays.length === 0) {
-                showAssetToast("Please tick at least one Day (e.g. Mon–Sat) to mass-allocate.", true);
+                showAssetToast(`Please tick at least one Day (e.g. Mon–Sat) to mass-${mode === 'remove' ? 'remove' : 'allocate'}.`, true);
+                return;
+            }
+            if (roomCheckboxes.length > 0 && selectedRoomIds.size === 0) {
+                showAssetToast(`Please keep at least one Allocated Classroom ticked to mass-${mode === 'remove' ? 'remove' : 'allocate'}.`, true);
                 return;
             }
 
@@ -30416,6 +30489,7 @@ Shukran`;
             (classroomsData || []).forEach(room => {
                 if (!room || !Array.isArray(room.allocations)) return;
                 if (genderScope !== 'all' && String(room.type || '').toLowerCase() !== genderScope.toLowerCase()) return;
+                if (roomCheckboxes.length > 0 && !selectedRoomIds.has(String(room.id))) return;
 
                 let roomModified = false;
                 room.allocations.forEach(alloc => {
@@ -30467,11 +30541,32 @@ Shukran`;
                 }
             });
 
+            // When removing periods, if user opted to also untick/disable those days in the Timetable Template (or if no class uses that slot anymore when checkbox is ticked)
+            if (mode === 'remove' && alsoDisableInTemplateOnRemove) {
+                selectedPeriods.forEach(pKey => {
+                    selectedDays.forEach(dKey => {
+                        const slotId = `${dKey}_${pKey}`;
+                        const stillUsedByAnyClass = (classroomsData || []).some(r =>
+                            r && Array.isArray(r.allocations) && r.allocations.some(a =>
+                                a && Array.isArray(a.slots) && a.slots.includes(slotId)
+                            )
+                        );
+                        if (!stillUsedByAnyClass) {
+                            const dayCb = document.querySelector(`input[name="ttValidDay_${pKey}"][value="${dKey}"]`);
+                            if (dayCb && dayCb.checked) {
+                                dayCb.checked = false;
+                                dayCb.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    });
+                });
+            }
+
             // Save template + updated classroom allocations together
             await window.saveEditedTimetableTemplate();
             await saveClassroomsToCloud();
 
-            const actionWord = mode === 'remove' ? 'Removed' : 'Allocated';
+            const actionWord = mode === 'remove' ? 'Mass-Removed' : 'Mass-Allocated';
             showAssetToast(`${actionWord} ${selectedPeriods.join(', ')} (${selectedDays.join(', ')}) across ${updatedAllocationsCount} Allocated Classes in ${updatedRoomsCount} Classrooms!`);
         };
 
@@ -30681,12 +30776,13 @@ Shukran`;
 
                 const cfg = normalizeWatiConfig(watiConfig);
                 const rawToken = String(cfg.accessToken || DEFAULT_WATI_ACCESS_TOKEN).trim();
-                const baseUrl = getResolvedWatiBaseUrl(cfg.apiEndpoint, rawToken);
+                const candidateBaseUrls = resolveWatiCandidateBaseUrls(cfg.apiEndpoint, rawToken);
                 const tokenHeader = /^Bearer\s+/i.test(rawToken) ? rawToken : `Bearer ${rawToken}`;
-                const billTemplateName = (watiConfig.facultyBillTemplateName || 'faculty_elec_bill_pdf').trim();
+                const rawTplName = (cfg.facultyBillTemplateName || watiConfig.facultyBillTemplateName || 'faculty_elec_bill_pdf_1').trim();
+                const billTemplateName = (rawTplName === 'faculty_elec_bill_pdf' || !rawTplName) ? 'faculty_elec_bill_pdf_1' : rawTplName;
                 const targetScriptUrl = getActiveFacultyAppsScriptUrl();
 
-                // Step 1: Upload the generated Bill PDF to Google Drive ONLY (using action: 'uploadFacultyBillPdfForWhatsApp' so Apps Script does NOT send a duplicate WATI message)
+                // Step 1: Upload the generated Bill PDF to Google Drive ONLY so we get a public .pdf URL for variable {{5}}
                 let directDownloadUrl = '';
                 try {
                     const uploadResp = await fetch(targetScriptUrl, {
@@ -30702,9 +30798,9 @@ Shukran`;
                         })
                     });
                     const upJson = await uploadResp.json();
-                    if (upJson && (upJson.status === 'success' || upJson.fileId)) {
-                        const fileId = upJson.fileId || extractGoogleDriveFileId(upJson.fileUrl || '');
-                        // Append &file=...pdf so WATI's document header validator recognizes it as a .pdf URL and replaces the sample PDF
+                    if (upJson && (upJson.status === 'success' || upJson.fileId || upJson.directDownloadUrl)) {
+                        const fileId = upJson.fileId || extractGoogleDriveFileId(upJson.fileUrl || upJson.directDownloadUrl || '');
+                        // Append &file=...pdf so WATI's Document (.pdf) header variable {{5}} validator recognizes it as a .pdf URL
                         directDownloadUrl = fileId
                             ? `https://drive.google.com/uc?export=download&id=${fileId}&file=${encodeURIComponent(pdfFileName)}`
                             : (upJson.directDownloadUrl || '');
@@ -30714,69 +30810,123 @@ Shukran`;
                     console.warn("Drive upload for WhatsApp PDF warning:", eUp);
                 }
 
-                // Step 2: Send ONCE via WATI Template Message with "media" parameter + header.document.link
-                const templateParams = [
-                    { name: "1", value: occupantName },
-                    { name: "2", value: flatDetails },
-                    { name: "3", value: monthFormatted },
-                    { name: "4", value: dueFormatted }
-                ];
-                if (directDownloadUrl) {
-                    templateParams.push({ name: "media", value: directDownloadUrl });
+                if (!directDownloadUrl && rec.billPdfDriveUrl) {
+                    const existingFileId = extractGoogleDriveFileId(rec.billPdfDriveUrl);
+                    directDownloadUrl = existingFileId
+                        ? `https://drive.google.com/uc?export=download&id=${existingFileId}&file=${encodeURIComponent(pdfFileName)}`
+                        : rec.billPdfDriveUrl;
                 }
+
+                // Step 2: Build parameters matching WATI template `faculty_elec_bill_pdf_1`:
+                // Variable {{5}} = Document (.pdf) URL (Sample Content row 1)
+                // Variable {{1}} = Resident Name (Sample Content row 2)
+                // Variable {{2}} = Flat Details (Sample Content row 3)
+                // Variable {{3}} = Bill Month (Sample Content row 4)
+                // Variable {{4}} = Due Date (Sample Content row 5)
+                const pdfUrlForWati = directDownloadUrl || 'https://pdfobject.com/pdf/sample.pdf';
+                const templateParams = [
+                    { name: "5", value: pdfUrlForWati },
+                    { name: "1", value: sanitizeWatiParamValue(occupantName, 'Resident') },
+                    { name: "2", value: sanitizeWatiParamValue(flatDetails, 'Faculty Bldg') },
+                    { name: "3", value: sanitizeWatiParamValue(monthFormatted, '-') },
+                    { name: "4", value: sanitizeWatiParamValue(dueFormatted, '-') }
+                ];
 
                 let sentOk = false;
-                try {
-                    const singleTplPayload = {
-                        template_name: billTemplateName,
-                        broadcast_name: `fac_bill_${rec.flatNo}_${Date.now()}`,
-                        parameters: templateParams
-                    };
-                    if (directDownloadUrl) {
-                        singleTplPayload.header = {
-                            type: "document",
-                            document: {
-                                link: directDownloadUrl,
-                                filename: pdfFileName
-                            }
+                let lastWatiError = '';
+
+                for (const baseUrl of candidateBaseUrls) {
+                    if (sentOk) break;
+
+                    // 2A. Try WATI Bulk Template Endpoint (/api/v1/sendTemplateMessages) with customParams [5, 1, 2, 3, 4]
+                    try {
+                        const bulkPayload = {
+                            template_name: billTemplateName,
+                            broadcast_name: `fac_bill_${rec.flatNo}_${Date.now()}`,
+                            receivers: [
+                                {
+                                    whatsappNumber: formattedPhone,
+                                    customParams: templateParams
+                                }
+                            ]
                         };
+                        const rBulk = await fetch(`${baseUrl}/api/v1/sendTemplateMessages`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': tokenHeader
+                            },
+                            body: JSON.stringify(bulkPayload)
+                        });
+                        const jBulk = await rBulk.json().catch(() => ({}));
+                        const hasReceiverErr = Array.isArray(jBulk.errors) && jBulk.errors.length > 0 && jBulk.errors[0].error;
+                        if (rBulk.ok && jBulk.result !== false && !jBulk.error && !hasReceiverErr) {
+                            sentOk = true;
+                            break;
+                        } else {
+                            lastWatiError = (hasReceiverErr ? jBulk.errors[0].error : (jBulk.info || jBulk.message || jBulk.error)) || `HTTP ${rBulk.status}`;
+                        }
+                    } catch (eBulk) {
+                        lastWatiError = eBulk.message || String(eBulk);
                     }
 
-                    const rSingle = await fetch(`${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${encodeURIComponent(formattedPhone)}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': tokenHeader
-                        },
-                        body: JSON.stringify(singleTplPayload)
-                    });
-                    const jSingle = await rSingle.json().catch(() => ({}));
-                    if (rSingle.ok && jSingle.result !== false) {
-                        sentOk = true;
+                    // 2B. Fallback to Single Template Endpoint (/api/v1/sendTemplateMessage?whatsappNumber=...) with parameters [5, 1, 2, 3, 4]
+                    try {
+                        const singleTplPayload = {
+                            template_name: billTemplateName,
+                            broadcast_name: `fac_bill_${rec.flatNo}_${Date.now()}`,
+                            parameters: templateParams
+                        };
+                        const rSingle = await fetch(`${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${encodeURIComponent(formattedPhone)}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': tokenHeader
+                            },
+                            body: JSON.stringify(singleTplPayload)
+                        });
+                        const jSingle = await rSingle.json().catch(() => ({}));
+                        if (rSingle.ok && jSingle.result !== false && !jSingle.error && !(jSingle.info && String(jSingle.info).toLowerCase().includes('invalid'))) {
+                            sentOk = true;
+                            break;
+                        } else {
+                            lastWatiError = (jSingle && (jSingle.info || jSingle.message || jSingle.error)) || lastWatiError || `HTTP ${rSingle.status}`;
+                        }
+                    } catch (eSingle) {
+                        console.warn("Single template call warning:", eSingle);
+                        lastWatiError = eSingle.message || lastWatiError;
                     }
-                } catch (eSingle) {
-                    console.warn("Single template call warning:", eSingle);
                 }
 
-                // Fallback ONLY if the template call above did not succeed (prevents duplicate messages!)
+                // 2C. Session File Fallback ONLY if the template calls above did not succeed
                 if (!sentOk) {
-                    const fd = new FormData();
-                    fd.append('file', pdfBlob, pdfFileName);
-                    const sfRes = await fetch(`${baseUrl}/api/v1/sendSessionFile/${encodeURIComponent(formattedPhone)}?caption=${encodeURIComponent(fullCaptionText)}`, {
-                        method: 'POST',
-                        headers: { 'Authorization': tokenHeader },
-                        body: fd
-                    });
-                    if (sfRes.ok) {
-                        sentOk = true;
+                    for (const baseUrl of candidateBaseUrls) {
+                        try {
+                            const fd = new FormData();
+                            fd.append('file', pdfBlob, pdfFileName);
+                            const sfRes = await fetch(`${baseUrl}/api/v1/sendSessionFile/${encodeURIComponent(formattedPhone)}?caption=${encodeURIComponent(fullCaptionText)}`, {
+                                method: 'POST',
+                                headers: { 'Authorization': tokenHeader },
+                                body: fd
+                            });
+                            const sfJson = await sfRes.json().catch(() => ({}));
+                            if (sfRes.ok && sfJson.result !== false) {
+                                sentOk = true;
+                                break;
+                            }
+                        } catch (eSf) {}
                     }
+                }
+
+                if (!sentOk) {
+                    throw new Error(lastWatiError || `WATI rejected template "${billTemplateName}". Please verify the template is Approved in WATI.`);
                 }
 
                 rec.whatsappSent = true;
                 rec.whatsappSentAt = new Date().toISOString();
                 renderEgFacultyBldgModule();
                 await saveCloudData();
-                showAssetToast(`WhatsApp Bill PDF sent once to ${occupantName} (+${formattedPhone})!`);
+                showAssetToast(`WhatsApp Bill PDF (${billTemplateName}) sent to ${occupantName} (+${formattedPhone})!`);
             } catch (err) {
                 console.error("Send Faculty Bill WhatsApp error:", err);
                 showAssetToast("Error sending WhatsApp Bill: " + (err.message || err), true);
@@ -31062,17 +31212,20 @@ Shukran`;
                     </table>
                 </div>
 
-                <!-- Part 2: Mass Allocate Period(s) to All Allocated Standard Classes -->
-                <div id="massAllocSectionBox" class="bg-emerald-50/90 border-2 border-emerald-400 rounded-xl p-4 space-y-3 shadow-sm">
+                <!-- Part 2: Mass Allocate OR Mass Remove Period(s) Across Allocated Standard Classes -->
+                <div id="massAllocSectionBox" class="bg-emerald-50/90 border-2 border-emerald-400 rounded-xl p-4 space-y-3 shadow-sm transition">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200 pb-2">
                         <div>
-                            <h4 class="text-sm font-extrabold text-emerald-950 flex items-center space-x-2">
-                                <i class="fa-solid fa-wand-magic-sparkles text-emerald-700"></i>
-                                <span>Mass Allocate / Unallocate Period(s) Across All Allocated Standard Classes</span>
-                            </h4>
-                            <p class="text-[11px] text-emerald-800 mt-0.5">Easily add (or remove) newly enabled periods (like Period 1 on Mon–Fri, or Extra 1/2 with custom time) to all existing Allocated Darajah/Standard Classes without opening each class manually.</p>
+                            <div class="flex items-center space-x-2">
+                                <h4 class="text-sm font-extrabold text-emerald-950 flex items-center space-x-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-700"></i>
+                                    <span>Mass Allocate / Mass Remove Period(s) Across Allocated Standard Classes</span>
+                                </h4>
+                                <span id="massAllocModeBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-emerald-700 text-white">Mass Add / Remove Ready</span>
+                            </div>
+                            <p class="text-[11px] text-emerald-800 mt-0.5">Tick the Period(s), Target Days, and Allocated Classrooms below, then click <strong>Mass Allocate to Allocated Classes &amp; Save</strong> or <strong>Mass Remove from Allocated Classes &amp; Save</strong>.</p>
                         </div>
-                        <select id="massAllocScopeSelect" class="p-1.5 border border-emerald-400 rounded-lg text-xs font-extrabold bg-white text-emerald-950">
+                        <select id="massAllocScopeSelect" onchange="renderMassAllocateClassroomsCheckboxes()" class="p-1.5 border border-emerald-400 rounded-lg text-xs font-extrabold bg-white text-emerald-950">
                             <option value="all">All Allocated Classes (Male &amp; Female)</option>
                             <option value="Male">Male Allocated Classes Only</option>
                             <option value="Female">Female Allocated Classes Only</option>
@@ -31080,42 +31233,63 @@ Shukran`;
                     </div>
 
                     <div class="space-y-1.5">
-                        <label class="text-[11px] font-extrabold text-emerald-950 uppercase block">1. Tick Period(s) to Mass-Allocate:</label>
+                        <div class="flex items-center space-x-3">
+                            <label class="text-[11px] font-extrabold text-emerald-950 uppercase">1. Tick Period(s) to Mass-Add or Mass-Remove:</label>
+                            <button type="button" onclick="document.querySelectorAll('input[name=massAllocPeriodKey]').forEach(cb => cb.checked = true)" class="text-[10px] font-bold text-emerald-800 underline">Select All Periods</button>
+                            <button type="button" onclick="document.querySelectorAll('input[name=massAllocPeriodKey]').forEach(cb => cb.checked = false)" class="text-[10px] font-bold text-gray-600 underline">Clear Periods</button>
+                        </div>
                         <div id="massAllocPeriodsCheckboxContainer" class="flex flex-wrap gap-2"></div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end pt-1">
-                        <div class="md:col-span-5 space-y-1.5">
-                            <div class="flex items-center space-x-3">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start pt-1">
+                        <div class="md:col-span-7 space-y-1.5">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <label class="text-[11px] font-extrabold text-emerald-950 uppercase">2. Tick Target Days:</label>
-                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocDayKey]').forEach(cb => cb.checked = true)" class="text-[10px] font-bold text-emerald-800 underline">Select All Days</button>
+                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocDayKey]').forEach(cb => cb.checked = true)" class="text-[10px] font-bold text-emerald-800 underline">All (Mon–Sat)</button>
+                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocDayKey]').forEach(cb => cb.checked = (cb.value !== 'Sat'))" class="text-[10px] font-bold text-indigo-800 underline">Mon–Fri Only</button>
+                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocDayKey]').forEach(cb => cb.checked = (cb.value === 'Sat'))" class="text-[10px] font-bold text-amber-800 underline">Sat Only</button>
                                 <button type="button" onclick="document.querySelectorAll('input[name=massAllocDayKey]').forEach(cb => cb.checked = false)" class="text-[10px] font-bold text-gray-600 underline">Clear Days</button>
                             </div>
                             <div class="flex flex-wrap gap-1.5">
-                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Mon" checked class="rounded text-emerald-600"><span>Mon</span></label>
-                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Tue" checked class="rounded text-emerald-600"><span>Tue</span></label>
-                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Wed" checked class="rounded text-emerald-600"><span>Wed</span></label>
-                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Thu" checked class="rounded text-emerald-600"><span>Thu</span></label>
-                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Fri" checked class="rounded text-emerald-600"><span>Fri</span></label>
-                                <label class="inline-flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Sat" checked class="rounded text-emerald-600"><span>Sat</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Mon" checked class="rounded text-emerald-600"><span>Mon</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Tue" checked class="rounded text-emerald-600"><span>Tue</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Wed" checked class="rounded text-emerald-600"><span>Wed</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Thu" checked class="rounded text-emerald-600"><span>Thu</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Fri" checked class="rounded text-emerald-600"><span>Fri</span></label>
+                                <label class="inline-flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 text-xs font-bold text-emerald-950 cursor-pointer"><input type="checkbox" name="massAllocDayKey" value="Sat" checked class="rounded text-emerald-600"><span>Sat</span></label>
                             </div>
                         </div>
 
-                        <div class="md:col-span-3">
-                            <label class="text-[10px] font-bold text-emerald-950 uppercase block mb-1">Optional Extra 1/2 Time</label>
+                        <div class="md:col-span-5">
+                            <label class="text-[10px] font-bold text-emerald-950 uppercase block mb-1">Optional Extra 1/2 Time (When Adding EX1/EX2)</label>
                             <input type="text" id="massAllocExtraTimeInput" placeholder="e.g. 16:00 - 16:45" class="w-full p-1.5 border border-emerald-300 rounded-lg text-xs font-mono bg-white">
                         </div>
+                    </div>
 
-                        <div class="md:col-span-4 flex flex-wrap justify-end items-center gap-2">
-                            <button type="button" onclick="executeMassPeriodAllocationToAllocatedClasses('remove')" class="bg-red-100 hover:bg-red-200 text-red-900 border border-red-300 px-3 py-2 rounded-lg text-xs font-extrabold transition inline-flex items-center space-x-1">
-                                <i class="fa-solid fa-calendar-minus"></i>
-                                <span>Remove</span>
-                            </button>
-                            <button type="button" onclick="executeMassPeriodAllocationToAllocatedClasses('add')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 rounded-lg text-xs font-extrabold transition shadow inline-flex items-center space-x-1.5">
-                                <i class="fa-solid fa-bolt"></i>
-                                <span>Allocate to All Classes &amp; Save</span>
-                            </button>
+                    <div class="space-y-1.5 pt-1 border-t border-emerald-200/80">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center space-x-3">
+                                <label class="text-[11px] font-extrabold text-emerald-950 uppercase">3. Target Allocated Classrooms:</label>
+                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocClassroomId]').forEach(cb => cb.checked = true)" class="text-[10px] font-bold text-emerald-800 underline">Select All Allocated Classrooms</button>
+                                <button type="button" onclick="document.querySelectorAll('input[name=massAllocClassroomId]').forEach(cb => cb.checked = false)" class="text-[10px] font-bold text-gray-600 underline">Untick All</button>
+                            </div>
+                            <label class="inline-flex items-center space-x-1.5 text-[11px] font-bold text-rose-900 bg-rose-100/80 px-2.5 py-1 rounded-lg border border-rose-300 cursor-pointer" title="When Mass Removing a period from all classes, also untick those days in the Timetable Template if no class uses them anymore">
+                                <input type="checkbox" id="massRemoveDisableTemplateDaysCheckbox" checked class="rounded text-rose-600 focus:ring-rose-500 h-3.5 w-3.5">
+                                <span>On Mass Remove: Also untick removed Period–Days in Template above if unused</span>
+                            </label>
                         </div>
+                        <div id="massAllocClassroomsCheckboxContainer" class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-2 bg-white/80 rounded-lg border border-emerald-200"></div>
+                    </div>
+
+                    <div class="flex flex-wrap justify-end items-center gap-2.5 pt-2 border-t border-emerald-200">
+                        <button type="button" onclick="executeMassPeriodAllocationToAllocatedClasses('remove')" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-extrabold transition shadow inline-flex items-center space-x-1.5">
+                            <i class="fa-solid fa-calendar-minus"></i>
+                            <span>Mass Remove from Allocated Classes &amp; Save</span>
+                        </button>
+                        <button type="button" onclick="executeMassPeriodAllocationToAllocatedClasses('add')" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-xs font-extrabold transition shadow inline-flex items-center space-x-1.5">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>Mass Allocate to Allocated Classes &amp; Save</span>
+                        </button>
                     </div>
                 </div>
             </div>

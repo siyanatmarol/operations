@@ -6386,9 +6386,9 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
   var tz = Session.getScriptTimeZone();
   var dateFilter = "(newer_than:" + lookbackDays + "d OR after:2025/12/25)";
 
-  // A. Search Mahanagar Gas threads across full year (Jan-Dec 2026, including May-Nov 2026 and both 1st & 17th bills!)
-  var mglQuery = '(from:icpngbill@mahanagargas.com OR subject:"Your PNG Ebill") has:attachment ' + dateFilter;
-  var mglThreads = GmailApp.search(mglQuery, 0, 200);
+  // A. Search Mahanagar Gas threads across full year (supports icpngbill, any mahanagargas.com sender, or forwarded PNG Ebill emails)
+  var mglQuery = '(from:mahanagargas.com OR subject:"Your PNG Ebill" OR subject:"PNG Ebill") has:attachment ' + dateFilter;
+  var mglThreads = GmailApp.search(mglQuery, 0, 250);
   totalThreadsScanned += mglThreads.length;
 
   for (var t = 0; t < mglThreads.length; t++) {
@@ -6401,7 +6401,7 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
       var fromStr = String(msg.getFrom() || "").toLowerCase();
       var subjectStr = String(msg.getSubject() || "");
       if (isExplicitNoticeOrReceiptTitle_(subjectStr)) continue;
-      if (!/PNG\s*Ebill|Mahanagar\s*Gas|icpngbill/i.test(subjectStr + " " + fromStr)) continue;
+      if (!/PNG\s*Ebill|Mahanagar\s*Gas|mahanagargas|icpngbill/i.test(subjectStr + " " + fromStr)) continue;
 
       seenMsgId[msgId] = true;
       allDescriptors.push({
@@ -6602,11 +6602,334 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
   var lookbackDays = customLookbackDays ? Number(customLookbackDays) : 15;
   var meters = loadConfiguredMetersFromFirebase_();
   var indexRes = listAllUtilityBillMessagesFast_(lookbackDays, meters);
+  var descriptors = Array.isArray(indexRes.attachments) ? indexRes.attachments : [];
+  if (descriptors.length === 0) {
+    return {
+      syncedCount: 0,
+      threadsScanned: indexRes.threadsScanned || 0,
+      message: "No new utility bill emails found in the last " + lookbackDays + " days."
+    };
+  }
+
+  var existingBills = loadExistingBillsFromFirebase_();
+  var folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
+  var syncedCount = 0;
+
+  for (var i = 0; i < descriptors.length; i++) {
+    var d = descriptors[i];
+    if (!d || !d.messageId) continue;
+    try {
+      var msg = GmailApp.getMessageById(String(d.messageId));
+      if (!msg) continue;
+      var subjHeader = String(d.subject || msg.getSubject() || "");
+      if (isExplicitNoticeOrReceiptTitle_(subjHeader)) continue;
+
+      var bodyMonthTag = "";
+      try {
+        var plainSlice = String(msg.getPlainBody() || "").slice(0, 600);
+        var mTag = plainSlice.match(/Electricity\s+Bill\s+for\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/]\d{2,4}/i);
+        if (mTag) bodyMonthTag = " " + mTag[0];
+      } catch (eP) {}
+      var fullSubject = subjHeader + bodyMonthTag;
+
+      var atts = msg.getAttachments() || [];
+      for (var a = 0; a < atts.length; a++) {
+        var att = atts[a];
+        if (!att) continue;
+        var attName = String(att.getName() || "");
+        var cType = String(att.getContentType() || "").toLowerCase();
+        if (cType.indexOf("pdf") === -1 && attName.toLowerCase().slice(-4) !== ".pdf") continue;
+        if (isExplicitNoticeOrReceiptTitle_(attName)) continue;
+
+        var pdfText = extractPdfTextServerSide_(att);
+        if (!pdfText) continue;
+
+        var combinedCorpus = fullSubject + " " + pdfText;
+        var matchedMeter = findConfiguredMeterInTextServer_(meters, combinedCorpus, Boolean(d.isGasEmail));
+        if (!matchedMeter) continue;
+
+        var parsedBill = parseUtilityBillTextServer_(combinedCorpus, fullSubject, d.msgDateStr, Boolean(d.isGasEmail));
+        if (!parsedBill || !(parsedBill.amount > 0)) continue;
+
+        var billKey = String(matchedMeter.id) + "_" + parsedBill.yearStr + "_" + parsedBill.monthIdx;
+        var existingRec = existingBills[billKey];
+        if (existingRec && (existingRec.isLocked === true || existingRec.isManualEdit === true)) continue;
+
+        var caClean = String(matchedMeter.caNumber || matchedMeter.meterNumber || matchedMeter.id).trim();
+        var updatedRec = null;
+
+        if (!d.isGasEmail) {
+          if (existingRec && Number(existingRec.amount) > 0 && Number(existingRec.units) > 0 && existingRec.fileUrl) {
+            continue;
+          }
+          var desiredNameElec = caClean + "_" + parsedBill.yearStr + "_M" + (parsedBill.monthIdx + 1) + ".pdf";
+          var fileUrlElec = (existingRec && existingRec.fileUrl)
+            ? existingRec.fileUrl
+            : saveSinglePdfInFolder_(folder, { messageId: d.messageId, attIndex: a, desiredFileName: desiredNameElec });
+          updatedRec = {
+            meterId: matchedMeter.id,
+            caNumber: matchedMeter.caNumber || "",
+            year: String(parsedBill.yearStr),
+            monthIndex: parsedBill.monthIdx,
+            amount: parsedBill.amount,
+            units: parsedBill.units,
+            billDate: d.msgDateStr,
+            notes: "Auto-fetched at 8AM from Bill PDF (" + (attName || "Adani E-Bill") + ")",
+            fileUrl: fileUrlElec || "",
+            updatedAt: new Date().toISOString()
+          };
+        } else {
+          var subBills = (existingRec && Array.isArray(existingRec.subBills)) ? existingRec.subBills.slice() : [];
+          if (subBills.length === 0 && existingRec && Number(existingRec.amount) > 0) {
+            subBills.push({
+              billKeyId: existingRec.invoiceId || ("MGL_" + (existingRec.billDate || d.msgDateStr) + "_" + Math.round(Number(existingRec.amount || 0) * 100)),
+              billDate: existingRec.billDate || d.msgDateStr,
+              amount: Number(existingRec.amount) || 0,
+              units: Number(existingRec.units) || 0,
+              fileUrl: existingRec.fileUrl || ""
+            });
+          }
+          var alreadyExists = subBills.some(function(sb) {
+            return (sb.billKeyId && sb.billKeyId === parsedBill.invoiceId) ||
+              (sb.billDate === parsedBill.billDateStr && Math.abs(Number(sb.amount || 0) - parsedBill.amount) < 0.01 && Math.abs(Number(sb.units || 0) - parsedBill.units) < 0.01);
+          });
+          if (alreadyExists) continue;
+
+          var desiredNameGas = caClean + "_" + parsedBill.yearStr + "_M" + (parsedBill.monthIdx + 1) + "_B" + (subBills.length + 1) + ".pdf";
+          var fileUrlGas = saveSinglePdfInFolder_(folder, { messageId: d.messageId, attIndex: a, desiredFileName: desiredNameGas });
+          subBills.push({
+            billKeyId: parsedBill.invoiceId,
+            billDate: parsedBill.billDateStr || d.msgDateStr,
+            amount: parsedBill.amount,
+            units: parsedBill.units,
+            fileUrl: fileUrlGas || ""
+          });
+          subBills.sort(function(x, y) { return String(x.billDate || "").localeCompare(String(y.billDate || "")); });
+
+          var totAmt = 0;
+          var totUnits = 0;
+          for (var s = 0; s < subBills.length; s++) {
+            totAmt += Number(subBills[s].amount || 0);
+            totUnits += Number(subBills[s].units || 0);
+          }
+          updatedRec = {
+            meterId: matchedMeter.id,
+            caNumber: matchedMeter.caNumber || "",
+            year: String(parsedBill.yearStr),
+            monthIndex: parsedBill.monthIdx,
+            amount: Math.round(totAmt * 100) / 100,
+            units: Math.round(totUnits * 100) / 100,
+            billDate: subBills[subBills.length - 1].billDate || d.msgDateStr,
+            notes: "Auto-fetched at 8AM from MGL PDF (" + subBills.length + " bill(s))",
+            fileUrl: subBills[0].fileUrl || "",
+            subBills: subBills,
+            updatedAt: new Date().toISOString()
+          };
+        }
+
+        if (updatedRec) {
+          existingBills[billKey] = updatedRec;
+          writeSingleBillToFirebase_(billKey, updatedRec);
+          syncedCount++;
+        }
+      }
+    } catch (eMsg) {}
+  }
+
   return {
-    syncedCount: 0,
+    syncedCount: syncedCount,
     threadsScanned: indexRes.threadsScanned || 0,
-    message: "Indexed " + (indexRes.totalAttachments || 0) + " candidate bill message(s)."
+    message: "Synced " + syncedCount + " new bill(s) across " + descriptors.length + " candidate email(s)."
   };
+}
+
+function loadExistingBillsFromFirebase_() {
+  try {
+    var res = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills.json");
+    var parsed = JSON.parse(res.getContentText() || "{}");
+    return (parsed && typeof parsed === "object") ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeSingleBillToFirebase_(billKey, billObj) {
+  var payload = JSON.stringify(billObj);
+  try {
+    UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + encodeURIComponent(billKey) + ".json", {
+      method: "put",
+      contentType: "application/json",
+      payload: payload,
+      muteHttpExceptions: true
+    });
+  } catch (e1) {}
+  try {
+    UrlFetchApp.fetch(FIREBASE_DB_URL + "/elecGasBills/" + encodeURIComponent(billKey) + ".json", {
+      method: "put",
+      contentType: "application/json",
+      payload: payload,
+      muteHttpExceptions: true
+    });
+  } catch (e2) {}
+}
+
+function extractPdfTextServerSide_(attBlob) {
+  var tempFileId = "";
+  try {
+    var token = ScriptApp.getOAuthToken();
+    var boundary = "-------siyanatPdfBoundary" + new Date().getTime();
+    var metadata = JSON.stringify({
+      name: "tmp_siyanat_parse_" + new Date().getTime(),
+      mimeType: "application/vnd.google-apps.document"
+    });
+    var bodyStart = Utilities.newBlob(
+      "--" + boundary + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + metadata +
+      "\r\n--" + boundary + "\r\nContent-Type: application/pdf\r\n\r\n"
+    ).getBytes();
+    var bodyEnd = Utilities.newBlob("\r\n--" + boundary + "--").getBytes();
+    var fullPayload = bodyStart.concat(attBlob.getBytes()).concat(bodyEnd);
+
+    var uploadRes = UrlFetchApp.fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+      method: "post",
+      contentType: "multipart/related; boundary=" + boundary,
+      headers: { Authorization: "Bearer " + token },
+      payload: fullPayload,
+      muteHttpExceptions: true
+    });
+    var uploadJson = JSON.parse(uploadRes.getContentText() || "{}");
+    tempFileId = uploadJson.id || "";
+    if (!tempFileId) return "";
+
+    var expRes = UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/" + tempFileId + "/export?mimeType=text/plain", {
+      method: "get",
+      headers: { Authorization: "Bearer " + token },
+      muteHttpExceptions: true
+    });
+    return String(expRes.getContentText() || "");
+  } catch (e) {
+    return "";
+  } finally {
+    if (tempFileId) {
+      try {
+        UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/files/" + tempFileId, {
+          method: "delete",
+          headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+          muteHttpExceptions: true
+        });
+      } catch (eDel) {}
+    }
+  }
+}
+
+function findConfiguredMeterInTextServer_(meters, combinedText, isGasEmail) {
+  var norm = String(combinedText || "");
+  var normNoSpace = norm.replace(/\s+/g, "");
+  for (var i = 0; i < meters.length; i++) {
+    var m = meters[i];
+    if (!m) continue;
+    var mIsGas = (m.utility === "gas");
+    if (mIsGas !== Boolean(isGasEmail)) continue;
+    var ca = String(m.caNumber || "").trim();
+    var mtr = String(m.meterNumber || "").trim();
+    var bp = String(m.bpNumber || "").trim();
+    if (ca && ca !== "-" && ca.indexOf("AE-CA-") !== 0 && ca.indexOf("MGL-CA-") !== 0 && ca.length >= 5) {
+      if (norm.indexOf(ca) !== -1 || normNoSpace.indexOf(ca.replace(/\s+/g, "")) !== -1) return m;
+    }
+    if (mtr && mtr !== "-" && mtr.indexOf("AE-MTR-") !== 0 && mtr.indexOf("MGL-MTR-") !== 0 && mtr.length >= 4) {
+      if (norm.indexOf(mtr) !== -1 || normNoSpace.indexOf(mtr.replace(/\s+/g, "")) !== -1) return m;
+    }
+    if (mIsGas && bp && bp !== "-" && bp.length >= 5) {
+      if (norm.indexOf(bp) !== -1 || normNoSpace.indexOf(bp.replace(/\s+/g, "")) !== -1) return m;
+    }
+  }
+  return null;
+}
+
+function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isGasEmail) {
+  var monthMap = {
+    jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3,
+    may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7,
+    sep: 8, sept: 8, september: 8, oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11
+  };
+  var dateParts = String(msgDateStr || "2026-01-01").split("-");
+  var fallbackYear = parseInt(dateParts[0], 10) || 2026;
+  var fallbackMonth = (parseInt(dateParts[1], 10) || 1) - 1;
+
+  if (!isGasEmail) {
+    if (!/BILL\s*OF\s*SUPPLY|TAX\s*INVOICE|Current\s*Month\s*Bill|Units\s*Consumed|Billed\s*Demand/i.test(combinedCorpus)) return null;
+    var amt = 0;
+    var units = 0;
+    var m1 = combinedCorpus.match(/CA\s*NO\.?\s*[:\-]?\s*\d{8,12}[^0-9A-Za-z]{0,16}([0-9,]{2,}\.\d{2})/i);
+    if (m1) amt = parseFloat(m1[1].replace(/,/g, ""));
+    if (!(amt > 0)) {
+      var m2 = combinedCorpus.match(/(?:Total\s*Amount\s*Payable|Amount\s*Payable|Current\s*Month\s*Bill|Net\s*Payable)\s*[:\-]?[^0-9A-Za-z]{0,12}([0-9,]{2,}\.\d{2})/i);
+      if (m2) amt = parseFloat(m2[1].replace(/,/g, ""));
+    }
+    var u1 = combinedCorpus.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-\d{2}\s+([0-9,]+(?:\.\d+)?)\s+[^0-9A-Za-z]{0,10}[0-9,]{2,}\.\d{2}/i);
+    if (u1) units = parseFloat(u1[1].replace(/,/g, ""));
+    if (!(units > 0)) {
+      var u2 = combinedCorpus.match(/(?:Units\s*Consumed|Billed\s*Units|kVAh\s*Consumed|kWh\s*Consumed)\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+      if (u2) units = parseFloat(u2[1].replace(/,/g, ""));
+    }
+    if (!(amt > 0) || !(units > 0)) return null;
+
+    var monthIdx = fallbackMonth;
+    var yearStr = String(fallbackYear);
+    var fm = String(subjectStr || "").match(/Electricity\s+Bill\s+for\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/](\d{2,4})/i);
+    if (fm && monthMap[fm[1].toLowerCase()] !== undefined) {
+      monthIdx = monthMap[fm[1].toLowerCase()];
+      yearStr = String(fm[2].length === 2 ? (2000 + parseInt(fm[2], 10)) : parseInt(fm[2], 10));
+    }
+    return {
+      amount: Math.round(amt * 100) / 100,
+      units: Math.round(units * 100) / 100,
+      monthIdx: monthIdx,
+      yearStr: yearStr,
+      billDateStr: msgDateStr,
+      invoiceId: yearStr + "_" + monthIdx + "_" + Math.round(amt)
+    };
+  } else {
+    if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY/i.test(combinedCorpus)) return null;
+    if (!/AMOUNT\s*PAYABLE|CORRECTED\s*CONSUMPTION|CONSUMER\s*REF/i.test(combinedCorpus)) return null;
+    var gAmt = 0;
+    var gUnits = 0;
+    var gm1 = combinedCorpus.match(/AMOUNT\s*PAYABLE[\s\S]{0,160}?\b\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+[^0-9A-Za-z]{0,8}([0-9,]+\.\d{2})/i);
+    if (gm1) gAmt = parseFloat(gm1[1].replace(/,/g, ""));
+    if (!(gAmt > 0)) {
+      var gm2 = combinedCorpus.match(/AMOUNT\s*PAYABLE\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?[^0-9A-Za-z]{0,8}([0-9,]+\.\d{2})/i);
+      if (gm2) gAmt = parseFloat(gm2[1].replace(/,/g, ""));
+    }
+    var gu1 = combinedCorpus.match(/Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+    if (gu1) gUnits = parseFloat(gu1[1].replace(/,/g, ""));
+    if (!(gUnits > 0)) {
+      var gu2 = combinedCorpus.match(/CORRECTED\s*CONSUMPTION\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+      if (gu2) gUnits = parseFloat(gu2[1].replace(/,/g, ""));
+    }
+    if (!(gAmt > 0)) return null;
+
+    var invDateM = combinedCorpus.match(/INVOICE\s*DATE\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
+    var billDateIso = invDateM ? (invDateM[3] + "-" + invDateM[2] + "-" + invDateM[1]) : msgDateStr;
+    var gMonthIdx = fallbackMonth;
+    var gYearStr = String(fallbackYear);
+    var mglSubj = String(subjectStr || "").match(/for\s+Month\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i);
+    if (mglSubj && monthMap[mglSubj[1].toLowerCase()] !== undefined) {
+      gMonthIdx = monthMap[mglSubj[1].toLowerCase()];
+      gYearStr = invDateM ? invDateM[3] : String(fallbackYear);
+    } else if (invDateM) {
+      gMonthIdx = parseInt(invDateM[2], 10) - 1;
+      gYearStr = invDateM[3];
+    }
+    var invNoM = combinedCorpus.match(/BILL\s*OF\s*SUPPLY\s*NO\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z]{2,6}\/[0-9A-Z\/\-]{5,25})/i);
+    var invNoClean = invNoM ? invNoM[1].trim() : "MGL";
+    return {
+      amount: Math.round(gAmt * 100) / 100,
+      units: Math.round(gUnits * 100) / 100,
+      monthIdx: gMonthIdx,
+      yearStr: gYearStr,
+      billDateStr: billDateIso,
+      invoiceId: invNoClean + "_" + billDateIso + "_" + Math.round(gAmt * 100) + "_" + Math.round(gUnits * 100)
+    };
+  }
 }
 
 function getOrCreateUtilityFolder_(folderName) {
@@ -9616,7 +9939,13 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     maintLogs = Array.isArray(data.maint) ? data.maint : (data.maint && typeof data.maint === 'object' ? Object.values(data.maint) : []);
                     vacantBills = data.bills || {};
                     if (data.elecGasBpNumbers && typeof data.elecGasBpNumbers === 'object') {
-                        elecGasBpNumbersData = { ...loadElecGasBpMapCache(), ...data.elecGasBpNumbers };
+                        const localBpCache = loadElecGasBpMapCache();
+                        const mergedBp = { ...localBpCache };
+                        Object.keys(data.elecGasBpNumbers).forEach(k => {
+                            const v = String(data.elecGasBpNumbers[k] || '').trim();
+                            if (v && v !== '__DELETED__') mergedBp[k] = v;
+                        });
+                        elecGasBpNumbersData = mergedBp;
                         saveElecGasBpMapCache(elecGasBpNumbersData);
                     } else {
                         elecGasBpNumbersData = loadElecGasBpMapCache();
@@ -10030,7 +10359,13 @@ window.loadClassroomsFromCloud = async function() {
                         vacantBills = (data.bills && typeof data.bills === 'object') ? data.bills : {};
                     }
                     if (data.elecGasBpNumbers !== undefined && data.elecGasBpNumbers && typeof data.elecGasBpNumbers === 'object') {
-                        elecGasBpNumbersData = { ...loadElecGasBpMapCache(), ...data.elecGasBpNumbers };
+                        const localBpCache = loadElecGasBpMapCache();
+                        const mergedBp = { ...localBpCache };
+                        Object.keys(data.elecGasBpNumbers).forEach(k => {
+                            const v = String(data.elecGasBpNumbers[k] || '').trim();
+                            if (v && v !== '__DELETED__') mergedBp[k] = v;
+                        });
+                        elecGasBpNumbersData = mergedBp;
                         saveElecGasBpMapCache(elecGasBpNumbersData);
                     }
                     if (data.elecGasMeters !== undefined && didNodeChange('elecGasMeters')) {
@@ -11086,24 +11421,42 @@ window.loadClassroomsFromCloud = async function() {
             'classroomYearArchives', 'notifications', 'keys', 'issued_keys'
         ]);
 
-        const multiPathUpdates = {};
+        const portalUpdates = {};
+        const rootMirrorUpdates = {};
+        const pendingSigs = {};
         let changedCount = 0;
 
         for (const [nodeKey, rawVal] of Object.entries(candidateNodes)) {
             const sig = computeFastNodeSignature(rawVal);
             if (_cloudNodeSnapshots[nodeKey] !== sig) {
                 const cleanVal = JSON.parse(sig);
-                multiPathUpdates[`portalData/${nodeKey}`] = cleanVal;
+                portalUpdates[`portalData/${nodeKey}`] = cleanVal;
                 if (mirroredRootNodes.has(nodeKey)) {
-                    multiPathUpdates[nodeKey] = cleanVal;
+                    rootMirrorUpdates[nodeKey] = cleanVal;
                 }
-                _cloudNodeSnapshots[nodeKey] = sig;
+                pendingSigs[nodeKey] = sig;
                 changedCount++;
             }
         }
 
         if (changedCount > 0) {
-            await dbUpdate(dbRef(db), multiPathUpdates);
+            try {
+                await dbUpdate(dbRef(db), portalUpdates);
+                Object.keys(pendingSigs).forEach(k => { _cloudNodeSnapshots[k] = pendingSigs[k]; });
+            } catch (portalBatchErr) {
+                // Fallback: write each changed portalData node individually so one restricted key cannot block others
+                await Promise.all(Object.keys(pendingSigs).map(async (nodeKey) => {
+                    try {
+                        await set(dbRef(db, `portalData/${nodeKey}`), portalUpdates[`portalData/${nodeKey}`]);
+                        _cloudNodeSnapshots[nodeKey] = pendingSigs[nodeKey];
+                    } catch (eNode) {}
+                }));
+            }
+            if (Object.keys(rootMirrorUpdates).length > 0) {
+                Object.keys(rootMirrorUpdates).forEach(nodeKey => {
+                    set(dbRef(db, nodeKey), rootMirrorUpdates[nodeKey]).catch(() => {});
+                });
+            }
         }
     } catch (err) {
         console.error("Error saving to cloud:", err);
@@ -21138,16 +21491,20 @@ window.cleanDuplicateEstateAssets = async function() {
                 saveElecGasBpMapCache(bpUpdate);
             }
 
+            isSavingPortalData = true;
             closeModal('modalElecGasMeter');
             renderElecGasModule();
             await saveCloudData();
+            isSavingPortalData = true;
             try {
                 await Promise.all([
-                    set(dbRef(db, 'portalData/elecGasMeters'), elecGasMetersData),
-                    set(dbRef(db, 'elecGasMeters'), elecGasMetersData),
-                    set(dbRef(db, 'portalData/elecGasBpNumbers'), elecGasBpNumbersData || {}),
-                    set(dbRef(db, 'elecGasBpNumbers'), elecGasBpNumbersData || {})
+                    set(dbRef(db, 'portalData/elecGasMeters'), elecGasMetersData).catch(err => console.error("Save portalData/elecGasMeters:", err)),
+                    set(dbRef(db, 'portalData/elecGasBpNumbers'), elecGasBpNumbersData || {}).catch(err => console.error("Save portalData/elecGasBpNumbers:", err))
                 ]);
+                _cloudNodeSnapshots['elecGasMeters'] = computeFastNodeSignature(elecGasMetersData);
+                _cloudNodeSnapshots['elecGasBpNumbers'] = computeFastNodeSignature(elecGasBpNumbersData || {});
+                set(dbRef(db, 'elecGasMeters'), elecGasMetersData).catch(() => {});
+                set(dbRef(db, 'elecGasBpNumbers'), elecGasBpNumbersData || {}).catch(() => {});
             } catch (eDirect) {
                 console.error("Direct meter save error:", eDirect);
             }

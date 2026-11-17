@@ -27376,7 +27376,73 @@ Shukran`;
             }
         };
 
-        function generateKeysExportFileEntry(columns, rows, sheetName, pdfTitle, baseFilename, format) {
+        function sortMasterKeysByBuildingForExport(list) {
+            const canonicalAreas = typeof getAllSupportedKeyAreas === 'function' ? getAllSupportedKeyAreas() : [];
+            const areaOrderMap = new Map();
+            canonicalAreas.forEach((areaName, idx) => {
+                areaOrderMap.set(String(areaName || '').trim().toLowerCase(), idx);
+            });
+            return [...(list || [])].sort((a, b) => {
+                const areaA = String(a?.area || 'Unassigned Area').trim() || 'Unassigned Area';
+                const areaB = String(b?.area || 'Unassigned Area').trim() || 'Unassigned Area';
+                const rankA = areaOrderMap.has(areaA.toLowerCase()) ? areaOrderMap.get(areaA.toLowerCase()) : 9999;
+                const rankB = areaOrderMap.has(areaB.toLowerCase()) ? areaOrderMap.get(areaB.toLowerCase()) : 9999;
+                if (rankA !== rankB) return rankA - rankB;
+                if (areaA.toLowerCase() !== areaB.toLowerCase()) {
+                    return areaA.localeCompare(areaB, undefined, { numeric: true, sensitivity: 'base' });
+                }
+                return String(a?.keyId || '').localeCompare(String(b?.keyId || ''), undefined, { numeric: true, sensitivity: 'base' });
+            });
+        }
+
+        function stampKeysPdfHeadersAndPageNumbers(doc, pdfTitle, formattedDate, hasIndexPage) {
+            const totalPages = doc.internal.getNumberOfPages();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            for (let p = 1; p <= totalPages; p++) {
+                doc.setPage(p);
+
+                // Top-right page badge for quick physical flipping
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.setTextColor(6, 95, 70);
+                doc.text(`Page ${p} of ${totalPages}`, pageWidth - 14, 12, { align: 'right' });
+
+                // Running header on subsequent pages
+                if (p > 1) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(55, 65, 81);
+                    const subLabel = hasIndexPage ? `${pdfTitle} — Building Key Details` : pdfTitle;
+                    doc.text(subLabel, 14, 12);
+                    doc.setDrawColor(209, 213, 219);
+                    doc.setLineWidth(0.25);
+                    doc.line(14, 14.5, pageWidth - 14, 14.5);
+                }
+
+                // Bottom footer divider + Page X of Y
+                doc.setDrawColor(209, 213, 219);
+                doc.setLineWidth(0.3);
+                doc.line(14, pageHeight - 12, pageWidth - 14, pageHeight - 12);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(107, 114, 128);
+                doc.text(
+                    `Aljamea-tus-Saifiyah Facilities Management Dept (Marol) | Exported: ${formattedDate}`,
+                    14,
+                    pageHeight - 7.5
+                );
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.setTextColor(6, 95, 70);
+                doc.text(`Page ${p} of ${totalPages}`, pageWidth - 14, pageHeight - 7.5, { align: 'right' });
+            }
+        }
+
+        function generateKeysExportFileEntry(columns, rows, sheetName, pdfTitle, baseFilename, format, options = {}) {
             if (format === 'excel') {
                 const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
                 const wb = XLSX.utils.book_new();
@@ -27391,18 +27457,236 @@ Shukran`;
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF({ orientation: 'landscape' });
                 const dateStamp = getLocalTodayDateString();
-                doc.setFontSize(14);
-                doc.text(pdfTitle, 14, 15);
-                doc.setFontSize(9);
-                doc.text(`Exported on: ${formatKeyDateDdMmmYyyy(dateStamp)} | Aljamea-tus-Saifiyah Facilities Management Dept (Marol)`, 14, 21);
-                doc.autoTable({
-                    head: [columns],
-                    body: rows,
-                    startY: 25,
-                    theme: 'grid',
-                    styles: { fontSize: 8 },
-                    headStyles: { fillColor: [6, 95, 70] }
-                });
+                const formattedDate = formatKeyDateDdMmmYyyy(dateStamp);
+                const includeBuildingIndex = Boolean(options && options.includeBuildingIndex && rows.length > 0);
+
+                if (includeBuildingIndex) {
+                    // Group metadata by Building / Area (column index 1)
+                    const buildingOrder = [];
+                    const buildingMetaMap = new Map();
+
+                    rows.forEach(r => {
+                        const rawBldg = String(r[1] || '').trim();
+                        const bldgName = (!rawBldg || rawBldg === '-') ? 'Unassigned Area / Building' : rawBldg;
+                        const keyIdStr = String(r[0] || '').trim();
+                        const totKeysNum = Math.max(0, Number(r[6]) || 0);
+                        const inStoreNum = Math.max(0, Number(r[7]) || 0);
+
+                        if (!buildingMetaMap.has(bldgName)) {
+                            buildingOrder.push(bldgName);
+                            buildingMetaMap.set(bldgName, {
+                                buildingName: bldgName,
+                                keyIdCount: 0,
+                                totalPhysicalKeys: 0,
+                                totalKeysInStore: 0,
+                                firstKeyId: keyIdStr && keyIdStr !== '-' ? keyIdStr : '',
+                                lastKeyId: keyIdStr && keyIdStr !== '-' ? keyIdStr : '',
+                                startPage: null,
+                                endPage: null
+                            });
+                        }
+                        const meta = buildingMetaMap.get(bldgName);
+                        meta.keyIdCount += 1;
+                        meta.totalPhysicalKeys += totKeysNum;
+                        meta.totalKeysInStore += inStoreNum;
+                        if (keyIdStr && keyIdStr !== '-') {
+                            if (!meta.firstKeyId) meta.firstKeyId = keyIdStr;
+                            meta.lastKeyId = keyIdStr;
+                        }
+                    });
+
+                    // Build body rows with a clear Building Section Header row before each building's keys
+                    const enhancedBodyRows = [];
+                    const rowBuildingTagByIndex = {};
+                    let currentBldg = null;
+
+                    rows.forEach(r => {
+                        const rawBldg = String(r[1] || '').trim();
+                        const bldgName = (!rawBldg || rawBldg === '-') ? 'Unassigned Area / Building' : rawBldg;
+                        if (bldgName !== currentBldg) {
+                            currentBldg = bldgName;
+                            const meta = buildingMetaMap.get(bldgName);
+                            const rangeText = (meta.firstKeyId && meta.lastKeyId)
+                                ? (meta.firstKeyId === meta.lastKeyId ? meta.firstKeyId : `${meta.firstKeyId} to ${meta.lastKeyId}`)
+                                : '-';
+                            const headerRowIdx = enhancedBodyRows.length;
+                            rowBuildingTagByIndex[headerRowIdx] = { buildingName: bldgName, isSectionHeader: true };
+                            enhancedBodyRows.push([
+                                {
+                                    content: `BUILDING / AREA: ${bldgName.toUpperCase()}   |   Key IDs: ${meta.keyIdCount}   |   Range: ${rangeText}   |   Physical Keys: ${meta.totalPhysicalKeys} (In Store: ${meta.totalKeysInStore})`,
+                                    colSpan: columns.length,
+                                    styles: {
+                                        fillColor: [209, 250, 229],
+                                        textColor: [6, 78, 59],
+                                        fontStyle: 'bold',
+                                        fontSize: 8.5,
+                                        halign: 'left',
+                                        cellPadding: { top: 2.2, bottom: 2.2, left: 3, right: 3 }
+                                    }
+                                }
+                            ]);
+                        }
+                        const dataRowIdx = enhancedBodyRows.length;
+                        rowBuildingTagByIndex[dataRowIdx] = { buildingName: bldgName, isSectionHeader: false };
+                        enhancedBodyRows.push(r);
+                    });
+
+                    // Reserve Page 1 (or enough front pages if needed) for the Building Index Table
+                    const reservedIndexPages = Math.max(1, Math.ceil((buildingOrder.length + 1) / 18));
+                    for (let i = 0; i < reservedIndexPages; i++) {
+                        doc.addPage();
+                    }
+                    doc.setPage(reservedIndexPages + 1);
+
+                    doc.autoTable({
+                        head: [columns],
+                        body: enhancedBodyRows,
+                        startY: 18,
+                        margin: { top: 18, bottom: 16, left: 14, right: 14 },
+                        theme: 'grid',
+                        styles: { fontSize: 8, cellPadding: 1.8 },
+                        headStyles: { fillColor: [6, 95, 70], textColor: [255, 255, 255], fontStyle: 'bold' },
+                        didDrawCell: function(data) {
+                            if (data.section === 'body') {
+                                const tag = rowBuildingTagByIndex[data.row.index];
+                                if (tag && tag.buildingName) {
+                                    const meta = buildingMetaMap.get(tag.buildingName);
+                                    const currPage = doc.internal.getCurrentPageInfo().pageNumber;
+                                    if (meta) {
+                                        // Record the exact page where this building's first key row lands
+                                        if (!tag.isSectionHeader && !meta.firstKeyRowRecorded) {
+                                            meta.startPage = currPage;
+                                            meta.firstKeyRowRecorded = true;
+                                        } else if (tag.isSectionHeader && meta.startPage === null) {
+                                            meta.startPage = currPage;
+                                        }
+                                        if (meta.endPage === null || currPage > meta.endPage) {
+                                            meta.endPage = currPage;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Now switch back to Page 1 to render the Building / Area Index Table
+                    doc.setPage(1);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(14);
+                    doc.setTextColor(6, 78, 59);
+                    doc.text(pdfTitle, 14, 15);
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.setTextColor(17, 24, 39);
+                    doc.text('INDEX OF BUILDINGS / AREAS — STARTING PAGE NUMBERS FOR PHYSICAL LOOKUP', 14, 21.5);
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(75, 85, 99);
+                    doc.text(
+                        `Exported on: ${formattedDate} | Aljamea-tus-Saifiyah Facilities Management Dept (Marol) | Total Buildings: ${buildingOrder.length} | Total Key IDs: ${rows.length}`,
+                        14,
+                        26.5
+                    );
+
+                    let grandTotalKeyIds = 0;
+                    let grandTotalPhysicalKeys = 0;
+                    let grandTotalInStore = 0;
+
+                    const indexTableRows = buildingOrder.map((bldgName, idx) => {
+                        const meta = buildingMetaMap.get(bldgName);
+                        grandTotalKeyIds += meta.keyIdCount;
+                        grandTotalPhysicalKeys += meta.totalPhysicalKeys;
+                        grandTotalInStore += meta.totalKeysInStore;
+
+                        const rangeText = (meta.firstKeyId && meta.lastKeyId)
+                            ? (meta.firstKeyId === meta.lastKeyId ? meta.firstKeyId : `${meta.firstKeyId} – ${meta.lastKeyId}`)
+                            : '-';
+                        const startPg = meta.startPage || (reservedIndexPages + 1);
+                        const endPg = meta.endPage || startPg;
+                        const pageSpanText = startPg === endPg ? `Page ${startPg}` : `Pages ${startPg} – ${endPg}`;
+
+                        return [
+                            String(idx + 1),
+                            bldgName,
+                            rangeText,
+                            String(meta.keyIdCount),
+                            String(meta.totalPhysicalKeys),
+                            String(meta.totalKeysInStore),
+                            `Page ${startPg}`,
+                            pageSpanText
+                        ];
+                    });
+
+                    // Append Grand Total summary row at the bottom of the Index table
+                    indexTableRows.push([
+                        {
+                            content: 'TOTAL ACROSS ALL BUILDINGS / AREAS',
+                            colSpan: 3,
+                            styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'right' }
+                        },
+                        { content: String(grandTotalKeyIds), styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'center' } },
+                        { content: String(grandTotalPhysicalKeys), styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'center' } },
+                        { content: String(grandTotalInStore), styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'center' } },
+                        {
+                            content: `Details: Page ${reservedIndexPages + 1}+`,
+                            colSpan: 2,
+                            styles: { fontStyle: 'bold', fillColor: [209, 250, 229], textColor: [6, 78, 59], halign: 'center' }
+                        }
+                    ]);
+
+                    doc.autoTable({
+                        head: [[
+                            'Sr. No.',
+                            'Building / Area Name',
+                            'Key ID Range',
+                            'Total Key IDs',
+                            'Total Keys',
+                            'Keys in Store',
+                            'Starts on Page No.',
+                            'Page Span'
+                        ]],
+                        body: indexTableRows,
+                        startY: 30,
+                        margin: { top: 18, bottom: 16, left: 14, right: 14 },
+                        theme: 'grid',
+                        styles: { fontSize: 9, cellPadding: 2.5, valign: 'middle' },
+                        headStyles: { fillColor: [6, 95, 70], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                        columnStyles: {
+                            0: { halign: 'center', cellWidth: 18 },
+                            1: { fontStyle: 'bold', cellWidth: 72 },
+                            2: { halign: 'center', cellWidth: 48 },
+                            3: { halign: 'center', cellWidth: 28 },
+                            4: { halign: 'center', cellWidth: 26 },
+                            5: { halign: 'center', cellWidth: 28 },
+                            6: { halign: 'center', fontStyle: 'bold', textColor: [6, 95, 70], fillColor: [236, 253, 245], cellWidth: 34 },
+                            7: { halign: 'center', cellWidth: 32 }
+                        }
+                    });
+
+                    stampKeysPdfHeadersAndPageNumbers(doc, pdfTitle, formattedDate, true);
+                } else {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(14);
+                    doc.setTextColor(6, 78, 59);
+                    doc.text(pdfTitle, 14, 15);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.setTextColor(75, 85, 99);
+                    doc.text(`Exported on: ${formattedDate} | Aljamea-tus-Saifiyah Facilities Management Dept (Marol)`, 14, 21);
+                    doc.autoTable({
+                        head: [columns],
+                        body: rows,
+                        startY: 25,
+                        margin: { top: 18, bottom: 16, left: 14, right: 14 },
+                        theme: 'grid',
+                        styles: { fontSize: 8 },
+                        headStyles: { fillColor: [6, 95, 70] }
+                    });
+                    stampKeysPdfHeadersAndPageNumbers(doc, pdfTitle, formattedDate, false);
+                }
+
                 const arrayBuf = doc.output('arraybuffer');
                 return {
                     filename: `${baseFilename}.pdf`,
@@ -27428,7 +27712,7 @@ Shukran`;
             const dateStamp = formatKeyDateDdMmmYyyy(getLocalTodayDateString());
             const filesToDownload = [];
 
-            const masterListSource = getFilteredKeysMasterList();
+            const masterListSource = sortMasterKeysByBuildingForExport(getFilteredKeysMasterList());
 
             if (wantMasterOnly) {
                 const cols = ["Key ID", "Area / Building", "Floor", "Room No.", "Details", "Storage Location", "Total Keys", "Keys in Store"];
@@ -27454,7 +27738,8 @@ Shukran`;
                         "Keys_Master_List",
                         "Keys Inventory — Master List (Key ID & Storage Details)",
                         `Keys_Master_List_${dateStamp}`,
-                        format
+                        format,
+                        { includeBuildingIndex: true }
                     )
                 );
             }
@@ -27487,7 +27772,8 @@ Shukran`;
                         "Master_With_Active_Holders",
                         "Keys Inventory — Master List with Active Key Holders",
                         `Keys_Master_List_With_Active_Holders_${dateStamp}`,
-                        format
+                        format,
+                        { includeBuildingIndex: true }
                     )
                 );
             }

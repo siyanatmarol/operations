@@ -27376,23 +27376,47 @@ Shukran`;
             }
         };
 
+        function getKeyTrailingSerialNumber(keyId) {
+            const raw = String(keyId || '').trim();
+            if (!raw) return Number.MAX_SAFE_INTEGER;
+            // Extract number after the last slash (e.g. AA/MK/001 -> 1, AA/ /398 -> 398)
+            const parts = raw.split('/');
+            const lastPart = parts[parts.length - 1].trim();
+            const exactMatch = lastPart.match(/^(\d+)/);
+            if (exactMatch) return parseInt(exactMatch[1], 10);
+            const anyTrailingDigits = raw.match(/(\d+)\s*$/);
+            if (anyTrailingDigits) return parseInt(anyTrailingDigits[1], 10);
+            return Number.MAX_SAFE_INTEGER;
+        }
+
         function sortMasterKeysByBuildingForExport(list) {
             const canonicalAreas = typeof getAllSupportedKeyAreas === 'function' ? getAllSupportedKeyAreas() : [];
             const areaOrderMap = new Map();
             canonicalAreas.forEach((areaName, idx) => {
                 areaOrderMap.set(String(areaName || '').trim().toLowerCase(), idx);
             });
-            return [...(list || [])].sort((a, b) => {
-                const areaA = String(a?.area || 'Unassigned Area').trim() || 'Unassigned Area';
-                const areaB = String(b?.area || 'Unassigned Area').trim() || 'Unassigned Area';
-                const rankA = areaOrderMap.has(areaA.toLowerCase()) ? areaOrderMap.get(areaA.toLowerCase()) : 9999;
-                const rankB = areaOrderMap.has(areaB.toLowerCase()) ? areaOrderMap.get(areaB.toLowerCase()) : 9999;
-                if (rankA !== rankB) return rankA - rankB;
-                if (areaA.toLowerCase() !== areaB.toLowerCase()) {
-                    return areaA.localeCompare(areaB, undefined, { numeric: true, sensitivity: 'base' });
-                }
-                return String(a?.keyId || '').localeCompare(String(b?.keyId || ''), undefined, { numeric: true, sensitivity: 'base' });
-            });
+            // Preserve original array index as tie-breaker so portal order is strictly respected
+            return (list || [])
+                .map((item, originalIndex) => ({ item, originalIndex }))
+                .sort((WrapperA, WrapperB) => {
+                    const a = WrapperA.item;
+                    const b = WrapperB.item;
+                    const areaA = String(a?.area || 'Unassigned Area').trim() || 'Unassigned Area';
+                    const areaB = String(b?.area || 'Unassigned Area').trim() || 'Unassigned Area';
+                    const rankA = areaOrderMap.has(areaA.toLowerCase()) ? areaOrderMap.get(areaA.toLowerCase()) : 9999;
+                    const rankB = areaOrderMap.has(areaB.toLowerCase()) ? areaOrderMap.get(areaB.toLowerCase()) : 9999;
+                    if (rankA !== rankB) return rankA - rankB;
+                    if (areaA.toLowerCase() !== areaB.toLowerCase()) {
+                        return areaA.localeCompare(areaB, undefined, { numeric: true, sensitivity: 'base' });
+                    }
+                    // Within the same building, sort by the trailing serial number (001, 002, ..., 398)
+                    // rather than alphabetical middle floor/section code (MK vs 01 vs blank)
+                    const numA = getKeyTrailingSerialNumber(a?.keyId);
+                    const numB = getKeyTrailingSerialNumber(b?.keyId);
+                    if (numA !== numB) return numA - numB;
+                    return WrapperA.originalIndex - WrapperB.originalIndex;
+                })
+                .map(w => w.item);
         }
 
         function stampKeysPdfHeadersAndPageNumbers(doc, pdfTitle, formattedDate, hasIndexPage) {
@@ -27469,33 +27493,25 @@ Shukran`;
                         const rawBldg = String(r[1] || '').trim();
                         const bldgName = (!rawBldg || rawBldg === '-') ? 'Unassigned Area / Building' : rawBldg;
                         const keyIdStr = String(r[0] || '').trim();
-                        const totKeysNum = Math.max(0, Number(r[6]) || 0);
-                        const inStoreNum = Math.max(0, Number(r[7]) || 0);
 
                         if (!buildingMetaMap.has(bldgName)) {
                             buildingOrder.push(bldgName);
                             buildingMetaMap.set(bldgName, {
                                 buildingName: bldgName,
-                                keyIdCount: 0,
-                                totalPhysicalKeys: 0,
-                                totalKeysInStore: 0,
                                 firstKeyId: keyIdStr && keyIdStr !== '-' ? keyIdStr : '',
                                 lastKeyId: keyIdStr && keyIdStr !== '-' ? keyIdStr : '',
                                 startPage: null,
-                                endPage: null
+                                firstKeyRowRecorded: false
                             });
                         }
                         const meta = buildingMetaMap.get(bldgName);
-                        meta.keyIdCount += 1;
-                        meta.totalPhysicalKeys += totKeysNum;
-                        meta.totalKeysInStore += inStoreNum;
                         if (keyIdStr && keyIdStr !== '-') {
                             if (!meta.firstKeyId) meta.firstKeyId = keyIdStr;
                             meta.lastKeyId = keyIdStr;
                         }
                     });
 
-                    // Build body rows with a clear Building Section Header row before each building's keys
+                    // Build body rows with a clean Building Section Header row before each building's keys
                     const enhancedBodyRows = [];
                     const rowBuildingTagByIndex = {};
                     let currentBldg = null;
@@ -27507,13 +27523,13 @@ Shukran`;
                             currentBldg = bldgName;
                             const meta = buildingMetaMap.get(bldgName);
                             const rangeText = (meta.firstKeyId && meta.lastKeyId)
-                                ? (meta.firstKeyId === meta.lastKeyId ? meta.firstKeyId : `${meta.firstKeyId} to ${meta.lastKeyId}`)
+                                ? (meta.firstKeyId === meta.lastKeyId ? meta.firstKeyId : `${meta.firstKeyId} – ${meta.lastKeyId}`)
                                 : '-';
                             const headerRowIdx = enhancedBodyRows.length;
                             rowBuildingTagByIndex[headerRowIdx] = { buildingName: bldgName, isSectionHeader: true };
                             enhancedBodyRows.push([
                                 {
-                                    content: `BUILDING / AREA: ${bldgName.toUpperCase()}   |   Key IDs: ${meta.keyIdCount}   |   Range: ${rangeText}   |   Physical Keys: ${meta.totalPhysicalKeys} (In Store: ${meta.totalKeysInStore})`,
+                                    content: `BUILDING / AREA: ${bldgName.toUpperCase()}   (${rangeText})`,
                                     colSpan: columns.length,
                                     styles: {
                                         fillColor: [209, 250, 229],
@@ -27532,7 +27548,7 @@ Shukran`;
                     });
 
                     // Reserve Page 1 (or enough front pages if needed) for the Building Index Table
-                    const reservedIndexPages = Math.max(1, Math.ceil((buildingOrder.length + 1) / 18));
+                    const reservedIndexPages = Math.max(1, Math.ceil(buildingOrder.length / 18));
                     for (let i = 0; i < reservedIndexPages; i++) {
                         doc.addPage();
                     }
@@ -27553,15 +27569,11 @@ Shukran`;
                                     const meta = buildingMetaMap.get(tag.buildingName);
                                     const currPage = doc.internal.getCurrentPageInfo().pageNumber;
                                     if (meta) {
-                                        // Record the exact page where this building's first key row lands
                                         if (!tag.isSectionHeader && !meta.firstKeyRowRecorded) {
                                             meta.startPage = currPage;
                                             meta.firstKeyRowRecorded = true;
                                         } else if (tag.isSectionHeader && meta.startPage === null) {
                                             meta.startPage = currPage;
-                                        }
-                                        if (meta.endPage === null || currPage > meta.endPage) {
-                                            meta.endPage = currPage;
                                         }
                                     }
                                 }
@@ -27569,7 +27581,7 @@ Shukran`;
                         }
                     });
 
-                    // Now switch back to Page 1 to render the Building / Area Index Table
+                    // Switch back to Page 1 to render the clean 4-column Building Index
                     doc.setPage(1);
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(14);
@@ -27579,89 +27591,50 @@ Shukran`;
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(10);
                     doc.setTextColor(17, 24, 39);
-                    doc.text('INDEX OF BUILDINGS / AREAS — STARTING PAGE NUMBERS FOR PHYSICAL LOOKUP', 14, 21.5);
+                    doc.text('INDEX — BUILDING / AREA STARTING PAGE NUMBERS', 14, 21.5);
 
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(8.5);
                     doc.setTextColor(75, 85, 99);
                     doc.text(
-                        `Exported on: ${formattedDate} | Aljamea-tus-Saifiyah Facilities Management Dept (Marol) | Total Buildings: ${buildingOrder.length} | Total Key IDs: ${rows.length}`,
+                        `Exported on: ${formattedDate} | Aljamea-tus-Saifiyah Facilities Management Dept (Marol)`,
                         14,
                         26.5
                     );
 
-                    let grandTotalKeyIds = 0;
-                    let grandTotalPhysicalKeys = 0;
-                    let grandTotalInStore = 0;
-
                     const indexTableRows = buildingOrder.map((bldgName, idx) => {
                         const meta = buildingMetaMap.get(bldgName);
-                        grandTotalKeyIds += meta.keyIdCount;
-                        grandTotalPhysicalKeys += meta.totalPhysicalKeys;
-                        grandTotalInStore += meta.totalKeysInStore;
-
                         const rangeText = (meta.firstKeyId && meta.lastKeyId)
                             ? (meta.firstKeyId === meta.lastKeyId ? meta.firstKeyId : `${meta.firstKeyId} – ${meta.lastKeyId}`)
                             : '-';
                         const startPg = meta.startPage || (reservedIndexPages + 1);
-                        const endPg = meta.endPage || startPg;
-                        const pageSpanText = startPg === endPg ? `Page ${startPg}` : `Pages ${startPg} – ${endPg}`;
 
                         return [
                             String(idx + 1),
                             bldgName,
                             rangeText,
-                            String(meta.keyIdCount),
-                            String(meta.totalPhysicalKeys),
-                            String(meta.totalKeysInStore),
-                            `Page ${startPg}`,
-                            pageSpanText
+                            `Page ${startPg}`
                         ];
                     });
-
-                    // Append Grand Total summary row at the bottom of the Index table
-                    indexTableRows.push([
-                        {
-                            content: 'TOTAL ACROSS ALL BUILDINGS / AREAS',
-                            colSpan: 3,
-                            styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'right' }
-                        },
-                        { content: String(grandTotalKeyIds), styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'center' } },
-                        { content: String(grandTotalPhysicalKeys), styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'center' } },
-                        { content: String(grandTotalInStore), styles: { fontStyle: 'bold', fillColor: [243, 244, 246], textColor: [17, 24, 39], halign: 'center' } },
-                        {
-                            content: `Details: Page ${reservedIndexPages + 1}+`,
-                            colSpan: 2,
-                            styles: { fontStyle: 'bold', fillColor: [209, 250, 229], textColor: [6, 78, 59], halign: 'center' }
-                        }
-                    ]);
 
                     doc.autoTable({
                         head: [[
                             'Sr. No.',
-                            'Building / Area Name',
+                            'Building Name',
                             'Key ID Range',
-                            'Total Key IDs',
-                            'Total Keys',
-                            'Keys in Store',
-                            'Starts on Page No.',
-                            'Page Span'
+                            'Starting Page No.'
                         ]],
                         body: indexTableRows,
                         startY: 30,
                         margin: { top: 18, bottom: 16, left: 14, right: 14 },
                         theme: 'grid',
-                        styles: { fontSize: 9, cellPadding: 2.5, valign: 'middle' },
+                        styles: { fontSize: 9.5, cellPadding: 3, valign: 'middle' },
                         headStyles: { fillColor: [6, 95, 70], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
                         columnStyles: {
-                            0: { halign: 'center', cellWidth: 18 },
-                            1: { fontStyle: 'bold', cellWidth: 72 },
-                            2: { halign: 'center', cellWidth: 48 },
-                            3: { halign: 'center', cellWidth: 28 },
-                            4: { halign: 'center', cellWidth: 26 },
-                            5: { halign: 'center', cellWidth: 28 },
-                            6: { halign: 'center', fontStyle: 'bold', textColor: [6, 95, 70], fillColor: [236, 253, 245], cellWidth: 34 },
-                            7: { halign: 'center', cellWidth: 32 }
+                            0: { halign: 'center', cellWidth: 24 },
+                            1: { fontStyle: 'bold', cellWidth: 95 },
+                            2: { halign: 'center', cellWidth: 75 },
+                            3: { halign: 'center', fontStyle: 'bold', textColor: [6, 95, 70], fillColor: [236, 253, 245], cellWidth: 45 }
                         }
                     });
 

@@ -7010,30 +7010,50 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
       invoiceId: yearStr + "_" + monthIdx + "_" + Math.round(amt)
     };
   } else {
-    if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\s*NO|CONTRACT\s*ACCOUNT/i.test(combinedCorpus)) return null;
+    if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\.?\s*NO|CA\s*NUMBER|SALE\s*OF\s*NATURAL\s*GAS|DOM\/|CON\//i.test(combinedCorpus)) return null;
     var gAmt = 0;
     var gUnits = 0;
+    var gIsCredit = /Credit\s*Bill/i.test(combinedCorpus);
+    var mTpDom = combinedCorpus.match(/TOTAL\s*PAYABLE\s*(?:\(\s*A\s*\+\s*B\s*\))?\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
+    var mTbDom = combinedCorpus.match(/TOTAL\s*CHARGES\s*B\b\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
+    if (mTpDom) {
+      var tpVal = parseFloat(mTpDom[1].replace(/[\s,]/g, ""));
+      if (!isNaN(tpVal)) {
+        if (tpVal > 0) {
+          gAmt = tpVal;
+        } else {
+          gIsCredit = true;
+          if (mTbDom) {
+            var tbVal = parseFloat(mTbDom[1].replace(/[\s,]/g, ""));
+            if (!isNaN(tbVal) && tbVal > 0) gAmt = tbVal;
+          }
+        }
+      }
+    }
     var gmPatterns = [
+      /\b([0-9,]+(?:\.\d{1,2})?)\s+(?:[0-9,]+(?:\.\d{1,2})?\s+)?Amount\s*upto\b/i,
       /AMOUNT\s*PAYABLE[\s\S]{0,160}?\b\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i,
       /(?:TOTAL\s*AMOUNT\s*PAYABLE|NET\s*AMOUNT\s*PAYABLE|AMOUNT\s*PAYABLE\s*BEFORE\s*DUE\s*DATE|AMOUNT\s*PAYABLE|CURRENT\s*MONTH\s*CHARGES|TOTAL\s*CURRENT\s*CHARGES|BILL\s*AMOUNT)\s*(?:\([^)]*\))?\s*[:\-]?\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?(?:Rs\.?|INR|₹)?\s*[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i
     ];
     for (var gp = 0; gp < gmPatterns.length; gp++) {
-      if (gAmt > 0) break;
+      if (gAmt > 0 || gIsCredit) break;
       var gmM = combinedCorpus.match(gmPatterns[gp]);
       if (gmM) gAmt = parseFloat(gmM[1].replace(/,/g, ""));
     }
     var guPatterns = [
+      /Gas\s*Consumption\s*SCM\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
       /Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
-      /(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\(in\s*Scm\)|\(SCM\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
-      /\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i,
-      /([0-9,]+(?:\.\d+)?)\s*SCM\b/i
+      /(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
+      /\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i
     ];
     for (var up = 0; up < guPatterns.length; up++) {
-      if (gUnits > 0) break;
       var guM = combinedCorpus.match(guPatterns[up]);
-      if (guM) gUnits = parseFloat(guM[1].replace(/,/g, ""));
+      if (guM) {
+        var uVal = parseFloat(guM[1].replace(/,/g, ""));
+        if (!isNaN(uVal) && uVal >= 0) { gUnits = uVal; break; }
+      }
     }
-    if (!(gAmt > 0)) return null;
+    if (!(gAmt > 0) && !gIsCredit) return null;
 
     var invDateM = combinedCorpus.match(/(?:INVOICE\s*DATE|BILL\s*DATE)\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
     var billDateIso = invDateM ? (invDateM[3] + "-" + invDateM[2] + "-" + invDateM[1]) : msgDateStr;
@@ -21139,8 +21159,9 @@ window.cleanDuplicateEstateAssets = async function() {
                     const rec = getElecGasBillRecord(m.id, selYear, mIdx);
                     const amt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
                     const units = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
-                    if (!isNaN(amt) && amt > 0) {
-                        totalGasAmt += (isNaN(amt) ? 0 : amt);
+                    const hasValidGasBill = (!isNaN(amt) && amt > 0) || Boolean(rec && (rec.isCreditBill || rec.fileUrl));
+                    if (hasValidGasBill) {
+                        totalGasAmt += (!isNaN(amt) && amt > 0 ? amt : 0);
                         totalGasUnits += (isNaN(units) ? 0 : units);
                         gasGreenCells++;
                     } else {
@@ -21251,7 +21272,7 @@ window.cleanDuplicateEstateAssets = async function() {
                     const rawAmt = rec && rec.amount !== undefined && rec.amount !== '' ? parseFloat(rec.amount) : NaN;
                     const amtVal = !isNaN(rawAmt) && rawAmt > 0 ? rawAmt : 0;
                     const unitsVal = rec && rec.units !== undefined && rec.units !== '' ? parseFloat(rec.units) : 0;
-                    const isUpdated = amtVal > 0;
+                    const isUpdated = amtVal > 0 || (isGas && Boolean(rec && (rec.isCreditBill || rec.fileUrl)));
 
                     if (isUpdated) {
                         rowTotalAmt += amtVal;
@@ -21729,8 +21750,8 @@ window.cleanDuplicateEstateAssets = async function() {
                     const units = Number(rec.units || 0);
                     const meterObjForRec = elecGasMetersData.find(x => String(x.id) === mId);
                     const isGasMeterRec = Boolean(meterObjForRec && meterObjForRec.utility === 'gas') || /mgl|gas/i.test(notesStr);
-                    // For Adani Electricity, units <= 0 indicates a disconnection notice; for Mahanagar Gas, keep valid bills even if units parsed as 0
-                    if (!validMeterIdSet.has(mId) || isNoticeNote || (isAutoNote && (amt <= 0 || (!isGasMeterRec && units <= 0) || amt === 34))) {
+                    // For Adani Electricity, units <= 0 indicates a disconnection notice; for Mahanagar Gas, keep valid bills & Credit Bills even if units or net payable is 0
+                    if (!validMeterIdSet.has(mId) || isNoticeNote || (isAutoNote && ((amt <= 0 && !rec.isCreditBill) || (!isGasMeterRec && units <= 0) || amt === 34))) {
                         delete elecGasBillsData[k];
                         removedBadBills++;
                         return;
@@ -22535,10 +22556,30 @@ window.cleanDuplicateEstateAssets = async function() {
         // - Fixes MGL "(U/MVAT): CON/..." invoice ID extraction so 2nd monthly Gas bills (1st & 17th) always combine!
         // =========================================================================
         function sortPdfItemsReadingOrder(items) {
-            return [...items].sort((a, b) => {
-                if (Math.abs(b.y - a.y) > 4.5) return b.y - a.y;
-                return a.x - b.x;
+            if (!Array.isArray(items) || items.length === 0) return [];
+            // Transitive row-clustering: sort top-to-bottom by Y first, group items within 4.2pt into horizontal rows, then sort each row left-to-right by X
+            const byY = [...items].sort((a, b) => (b.y - a.y) || (a.x - b.x));
+            const rows = [];
+            for (let i = 0; i < byY.length; i++) {
+                const it = byY[i];
+                let placed = false;
+                for (let r = rows.length - 1; r >= Math.max(0, rows.length - 3); r--) {
+                    if (Math.abs(rows[r].anchorY - it.y) <= 4.2) {
+                        rows[r].items.push(it);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    rows.push({ anchorY: it.y, items: [it] });
+                }
+            }
+            const out = [];
+            rows.forEach(r => {
+                r.items.sort((a, b) => a.x - b.x);
+                out.push(...r.items);
             });
+            return out;
         }
 
         function getCandidatePdfPasswordsForMeters(metersList) {
@@ -22619,8 +22660,11 @@ window.cleanDuplicateEstateAssets = async function() {
             let page1RawText = "";
             let page1VisualText = "";
             let page1LeftPanelText = "";
+            let page1LeftHalfText = "";
+            let page1RightHalfText = "";
             let page1MidRightPanelText = "";
             let page1RightPanelText = "";
+            let page1Width = 600;
             const allItems = [];
             let page1Items = [];
 
@@ -22649,9 +22693,12 @@ window.cleanDuplicateEstateAssets = async function() {
                     page1Items = pageItems;
                     page1RawText = pRaw.replace(/\s+/g, " ").trim();
                     page1VisualText = pVis.replace(/\s+/g, " ").trim();
-                    // Split Page 1 into Left Panel (Adani CA NO / Payable Box) and Right Panels (Adani Consumption Table & MGL Invoice/Payable Box)
                     const maxX = Math.max(pageWidth, ...pageItems.map(i => i.x), 500);
+                    page1Width = maxX;
                     page1LeftPanelText = sortPdfItemsReadingOrder(pageItems.filter(i => i.x < maxX * 0.36)).map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+                    // Domestic MGL ("DOM/...") Left Half Table ("SALE OF NATURAL GAS" from x=0 to x=52% width, isolated from right-side "Important Information")
+                    page1LeftHalfText = sortPdfItemsReadingOrder(pageItems.filter(i => i.x < maxX * 0.525)).map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
+                    page1RightHalfText = sortPdfItemsReadingOrder(pageItems.filter(i => i.x >= maxX * 0.51)).map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
                     page1MidRightPanelText = sortPdfItemsReadingOrder(pageItems.filter(i => i.x >= maxX * 0.28)).map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
                     page1RightPanelText = sortPdfItemsReadingOrder(pageItems.filter(i => i.x >= maxX * 0.48)).map(i => i.str).join(" ").replace(/\s+/g, " ").trim();
                 }
@@ -22662,8 +22709,11 @@ window.cleanDuplicateEstateAssets = async function() {
                 page1RawText,
                 page1VisualText,
                 page1LeftPanelText,
+                page1LeftHalfText,
+                page1RightHalfText,
                 page1MidRightPanelText,
                 page1RightPanelText,
+                page1Width,
                 page1Items,
                 items: allItems
             };
@@ -22928,31 +22978,186 @@ window.cleanDuplicateEstateAssets = async function() {
                     ...period
                 };
             } else {
-                // Mahanagar Gas (MGL) Commercial (IC PNG) & Domestic / Monthly PNG Bill Parser
+                // Mahanagar Gas (MGL) Commercial ("CON/...") & Domestic ("DOM/..." e.g. Najmi Bldg Lines 5, 6 & 7) Bill Parser
+                const p1LeftHalf = pdfObj.page1LeftHalfText || p1Left || "";
+                const p1RightHalf = pdfObj.page1RightHalfText || p1Right || "";
+                const p1Width = Number(pdfObj.page1Width) || 600;
                 const extraCorpus = String(pdfObj.extraFallbackText || "");
-                const fullMglCorpus = `${combinedCorpus} || ${extraCorpus}`;
-                if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\s*NO|CONTRACT\s*ACCOUNT|PIPED\s*NATURAL\s*GAS/i.test(fullMglCorpus)) {
+                const fullMglCorpus = `${p1LeftHalf} || ${p1RightHalf} || ${combinedCorpus} || ${extraCorpus}`;
+                if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\.?\s*NO|CA\s*NUMBER|SALE\s*OF\s*NATURAL\s*GAS|DOM\/|CON\//i.test(fullMglCorpus)) {
                     return null;
                 }
 
                 let amount = 0;
                 let units = 0;
+                let foundUnitsExplicit = false;
+                let isCreditBill = /Credit\s*Bill/i.test(fullMglCorpus);
+                let creditPayableAmount = 0;
+                let totalPayableAB = null;
+                let totalChargesA = null;
+                let totalChargesB = null;
 
-                const mglTexts = [p1Right, p1MidRight, p1Vis, p1Raw, pdfObj.visualText, pdfObj.rawStreamText, extraCorpus].filter(Boolean);
+                // Helper: Find numeric value on the same horizontal row in the Domestic MGL left-half table ("SALE OF NATURAL GAS")
+                const findSameRowLeftTableNumber = (labelRegex) => {
+                    if (!p1Items || p1Items.length === 0) return null;
+                    const lblItem = p1Items.find(it => it.x < p1Width * 0.45 && labelRegex.test(it.str));
+                    if (!lblItem) return null;
+                    const rowNums = p1Items
+                        .filter(it => it !== lblItem && it.x > lblItem.x && it.x < p1Width * 0.55 && Math.abs(it.y - lblItem.y) <= 9.5)
+                        .sort((a, b) => b.x - a.x); // rightmost column of left table first
+                    for (const cand of rowNums) {
+                        const m = cand.str.replace(/\s+/g, "").match(/^([\-+]?[0-9,]+(?:\.\d{1,2})?)$/);
+                        if (m) {
+                            const val = parseFloat(m[1].replace(/,/g, ""));
+                            if (!isNaN(val)) return val;
+                        }
+                    }
+                    return null;
+                };
 
+                const mglTexts = [p1LeftHalf, p1RightHalf, p1Right, p1MidRight, p1Vis, p1Raw, pdfObj.visualText, pdfObj.rawStreamText, extraCorpus].filter(Boolean);
+
+                // 1. Check Domestic MGL ("DOM/...") explicit table rows:
+                //    - "TOTAL PAYABLE (A+B)   583.00" (or "-257.00" on Credit Bill)
+                //    - "TOTAL CHARGES B       242.90"
+                //    - "TOTAL CHARGES A       583.04" (or "-500.00")
                 for (const txt of mglTexts) {
-                    if (amount <= 0) {
+                    if (totalPayableAB === null) {
+                        const mTp = txt.match(/TOTAL\s*PAYABLE\s*(?:\(\s*A\s*\+\s*B\s*\))?\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
+                        if (mTp) {
+                            const v = parseFloat(mTp[1].replace(/[\s,]/g, ""));
+                            if (!isNaN(v)) totalPayableAB = v;
+                        }
+                    }
+                    if (totalChargesB === null) {
+                        const mTb = txt.match(/TOTAL\s*CHARGES\s*B\b\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
+                        if (mTb) {
+                            const v = parseFloat(mTb[1].replace(/[\s,]/g, ""));
+                            if (!isNaN(v)) totalChargesB = v;
+                        }
+                    }
+                    if (totalChargesA === null) {
+                        const mTa = txt.match(/TOTAL\s*CHARGES\s*A\b\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
+                        if (mTa) {
+                            const v = parseFloat(mTa[1].replace(/[\s,]/g, ""));
+                            if (!isNaN(v)) totalChargesA = v;
+                        }
+                    }
+                }
+
+                // Spatial X/Y Same-Row & Value-Column Fallback for Domestic MGL Left Table ("SALE OF NATURAL GAS")
+                if (totalPayableAB === null) totalPayableAB = findSameRowLeftTableNumber(/TOTAL\s*PAYABLE/i);
+                if (totalChargesB === null) totalChargesB = findSameRowLeftTableNumber(/TOTAL\s*CHARGES\s*B\b/i);
+                if (totalChargesA === null) totalChargesA = findSameRowLeftTableNumber(/TOTAL\s*CHARGES\s*A\b/i);
+
+                // Value-Column Positional Fallback for Domestic MGL ("DOM/..."):
+                // In the left table between "SALE OF NATURAL GAS" and "Gas Consumption Security Deposit",
+                // the right-aligned value column (x between 36% and 54% of page width) has:
+                //   - First numeric row = Gas Consumption SCM (e.g. 11.00 or 0.00)
+                //   - Second-to-last numeric row = TOTAL CHARGES B (e.g. 0.00 or 242.90)
+                //   - Last numeric row = TOTAL PAYABLE (A+B) (e.g. 583.00 or -257.00)
+                if (p1Items && p1Items.length > 0 && /SALE\s*OF\s*NATURAL\s*GAS|DOM\//i.test(fullMglCorpus)) {
+                    const saleHdr = p1Items.find(it => /SALE\s*OF\s*NATURAL\s*GAS|MVAT\s*Invoice/i.test(it.str));
+                    const secDep = p1Items.find(it => /Security\s*Deposit|Previous\s*Reading|Meter\s*No/i.test(it.str));
+                    const topY = saleHdr ? saleHdr.y + 5 : 9999;
+                    const botY = secDep ? secDep.y - 2 : 0;
+                    const valColItems = p1Items
+                        .filter(it => it.x >= p1Width * 0.36 && it.x <= p1Width * 0.545 && it.y <= topY && it.y >= botY)
+                        .map(it => {
+                            const m = it.str.replace(/\s+/g, "").match(/^([\-+]?[0-9,]+\.\d{2})$/);
+                            return m ? { y: it.y, x: it.x, val: parseFloat(m[1].replace(/,/g, "")) } : null;
+                        })
+                        .filter(Boolean)
+                        .sort((a, b) => b.y - a.y); // top-to-bottom
+
+                    if (valColItems.length >= 6) {
+                        if (totalPayableAB === null) {
+                            totalPayableAB = valColItems[valColItems.length - 1].val;
+                        }
+                        if (totalChargesB === null && valColItems.length >= 2) {
+                            totalChargesB = valColItems[valColItems.length - 2].val;
+                        }
+                        if (!foundUnitsExplicit) {
+                            units = valColItems[0].val;
+                            foundUnitsExplicit = true;
+                        }
+                    }
+                }
+
+                // Orange Circles Pair Fallback on Right Half (e.g. "583" and "683" where Amount After = Amount Upto + 100)
+                if (totalPayableAB === null && !isCreditBill && p1Items && p1Items.length > 0 && /DOM\/|SALE\s*OF\s*NATURAL\s*GAS/i.test(fullMglCorpus)) {
+                    const rightNums = p1Items
+                        .filter(it => it.x >= p1Width * 0.55 && it.y > 350)
+                        .map(it => {
+                            const m = it.str.trim().match(/^([0-9,]+(?:\.\d{1,2})?)$/);
+                            return m ? { x: it.x, y: it.y, val: parseFloat(m[1].replace(/,/g, "")) } : null;
+                        })
+                        .filter(it => it && it.val > 0 && it.val < 1000000);
+                    for (let i = 0; i < rightNums.length; i++) {
+                        for (let j = 0; j < rightNums.length; j++) {
+                            if (i === j) continue;
+                            if (Math.abs(rightNums[i].y - rightNums[j].y) < 15 && Math.abs((rightNums[j].val - rightNums[i].val) - 100) < 0.05) {
+                                totalPayableAB = rightNums[i].val;
+                                break;
+                            }
+                        }
+                        if (totalPayableAB !== null) break;
+                    }
+                }
+
+                if (totalPayableAB !== null) {
+                    if (totalPayableAB > 0) {
+                        amount = totalPayableAB;
+                    } else {
+                        // Domestic MGL Credit Bill (e.g. Line 5 where TOTAL PAYABLE (A+B) = -257.00 and TOTAL CHARGES B = 242.90)
+                        isCreditBill = true;
+                        creditPayableAmount = totalPayableAB;
+                        if (totalChargesB !== null && totalChargesB > 0) {
+                            amount = totalChargesB;
+                        } else if (totalChargesA !== null && totalChargesA > 0) {
+                            amount = totalChargesA;
+                        } else {
+                            amount = 0;
+                        }
+                    }
+                }
+
+                // 2. Domestic MGL Orange Circle ("583  Amount upto  03/12/2026") & Commercial IC PNG ("AMOUNT PAYABLE")
+                for (const txt of mglTexts) {
+                    if (amount <= 0 && !isCreditBill) {
+                        const mUpto = txt.match(/\b([0-9,]+(?:\.\d{1,2})?)\s+(?:[0-9,]+(?:\.\d{1,2})?\s+)?Amount\s*upto\b/i);
+                        if (mUpto) {
+                            const v = parseFloat(mUpto[1].replace(/,/g, ""));
+                            if (v > 0) amount = v;
+                        }
+                    }
+                    if (amount <= 0 && !isCreditBill) {
                         const m1 = txt.match(/AMOUNT\s*PAYABLE[\s\S]{0,160}?\b\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i);
                         if (m1) amount = parseFloat(m1[1].replace(/,/g, ""));
                     }
-                    if (amount <= 0) {
+                    if (amount <= 0 && !isCreditBill) {
                         const m2 = txt.match(/(?:TOTAL\s*AMOUNT\s*PAYABLE|NET\s*AMOUNT\s*PAYABLE|AMOUNT\s*PAYABLE\s*BEFORE\s*DUE\s*DATE|AMOUNT\s*PAYABLE|CURRENT\s*MONTH\s*CHARGES|TOTAL\s*CURRENT\s*CHARGES|BILL\s*AMOUNT)\s*(?:\([^)]*\))?\s*[:\-]?\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?(?:Rs\.?|INR|₹)?\s*[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i);
                         if (m2) amount = parseFloat(m2[1].replace(/,/g, ""));
                     }
                 }
 
-                // Spatial X/Y Fallback for MGL "AMOUNT PAYABLE" on Page 1
-                if (amount <= 0 && p1Items.length > 0) {
+                // Spatial X/Y Fallback for Orange Circle "Amount upto" (above "Amount upto") or Commercial "AMOUNT PAYABLE" (below "AMOUNT PAYABLE")
+                if (amount <= 0 && !isCreditBill && p1Items.length > 0) {
+                    const uptoHeader = p1Items.find(it => /Amount\s*upto/i.test(it.str));
+                    if (uptoHeader) {
+                        const aboveUpto = p1Items
+                            .filter(it => Math.abs(it.x - uptoHeader.x) < 65 && (it.y - uptoHeader.y) > 2 && (it.y - uptoHeader.y) < 60)
+                            .sort((a, b) => a.y - b.y);
+                        for (const cand of aboveUpto) {
+                            const numM = cand.str.trim().match(/^([0-9,]+(?:\.\d{1,2})?)$/);
+                            if (numM) {
+                                const v = parseFloat(numM[1].replace(/,/g, ""));
+                                if (v > 0) { amount = v; break; }
+                            }
+                        }
+                    }
+                }
+                if (amount <= 0 && !isCreditBill && p1Items.length > 0) {
                     const apHeader = p1Items.find(it => /AMOUNT\s*PAYABLE|BILL\s*AMOUNT|NET\s*PAYABLE/i.test(it.str)) || p1Items.find(it => /^PAYABLE$/i.test(it.str));
                     if (apHeader) {
                         const belowAp = p1Items
@@ -22968,28 +23173,43 @@ window.cleanDuplicateEstateAssets = async function() {
                     }
                 }
 
-                // MGL Units (SCM): Supports both Commercial IC PNG ("Corrected Consumption...") and Domestic / Monthly MGL ("Billed Consumption", "Gas Consumed", "SCM", etc.)
+                // 3. MGL Units (SCM):
+                //    - Domestic MGL ("DOM/..."): "Gas Consumption SCM (Standard cubic meter.)   11.00" (or "0.00")
+                //    - Commercial IC PNG ("CON/..."): "Corrected Consumption For Piped Natural Gas (in Scm)   544.00"
                 for (const txt of mglTexts) {
-                    if (units <= 0) {
+                    if (!foundUnitsExplicit) {
+                        const uDom = txt.match(/Gas\s*Consumption\s*SCM\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+                        if (uDom) {
+                            const v = parseFloat(uDom[1].replace(/,/g, ""));
+                            if (!isNaN(v) && v >= 0) {
+                                units = v;
+                                foundUnitsExplicit = true;
+                            }
+                        }
+                    }
+                    if (!foundUnitsExplicit && units <= 0) {
                         const u1 = txt.match(/Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
-                        if (u1) units = parseFloat(u1[1].replace(/,/g, ""));
+                        if (u1) { units = parseFloat(u1[1].replace(/,/g, "")); foundUnitsExplicit = true; }
                     }
-                    if (units <= 0) {
+                    if (!foundUnitsExplicit && units <= 0) {
                         const u2 = txt.match(/\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i);
-                        if (u2) units = parseFloat(u2[1].replace(/,/g, ""));
+                        if (u2) { units = parseFloat(u2[1].replace(/,/g, "")); foundUnitsExplicit = true; }
                     }
-                    if (units <= 0) {
-                        const u3 = txt.match(/(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\(in\s*Scm\)|\(SCM\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
-                        if (u3) units = parseFloat(u3[1].replace(/,/g, ""));
-                    }
-                    if (units <= 0) {
-                        const u4 = txt.match(/\b([0-9,]+(?:\.\d+)?)\s*SCM\b/i);
-                        if (u4) units = parseFloat(u4[1].replace(/,/g, ""));
+                    if (!foundUnitsExplicit && units <= 0) {
+                        const u3 = txt.match(/(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+                        if (u3) { units = parseFloat(u3[1].replace(/,/g, "")); foundUnitsExplicit = true; }
                     }
                 }
 
-                // Spatial X/Y Fallback for MGL "CORRECTED CONSUMPTION" column on Page 1
-                if (units <= 0 && p1Items.length > 0) {
+                // Spatial X/Y Same-Row Fallback for Domestic "Gas Consumption SCM" or Commercial "CORRECTED CONSUMPTION"
+                if (!foundUnitsExplicit) {
+                    const domRowScm = findSameRowLeftTableNumber(/Gas\s*Consumption\s*SCM/i);
+                    if (domRowScm !== null && domRowScm >= 0) {
+                        units = domRowScm;
+                        foundUnitsExplicit = true;
+                    }
+                }
+                if (!foundUnitsExplicit && units <= 0 && p1Items.length > 0) {
                     const ccHeader = p1Items.find(it => /CORRECTED\s*CONSUMPTION/i.test(it.str)) || p1Items.find(it => /^CONSUMPTION$/i.test(it.str) && it.x > 350);
                     if (ccHeader) {
                         const belowCc = p1Items
@@ -22999,18 +23219,18 @@ window.cleanDuplicateEstateAssets = async function() {
                             const numM = cand.str.match(/^([0-9,]+(?:\.\d+)?)$/);
                             if (numM) {
                                 const v = parseFloat(numM[1].replace(/,/g, ""));
-                                if (!isNaN(v) && v >= 0) { units = v; break; }
+                                if (!isNaN(v) && v >= 0) { units = v; foundUnitsExplicit = true; break; }
                             }
                         }
                     }
                 }
 
-                if (!(amount > 0)) return null;
+                if (!(amount > 0) && !isCreditBill) return null;
 
-                // Extract unique Invoice Date & Invoice No inside the MGL PDF so 2 bills in the same month (e.g. 1st and 17th) NEVER collide!
-                // Note: Skips "(U/MVAT):" after "BILL OF SUPPLY NO." so it matches the actual invoice number "CON/11/26-27/175764" (never "U/MVAT"!)
+                // Extract unique Invoice Date & Invoice No inside the MGL PDF (supports both "DOM/11/26-27/17534252" and "CON/11/26-27/175764")
                 const invDateMatch = fullMglCorpus.match(/(?:INVOICE\s*DATE|BILL\s*DATE)\s*[:\-]?\s*(\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4})/i);
-                const invNoMatch = fullMglCorpus.match(/(?:BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
+                const directDomConMatch = fullMglCorpus.match(/\b((?:DOM|CON)\/[0-9A-Z\/\-]{5,25})\b/i);
+                const invNoMatch = directDomConMatch || fullMglCorpus.match(/(?:MVAT\s*INVOICE\s*NO|GST\s*INVOICE\s*NO|BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
                 const invDateIso = invDateMatch ? normalizeDateToIso(invDateMatch[1], msgDateStr) : normalizeDateToIso(msgDateStr, "2026-01-01");
                 const invNoClean = invNoMatch ? invNoMatch[1].trim() : "MGL";
                 const uniqueInvoiceId = `${invNoClean}_${invDateIso}_${Math.round(amount * 100)}_${Math.round(units * 100)}`;
@@ -23019,6 +23239,8 @@ window.cleanDuplicateEstateAssets = async function() {
                 return {
                     amount: Math.round(amount * 100) / 100,
                     units: Math.round(units * 100) / 100,
+                    isCreditBill,
+                    creditPayableAmount,
                     invoiceId: uniqueInvoiceId,
                     billDateStr: invDateIso,
                     ...period
@@ -23124,7 +23346,7 @@ window.cleanDuplicateEstateAssets = async function() {
 
                             // Verify it's a genuine Bill (not a disconnection notice) and extract Amount & Units from the PDF
                             const parsedBill = parseVerifiedBillDetailsFromPdfObj(pdfObj, item.subject, item.msgDateStr, item.isGasEmail);
-                            if (!parsedBill || !(parsedBill.amount > 0)) {
+                            if (!parsedBill || (!(parsedBill.amount > 0) && !parsedBill.isCreditBill)) {
                                 continue;
                             }
 
@@ -23245,6 +23467,9 @@ window.cleanDuplicateEstateAssets = async function() {
                                     return copy;
                                 });
 
+                                const creditNoteSuffix = parsedBill.isCreditBill
+                                    ? ` (Credit Bill: Net Payable ₹${Number(parsedBill.creditPayableAmount || 0).toLocaleString('en-IN')})`
+                                    : '';
                                 elecGasBillsData[billKey] = {
                                     meterId: matchedMeter.id,
                                     caNumber: matchedMeter.caNumber || '',
@@ -23252,6 +23477,8 @@ window.cleanDuplicateEstateAssets = async function() {
                                     monthIndex: parsedBill.monthIdx,
                                     amount: totalAmt,
                                     units: totalUnits,
+                                    isCreditBill: Boolean(parsedBill.isCreditBill),
+                                    creditPayableAmount: parsedBill.creditPayableAmount || 0,
                                     amount1: cleanSubBills[0] ? cleanSubBills[0].amount : totalAmt,
                                     units1: cleanSubBills[0] ? cleanSubBills[0].units : totalUnits,
                                     amount2: cleanSubBills[1] ? cleanSubBills[1].amount : 0,
@@ -23260,7 +23487,7 @@ window.cleanDuplicateEstateAssets = async function() {
                                     billDate2: cleanSubBills[1] ? cleanSubBills[1].billDate : '',
                                     notes: cleanSubBills.length >= 2
                                         ? `Auto-fetched ${cleanSubBills.length} MGL Bills (${cleanSubBills.map(b => '₹' + (Number(b.amount) || 0).toLocaleString('en-IN')).join(' + ')})`
-                                        : `Auto-fetched from MGL Bill PDF`,
+                                        : `Auto-fetched from MGL Bill PDF${creditNoteSuffix}`,
                                     fileUrl: cleanSubBills[0] ? cleanSubBills[0].fileUrl : '',
                                     fileUrl2: cleanSubBills[1] ? cleanSubBills[1].fileUrl : '',
                                     subBills: cleanSubBills,

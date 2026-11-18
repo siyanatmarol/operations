@@ -6762,7 +6762,7 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
         if (!matchedMeter) continue;
 
         var parsedBill = parseUtilityBillTextServer_(combinedCorpus, fullSubject, d.msgDateStr, Boolean(d.isGasEmail));
-        if (!parsedBill || !(parsedBill.amount > 0)) continue;
+        if (!parsedBill || (!(parsedBill.amount > 0) && !parsedBill.isCreditBill)) continue;
 
         var billKey = String(matchedMeter.id) + "_" + parsedBill.yearStr + "_" + parsedBill.monthIdx;
         var existingRec = existingBills[billKey];
@@ -6793,7 +6793,7 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
           };
         } else {
           var subBills = (existingRec && Array.isArray(existingRec.subBills)) ? existingRec.subBills.slice() : [];
-          if (subBills.length === 0 && existingRec && Number(existingRec.amount) > 0) {
+          if (subBills.length === 0 && existingRec && (Number(existingRec.amount) > 0 || existingRec.isCreditBill)) {
             subBills.push({
               billKeyId: existingRec.invoiceId || ("MGL_" + (existingRec.billDate || d.msgDateStr) + "_" + Math.round(Number(existingRec.amount || 0) * 100)),
               billDate: existingRec.billDate || d.msgDateStr,
@@ -6825,6 +6825,7 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
             totAmt += Number(subBills[s].amount || 0);
             totUnits += Number(subBills[s].units || 0);
           }
+          var creditSuffix = parsedBill.isCreditBill ? (" (Credit Bill: Net Payable Rs." + (parsedBill.creditPayableAmount || 0) + ")") : "";
           updatedRec = {
             meterId: matchedMeter.id,
             caNumber: matchedMeter.caNumber || "",
@@ -6832,9 +6833,17 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
             monthIndex: parsedBill.monthIdx,
             amount: Math.round(totAmt * 100) / 100,
             units: Math.round(totUnits * 100) / 100,
-            billDate: subBills[subBills.length - 1].billDate || d.msgDateStr,
-            notes: "Auto-fetched at 8AM from MGL PDF (" + subBills.length + " bill(s))",
-            fileUrl: subBills[0].fileUrl || "",
+            isCreditBill: Boolean(parsedBill.isCreditBill),
+            creditPayableAmount: parsedBill.creditPayableAmount || 0,
+            amount1: subBills[0] ? subBills[0].amount : Math.round(totAmt * 100) / 100,
+            units1: subBills[0] ? subBills[0].units : Math.round(totUnits * 100) / 100,
+            amount2: subBills[1] ? subBills[1].amount : 0,
+            units2: subBills[1] ? subBills[1].units : 0,
+            billDate: subBills[0] ? subBills[0].billDate : d.msgDateStr,
+            billDate2: subBills[1] ? subBills[1].billDate : "",
+            notes: "Auto-fetched at 8AM from MGL PDF (" + subBills.length + " bill(s))" + creditSuffix,
+            fileUrl: subBills[0] ? (subBills[0].fileUrl || "") : "",
+            fileUrl2: subBills[1] ? (subBills[1].fileUrl || "") : "",
             subBills: subBills,
             updatedAt: new Date().toISOString()
           };
@@ -7067,11 +7076,17 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
       gMonthIdx = parseInt(invDateM[2], 10) - 1;
       gYearStr = invDateM[3];
     }
-    var invNoM = combinedCorpus.match(/BILL\s*OF\s*SUPPLY\s*NO\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z]{2,6}\/[0-9A-Z\/\-]{5,25})/i);
+    var domConM = combinedCorpus.match(/\b((?:DOM|CON)\/[0-9A-Z\/\-]{5,25})\b/i);
+    var invNoM = domConM || combinedCorpus.match(/(?:MVAT\s*INVOICE\s*NO|GST\s*INVOICE\s*NO|BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
     var invNoClean = invNoM ? invNoM[1].trim() : "MGL";
+    var gCreditPayable = (mTpDom && !isNaN(parseFloat(mTpDom[1].replace(/[\s,]/g, ""))) && parseFloat(mTpDom[1].replace(/[\s,]/g, "")) <= 0)
+      ? parseFloat(mTpDom[1].replace(/[\s,]/g, ""))
+      : 0;
     return {
       amount: Math.round(gAmt * 100) / 100,
       units: Math.round(gUnits * 100) / 100,
+      isCreditBill: Boolean(gIsCredit),
+      creditPayableAmount: gCreditPayable,
       monthIdx: gMonthIdx,
       yearStr: gYearStr,
       billDateStr: billDateIso,

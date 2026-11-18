@@ -492,6 +492,7 @@
             body.pwa-mode #modalEditKeyMaster,
             body.pwa-mode #modalKeysExpiredAlert,
             body.pwa-mode #modalKeysExport,
+            body.pwa-mode #modalExportKeysInventory,
             body.pwa-mode #modalKeysBulkReassignClean {
                 font-size: calc(0.875rem - 1pt) !important;
             }
@@ -531,14 +532,16 @@
             body.pwa-mode #module-inventory .text-sm,
             body.pwa-mode #modalKeyIssueReturn .text-sm,
             body.pwa-mode #modalEditKeyMaster .text-sm,
-            body.pwa-mode #modalKeysExport .text-sm {
+            body.pwa-mode #modalKeysExport,
+            body.pwa-mode #modalExportKeysInventory .text-sm {
                 font-size: calc(0.875rem - 1pt) !important;
                 line-height: 1.25 !important;
             }
             body.pwa-mode #module-inventory .text-xs,
             body.pwa-mode #modalKeyIssueReturn .text-xs,
             body.pwa-mode #modalEditKeyMaster .text-xs,
-            body.pwa-mode #modalKeysExport .text-xs {
+            body.pwa-mode #modalKeysExport,
+            body.pwa-mode #modalExportKeysInventory .text-xs {
                 font-size: calc(0.75rem - 1pt) !important;
                 line-height: 1.2 !important;
             }
@@ -558,28 +561,87 @@
                 line-height: 1.1 !important;
             }
 
-            /* Top Sub-Navigation Segmented Bar in Keys Module */
-            body.pwa-mode #module-inventory > div:first-child {
+            /* Top Sub-Navigation Segmented Bar in Keys Module (Fixed overlap on Mobile) */
+            body.pwa-mode #module-inventory > div:first-child,
+            #module-inventory > div:first-child {
                 padding: 0.45rem !important;
                 gap: 0.4rem !important;
                 border-radius: 0.75rem !important;
             }
-            body.pwa-mode #module-inventory > div:first-child > div:first-child {
+            body.pwa-mode #module-inventory > div:first-child > div:first-child,
+            #module-inventory > div:first-child > div:first-child {
                 display: grid !important;
                 grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-                gap: 0.3rem !important;
+                gap: 0.28rem !important;
                 width: 100% !important;
             }
-            body.pwa-mode #module-inventory > div:first-child > div:first-child button {
-                padding: 0.4rem 0.3rem !important;
+            body.pwa-mode #module-inventory > div:first-child > div:first-child button,
+            #module-inventory > div:first-child > div:first-child button {
+                min-width: 0 !important;
+                width: 100% !important;
+                overflow: hidden !important;
+                padding: 0.42rem 0.2rem !important;
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
                 justify-content: center !important;
-                font-size: calc(0.75rem - 1pt) !important;
+                gap: 0.2rem !important;
+                font-size: 0.66rem !important;
+                line-height: 1.15 !important;
+                letter-spacing: -0.02em !important;
                 white-space: nowrap !important;
                 border-radius: 0.5rem !important;
+                box-sizing: border-box !important;
             }
-            body.pwa-mode #module-inventory > div:first-child > div:first-child button span[id*="CountBadge"] {
-                padding: 0.05rem 0.35rem !important;
-                font-size: calc(10px - 1pt) !important;
+            body.pwa-mode #module-inventory > div:first-child > div:first-child button > * + *,
+            #module-inventory > div:first-child > div:first-child button > * + * {
+                margin-left: 0 !important;
+            }
+            body.pwa-mode #module-inventory > div:first-child > div:first-child button > i,
+            #module-inventory > div:first-child > div:first-child button > i {
+                display: none !important;
+            }
+            body.pwa-mode #module-inventory > div:first-child > div:first-child button > span:not([id*="CountBadge"]),
+            #module-inventory > div:first-child > div:first-child button > span:not([id*="CountBadge"]) {
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
+                min-width: 0 !important;
+            }
+            body.pwa-mode #module-inventory > div:first-child > div:first-child button span[id*="CountBadge"],
+            #module-inventory > div:first-child > div:first-child button span[id*="CountBadge"] {
+                padding: 0.06rem 0.3rem !important;
+                font-size: 0.58rem !important;
+                line-height: 1.1 !important;
+                flex-shrink: 0 !important;
+                margin-left: 0 !important;
+            }
+
+            /* Mobile Scrollable Pop-Up Modals in Keys Module (#modalExportKeysInventory & all Keys modals) */
+            body.pwa-mode #modalExportKeysInventory,
+            #modalExportKeysInventory {
+                align-items: flex-start !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding-top: 0.75rem !important;
+                padding-bottom: calc(5.2rem + env(safe-area-inset-bottom, 0px)) !important;
+            }
+            body.pwa-mode #modalExportKeysInventory > div,
+            #modalExportKeysInventory > div {
+                max-height: calc(100vh - 6.2rem - env(safe-area-inset-bottom, 0px)) !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+                margin: auto !important;
+            }
+            body.pwa-mode #modalExportKeysInventory form,
+            #modalExportKeysInventory form {
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior: contain !important;
+                flex: 1 1 auto !important;
+                min-height: 0 !important;
             }
             body.pwa-mode #module-inventory > div:first-child > div:last-child {
                 width: 100% !important;
@@ -6368,9 +6430,23 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
 
   var configuredElecCas = {};
   var elecCaList = [];
+  var gasSearchTokens = [];
+  var seenGasToken = {};
+
   for (var i = 0; i < meters.length; i++) {
     var m = meters[i];
-    if (!m || m.utility === "gas") continue;
+    if (!m) continue;
+    if (m.utility === "gas") {
+      var gCandidates = [m.caNumber, m.bpNumber, m.meterNumber];
+      for (var gc = 0; gc < gCandidates.length; gc++) {
+        var rawTok = String(gCandidates[gc] || "").replace(/^(?:BP|CA|MTR|MGL)[\-:\s]*/i, "").replace(/\s+/g, "");
+        if (rawTok && rawTok !== "-" && rawTok.indexOf("MGL-") !== 0 && rawTok.length >= 5 && !seenGasToken[rawTok]) {
+          seenGasToken[rawTok] = true;
+          gasSearchTokens.push('"' + rawTok + '"');
+        }
+      }
+      continue;
+    }
     var ca = String(m.caNumber || "").replace(/\s+/g, "");
     if (ca && ca !== "-" && ca.indexOf("AE-CA-") !== 0 && ca.length >= 5) {
       if (!configuredElecCas[ca]) {
@@ -6386,31 +6462,40 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
   var tz = Session.getScriptTimeZone();
   var dateFilter = "(newer_than:" + lookbackDays + "d OR after:2025/12/25)";
 
-  // A. Search Mahanagar Gas threads across full year (supports icpngbill, any mahanagargas.com sender, or forwarded PNG Ebill emails)
-  var mglQuery = '(from:mahanagargas.com OR subject:"Your PNG Ebill" OR subject:"PNG Ebill") has:attachment ' + dateFilter;
-  var mglThreads = GmailApp.search(mglQuery, 0, 250);
-  totalThreadsScanned += mglThreads.length;
+  // A. Search Mahanagar Gas threads across full year (supports Commercial icpngbill, Domestic ebill/mahanagargas, forwarded MGL bills, and direct CA/BP/Meter matches for Lines 1-7!)
+  var mglQueries = [
+    '(from:mahanagargas.com OR subject:"PNG Ebill" OR subject:"Mahanagar Gas" OR subject:"MGL") has:attachment ' + dateFilter
+  ];
+  if (gasSearchTokens.length > 0) {
+    mglQueries.push('(' + gasSearchTokens.join(" OR ") + ') has:attachment ' + dateFilter);
+  }
 
-  for (var t = 0; t < mglThreads.length; t++) {
-    var messages = mglThreads[t].getMessages();
-    for (var mIdx = 0; mIdx < messages.length; mIdx++) {
-      var msg = messages[mIdx];
-      var msgId = msg.getId();
-      if (seenMsgId[msgId]) continue;
+  for (var mqIdx = 0; mqIdx < mglQueries.length; mqIdx++) {
+    var mglThreads = GmailApp.search(mglQueries[mqIdx], 0, 250);
+    totalThreadsScanned += mglThreads.length;
 
-      var fromStr = String(msg.getFrom() || "").toLowerCase();
-      var subjectStr = String(msg.getSubject() || "");
-      if (isExplicitNoticeOrReceiptTitle_(subjectStr)) continue;
-      if (!/PNG\s*Ebill|Mahanagar\s*Gas|mahanagargas|icpngbill/i.test(subjectStr + " " + fromStr)) continue;
+    for (var t = 0; t < mglThreads.length; t++) {
+      var messages = mglThreads[t].getMessages();
+      for (var mIdx = 0; mIdx < messages.length; mIdx++) {
+        var msg = messages[mIdx];
+        var msgId = msg.getId();
+        if (seenMsgId[msgId]) continue;
 
-      seenMsgId[msgId] = true;
-      allDescriptors.push({
-        messageId: msgId,
-        subject: subjectStr,
-        msgDateStr: Utilities.formatDate(msg.getDate(), tz, "yyyy-MM-dd"),
-        isGasEmail: true,
-        subjCa: ""
-      });
+        var fromStr = String(msg.getFrom() || "").toLowerCase();
+        var subjectStr = String(msg.getSubject() || "");
+        if (isExplicitNoticeOrReceiptTitle_(subjectStr)) continue;
+        // Skip Adani electricity emails if matched by a general query
+        if (/adanielectricity|Your\s*bill\s*details/i.test(subjectStr + " " + fromStr)) continue;
+
+        seenMsgId[msgId] = true;
+        allDescriptors.push({
+          messageId: msgId,
+          subject: subjectStr,
+          msgDateStr: Utilities.formatDate(msg.getDate(), tz, "yyyy-MM-dd"),
+          isGasEmail: true,
+          subjCa: ""
+        });
+      }
     }
   }
 
@@ -6494,11 +6579,12 @@ function getBillPdfsByDescriptors_(descriptors) {
       var subjHeader = String(d.subject || msg.getSubject() || "");
       if (isExplicitNoticeOrReceiptTitle_(subjHeader)) continue;
 
-      // Extract ONLY the "Electricity Bill for OCT-26" month tag from the plain body (never reject based on body disclaimer text!)
+      // Extract plain body text (for MGL emails where BP/CA, Amount, Due Date, or Bill Period is stated in the email body)
       var bodyMonthTag = "";
+      var emailPlainBody = "";
       try {
-        var plainSlice = String(msg.getPlainBody() || "").slice(0, 600);
-        var mTag = plainSlice.match(/Electricity\s+Bill\s+for\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/]\d{2,4}/i);
+        emailPlainBody = String(msg.getPlainBody() || "").slice(0, 4000);
+        var mTag = emailPlainBody.match(/Electricity\s+Bill\s+for\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/]\d{2,4}/i);
         if (mTag) bodyMonthTag = " " + mTag[0];
       } catch (eP) {}
 
@@ -6508,25 +6594,32 @@ function getBillPdfsByDescriptors_(descriptors) {
         if (!att) continue;
         var attName = String(att.getName() || "");
         var cType = String(att.getContentType() || "").toLowerCase();
-        if (cType.indexOf("pdf") === -1 && attName.toLowerCase().slice(-4) !== ".pdf") continue;
+        var isPdf = (cType.indexOf("pdf") !== -1 || attName.toLowerCase().slice(-4) === ".pdf" || (Boolean(d.isGasEmail) && cType.indexOf("octet-stream") !== -1));
+        if (!isPdf) continue;
         if (isExplicitNoticeOrReceiptTitle_(attName)) continue;
 
-        // If d.attIndex was specified (backward compat with v3 descriptors), only fetch that index
         if (d.attIndex !== undefined && d.attIndex !== null && Number(d.attIndex) !== a) continue;
 
         var rawBytes = att.getBytes();
         var b64 = Utilities.base64Encode(rawBytes);
 
-        // Deduplicate identical forwarded PDF bytes inside the same batch
         var pdfSig = attName + "_" + b64.length + "_" + b64.slice(0, 80) + "_" + b64.slice(-80);
         if (seenBatchPdfSig[pdfSig]) continue;
         seenBatchPdfSig[pdfSig] = true;
+
+        // For Gas emails, also provide server-side OCR text if Drive conversion succeeds
+        var serverOcrText = "";
+        if (Boolean(d.isGasEmail)) {
+          try { serverOcrText = extractPdfTextServerSide_(att); } catch (eOcr) {}
+        }
 
         out.push({
           messageId: d.messageId,
           attIndex: a,
           attName: attName,
           subject: subjHeader + bodyMonthTag,
+          emailBody: emailPlainBody,
+          serverPdfText: serverOcrText,
           msgDateStr: d.msgDateStr || Utilities.formatDate(msg.getDate(), tz, "yyyy-MM-dd"),
           isGasEmail: Boolean(d.isGasEmail),
           subjCa: d.subjCa || "",
@@ -6591,11 +6684,29 @@ function saveSinglePdfInFolder_(folder, data) {
 function loadConfiguredMetersFromFirebase_() {
   var metersRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasMeters.json");
   var metersRaw = JSON.parse(metersRes.getContentText() || "null");
+  var bpMap = {};
+  try {
+    var bpRes = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBpNumbers.json");
+    var bpParsed = JSON.parse(bpRes.getContentText() || "{}");
+    if (bpParsed && typeof bpParsed === "object") bpMap = bpParsed;
+  } catch (eBp) {}
+
   var meters = [];
   if (metersRaw) {
     meters = Array.isArray(metersRaw) ? metersRaw : Object.keys(metersRaw).map(function(k) { return metersRaw[k]; });
   }
-  return meters.filter(function(m) { return m && typeof m === "object"; });
+  var gasIdx = 0;
+  return meters.filter(function(m) { return m && typeof m === "object"; }).map(function(m) {
+    if (m.utility === "gas") {
+      gasIdx++;
+      var lineKey = String(m.lineNumber || ("Line " + gasIdx)).trim();
+      var mId = String(m.id || ("gas_" + gasIdx)).trim();
+      var caKey = String(m.caNumber || "").trim();
+      var savedBp = String(m.bpNumber || bpMap[mId] || bpMap[lineKey] || (caKey ? bpMap["ca_" + caKey] : "") || bpMap["gas_" + gasIdx] || "").trim();
+      if (savedBp && savedBp !== "__DELETED__") m.bpNumber = savedBp;
+    }
+    return m;
+  });
 }
 
 function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
@@ -6642,9 +6753,11 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
         if (isExplicitNoticeOrReceiptTitle_(attName)) continue;
 
         var pdfText = extractPdfTextServerSide_(att);
-        if (!pdfText) continue;
+        var plainBodyText = "";
+        try { plainBodyText = String(msg.getPlainBody() || "").slice(0, 4000); } catch (eBody) {}
+        if (!pdfText && !plainBodyText) continue;
 
-        var combinedCorpus = fullSubject + " " + pdfText;
+        var combinedCorpus = fullSubject + " " + attName + " " + plainBodyText + " " + (pdfText || "");
         var matchedMeter = findConfiguredMeterInTextServer_(meters, combinedCorpus, Boolean(d.isGasEmail));
         if (!matchedMeter) continue;
 
@@ -6821,26 +6934,34 @@ function extractPdfTextServerSide_(attBlob) {
   }
 }
 
+function normalizeMeterIdentifierToken_(val) {
+  var s = String(val || "").trim();
+  if (!s || s === "-" || /^(?:AE-CA-|MGL-CA-|AE-MTR-|MGL-MTR-)/i.test(s)) return "";
+  var stripped = s.replace(/^(?:BP|CA|MTR|MGL|NO|NUMBER)[\s:\-\.]*/i, "").replace(/[\s\-\/]/g, "");
+  return stripped;
+}
+
+function doesCorpusContainMeterToken_(normText, normNoSpace, normDigitsOnly, rawVal, minLen) {
+  var tok = normalizeMeterIdentifierToken_(rawVal);
+  if (!tok || tok.length < (minLen || 4)) return false;
+  if (normText.indexOf(tok) !== -1 || normNoSpace.indexOf(tok) !== -1) return true;
+  var digits = tok.replace(/\D/g, "").replace(/^0+/, "");
+  if (digits.length >= 6 && normDigitsOnly.indexOf(digits) !== -1) return true;
+  return false;
+}
+
 function findConfiguredMeterInTextServer_(meters, combinedText, isGasEmail) {
   var norm = String(combinedText || "");
   var normNoSpace = norm.replace(/\s+/g, "");
+  var normDigitsOnly = normNoSpace.replace(/\D/g, "");
   for (var i = 0; i < meters.length; i++) {
     var m = meters[i];
     if (!m) continue;
     var mIsGas = (m.utility === "gas");
     if (mIsGas !== Boolean(isGasEmail)) continue;
-    var ca = String(m.caNumber || "").trim();
-    var mtr = String(m.meterNumber || "").trim();
-    var bp = String(m.bpNumber || "").trim();
-    if (ca && ca !== "-" && ca.indexOf("AE-CA-") !== 0 && ca.indexOf("MGL-CA-") !== 0 && ca.length >= 5) {
-      if (norm.indexOf(ca) !== -1 || normNoSpace.indexOf(ca.replace(/\s+/g, "")) !== -1) return m;
-    }
-    if (mtr && mtr !== "-" && mtr.indexOf("AE-MTR-") !== 0 && mtr.indexOf("MGL-MTR-") !== 0 && mtr.length >= 4) {
-      if (norm.indexOf(mtr) !== -1 || normNoSpace.indexOf(mtr.replace(/\s+/g, "")) !== -1) return m;
-    }
-    if (mIsGas && bp && bp !== "-" && bp.length >= 5) {
-      if (norm.indexOf(bp) !== -1 || normNoSpace.indexOf(bp.replace(/\s+/g, "")) !== -1) return m;
-    }
+    if (doesCorpusContainMeterToken_(norm, normNoSpace, normDigitsOnly, m.caNumber, 5)) return m;
+    if (mIsGas && doesCorpusContainMeterToken_(norm, normNoSpace, normDigitsOnly, m.bpNumber, 5)) return m;
+    if (doesCorpusContainMeterToken_(norm, normNoSpace, normDigitsOnly, m.meterNumber, 4)) return m;
   }
   return null;
 }
@@ -6889,25 +7010,32 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
       invoiceId: yearStr + "_" + monthIdx + "_" + Math.round(amt)
     };
   } else {
-    if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY/i.test(combinedCorpus)) return null;
-    if (!/AMOUNT\s*PAYABLE|CORRECTED\s*CONSUMPTION|CONSUMER\s*REF/i.test(combinedCorpus)) return null;
+    if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\s*NO|CONTRACT\s*ACCOUNT/i.test(combinedCorpus)) return null;
     var gAmt = 0;
     var gUnits = 0;
-    var gm1 = combinedCorpus.match(/AMOUNT\s*PAYABLE[\s\S]{0,160}?\b\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+[^0-9A-Za-z]{0,8}([0-9,]+\.\d{2})/i);
-    if (gm1) gAmt = parseFloat(gm1[1].replace(/,/g, ""));
-    if (!(gAmt > 0)) {
-      var gm2 = combinedCorpus.match(/AMOUNT\s*PAYABLE\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?[^0-9A-Za-z]{0,8}([0-9,]+\.\d{2})/i);
-      if (gm2) gAmt = parseFloat(gm2[1].replace(/,/g, ""));
+    var gmPatterns = [
+      /AMOUNT\s*PAYABLE[\s\S]{0,160}?\b\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i,
+      /(?:TOTAL\s*AMOUNT\s*PAYABLE|NET\s*AMOUNT\s*PAYABLE|AMOUNT\s*PAYABLE\s*BEFORE\s*DUE\s*DATE|AMOUNT\s*PAYABLE|CURRENT\s*MONTH\s*CHARGES|TOTAL\s*CURRENT\s*CHARGES|BILL\s*AMOUNT)\s*(?:\([^)]*\))?\s*[:\-]?\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?(?:Rs\.?|INR|₹)?\s*[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i
+    ];
+    for (var gp = 0; gp < gmPatterns.length; gp++) {
+      if (gAmt > 0) break;
+      var gmM = combinedCorpus.match(gmPatterns[gp]);
+      if (gmM) gAmt = parseFloat(gmM[1].replace(/,/g, ""));
     }
-    var gu1 = combinedCorpus.match(/Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
-    if (gu1) gUnits = parseFloat(gu1[1].replace(/,/g, ""));
-    if (!(gUnits > 0)) {
-      var gu2 = combinedCorpus.match(/CORRECTED\s*CONSUMPTION\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
-      if (gu2) gUnits = parseFloat(gu2[1].replace(/,/g, ""));
+    var guPatterns = [
+      /Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
+      /(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\(in\s*Scm\)|\(SCM\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
+      /\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i,
+      /([0-9,]+(?:\.\d+)?)\s*SCM\b/i
+    ];
+    for (var up = 0; up < guPatterns.length; up++) {
+      if (gUnits > 0) break;
+      var guM = combinedCorpus.match(guPatterns[up]);
+      if (guM) gUnits = parseFloat(guM[1].replace(/,/g, ""));
     }
     if (!(gAmt > 0)) return null;
 
-    var invDateM = combinedCorpus.match(/INVOICE\s*DATE\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
+    var invDateM = combinedCorpus.match(/(?:INVOICE\s*DATE|BILL\s*DATE)\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
     var billDateIso = invDateM ? (invDateM[3] + "-" + invDateM[2] + "-" + invDateM[1]) : msgDateStr;
     var gMonthIdx = fallbackMonth;
     var gYearStr = String(fallbackYear);
@@ -7760,9 +7888,9 @@ function getOrCreateUtilityFolder_(name) {
     </div>
 
     <!-- Modal 5B: Export Keys Inventory Pop-Up Modal (#modalExportKeysInventory) -->
-    <div id="modalExportKeysInventory" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-[80]">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-emerald-200">
-            <div class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 text-white px-5 py-4 flex justify-between items-center">
+    <div id="modalExportKeysInventory" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-3 sm:p-4 z-[80] overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[84vh] sm:max-h-[90vh] flex flex-col overflow-hidden border border-emerald-200 my-auto">
+            <div class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 text-white px-5 py-3.5 sm:py-4 flex justify-between items-center shrink-0">
                 <div class="flex items-center space-x-2.5">
                     <i class="fa-solid fa-file-export text-emerald-300 text-lg"></i>
                     <div>
@@ -7773,7 +7901,7 @@ function getOrCreateUtilityFolder_(name) {
                 <button type="button" onclick="closeModal('modalExportKeysInventory')" class="text-emerald-200 hover:text-white text-2xl font-bold leading-none">&times;</button>
             </div>
 
-            <form onsubmit="handleKeysExportModalSubmit(event)" class="p-5 space-y-4 text-xs sm:text-sm">
+            <form onsubmit="handleKeysExportModalSubmit(event)" class="p-4 sm:p-5 space-y-4 text-xs sm:text-sm overflow-y-auto flex-1 overscroll-contain" style="-webkit-overflow-scrolling: touch;">
                 <div class="space-y-2.5">
                     <label class="text-xs font-extrabold text-gray-700 uppercase tracking-wider block">1. Select Options to Export (Check one or more):</label>
 
@@ -21599,7 +21727,10 @@ window.cleanDuplicateEstateAssets = async function() {
                     const isNoticeNote = isAutoNote && /disconnect|notice|intimation/i.test(notesStr);
                     const amt = Number(rec.amount || 0);
                     const units = Number(rec.units || 0);
-                    if (!validMeterIdSet.has(mId) || isNoticeNote || (isAutoNote && (amt <= 0 || units <= 0 || amt === 34))) {
+                    const meterObjForRec = elecGasMetersData.find(x => String(x.id) === mId);
+                    const isGasMeterRec = Boolean(meterObjForRec && meterObjForRec.utility === 'gas') || /mgl|gas/i.test(notesStr);
+                    // For Adani Electricity, units <= 0 indicates a disconnection notice; for Mahanagar Gas, keep valid bills even if units parsed as 0
+                    if (!validMeterIdSet.has(mId) || isNoticeNote || (isAutoNote && (amt <= 0 || (!isGasMeterRec && units <= 0) || amt === 34))) {
                         delete elecGasBillsData[k];
                         removedBadBills++;
                         return;
@@ -22410,7 +22541,29 @@ window.cleanDuplicateEstateAssets = async function() {
             });
         }
 
-        async function extractTextAndItemsFromPdfBase64(pdfBase64) {
+        function getCandidatePdfPasswordsForMeters(metersList) {
+            const candidates = new Set(['']);
+            (metersList || []).forEach((m, idx) => {
+                if (!m) return;
+                const bp = m.utility === 'gas' ? (m.bpNumber || getSavedBpNumberForGasMeter(m, idx) || '') : '';
+                [m.caNumber, m.bpNumber, bp, m.meterNumber].forEach(val => {
+                    const s = String(val || '').trim();
+                    if (!s || s === '-') return;
+                    candidates.add(s);
+                    const clean = s.replace(/^(?:BP|CA|MTR|MGL)[\s:\-\.]*/i, '').replace(/[\s\-\/]/g, '');
+                    if (clean) {
+                        candidates.add(clean);
+                        candidates.add(clean.toUpperCase());
+                        candidates.add(clean.toLowerCase());
+                        const noZero = clean.replace(/^0+/, '');
+                        if (noZero) candidates.add(noZero);
+                    }
+                });
+            });
+            return Array.from(candidates);
+        }
+
+        async function extractTextAndItemsFromPdfBase64(pdfBase64, metersList = []) {
             if (!window.pdfjsLib) {
                 throw new Error("PDF.js library not loaded.");
             }
@@ -22422,8 +22575,45 @@ window.cleanDuplicateEstateAssets = async function() {
             for (let i = 0; i < binaryStr.length; i++) {
                 bytes[i] = binaryStr.charCodeAt(i);
             }
-            const loadingTask = window.pdfjsLib.getDocument({ data: bytes });
-            const pdfDoc = await loadingTask.promise;
+            let pdfDoc = null;
+            const passwordsToTry = getCandidatePdfPasswordsForMeters(metersList);
+            for (let pwIdx = 0; pwIdx < passwordsToTry.length; pwIdx++) {
+                try {
+                    const pw = passwordsToTry[pwIdx];
+                    const docParams = pw ? { data: bytes.slice(0), password: pw } : { data: bytes.slice(0) };
+                    const loadingTask = window.pdfjsLib.getDocument(docParams);
+                    pdfDoc = await loadingTask.promise;
+                    if (pdfDoc) break;
+                } catch (pwErr) {
+                    const isPwErr = pwErr && (pwErr.name === 'PasswordException' || /password/i.test(String(pwErr.message || pwErr)));
+                    if (!isPwErr || pwIdx === passwordsToTry.length - 1) {
+                        return {
+                            rawStreamText: "",
+                            visualText: "",
+                            page1RawText: "",
+                            page1VisualText: "",
+                            page1LeftPanelText: "",
+                            page1MidRightPanelText: "",
+                            page1RightPanelText: "",
+                            page1Items: [],
+                            items: []
+                        };
+                    }
+                }
+            }
+            if (!pdfDoc) {
+                return {
+                    rawStreamText: "",
+                    visualText: "",
+                    page1RawText: "",
+                    page1VisualText: "",
+                    page1LeftPanelText: "",
+                    page1MidRightPanelText: "",
+                    page1RightPanelText: "",
+                    page1Items: [],
+                    items: []
+                };
+            }
             let rawStreamText = "";
             let visualText = "";
             let page1RawText = "";
@@ -22479,33 +22669,47 @@ window.cleanDuplicateEstateAssets = async function() {
             };
         }
 
+        function normalizePortalMeterToken(rawVal) {
+            const s = String(rawVal || '').trim();
+            if (!s || s === '-' || /^(?:AE-CA-|MGL-CA-|AE-MTR-|MGL-MTR-)/i.test(s)) return '';
+            return s.replace(/^(?:BP|CA|MTR|MGL|NO|NUMBER)[\s:\-\.]*/i, '').replace(/[\s\-\/]/g, '');
+        }
+
+        function corpusMatchesMeterToken(normText, normTextNoSpaces, normDigitsOnly, rawVal, minLen = 4) {
+            const tok = normalizePortalMeterToken(rawVal);
+            if (!tok || tok.length < minLen) return false;
+            if (normText.includes(tok) || normTextNoSpaces.includes(tok)) return true;
+            // Also match when MGL pads CA/BP numbers with leading zeros (e.g. 004000... vs 4000...) or splits digits with spaces
+            const digitsOnly = tok.replace(/\D/g, '').replace(/^0+/, '');
+            if (digitsOnly.length >= 6 && normDigitsOnly.includes(digitsOnly)) return true;
+            return false;
+        }
+
         function findStrictConfiguredMeterInPdf(metersList, combinedText, isGasEmail) {
             const normText = String(combinedText || "");
             const normTextNoSpaces = normText.replace(/\s+/g, "");
+            const normDigitsOnly = normTextNoSpaces.replace(/\D/g, "");
+            let gasCounter = 0;
+
             for (let i = 0; i < metersList.length; i++) {
                 const m = metersList[i];
                 if (!m) continue;
                 const mIsGas = (m.utility === 'gas');
+                const currentGasIdx = mIsGas ? gasCounter++ : -1;
                 if (mIsGas !== Boolean(isGasEmail)) continue;
 
                 const ca = String(m.caNumber || '').trim();
                 const mtr = String(m.meterNumber || '').trim();
-                const bp = String(m.bpNumber || '').trim();
+                const bp = mIsGas ? String(m.bpNumber || getSavedBpNumberForGasMeter(m, currentGasIdx) || '').trim() : '';
 
-                if (ca && ca !== '-' && !ca.startsWith('AE-CA-') && !ca.startsWith('MGL-CA-') && ca.length >= 5) {
-                    if (normText.includes(ca) || normTextNoSpaces.includes(ca.replace(/\s+/g, ""))) {
-                        return m;
-                    }
+                if (corpusMatchesMeterToken(normText, normTextNoSpaces, normDigitsOnly, ca, 5)) {
+                    return m;
                 }
-                if (mtr && mtr !== '-' && !mtr.startsWith('AE-MTR-') && !mtr.startsWith('MGL-MTR-') && mtr.length >= 4) {
-                    if (normText.includes(mtr) || normTextNoSpaces.includes(mtr.replace(/\s+/g, ""))) {
-                        return m;
-                    }
+                if (mIsGas && corpusMatchesMeterToken(normText, normTextNoSpaces, normDigitsOnly, bp, 5)) {
+                    return m;
                 }
-                if (mIsGas && bp && bp !== '-' && bp.length >= 5) {
-                    if (normText.includes(bp) || normTextNoSpaces.includes(bp.replace(/\s+/g, ""))) {
-                        return m;
-                    }
+                if (corpusMatchesMeterToken(normText, normTextNoSpaces, normDigitsOnly, mtr, 4)) {
+                    return m;
                 }
             }
             return null;
@@ -22532,7 +22736,7 @@ window.cleanDuplicateEstateAssets = async function() {
 
             // 1. For MGL: "Your PNG Ebill for Month November" in subject, or INVOICE DATE DD.MM.YYYY inside PDF
             if (isGasEmail) {
-                const invDateM = String(pdfText || "").match(/INVOICE\s*DATE\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
+                const invDateM = String(pdfText || "").match(/(?:INVOICE\s*DATE|BILL\s*DATE)\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
                 const mglSubj = String(subjectStr || "").match(/for\s+Month\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i);
                 if (mglSubj) {
                     const mKey = mglSubj[1].toLowerCase();
@@ -22724,42 +22928,39 @@ window.cleanDuplicateEstateAssets = async function() {
                     ...period
                 };
             } else {
-                // Mahanagar Gas (MGL) TAX INVOICE PDF
-                if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY/i.test(combinedCorpus)) {
-                    return null;
-                }
-                if (!/AMOUNT\s*PAYABLE|CORRECTED\s*CONSUMPTION|CONSUMER\s*REF/i.test(combinedCorpus)) {
+                // Mahanagar Gas (MGL) Commercial (IC PNG) & Domestic / Monthly PNG Bill Parser
+                const extraCorpus = String(pdfObj.extraFallbackText || "");
+                const fullMglCorpus = `${combinedCorpus} || ${extraCorpus}`;
+                if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\s*NO|CONTRACT\s*ACCOUNT|PIPED\s*NATURAL\s*GAS/i.test(fullMglCorpus)) {
                     return null;
                 }
 
                 let amount = 0;
                 let units = 0;
 
-                const mglTexts = [p1Right, p1MidRight, p1Vis, p1Raw, pdfObj.visualText, pdfObj.rawStreamText].filter(Boolean);
+                const mglTexts = [p1Right, p1MidRight, p1Vis, p1Raw, pdfObj.visualText, pdfObj.rawStreamText, extraCorpus].filter(Boolean);
 
                 for (const txt of mglTexts) {
-                    // Priority 1: In p1Right (or full text), DUE DATE + AMOUNT PAYABLE followed by DD.MM.YYYY + Amount
-                    // (Allows up to 160 chars in case left-panel TEL. NO. / PAN NO. is interleaved in full-width visualText!)
                     if (amount <= 0) {
-                        const m1 = txt.match(/AMOUNT\s*PAYABLE[\s\S]{0,160}?\b\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+[^0-9A-Za-z]{0,8}([0-9,]+\.\d{2})/i);
+                        const m1 = txt.match(/AMOUNT\s*PAYABLE[\s\S]{0,160}?\b\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s+[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i);
                         if (m1) amount = parseFloat(m1[1].replace(/,/g, ""));
                     }
                     if (amount <= 0) {
-                        const m2 = txt.match(/AMOUNT\s*PAYABLE\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?[^0-9A-Za-z]{0,8}([0-9,]+\.\d{2})/i);
+                        const m2 = txt.match(/(?:TOTAL\s*AMOUNT\s*PAYABLE|NET\s*AMOUNT\s*PAYABLE|AMOUNT\s*PAYABLE\s*BEFORE\s*DUE\s*DATE|AMOUNT\s*PAYABLE|CURRENT\s*MONTH\s*CHARGES|TOTAL\s*CURRENT\s*CHARGES|BILL\s*AMOUNT)\s*(?:\([^)]*\))?\s*[:\-]?\s*(?:\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}\s*)?(?:Rs\.?|INR|₹)?\s*[^0-9A-Za-z]{0,8}([0-9,]+(?:\.\d{2})?)/i);
                         if (m2) amount = parseFloat(m2[1].replace(/,/g, ""));
                     }
                 }
 
                 // Spatial X/Y Fallback for MGL "AMOUNT PAYABLE" on Page 1
                 if (amount <= 0 && p1Items.length > 0) {
-                    const apHeader = p1Items.find(it => /AMOUNT\s*PAYABLE/i.test(it.str)) || p1Items.find(it => /^PAYABLE$/i.test(it.str));
+                    const apHeader = p1Items.find(it => /AMOUNT\s*PAYABLE|BILL\s*AMOUNT|NET\s*PAYABLE/i.test(it.str)) || p1Items.find(it => /^PAYABLE$/i.test(it.str));
                     if (apHeader) {
                         const belowAp = p1Items
-                            .filter(it => Math.abs(it.x - apHeader.x) < 85 && (apHeader.y - it.y) > 2 && (apHeader.y - it.y) < 60)
+                            .filter(it => Math.abs(it.x - apHeader.x) < 95 && (apHeader.y - it.y) > 2 && (apHeader.y - it.y) < 65)
                             .sort((a, b) => b.y - a.y);
                         for (const cand of belowAp) {
-                            const numM = cand.str.match(/([0-9,]+\.\d{2})/);
-                            if (numM && !/\d{2}\.\d{2}\.\d{4}/.test(cand.str)) {
+                            const numM = cand.str.match(/([0-9,]+(?:\.\d{2})?)/);
+                            if (numM && !/\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4}/.test(cand.str)) {
                                 const v = parseFloat(numM[1].replace(/,/g, ""));
                                 if (v > 0) { amount = v; break; }
                             }
@@ -22767,7 +22968,7 @@ window.cleanDuplicateEstateAssets = async function() {
                     }
                 }
 
-                // MGL Units (SCM): "Corrected Consumption For Piped Natural Gas (in Scm) 544.00" or row "1.1 <meter> <r1> <r2> <cf> 544.00"
+                // MGL Units (SCM): Supports both Commercial IC PNG ("Corrected Consumption...") and Domestic / Monthly MGL ("Billed Consumption", "Gas Consumed", "SCM", etc.)
                 for (const txt of mglTexts) {
                     if (units <= 0) {
                         const u1 = txt.match(/Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
@@ -22778,8 +22979,12 @@ window.cleanDuplicateEstateAssets = async function() {
                         if (u2) units = parseFloat(u2[1].replace(/,/g, ""));
                     }
                     if (units <= 0) {
-                        const u3 = txt.match(/CORRECTED\s*CONSUMPTION\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+                        const u3 = txt.match(/(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\(in\s*Scm\)|\(SCM\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
                         if (u3) units = parseFloat(u3[1].replace(/,/g, ""));
+                    }
+                    if (units <= 0) {
+                        const u4 = txt.match(/\b([0-9,]+(?:\.\d+)?)\s*SCM\b/i);
+                        if (u4) units = parseFloat(u4[1].replace(/,/g, ""));
                     }
                 }
 
@@ -22804,13 +23009,13 @@ window.cleanDuplicateEstateAssets = async function() {
 
                 // Extract unique Invoice Date & Invoice No inside the MGL PDF so 2 bills in the same month (e.g. 1st and 17th) NEVER collide!
                 // Note: Skips "(U/MVAT):" after "BILL OF SUPPLY NO." so it matches the actual invoice number "CON/11/26-27/175764" (never "U/MVAT"!)
-                const invDateMatch = combinedCorpus.match(/INVOICE\s*DATE\s*[:\-]?\s*(\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4})/i);
-                const invNoMatch = combinedCorpus.match(/BILL\s*OF\s*SUPPLY\s*NO\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z]{2,6}\/[0-9A-Z\/\-]{5,25})/i);
+                const invDateMatch = fullMglCorpus.match(/(?:INVOICE\s*DATE|BILL\s*DATE)\s*[:\-]?\s*(\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4})/i);
+                const invNoMatch = fullMglCorpus.match(/(?:BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
                 const invDateIso = invDateMatch ? normalizeDateToIso(invDateMatch[1], msgDateStr) : normalizeDateToIso(msgDateStr, "2026-01-01");
                 const invNoClean = invNoMatch ? invNoMatch[1].trim() : "MGL";
                 const uniqueInvoiceId = `${invNoClean}_${invDateIso}_${Math.round(amount * 100)}_${Math.round(units * 100)}`;
 
-                const period = determineBillPeriodFromPdfAndSubject(subjectStr, page1Corpus, msgDateStr, true);
+                const period = determineBillPeriodFromPdfAndSubject(subjectStr, fullMglCorpus, msgDateStr, true);
                 return {
                     amount: Math.round(amount * 100) / 100,
                     units: Math.round(units * 100) / 100,
@@ -22907,8 +23112,9 @@ window.cleanDuplicateEstateAssets = async function() {
                         if (!item || !item.pdfBase64) continue;
 
                         try {
-                            const pdfObj = await extractTextAndItemsFromPdfBase64(item.pdfBase64);
-                            const combinedText = `${item.subject || ''} ${pdfObj.page1VisualText || ''} ${pdfObj.visualText} ${pdfObj.rawStreamText}`;
+                            const pdfObj = await extractTextAndItemsFromPdfBase64(item.pdfBase64, elecGasMetersData);
+                            pdfObj.extraFallbackText = `${item.subject || ''} ${item.attName || ''} ${item.emailBody || ''} ${item.serverPdfText || ''}`;
+                            const combinedText = `${item.subject || ''} ${item.attName || ''} ${item.emailBody || ''} ${item.serverPdfText || ''} ${pdfObj.page1VisualText || ''} ${pdfObj.visualText} ${pdfObj.rawStreamText}`;
 
                             // Strictly match ONLY against meters already configured in the Electricity & Gas module
                             const matchedMeter = findStrictConfiguredMeterInPdf(elecGasMetersData, combinedText, item.isGasEmail);

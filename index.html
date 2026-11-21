@@ -1578,6 +1578,25 @@
                     </div>
                 </div>
 
+                <!-- Long Overview Card: Monthly Society Bill Payment Status -->
+                <div class="bg-white p-5 rounded-lg shadow border border-l-4 border-l-teal-600 space-y-3.5">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
+                        <div>
+                            <div class="flex items-center flex-wrap gap-2">
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Bill Status Overview</span>
+                                <span id="societyMonthlyPaidCountBadge" class="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">0 Paid</span>
+                                <span id="societyMonthlyPendingCountBadge" class="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300">0 Not Paid</span>
+                            </div>
+                            <h3 id="societyMonthlyStatusHeading" class="text-lg font-extrabold text-emerald-950 mt-0.5">November 2026 (FY 2026-27)</h3>
+                        </div>
+                        <div class="flex items-center space-x-2 bg-teal-50 p-2 rounded-lg border border-teal-200">
+                            <label for="societyOverviewMonthSelect" class="text-xs font-bold text-teal-900 uppercase">Select Month:</label>
+                            <select id="societyOverviewMonthSelect" onchange="renderSocietyMonthlyStatusOverview()" class="p-1.5 border rounded text-xs font-bold bg-white text-teal-950 focus:outline-none focus:ring-2 focus:ring-teal-500"></select>
+                        </div>
+                    </div>
+                    <div id="societyMonthlyStatusList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5"></div>
+                </div>
+
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800">Societies Maintenance & Billing Master</h2>
@@ -14140,6 +14159,86 @@ window.renderSocieties = function() {
 
     const otherEl = document.getElementById('societyOverviewOtherAmount');
     if(otherEl) otherEl.innerText = `₹${otherTotal.toLocaleString('en-IN')}`;
+
+    renderSocietyMonthlyStatusOverview();
+};
+
+window.renderSocietyMonthlyStatusOverview = function() {
+    const monthSelect = document.getElementById('societyOverviewMonthSelect');
+    const listContainer = document.getElementById('societyMonthlyStatusList');
+    const headingEl = document.getElementById('societyMonthlyStatusHeading');
+    const paidBadgeEl = document.getElementById('societyMonthlyPaidCountBadge');
+    const pendingBadgeEl = document.getElementById('societyMonthlyPendingCountBadge');
+    if (!monthSelect || !listContainer) return;
+
+    const selYear = document.getElementById('societyOverviewYearSelect')?.value || String(getCurrentSocietyFyStartYear());
+    const fyLabel = formatSocietyFyLabel(selYear);
+    const defaultMonthNum = new Date().getMonth() + 1;
+
+    // Populate/refresh month options in Indian FY order (Apr..Mar) while preserving current selection
+    const prevSelectedMonth = monthSelect.value ? parseInt(monthSelect.value, 10) : defaultMonthNum;
+    const validSelectedMonth = (prevSelectedMonth >= 1 && prevSelectedMonth <= 12) ? prevSelectedMonth : defaultMonthNum;
+
+    monthSelect.innerHTML = SOC_FY_MONTH_ORDER.map(mNum => {
+        const label = getSocietyMonthFullWithYear(selYear, mNum);
+        return `<option value="${mNum}"${mNum === validSelectedMonth ? ' selected' : ''}>${label}</option>`;
+    }).join('');
+    monthSelect.value = String(validSelectedMonth);
+
+    if (headingEl) {
+        headingEl.innerText = `${getSocietyMonthFullWithYear(selYear, validSelectedMonth)} (${fyLabel})`;
+    }
+
+    const list = getBuildingSocietyList();
+    if (list.length === 0) {
+        listContainer.innerHTML = '<div class="col-span-full text-xs text-gray-400 italic py-2">No societies found yet.</div>';
+        if (paidBadgeEl) paidBadgeEl.innerText = '0 Paid';
+        if (pendingBadgeEl) pendingBadgeEl.innerText = '0 Not Paid';
+        return;
+    }
+
+    let paidCount = 0;
+    let pendingCount = 0;
+
+    listContainer.innerHTML = list.map(s => {
+        const dataKey = getSocietyDataKey(s.name, selYear);
+        const record = societyBillsData[dataKey];
+        const st = getSocietyMonthPaymentStatus(record, validSelectedMonth);
+        const encodedName = encodeURIComponent(s.name).replace(/'/g, "%27");
+
+        if (st.isPaid) paidCount++;
+        else pendingCount++;
+
+        const cardCls = st.isPaid
+            ? 'bg-emerald-50/70 hover:bg-emerald-100/80 border-emerald-200'
+            : 'bg-red-50/60 hover:bg-red-100/70 border-red-200';
+        const statusBadge = st.autoPaid
+            ? '<span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-600 text-white"><i class="fa-solid fa-check mr-1 text-[9px]"></i>Paid</span>'
+            : (st.manualPaid
+                ? '<span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-teal-600 text-white"><i class="fa-solid fa-check mr-1 text-[9px]"></i>Paid</span>'
+                : '<span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-red-600 text-white"><i class="fa-solid fa-xmark mr-1 text-[9px]"></i>Not Paid</span>');
+
+        const subNote = st.autoPaid
+            ? `via ${getSocietyPeriodLabel(st.autoSourceKey, selYear)}`
+            : (st.manualPaid
+                ? (st.manualReason ? st.manualReason : 'Marked paid manually')
+                : 'Bill pending');
+
+        const tooltip = `${s.name} — ${getSocietyMonthFullWithYear(selYear, validSelectedMonth)}: ${st.isPaid ? 'Paid' : 'Not Paid'} (${subNote}). Click to update.`;
+
+        return `
+            <button type="button" onclick="openSocietyMonthStatusModal(decodeURIComponent('${encodedName}'), '${selYear}', ${validSelectedMonth})" title="${escapeSocietyAttrText(tooltip)}" class="w-full p-2.5 rounded-lg border transition flex items-center justify-between gap-2 text-left ${cardCls}">
+                <div class="min-w-0">
+                    <span class="font-bold text-xs text-gray-900 block truncate">${escapeSocietyAttrText(s.name)}</span>
+                    <span class="text-[10px] text-gray-600 block truncate mt-0.5">${escapeSocietyAttrText(subNote)}</span>
+                </div>
+                ${statusBadge}
+            </button>
+        `;
+    }).join('');
+
+    if (paidBadgeEl) paidBadgeEl.innerText = `${paidCount} Paid`;
+    if (pendingBadgeEl) pendingBadgeEl.innerText = `${pendingCount} Not Paid`;
 };
         
         window.openEditSocietyModal = function(socName) {

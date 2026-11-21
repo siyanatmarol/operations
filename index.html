@@ -1578,23 +1578,21 @@
                     </div>
                 </div>
 
-                <!-- Long Overview Card: Monthly Society Bill Payment Status -->
-                <div class="bg-white p-5 rounded-lg shadow border border-l-4 border-l-teal-600 space-y-3.5">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
-                        <div>
-                            <div class="flex items-center flex-wrap gap-2">
-                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Monthly Bill Status Overview</span>
-                                <span id="societyMonthlyPaidCountBadge" class="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">0 Paid</span>
-                                <span id="societyMonthlyPendingCountBadge" class="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300">0 Not Paid</span>
-                            </div>
-                            <h3 id="societyMonthlyStatusHeading" class="text-lg font-extrabold text-emerald-950 mt-0.5">November 2026 (FY 2026-27)</h3>
+                <!-- Compact Long Overview Card: Monthly Society Bill Payment Status -->
+                <div class="bg-white px-4 py-3 rounded-lg shadow border border-l-4 border-l-teal-600 space-y-2">
+                    <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-2">
+                        <div class="flex items-center flex-wrap gap-2">
+                            <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wide">Monthly Status:</span>
+                            <span id="societyMonthlyStatusHeading" class="text-xs font-extrabold text-teal-800">November 2026 (FY 2026-27)</span>
+                            <span id="societyMonthlyPaidCountBadge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">0 Paid</span>
+                            <span id="societyMonthlyPendingCountBadge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-300">0 Not Paid</span>
                         </div>
-                        <div class="flex items-center space-x-2 bg-teal-50 p-2 rounded-lg border border-teal-200">
-                            <label for="societyOverviewMonthSelect" class="text-xs font-bold text-teal-900 uppercase">Select Month:</label>
-                            <select id="societyOverviewMonthSelect" onchange="renderSocietyMonthlyStatusOverview()" class="p-1.5 border rounded text-xs font-bold bg-white text-teal-950 focus:outline-none focus:ring-2 focus:ring-teal-500"></select>
+                        <div class="flex items-center space-x-1.5 bg-teal-50 px-2 py-1 rounded border border-teal-200">
+                            <label for="societyOverviewMonthSelect" class="text-[11px] font-bold text-teal-900 uppercase">Month:</label>
+                            <select id="societyOverviewMonthSelect" onchange="renderSocietyMonthlyStatusOverview()" class="py-0.5 px-1.5 border rounded text-xs font-bold bg-white text-teal-950 focus:outline-none focus:ring-1 focus:ring-teal-500"></select>
                         </div>
                     </div>
-                    <div id="societyMonthlyStatusList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5"></div>
+                    <div id="societyMonthlyStatusList" class="flex flex-wrap gap-1.5"></div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow border gap-3">
@@ -14209,14 +14207,16 @@ window.renderSocietyMonthlyStatusOverview = function() {
         if (st.isPaid) paidCount++;
         else pendingCount++;
 
-        const cardCls = st.isPaid
-            ? 'bg-emerald-50/70 hover:bg-emerald-100/80 border-emerald-200'
-            : 'bg-red-50/60 hover:bg-red-100/70 border-red-200';
-        const statusBadge = st.autoPaid
-            ? '<span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-600 text-white"><i class="fa-solid fa-check mr-1 text-[9px]"></i>Paid</span>'
+        const pillCls = st.autoPaid
+            ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-950'
             : (st.manualPaid
-                ? '<span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-teal-600 text-white"><i class="fa-solid fa-check mr-1 text-[9px]"></i>Paid</span>'
-                : '<span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-red-600 text-white"><i class="fa-solid fa-xmark mr-1 text-[9px]"></i>Not Paid</span>');
+                ? 'bg-teal-50 hover:bg-teal-100 border-teal-300 text-teal-950'
+                : 'bg-red-50 hover:bg-red-100 border-red-200 text-red-950');
+        const statusPill = st.autoPaid
+            ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-600 text-white leading-none"><i class="fa-solid fa-check mr-0.5 text-[8px]"></i>Paid</span>'
+            : (st.manualPaid
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-teal-600 text-white leading-none"><i class="fa-solid fa-check mr-0.5 text-[8px]"></i>Paid</span>'
+                : '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-red-600 text-white leading-none"><i class="fa-solid fa-xmark mr-0.5 text-[8px]"></i>Pending</span>');
 
         const subNote = st.autoPaid
             ? `via ${getSocietyPeriodLabel(st.autoSourceKey, selYear)}`
@@ -14227,12 +14227,9 @@ window.renderSocietyMonthlyStatusOverview = function() {
         const tooltip = `${s.name} — ${getSocietyMonthFullWithYear(selYear, validSelectedMonth)}: ${st.isPaid ? 'Paid' : 'Not Paid'} (${subNote}). Click to update.`;
 
         return `
-            <button type="button" onclick="openSocietyMonthStatusModal(decodeURIComponent('${encodedName}'), '${selYear}', ${validSelectedMonth})" title="${escapeSocietyAttrText(tooltip)}" class="w-full p-2.5 rounded-lg border transition flex items-center justify-between gap-2 text-left ${cardCls}">
-                <div class="min-w-0">
-                    <span class="font-bold text-xs text-gray-900 block truncate">${escapeSocietyAttrText(s.name)}</span>
-                    <span class="text-[10px] text-gray-600 block truncate mt-0.5">${escapeSocietyAttrText(subNote)}</span>
-                </div>
-                ${statusBadge}
+            <button type="button" onclick="openSocietyMonthStatusModal(decodeURIComponent('${encodedName}'), '${selYear}', ${validSelectedMonth})" title="${escapeSocietyAttrText(tooltip)}" class="px-2.5 py-1 rounded-md border transition inline-flex items-center gap-1.5 text-xs ${pillCls}">
+                <span class="font-bold">${escapeSocietyAttrText(s.name)}</span>
+                ${statusPill}
             </button>
         `;
     }).join('');

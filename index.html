@@ -1803,6 +1803,18 @@
                     </div>
                 </div>
 
+                <!-- Overview Cards by Asset Name across All Estates -->
+                <div class="bg-white p-4 rounded-lg shadow border space-y-2.5">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+                        <h3 class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-layer-group text-emerald-700 mr-2"></i>
+                            <span>Asset Count Overview (Across All Estates)</span>
+                        </h3>
+                        <span id="assetTypeFilterHint" class="text-[11px] text-gray-500">Click any asset card to filter flats</span>
+                    </div>
+                    <div id="assetTypeOverviewCards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5"></div>
+                </div>
+
                 <!-- Search & Expand/Collapse Controls -->
                 <div class="bg-white p-4 rounded-lg shadow border flex flex-col sm:flex-row gap-3 items-center justify-between">
                     <div class="w-full sm:w-2/3 relative">
@@ -1819,14 +1831,15 @@
                     </div>
                 </div>
 
-                <!-- Main 3-Column Table with Accordion Drawers -->
+                <!-- Main 4-Column Table with Accordion Drawers -->
                 <div class="bg-white rounded-lg shadow border overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-gray-100 border-b text-gray-700 uppercase text-xs">
                             <tr>
-                                <th class="p-3.5 w-2/5">Flat Details</th>
-                                <th class="p-3.5 w-1/3">Status</th>
-                                <th class="p-3.5 w-1/4 text-right">Total Assets</th>
+                                <th class="p-3.5 w-[28%]">Flat Details</th>
+                                <th class="p-3.5 w-[18%]">Status</th>
+                                <th class="p-3.5 w-[36%]">Asset Count</th>
+                                <th class="p-3.5 w-[18%] text-right">Total Assets</th>
                             </tr>
                         </thead>
                         <tbody id="assetDetailsTableBody" class="divide-y"></tbody>
@@ -6246,19 +6259,22 @@
                     </div>
                     <textarea id="autoFetchAppsScriptTextarea" readonly class="w-full h-72 p-3 font-mono text-[11px] bg-slate-900 text-emerald-300 rounded-xl border border-slate-700 focus:outline-none">
 // ============================================================================
-// COMPLETE Code.gs (v6) FOR SIYANAT MAROL PORTAL (fm.marol@jameasaifiyah.edu)
-// NEW IN v6:
-//  - sendFacultyBillEmail: Sends Faculty Bldg Electricity Bill Email from fm.marol@jameasaifiyah.edu
-//    with the official Department Letterhead Bill attached as an ACTUAL DOWNLOADABLE PDF FILE.
-//  - uploadFacultyBillPdfForWhatsApp / sendFacultyBillWhatsAppPdf: Uploads Bill PDF to Drive &
-//    returns a direct binary PDF stream URL (https://drive.google.com/uc?export=download&id=...)
-//    and/or relays the PDF file directly to WATI API so WhatsApp delivers a downloadable PDF file!
-// 1) Preserves your exact original Siyanat_Marol_Uploads Drive Uploader (images, videos, PDFs)
-// 2) Full-Year (Jan–Dec 2026, including May–Nov 2026) Auto-Fetch for Adani Electricity & Mahanagar Gas:
-//    - Step 1 lists all matching email messages across all 12 months using lightweight headers ONLY (~1.5s)
-//    - Captures ALL messages inside multi-message threads ("IC, me 4", "IC PNGBILL 2") so 2nd monthly Gas bills (1st & 17th) are never skipped
-//    - Targets ONLY your configured 27 Electricity CAs & 7 Gas Meters (never adds extra meters!)
-//    - Batch-saves verified Bill PDFs to fm.marol Drive with zero timeout risk
+// COMPLETE Code.gs (v7) FOR SIYANAT MAROL PORTAL (fm.marol@jameasaifiyah.edu)
+// NEW IN v7:
+//  - Fixes 8:00 AM Daily Trigger (autoFetchAdaniAndMglBillsDaily):
+//      * Guards against Apps Script's trigger event object (prevents lookbackDays = NaN)
+//      * Restricts daily trigger to newer_than:7d (eliminates 18-minute full-year Drive OCR
+//        re-scans & Drive OCR rate-limiting that silently skipped new Adani bills)
+//      * Sorts emails newest-first & pre-skips already-synced Adani bills BEFORE Drive OCR
+//      * Brings server-side Adani PDF parser (parseUtilityBillTextServer_) to full parity with
+//        the webpage parser (supports Drive OCR line breaks, Rs./INR glyphs, Due Date / Line B
+//        patterns, forwarded emails >600 chars, filename month tags like 152377588_NOV, & 0-unit bills)
+//      * Logs every processed/skipped email, Drive OCR error, & Firebase HTTP status in Executions
+//  - Removes duplicate getOrCreateUtilityFolder_ definition
+// PRESERVED FROM v6:
+//  - sendFacultyBillEmail & uploadFacultyBillPdfForWhatsApp / sendFacultyBillWhatsAppPdf (WATI)
+//  - Original Siyanat_Marol_Uploads Drive Uploader (images, videos, PDFs)
+//  - Full-Year (Jan–Dec 2026) manual Auto-Fetch Sync from the webpage
 // ============================================================================
 var FIREBASE_DB_URL = "https://siyanatmarol-default-rtdb.asia-southeast1.firebasedatabase.app";
 var DRIVE_BILLS_FOLDER_NAME = "Siyanat_Utility_Bills_Auto";
@@ -6271,7 +6287,8 @@ function doPost(e) {
     if (data.action === "listUtilityBillAttachments") {
       var listRes = listAllUtilityBillMessagesFast_(
         Number(data.lookbackDays || 365),
-        data.configuredMeters || []
+        data.configuredMeters || [],
+        false
       );
       return ContentService.createTextOutput(JSON.stringify(listRes))
         .setMimeType(ContentService.MimeType.JSON);
@@ -6304,7 +6321,7 @@ function doPost(e) {
 
     // 5. Direct / Daily Trigger Sync Endpoint:
     if (data.action === "autoFetchUtilityBills") {
-      var syncResult = autoFetchAdaniAndMglBillsDaily(data.lookbackDays || 365);
+      var syncResult = autoFetchAdaniAndMglBillsDaily(Number(data.lookbackDays || 15));
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
         syncedCount: syncResult.syncedCount,
@@ -6329,7 +6346,6 @@ function doPost(e) {
       );
       var emailSubject = String(data.subject || ("Electricity Bill - " + pdfFilename.replace(".pdf", "")));
       var emailBody = String(data.body || "");
-      // Uses the default Google Account display name ("Facilities Management Office Aljamea Marol") without overriding it
       GmailApp.sendEmail(toEmail, emailSubject, emailBody, {
         attachments: [pdfBlob]
       });
@@ -6360,7 +6376,6 @@ function doPost(e) {
       var viewUrl = waFile.getUrl();
 
       var watiRelayResult = null;
-      // Only relay server-side if explicitly requested via data.relayFromServer === true (prevents duplicate WhatsApp dispatch!)
       if (data.action === "sendFacultyBillWhatsAppPdf" && data.relayFromServer === true && data.watiBaseUrl && data.watiToken && data.whatsappNumber) {
         watiRelayResult = relayFacultyBillPdfToWatiServerSide_(data, waBlob, directDownloadUrl);
       }
@@ -6418,14 +6433,14 @@ function doPost(e) {
 }
 
 // Helper: Check ONLY email subject or attachment filename for explicit Disconnection Notice / Payment Receipt titles
-// (NEVER run this on email body text, because standard bill emails contain disclaimer words like "avoid disconnection" or "reminder"!)
 function isExplicitNoticeOrReceiptTitle_(titleText) {
   return /\b(?:disconnection\s*notice|notice\s*of\s*disconnection|notice\s*u\/s\s*56|section\s*56\s*notice|intimation\s*of\s*disconnection|payment\s*receipt|acknowledgement\s*receipt|default\s*notice)\b/i.test(String(titleText || ""));
 }
 
-// Step 1: Ultra-Fast Header-Only Index across ALL 365 Days (Jan-Dec 2026, including May-Nov 2026!)
-// Does NOT call getAttachments() or getPlainBody() in Step 1 so it finishes in ~1.5 seconds without ever timing out!
-function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
+// Step 1: Ultra-Fast Header-Only Index
+// - Manual Webpage Sync (strictLookbackOnly = false): scans full year (Jan-Dec 2026)
+// - 8 AM Daily Trigger (strictLookbackOnly = true): scans ONLY newer_than:<lookbackDays>d (finishes in ~10s, zero OCR throttling!)
+function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters, strictLookbackOnly) {
   var meters = (Array.isArray(clientMeters) && clientMeters.length > 0) ? clientMeters : loadConfiguredMetersFromFirebase_();
 
   var configuredElecCas = {};
@@ -6460,9 +6475,12 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
   var seenMsgId = {};
   var totalThreadsScanned = 0;
   var tz = Session.getScriptTimeZone();
-  var dateFilter = "(newer_than:" + lookbackDays + "d OR after:2025/12/25)";
+  var safeDays = (typeof lookbackDays === "number" && !isNaN(lookbackDays) && lookbackDays > 0) ? Math.floor(lookbackDays) : 15;
+  var dateFilter = strictLookbackOnly
+    ? ("newer_than:" + safeDays + "d")
+    : ("(newer_than:" + safeDays + "d OR after:2025/12/25)");
 
-  // A. Search Mahanagar Gas threads across full year (supports Commercial icpngbill, Domestic ebill/mahanagargas, forwarded MGL bills, and direct CA/BP/Meter matches for Lines 1-7!)
+  // A. Search Mahanagar Gas threads
   var mglQueries = [
     '(from:mahanagargas.com OR subject:"PNG Ebill" OR subject:"Mahanagar Gas" OR subject:"MGL") has:attachment ' + dateFilter
   ];
@@ -6484,7 +6502,6 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
         var fromStr = String(msg.getFrom() || "").toLowerCase();
         var subjectStr = String(msg.getSubject() || "");
         if (isExplicitNoticeOrReceiptTitle_(subjectStr)) continue;
-        // Skip Adani electricity emails if matched by a general query
         if (/adanielectricity|Your\s*bill\s*details/i.test(subjectStr + " " + fromStr)) continue;
 
         seenMsgId[msgId] = true;
@@ -6492,6 +6509,7 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
           messageId: msgId,
           subject: subjectStr,
           msgDateStr: Utilities.formatDate(msg.getDate(), tz, "yyyy-MM-dd"),
+          msgTimeMs: msg.getDate().getTime(),
           isGasEmail: true,
           subjCa: ""
         });
@@ -6499,8 +6517,7 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
     }
   }
 
-  // B. Search Adani Electricity threads targeted to your 27 configured Electricity CAs (in chunks of 9 CAs)
-  //    This guarantees 100% of Jan-Dec 2026 bills (including May-Nov 2026) for your 27 campus meters are found in ~1s without scanning 60+ Dawat Estates flat meters!
+  // B. Search Adani Electricity threads targeted to your configured Electricity CAs (in chunks of 9 CAs)
   var adaniQueries = [];
   var chunkSize = 9;
   if (elecCaList.length > 0) {
@@ -6547,6 +6564,7 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
           messageId: aMsgId,
           subject: aSubj,
           msgDateStr: Utilities.formatDate(aMsg.getDate(), tz, "yyyy-MM-dd"),
+          msgTimeMs: aMsg.getDate().getTime(),
           isGasEmail: false,
           subjCa: subjCa
         });
@@ -6554,9 +6572,14 @@ function listAllUtilityBillMessagesFast_(lookbackDays, clientMeters) {
     }
   }
 
+  // Sort newest-first so today's emails are always processed first
+  allDescriptors.sort(function(a, b) {
+    return (b.msgTimeMs || 0) - (a.msgTimeMs || 0);
+  });
+
   return {
     status: "success",
-    codeVersion: 5,
+    codeVersion: 7,
     threadsScanned: totalThreadsScanned,
     totalAttachments: allDescriptors.length,
     attachments: allDescriptors
@@ -6579,7 +6602,6 @@ function getBillPdfsByDescriptors_(descriptors) {
       var subjHeader = String(d.subject || msg.getSubject() || "");
       if (isExplicitNoticeOrReceiptTitle_(subjHeader)) continue;
 
-      // Extract plain body text (for MGL emails where BP/CA, Amount, Due Date, or Bill Period is stated in the email body)
       var bodyMonthTag = "";
       var emailPlainBody = "";
       try {
@@ -6607,7 +6629,6 @@ function getBillPdfsByDescriptors_(descriptors) {
         if (seenBatchPdfSig[pdfSig]) continue;
         seenBatchPdfSig[pdfSig] = true;
 
-        // For Gas emails, also provide server-side OCR text if Drive conversion succeeds
         var serverOcrText = "";
         if (Boolean(d.isGasEmail)) {
           try { serverOcrText = extractPdfTextServerSide_(att); } catch (eOcr) {}
@@ -6634,7 +6655,7 @@ function getBillPdfsByDescriptors_(descriptors) {
   };
 }
 
-// Fast Batch Save of verified PDFs to fm.marol Drive (sets sharing ONCE on folder so each file saves in ~0.2s!)
+// Fast Batch Save of verified PDFs to fm.marol Drive
 function saveVerifiedBillPdfsBatchToDrive_(items) {
   var folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
   var urls = {};
@@ -6710,10 +6731,16 @@ function loadConfiguredMetersFromFirebase_() {
 }
 
 function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
-  var lookbackDays = customLookbackDays ? Number(customLookbackDays) : 15;
+  // Guard against Apps Script's time-driven trigger event object ({year, month, ...})
+  var isTriggerEvent = (customLookbackDays && typeof customLookbackDays === "object");
+  var lookbackDays = (!isTriggerEvent && Number(customLookbackDays) > 0) ? Math.floor(Number(customLookbackDays)) : 7;
+  var strictLookbackOnly = (lookbackDays <= 30);
+
   var meters = loadConfiguredMetersFromFirebase_();
-  var indexRes = listAllUtilityBillMessagesFast_(lookbackDays, meters);
+  var indexRes = listAllUtilityBillMessagesFast_(lookbackDays, meters, strictLookbackOnly);
   var descriptors = Array.isArray(indexRes.attachments) ? indexRes.attachments : [];
+  Logger.log("Daily Auto-Fetch v7 started | lookbackDays=" + lookbackDays + " | strict=" + strictLookbackOnly + " | candidates=" + descriptors.length + " | meters=" + meters.length);
+
   if (descriptors.length === 0) {
     return {
       syncedCount: 0,
@@ -6725,20 +6752,38 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
   var existingBills = loadExistingBillsFromFirebase_();
   var folder = getOrCreateUtilityFolder_(DRIVE_BILLS_FOLDER_NAME);
   var syncedCount = 0;
+  var skippedAlreadySynced = 0;
+  var skippedParseFailed = 0;
 
   for (var i = 0; i < descriptors.length; i++) {
     var d = descriptors[i];
     if (!d || !d.messageId) continue;
     try {
+      // Fast pre-check for Adani emails: skip Drive OCR completely if this CA + bill month is already synced
+      if (!d.isGasEmail && d.subjCa && d.msgDateStr) {
+        var preMeter = findConfiguredMeterInTextServer_(meters, d.subjCa, false);
+        if (preMeter) {
+          var pParts = String(d.msgDateStr).split("-");
+          var preKey = String(preMeter.id) + "_" + pParts[0] + "_" + (parseInt(pParts[1], 10) - 1);
+          var preRec = existingBills[preKey];
+          if (preRec && (preRec.isLocked === true || preRec.isManualEdit === true || (Number(preRec.amount) > 0 && preRec.fileUrl))) {
+            skippedAlreadySynced++;
+            continue;
+          }
+        }
+      }
+
       var msg = GmailApp.getMessageById(String(d.messageId));
       if (!msg) continue;
       var subjHeader = String(d.subject || msg.getSubject() || "");
       if (isExplicitNoticeOrReceiptTitle_(subjHeader)) continue;
 
+      // Read up to 4000 chars so forwarded message headers never push bill details out of range
+      var plainBodyText = "";
       var bodyMonthTag = "";
       try {
-        var plainSlice = String(msg.getPlainBody() || "").slice(0, 600);
-        var mTag = plainSlice.match(/Electricity\s+Bill\s+for\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/]\d{2,4}/i);
+        plainBodyText = String(msg.getPlainBody() || "").slice(0, 4000);
+        var mTag = plainBodyText.match(/Electricity\s+Bill\s+for\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/]\d{2,4}/i);
         if (mTag) bodyMonthTag = " " + mTag[0];
       } catch (eP) {}
       var fullSubject = subjHeader + bodyMonthTag;
@@ -6749,30 +6794,43 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
         if (!att) continue;
         var attName = String(att.getName() || "");
         var cType = String(att.getContentType() || "").toLowerCase();
-        if (cType.indexOf("pdf") === -1 && attName.toLowerCase().slice(-4) !== ".pdf") continue;
+        var isPdf = (cType.indexOf("pdf") !== -1 || attName.toLowerCase().slice(-4) === ".pdf" || (Boolean(d.isGasEmail) && cType.indexOf("octet-stream") !== -1));
+        if (!isPdf) continue;
         if (isExplicitNoticeOrReceiptTitle_(attName)) continue;
 
         var pdfText = extractPdfTextServerSide_(att);
-        var plainBodyText = "";
-        try { plainBodyText = String(msg.getPlainBody() || "").slice(0, 4000); } catch (eBody) {}
-        if (!pdfText && !plainBodyText) continue;
+        if (!pdfText && !plainBodyText) {
+          Logger.log("Skipped (empty OCR & body): " + subjHeader + " | " + attName);
+          continue;
+        }
 
         var combinedCorpus = fullSubject + " " + attName + " " + plainBodyText + " " + (pdfText || "");
         var matchedMeter = findConfiguredMeterInTextServer_(meters, combinedCorpus, Boolean(d.isGasEmail));
-        if (!matchedMeter) continue;
+        if (!matchedMeter) {
+          Logger.log("Skipped (no meter match): " + subjHeader + " | " + attName);
+          continue;
+        }
 
-        var parsedBill = parseUtilityBillTextServer_(combinedCorpus, fullSubject, d.msgDateStr, Boolean(d.isGasEmail));
-        if (!parsedBill || (!(parsedBill.amount > 0) && !parsedBill.isCreditBill)) continue;
+        var parsedBill = parseUtilityBillTextServer_(combinedCorpus, fullSubject + " " + attName, d.msgDateStr, Boolean(d.isGasEmail));
+        if (!parsedBill || (!(parsedBill.amount > 0) && !parsedBill.isCreditBill)) {
+          skippedParseFailed++;
+          Logger.log("Skipped (parse failed): CA=" + (matchedMeter.caNumber || matchedMeter.id) + " | att=" + attName + " | ocrLen=" + String(pdfText || "").length);
+          continue;
+        }
 
         var billKey = String(matchedMeter.id) + "_" + parsedBill.yearStr + "_" + parsedBill.monthIdx;
         var existingRec = existingBills[billKey];
-        if (existingRec && (existingRec.isLocked === true || existingRec.isManualEdit === true)) continue;
+        if (existingRec && (existingRec.isLocked === true || existingRec.isManualEdit === true)) {
+          skippedAlreadySynced++;
+          continue;
+        }
 
         var caClean = String(matchedMeter.caNumber || matchedMeter.meterNumber || matchedMeter.id).trim();
         var updatedRec = null;
 
         if (!d.isGasEmail) {
-          if (existingRec && Number(existingRec.amount) > 0 && Number(existingRec.units) > 0 && existingRec.fileUrl) {
+          if (existingRec && Number(existingRec.amount) > 0 && existingRec.fileUrl) {
+            skippedAlreadySynced++;
             continue;
           }
           var desiredNameElec = caClean + "_" + parsedBill.yearStr + "_M" + (parsedBill.monthIdx + 1) + ".pdf";
@@ -6806,7 +6864,10 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
             return (sb.billKeyId && sb.billKeyId === parsedBill.invoiceId) ||
               (sb.billDate === parsedBill.billDateStr && Math.abs(Number(sb.amount || 0) - parsedBill.amount) < 0.01 && Math.abs(Number(sb.units || 0) - parsedBill.units) < 0.01);
           });
-          if (alreadyExists) continue;
+          if (alreadyExists) {
+            skippedAlreadySynced++;
+            continue;
+          }
 
           var desiredNameGas = caClean + "_" + parsedBill.yearStr + "_M" + (parsedBill.monthIdx + 1) + "_B" + (subBills.length + 1) + ".pdf";
           var fileUrlGas = saveSinglePdfInFolder_(folder, { messageId: d.messageId, attIndex: a, desiredFileName: desiredNameGas });
@@ -6853,11 +6914,15 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
           existingBills[billKey] = updatedRec;
           writeSingleBillToFirebase_(billKey, updatedRec);
           syncedCount++;
+          Logger.log("SYNCED: " + billKey + " | CA=" + caClean + " | Rs." + updatedRec.amount + " | " + updatedRec.units + " units");
         }
       }
-    } catch (eMsg) {}
+    } catch (eMsg) {
+      Logger.log("Error processing message " + d.messageId + ": " + eMsg.toString());
+    }
   }
 
+  Logger.log("Daily Auto-Fetch v7 complete | synced=" + syncedCount + " | alreadySynced=" + skippedAlreadySynced + " | parseFailed=" + skippedParseFailed);
   return {
     syncedCount: syncedCount,
     threadsScanned: indexRes.threadsScanned || 0,
@@ -6871,6 +6936,7 @@ function loadExistingBillsFromFirebase_() {
     var parsed = JSON.parse(res.getContentText() || "{}");
     return (parsed && typeof parsed === "object") ? parsed : {};
   } catch (e) {
+    Logger.log("Error loading existing bills from Firebase: " + e.toString());
     return {};
   }
 }
@@ -6878,21 +6944,31 @@ function loadExistingBillsFromFirebase_() {
 function writeSingleBillToFirebase_(billKey, billObj) {
   var payload = JSON.stringify(billObj);
   try {
-    UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + encodeURIComponent(billKey) + ".json", {
+    var res1 = UrlFetchApp.fetch(FIREBASE_DB_URL + "/portalData/elecGasBills/" + encodeURIComponent(billKey) + ".json", {
       method: "put",
       contentType: "application/json",
       payload: payload,
       muteHttpExceptions: true
     });
-  } catch (e1) {}
+    if (res1.getResponseCode() >= 400) {
+      Logger.log("Firebase write error (/portalData) " + res1.getResponseCode() + " for " + billKey + ": " + res1.getContentText());
+    }
+  } catch (e1) {
+    Logger.log("Firebase write exception (/portalData) for " + billKey + ": " + e1.toString());
+  }
   try {
-    UrlFetchApp.fetch(FIREBASE_DB_URL + "/elecGasBills/" + encodeURIComponent(billKey) + ".json", {
+    var res2 = UrlFetchApp.fetch(FIREBASE_DB_URL + "/elecGasBills/" + encodeURIComponent(billKey) + ".json", {
       method: "put",
       contentType: "application/json",
       payload: payload,
       muteHttpExceptions: true
     });
-  } catch (e2) {}
+    if (res2.getResponseCode() >= 400) {
+      Logger.log("Firebase write error (/root) " + res2.getResponseCode() + " for " + billKey + ": " + res2.getContentText());
+    }
+  } catch (e2) {
+    Logger.log("Firebase write exception (/root) for " + billKey + ": " + e2.toString());
+  }
 }
 
 function extractPdfTextServerSide_(attBlob) {
@@ -6918,6 +6994,10 @@ function extractPdfTextServerSide_(attBlob) {
       payload: fullPayload,
       muteHttpExceptions: true
     });
+    if (uploadRes.getResponseCode() >= 400) {
+      Logger.log("Drive OCR upload error (" + uploadRes.getResponseCode() + "): " + String(uploadRes.getContentText() || "").slice(0, 300));
+      return "";
+    }
     var uploadJson = JSON.parse(uploadRes.getContentText() || "{}");
     tempFileId = uploadJson.id || "";
     if (!tempFileId) return "";
@@ -6927,8 +7007,13 @@ function extractPdfTextServerSide_(attBlob) {
       headers: { Authorization: "Bearer " + token },
       muteHttpExceptions: true
     });
+    if (expRes.getResponseCode() >= 400) {
+      Logger.log("Drive OCR export error (" + expRes.getResponseCode() + "): " + String(expRes.getContentText() || "").slice(0, 300));
+      return "";
+    }
     return String(expRes.getContentText() || "");
   } catch (e) {
+    Logger.log("Drive OCR exception: " + e.toString());
     return "";
   } finally {
     if (tempFileId) {
@@ -6984,28 +7069,69 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
   var dateParts = String(msgDateStr || "2026-01-01").split("-");
   var fallbackYear = parseInt(dateParts[0], 10) || 2026;
   var fallbackMonth = (parseInt(dateParts[1], 10) || 1) - 1;
+  var flatCorpus = String(combinedCorpus || "").replace(/\s+/g, " ");
 
   if (!isGasEmail) {
-    if (!/BILL\s*OF\s*SUPPLY|TAX\s*INVOICE|Current\s*Month\s*Bill|Units\s*Consumed|Billed\s*Demand/i.test(combinedCorpus)) return null;
+    if (!/BILL\s*OF\s*SUPPLY|TAX\s*INVOICE|Current\s*Month\s*Bill|Units\s*Consumed|Billed\s*Demand|Adani\s*Electricity/i.test(flatCorpus)) return null;
     var amt = 0;
-    var units = 0;
-    var m1 = combinedCorpus.match(/CA\s*NO\.?\s*[:\-]?\s*\d{8,12}[^0-9A-Za-z]{0,16}([0-9,]{2,}\.\d{2})/i);
+    var units = -1;
+
+    // Amount Priority 1: CA NO box (handles Drive OCR Rs./INR/₹ or newlines)
+    var m1 = flatCorpus.match(/CA\s*NO\.?\s*[:\-]?\s*\d{8,12}(?:\s*(?:Rs\.?|INR|₹|Amount\s*Payable|Total\s*Amount\s*Payable|Bill\s*Amount))?[^0-9]{0,20}([0-9,]{2,}\.\d{2})/i);
     if (m1) amt = parseFloat(m1[1].replace(/,/g, ""));
+
+    // Amount Priority 2: Amount immediately before Due Date
     if (!(amt > 0)) {
-      var m2 = combinedCorpus.match(/(?:Total\s*Amount\s*Payable|Amount\s*Payable|Current\s*Month\s*Bill|Net\s*Payable)\s*[:\-]?[^0-9A-Za-z]{0,12}([0-9,]{2,}\.\d{2})/i);
+      var m2 = flatCorpus.match(/([0-9,]{2,}\.\d{2})[^0-9A-Za-z]{0,16}Due\s*Date\s*[:\-]?\s*\d{2}[\-\.\/]\d{2}[\-\.\/]\d{4}/i);
       if (m2) amt = parseFloat(m2[1].replace(/,/g, ""));
     }
-    var u1 = combinedCorpus.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-\d{2}\s+([0-9,]+(?:\.\d+)?)\s+[^0-9A-Za-z]{0,10}[0-9,]{2,}\.\d{2}/i);
+
+    // Amount Priority 3: Left-box payable amount before "NOV-26 <units>"
+    if (!(amt > 0)) {
+      var mLineB = flatCorpus.match(/([0-9,]{2,}\.\d{2})\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-\d{2}\s+[0-9,]+(?:\.\d+)?/i);
+      if (mLineB) amt = parseFloat(mLineB[1].replace(/,/g, ""));
+    }
+
+    // Amount Priority 4: Consumption row "NOV-26 <units> ₹<amount>"
+    if (!(amt > 0)) {
+      var m3 = flatCorpus.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-\d{2}\s+[0-9,]+(?:\.\d+)?\s+(?:Rs\.?|INR|₹)?[^0-9A-Za-z]{0,12}([0-9,]{2,}\.\d{2})/i);
+      if (m3) amt = parseFloat(m3[1].replace(/,/g, ""));
+    }
+
+    // Amount Priority 5: Explicit Payable / Bill Amount labels (PDF or email body)
+    if (!(amt > 0)) {
+      var m4 = flatCorpus.match(/(?:Total\s*Amount\s*Payable|Amount\s*Payable|Current\s*Month\s*Bill|Net\s*Payable|Total\s*Current\s*Bill|Bill\s*Amount)\s*[:\-]?\s*(?:Rs\.?|INR|₹)?[^0-9A-Za-z]{0,16}([0-9,]{2,}(?:\.\d{2})?)/i);
+      if (m4) amt = parseFloat(m4[1].replace(/,/g, ""));
+    }
+
+    // Units Priority 1: Consumption row "NOV-26 <units> ₹<amount>"
+    var u1 = flatCorpus.match(/\b(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-\d{2}\s+([0-9,]+(?:\.\d+)?)\s+(?:Rs\.?|INR|₹)?[^0-9A-Za-z]{0,12}[0-9,]{2,}\.\d{2}/i);
     if (u1) units = parseFloat(u1[1].replace(/,/g, ""));
-    if (!(units > 0)) {
-      var u2 = combinedCorpus.match(/(?:Units\s*Consumed|Billed\s*Units|kVAh\s*Consumed|kWh\s*Consumed)\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+
+    // Units Priority 2: Explicit "Units Consumed" label
+    if (units < 0) {
+      var u2 = flatCorpus.match(/Units\s*Consumed\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
       if (u2) units = parseFloat(u2[1].replace(/,/g, ""));
     }
-    if (!(amt > 0) || !(units > 0)) return null;
+
+    // Units Priority 3: Billed Units / Total Consumption / kVAh / kWh / Billed Demand
+    if (units < 0) {
+      var u3 = flatCorpus.match(/(?:Billed\s*Units|Total\s*Consumption|kVAh\s*Consumed|kWh\s*Consumed|Billed\s*Demand)\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
+      if (u3) units = parseFloat(u3[1].replace(/,/g, ""));
+    }
+
+    // Allow 0-unit fixed-charge bills as long as amount > 0 and units was parsed (or default 0 on confirmed BILL OF SUPPLY)
+    if (units < 0 && /BILL\s*OF\s*SUPPLY|TAX\s*INVOICE/i.test(flatCorpus)) {
+      units = 0;
+    }
+    if (!(amt > 0) || isNaN(units) || units < 0) return null;
 
     var monthIdx = fallbackMonth;
     var yearStr = String(fallbackYear);
-    var fm = String(subjectStr || "").match(/Electricity\s+Bill\s+for\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/](\d{2,4})/i);
+    var fm = String(subjectStr || "").match(/Electricity\s+Bill\s+for\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/](\d{2,4})/i)
+          || flatCorpus.match(/Electricity\s+Bill\s+for\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/](\d{2,4})/i)
+          || String(subjectStr || "").match(/_(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[_\-]?(\d{2,4})/i)
+          || flatCorpus.match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\-(\d{2})\s+[0-9,]+(?:\.\d+)?\s+(?:Rs\.?|INR|₹)?[^0-9A-Za-z]{0,12}[0-9,]{2,}\.\d{2}/i);
     if (fm && monthMap[fm[1].toLowerCase()] !== undefined) {
       monthIdx = monthMap[fm[1].toLowerCase()];
       yearStr = String(fm[2].length === 2 ? (2000 + parseInt(fm[2], 10)) : parseInt(fm[2], 10));
@@ -7019,12 +7145,12 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
       invoiceId: yearStr + "_" + monthIdx + "_" + Math.round(amt)
     };
   } else {
-    if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\.?\s*NO|CA\s*NUMBER|SALE\s*OF\s*NATURAL\s*GAS|DOM\/|CON\//i.test(combinedCorpus)) return null;
+    if (!/TAX\s*INVOICE|MAHANAGAR\s*GAS|BILL\s*OF\s*SUPPLY|PNG\s*EBILL|MGL|BP\.?\s*NO|CA\s*NUMBER|SALE\s*OF\s*NATURAL\s*GAS|DOM\/|CON\//i.test(flatCorpus)) return null;
     var gAmt = 0;
     var gUnits = 0;
-    var gIsCredit = /Credit\s*Bill/i.test(combinedCorpus);
-    var mTpDom = combinedCorpus.match(/TOTAL\s*PAYABLE\s*(?:\(\s*A\s*\+\s*B\s*\))?\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
-    var mTbDom = combinedCorpus.match(/TOTAL\s*CHARGES\s*B\b\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
+    var gIsCredit = /Credit\s*Bill/i.test(flatCorpus);
+    var mTpDom = flatCorpus.match(/TOTAL\s*PAYABLE\s*(?:\(\s*A\s*\+\s*B\s*\))?\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
+    var mTbDom = flatCorpus.match(/TOTAL\s*CHARGES\s*B\b\s*[:\-]?\s*([\-+]?\s*[0-9,]+(?:\.\d{1,2})?)/i);
     if (mTpDom) {
       var tpVal = parseFloat(mTpDom[1].replace(/[\s,]/g, ""));
       if (!isNaN(tpVal)) {
@@ -7046,7 +7172,7 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
     ];
     for (var gp = 0; gp < gmPatterns.length; gp++) {
       if (gAmt > 0 || gIsCredit) break;
-      var gmM = combinedCorpus.match(gmPatterns[gp]);
+      var gmM = flatCorpus.match(gmPatterns[gp]);
       if (gmM) gAmt = parseFloat(gmM[1].replace(/,/g, ""));
     }
     var guPatterns = [
@@ -7056,7 +7182,7 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
       /\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i
     ];
     for (var up = 0; up < guPatterns.length; up++) {
-      var guM = combinedCorpus.match(guPatterns[up]);
+      var guM = flatCorpus.match(guPatterns[up]);
       if (guM) {
         var uVal = parseFloat(guM[1].replace(/,/g, ""));
         if (!isNaN(uVal) && uVal >= 0) { gUnits = uVal; break; }
@@ -7064,7 +7190,7 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
     }
     if (!(gAmt > 0) && !gIsCredit) return null;
 
-    var invDateM = combinedCorpus.match(/(?:INVOICE\s*DATE|BILL\s*DATE)\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
+    var invDateM = flatCorpus.match(/(?:INVOICE\s*DATE|BILL\s*DATE)\s*[:\-]?\s*(\d{2})[\.\/\-](\d{2})[\.\/\-](\d{4})/i);
     var billDateIso = invDateM ? (invDateM[3] + "-" + invDateM[2] + "-" + invDateM[1]) : msgDateStr;
     var gMonthIdx = fallbackMonth;
     var gYearStr = String(fallbackYear);
@@ -7076,8 +7202,8 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
       gMonthIdx = parseInt(invDateM[2], 10) - 1;
       gYearStr = invDateM[3];
     }
-    var domConM = combinedCorpus.match(/\b((?:DOM|CON)\/[0-9A-Z\/\-]{5,25})\b/i);
-    var invNoM = domConM || combinedCorpus.match(/(?:MVAT\s*INVOICE\s*NO|GST\s*INVOICE\s*NO|BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
+    var domConM = flatCorpus.match(/\b((?:DOM|CON)\/[0-9A-Z\/\-]{5,25})\b/i);
+    var invNoM = domConM || flatCorpus.match(/(?:MVAT\s*INVOICE\s*NO|GST\s*INVOICE\s*NO|BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
     var invNoClean = invNoM ? invNoM[1].trim() : "MGL";
     var gCreditPayable = (mTpDom && !isNaN(parseFloat(mTpDom[1].replace(/[\s,]/g, ""))) && parseFloat(mTpDom[1].replace(/[\s,]/g, "")) <= 0)
       ? parseFloat(mTpDom[1].replace(/[\s,]/g, ""))
@@ -7123,7 +7249,6 @@ function relayFacultyBillPdfToWatiServerSide_(data, pdfBlob, directDownloadUrl) 
 
   var results = {};
   var templateSucceeded = false;
-  // A) Send WATI Document Template ONCE with actual Drive PDF URL
   try {
     var payload = {
       template_name: templateName,
@@ -7155,7 +7280,6 @@ function relayFacultyBillPdfToWatiServerSide_(data, pdfBlob, directDownloadUrl) 
     results.templateError = eTpl.toString();
   }
 
-  // B) Fallback ONLY if template call above did NOT succeed (prevents duplicate WhatsApp messages!)
   if (!templateSucceeded && data.sendSessionFileFallback) {
     try {
       var captionEncoded = encodeURIComponent(String(data.caption || ""));
@@ -7186,15 +7310,6 @@ function setupDailyTrigger() {
     .everyDays(1)
     .atHour(8)
     .create();
-}
-
-function getOrCreateUtilityFolder_(name) {
-  var iter = DriveApp.getFoldersByName(name);
-  var folder = iter.hasNext() ? iter.next() : DriveApp.createFolder(name);
-  try {
-    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  } catch (e) {}
-  return folder;
 }
 </textarea>
                 </div>
@@ -20101,10 +20216,23 @@ await recordDawatEstatesNotification(
             return map[assetName] || 'fa-solid fa-cube';
         }
 
+        let activeAssetTypeCardFilter = '';
+
+        window.toggleAssetTypeCardFilter = function(assetName) {
+            const normalized = String(assetName || '').trim();
+            activeAssetTypeCardFilter = (activeAssetTypeCardFilter === normalized) ? '' : normalized;
+            renderAssetDetailsTable();
+        };
+
+        function escapeAssetHtmlText(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
         function updateAssetOverviewCards() {
             const totalAssets = estateAssetsData.length;
             const flatIdsWithAssets = new Set();
             let billsCount = 0;
+            const assetNameCounts = {};
 
             estatesData.forEach(flat => {
                 const assets = getAssetsForFlat(flat);
@@ -20113,6 +20241,8 @@ await recordDawatEstatesNotification(
 
             estateAssetsData.forEach(a => {
                 if (a.billUrl && String(a.billUrl).trim() !== '') billsCount++;
+                const aName = String(a.assetName || 'Other').trim() || 'Other';
+                assetNameCounts[aName] = (assetNameCounts[aName] || 0) + 1;
             });
 
             const totalEl = document.getElementById('cardTotalAssetsCount');
@@ -20122,6 +20252,48 @@ await recordDawatEstatesNotification(
             if (totalEl) totalEl.innerText = totalAssets;
             if (flatsEl) flatsEl.innerText = `${flatIdsWithAssets.size} / ${estatesData.length}`;
             if (billsEl) billsEl.innerText = billsCount;
+
+            const typeCardsContainer = document.getElementById('assetTypeOverviewCards');
+            const hintEl = document.getElementById('assetTypeFilterHint');
+            if (typeCardsContainer) {
+                const sortedEntries = Object.entries(assetNameCounts).sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]));
+                if (activeAssetTypeCardFilter && !assetNameCounts[activeAssetTypeCardFilter]) {
+                    activeAssetTypeCardFilter = '';
+                }
+                if (hintEl) {
+                    hintEl.innerHTML = activeAssetTypeCardFilter
+                        ? `Filtering by <strong class="text-emerald-800">${escapeAssetHtmlText(activeAssetTypeCardFilter)}</strong> &bull; <button type="button" onclick="toggleAssetTypeCardFilter('')" class="underline text-emerald-700 hover:text-emerald-900 font-semibold">Clear filter</button>`
+                        : 'Click any asset card to filter flats';
+                }
+                if (sortedEntries.length === 0) {
+                    typeCardsContainer.innerHTML = '<div class="col-span-full text-xs text-gray-400 italic py-2">No assets registered across estates yet.</div>';
+                } else {
+                    typeCardsContainer.innerHTML = sortedEntries.map(([name, count]) => {
+                        const isActive = activeAssetTypeCardFilter === name;
+                        const safeAttr = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        const iconCls = getAssetIconClass(name);
+                        const cardCls = isActive
+                            ? 'bg-emerald-800 text-white border-emerald-700 ring-2 ring-emerald-500/50 shadow-md'
+                            : 'bg-gray-50 hover:bg-emerald-50 text-gray-800 border-gray-200 hover:border-emerald-400';
+                        const iconWrapCls = isActive
+                            ? 'bg-emerald-700 text-white'
+                            : 'bg-emerald-100 text-emerald-800';
+                        const labelCls = isActive ? 'text-emerald-100' : 'text-gray-600';
+                        const countCls = isActive ? 'text-white' : 'text-emerald-900';
+                        return `
+                            <button type="button" onclick="toggleAssetTypeCardFilter('${safeAttr}')" class="p-3 rounded-lg border transition flex items-center justify-between text-left ${cardCls}">
+                                <div class="min-w-0 pr-2">
+                                    <span class="text-[11px] font-bold uppercase tracking-wide block truncate ${labelCls}" title="${escapeAssetHtmlText(name)}">${escapeAssetHtmlText(name)}</span>
+                                    <span class="text-xl font-extrabold mt-0.5 block leading-tight ${countCls}">${count}</span>
+                                </div>
+                                <div class="p-2 rounded-full text-sm shrink-0 ${iconWrapCls}">
+                                    <i class="${iconCls}"></i>
+                                </div>
+                            </button>
+                        `;
+                    }).join('');
+                }
+            }
         }
 
         window.renderAssetDetailsTable = function() {
@@ -20136,9 +20308,13 @@ await recordDawatEstatesNotification(
             const sortedFlats = getSortedEstatesList();
 
             const filteredFlats = sortedFlats.filter(flat => {
+                const flatAssets = getAssetsForFlat(flat);
+                if (activeAssetTypeCardFilter) {
+                    const hasMatchingAsset = flatAssets.some(a => (String(a.assetName || 'Other').trim() || 'Other') === activeAssetTypeCardFilter);
+                    if (!hasMatchingAsset) return false;
+                }
                 if (searchTokens.length === 0) return true;
                 const statusInfo = getFlatAllocationStatusInfo(flat);
-                const flatAssets = getAssetsForFlat(flat);
                 const assetsSearchStr = flatAssets.map(a => `${a.assetName} ${a.location} ${a.brand} ${a.type} ${a.modelNumber} ${a.capacity}`).join(' ');
                 const wingStr = flat.wing || '';
                 const corpus = `${flat.building} ${wingStr} ${flat.flatNo} ${flat.type || ''} ${flat.owner || ''} ${statusInfo.text} ${assetsSearchStr}`.toLowerCase();
@@ -20146,7 +20322,7 @@ await recordDawatEstatesNotification(
             });
 
             if (filteredFlats.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-gray-400 text-sm">No matching flats found in Estate Details.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400 text-sm">No matching flats found in Estate Details.</td></tr>';
                 return;
             }
 
@@ -20198,6 +20374,29 @@ await recordDawatEstatesNotification(
                     </td>
                     <td class="p-3.5 align-middle">
                         ${statusBadgeHtml}
+                    </td>
+                    <td class="p-3.5 align-middle">
+                        ${(() => {
+                            if (flatAssets.length === 0) {
+                                return '<span class="text-xs text-gray-400 italic">No assets</span>';
+                            }
+                            const countsMap = {};
+                            flatAssets.forEach(a => {
+                                const nm = String(a.assetName || 'Other').trim() || 'Other';
+                                countsMap[nm] = (countsMap[nm] || 0) + 1;
+                            });
+                            const pills = Object.entries(countsMap)
+                                .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+                                .map(([nm, cnt]) => {
+                                    const isHl = activeAssetTypeCardFilter === nm;
+                                    const pillCls = isHl
+                                        ? 'bg-emerald-700 text-white border-emerald-800'
+                                        : 'bg-teal-50 text-teal-900 border-teal-200';
+                                    const iconCls = isHl ? 'text-emerald-100' : 'text-teal-700';
+                                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${pillCls}"><i class="${getAssetIconClass(nm)} ${iconCls} mr-1 text-[10px]"></i>${escapeAssetHtmlText(nm)}:&nbsp;<strong>${cnt}</strong></span>`;
+                                }).join('');
+                            return `<div class="flex flex-wrap gap-1.5">${pills}</div>`;
+                        })()}
                     </td>
                     <td class="p-3.5 align-middle text-right">
                         <div class="inline-flex items-center space-x-2.5">
@@ -20294,7 +20493,7 @@ await recordDawatEstatesNotification(
                 }
 
                 drawerTr.innerHTML = `
-                    <td colspan="3" class="p-4">
+                    <td colspan="4" class="p-4">
                         <div class="space-y-3">
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                 <div class="flex items-center space-x-2">

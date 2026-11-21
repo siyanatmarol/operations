@@ -14290,6 +14290,9 @@ await recordDawatEstatesNotification(
             regularPeriods.forEach(p => {
                 const pData = (currentData.regular && currentData.regular[p.key]) ? currentData.regular[p.key] : { date: '', amount: 0, fileUrl: '' };
                 regularSum += (parseFloat(pData.amount) || 0);
+                const snapBase = `${getSocietyDataKey(currentSummarySocName, selYear)}__${p.key}`;
+                _savedRegularBillFieldSnapshots[`${snapBase}__date`] = String(pData.date ?? '');
+                _savedRegularBillFieldSnapshots[`${snapBase}__amount`] = String(pData.amount ?? '');
 
                 const safeKey = p.key;
 
@@ -14300,6 +14303,7 @@ await recordDawatEstatesNotification(
                         <td class="p-2.5 font-bold text-gray-800">${p.label}</td>
                         <td class="p-2.5">
                             <input type="date" min="1990-01-01" max="2099-12-31" value="${pData.date || ''}"
+                                onchange="updateRegularBillRow('${safeKey}', 'date', this.value, this)"
                                 onblur="updateRegularBillRow('${safeKey}', 'date', this.value, this)"
                                 onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}"
                                 class="crud-input p-1 border rounded text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -14313,7 +14317,7 @@ await recordDawatEstatesNotification(
                         </td>
                         <td class="p-2.5">
                             ${pData.fileUrl 
-                                ? `<button type="button" onclick="openInAppMediaViewer('${safeFileUrl}', '${safePeriodTitle}', 'pdf')" class="text-emerald-700 font-bold hover:underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF</button>` 
+                                ? `<div class="inline-flex items-center flex-wrap gap-2"><button type="button" onclick="openInAppMediaViewer('${safeFileUrl}', '${safePeriodTitle}', 'pdf')" class="text-emerald-700 font-bold hover:underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF</button><button type="button" data-crud="true" onclick="removeRegularBillFile('${safeKey}')" class="crud-action-btn text-red-600 hover:text-red-800 text-[11px] font-bold inline-flex items-center hover:underline" title="Remove attached PDF"><i class="fa-solid fa-xmark mr-0.5"></i>Remove</button></div>` 
                                 : '<span class="text-gray-400 italic">No File</span>'}
                             <input data-crud="true" type="file" accept=".pdf,image/*" onchange="uploadRegularBillFile('${safeKey}', this)" class="crud-action-btn block text-[10px] mt-1">
                         </td>
@@ -14393,7 +14397,7 @@ await recordDawatEstatesNotification(
                             <td class="p-2.5 text-gray-800">${b.desc || '-'}</td>
                             <td class="p-2.5">
                                 ${b.fileUrl 
-                                    ? `<button type="button" onclick="openInAppMediaViewer('${safeOtherUrl}', '${safeOtherTitle}', 'pdf')" class="text-amber-800 font-bold hover:underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF</button>` 
+                                    ? `<div class="inline-flex items-center flex-wrap gap-2"><button type="button" onclick="openInAppMediaViewer('${safeOtherUrl}', '${safeOtherTitle}', 'pdf')" class="text-amber-800 font-bold hover:underline inline-flex items-center"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i>View PDF</button><button type="button" data-crud="true" onclick="removeOtherBillFile(${idx})" class="crud-action-btn text-red-600 hover:text-red-800 text-[11px] font-bold inline-flex items-center hover:underline" title="Remove attached PDF"><i class="fa-solid fa-xmark mr-0.5"></i>Remove</button></div>` 
                                     : '<span class="text-gray-400 italic">None</span>'}
                             </td>
                             <td class="p-2.5 text-center space-x-2">
@@ -14436,9 +14440,12 @@ await recordDawatEstatesNotification(
             return `${String(yr).padStart(4, '0')}-${mo}-${dy}`;
         }
 
+        const _savedRegularBillFieldSnapshots = {};
+        const _regularBillAutoSaveTimers = {};
+
         window.recalcRegularBillsModalTotalsLive = function(periodKey, liveAmountVal) {
-            const selYear = document.getElementById('billsSummaryYearSelect')?.value || '2026';
-            const { record } = ensureSocietyBillRecord(currentSummarySocName, selYear);
+            const selYear = document.getElementById('billsSummaryYearSelect')?.value || String(getCurrentSocietyFyStartYear());
+            const { dataKey, record } = ensureSocietyBillRecord(currentSummarySocName, selYear);
             if (!record.regular[periodKey] || typeof record.regular[periodKey] !== 'object') {
                 record.regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
             }
@@ -14460,11 +14467,32 @@ await recordDawatEstatesNotification(
             if (regSumEl) regSumEl.innerText = `₹${regularSum.toLocaleString('en-IN')}`;
             const grandSumEl = document.getElementById('grandBillsTotalSum');
             if (grandSumEl) grandSumEl.innerText = `₹${(regularSum + otherSum).toLocaleString('en-IN')}`;
+
+            const badgeEl = document.getElementById(`regBillSaveBadge_${periodKey}`);
+            if (badgeEl) {
+                badgeEl.innerText = 'Saving...';
+                badgeEl.className = 'text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded transition';
+            }
+
+            const timerKey = `${dataKey}__${periodKey}__amount`;
+            if (_regularBillAutoSaveTimers[timerKey]) {
+                clearTimeout(_regularBillAutoSaveTimers[timerKey]);
+            }
+            _regularBillAutoSaveTimers[timerKey] = setTimeout(() => {
+                delete _regularBillAutoSaveTimers[timerKey];
+                updateRegularBillRow(periodKey, 'amount', liveAmountVal, null, true);
+            }, 500);
         };
 
-        window.updateRegularBillRow = async function(periodKey, field, value, inputEl = null) {
-            const selYear = document.getElementById('billsSummaryYearSelect').value;
-            const { record } = ensureSocietyBillRecord(currentSummarySocName, selYear);
+        window.updateRegularBillRow = async function(periodKey, field, value, inputEl = null, forceSave = false) {
+            const selYear = document.getElementById('billsSummaryYearSelect')?.value || String(getCurrentSocietyFyStartYear());
+            const { dataKey, record } = ensureSocietyBillRecord(currentSummarySocName, selYear);
+
+            const timerKey = `${dataKey}__${periodKey}__${field}`;
+            if (_regularBillAutoSaveTimers[timerKey]) {
+                clearTimeout(_regularBillAutoSaveTimers[timerKey]);
+                delete _regularBillAutoSaveTimers[timerKey];
+            }
 
             if(!record.regular[periodKey] || typeof record.regular[periodKey] !== 'object') {
                 record.regular[periodKey] = { date: '', amount: 0, fileUrl: '' };
@@ -14478,11 +14506,17 @@ await recordDawatEstatesNotification(
                 }
             }
 
-            if (String(record.regular[periodKey][field] ?? '') === String(finalVal ?? '')) {
+            const snapKey = `${dataKey}__${periodKey}__${field}`;
+            const lastSavedVal = Object.prototype.hasOwnProperty.call(_savedRegularBillFieldSnapshots, snapKey)
+                ? _savedRegularBillFieldSnapshots[snapKey]
+                : null;
+
+            if (!forceSave && lastSavedVal !== null && String(lastSavedVal) === String(finalVal ?? '')) {
                 return;
             }
 
             record.regular[periodKey][field] = finalVal;
+            _savedRegularBillFieldSnapshots[snapKey] = String(finalVal ?? '');
             if (!record.cycle) {
                 record.cycle = detectCycleFromRegularKeys(record.regular) || currentSummaryCycle || 'Quarterly';
             }
@@ -14559,6 +14593,45 @@ await recordDawatEstatesNotification(
             } catch(err) {
                 alert("File upload failed: " + err);
             }
+        };
+
+        window.removeRegularBillFile = async function(periodKey) {
+            const targetSocName = currentSummarySocName;
+            const selYear = document.getElementById('billsSummaryYearSelect')?.value || String(getCurrentSocietyFyStartYear());
+            const periodLabel = getSocietyPeriodLabel(periodKey, selYear);
+            if (!confirm(`Remove attached PDF for ${periodLabel} (${targetSocName})?`)) return;
+
+            const { record } = ensureSocietyBillRecord(targetSocName, selYear);
+            if (record.regular && record.regular[periodKey]) {
+                record.regular[periodKey].fileUrl = '';
+                await saveCloudData();
+                await recordDawatEstatesNotification(
+                    'society',
+                    'remove-regular-bill-file',
+                    `Removed regular maintenance bill PDF (${periodLabel}) for "${targetSocName}" (${formatSocietyFyLabel(selYear)})`
+                );
+                renderBillsSummaryModalContent();
+                renderSocieties();
+            }
+        };
+
+        window.removeOtherBillFile = async function(idx) {
+            const targetSocName = currentSummarySocName;
+            const selYear = document.getElementById('billsSummaryYearSelect')?.value || String(getCurrentSocietyFyStartYear());
+            const { record } = ensureSocietyBillRecord(targetSocName, selYear);
+            const item = (record.other && record.other[idx]) ? record.other[idx] : null;
+            if (!item || !item.fileUrl) return;
+            if (!confirm(`Remove attached PDF for "${item.desc || 'Other Bill'}" (${targetSocName})?`)) return;
+
+            item.fileUrl = '';
+            await saveCloudData();
+            await recordDawatEstatesNotification(
+                'society',
+                'remove-other-bill-file',
+                `Removed other society bill PDF (${item.desc || 'Other Bill'}) for "${targetSocName}" (${formatSocietyFyLabel(selYear)})`
+            );
+            renderBillsSummaryModalContent();
+            renderSocieties();
         };
 
         window.openAddOtherBillRow = function() {

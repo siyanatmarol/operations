@@ -1560,20 +1560,20 @@
             <p class="text-xs text-gray-500 mt-1.5">Aggregated regular maintenance & additional society bills for selected year.</p>
         </div>
                     <div class="flex items-center space-x-2 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                        <label class="text-xs font-bold text-emerald-900 uppercase">Filter Year:</label>
+                        <label class="text-xs font-bold text-emerald-900 uppercase">Financial Year:</label>
                         <select id="societyOverviewYearSelect" onchange="renderSocieties()" class="p-1.5 border rounded text-xs font-bold bg-white text-emerald-950">
-                            <option value="2026" selected>2026</option>
-                            <option value="2027">2027</option>
-                            <option value="2028">2028</option>
-                            <option value="2029">2029</option>
-                            <option value="2030">2030</option>
-                            <option value="2031">2031</option>
-                            <option value="2032">2032</option>
-                            <option value="2033">2033</option>
-                            <option value="2034">2034</option>
-                            <option value="2035">2035</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
+                            <option value="2026" selected>FY 2026-27</option>
+                            <option value="2027">FY 2027-28</option>
+                            <option value="2028">FY 2028-29</option>
+                            <option value="2029">FY 2029-30</option>
+                            <option value="2030">FY 2030-31</option>
+                            <option value="2031">FY 2031-32</option>
+                            <option value="2032">FY 2032-33</option>
+                            <option value="2033">FY 2033-34</option>
+                            <option value="2034">FY 2034-35</option>
+                            <option value="2035">FY 2035-36</option>
+                            <option value="2025">FY 2025-26</option>
+                            <option value="2024">FY 2024-25</option>
                         </select>
                     </div>
                 </div>
@@ -4786,20 +4786,20 @@
                 </div>
                 <div class="flex items-center space-x-3">
                     <div class="flex items-center space-x-1.5 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-300">
-                        <label class="text-xs font-bold text-emerald-900 uppercase">Select Year:</label>
+                        <label class="text-xs font-bold text-emerald-900 uppercase">Financial Year:</label>
                         <select id="billsSummaryYearSelect" onchange="renderBillsSummaryModalContent()" class="p-1 border rounded text-xs font-bold bg-white text-emerald-950">
-                            <option value="2026" selected>2026</option>
-                            <option value="2027">2027</option>
-                            <option value="2028">2028</option>
-                            <option value="2029">2029</option>
-                            <option value="2030">2030</option>
-                            <option value="2031">2031</option>
-                            <option value="2032">2032</option>
-                            <option value="2033">2033</option>
-                            <option value="2034">2034</option>
-                            <option value="2035">2035</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
+                            <option value="2026" selected>FY 2026-27</option>
+                            <option value="2027">FY 2027-28</option>
+                            <option value="2028">FY 2028-29</option>
+                            <option value="2029">FY 2029-30</option>
+                            <option value="2030">FY 2030-31</option>
+                            <option value="2031">FY 2031-32</option>
+                            <option value="2032">FY 2032-33</option>
+                            <option value="2033">FY 2033-34</option>
+                            <option value="2034">FY 2034-35</option>
+                            <option value="2035">FY 2035-36</option>
+                            <option value="2025">FY 2025-26</option>
+                            <option value="2024">FY 2024-25</option>
                         </select>
                     </div>
                     <button onclick="closeModal('modalBillsSummary')" class="text-gray-500 text-2xl font-bold hover:text-gray-800">&times;</button>
@@ -13715,6 +13715,40 @@ await recordDawatEstatesNotification(
 
 const SOC_MONTH_SHORT_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const SOC_MONTH_FULL_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        // Indian Financial Year order: April (4) through March (3)
+        const SOC_FY_MONTH_ORDER = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
+
+        function getCurrentSocietyFyStartYear() {
+            const now = new Date();
+            return (now.getMonth() >= 3) ? now.getFullYear() : (now.getFullYear() - 1);
+        }
+
+        function formatSocietyFyLabel(startYear) {
+            const y = parseInt(startYear, 10) || getCurrentSocietyFyStartYear();
+            return `FY ${y}-${String(y + 1).slice(-2)}`;
+        }
+
+        function getSocietyMonthCalendarYear(fyStartYear, monthNum) {
+            const y = parseInt(fyStartYear, 10) || getCurrentSocietyFyStartYear();
+            return (monthNum >= 4) ? y : (y + 1);
+        }
+
+        function getSocietyMonthShortWithYear(fyStartYear, monthNum) {
+            const calYr = getSocietyMonthCalendarYear(fyStartYear, monthNum);
+            return `${SOC_MONTH_SHORT_NAMES[monthNum - 1]} ${String(calYr).slice(-2)}`;
+        }
+
+        function getSocietyMonthFullWithYear(fyStartYear, monthNum) {
+            const calYr = getSocietyMonthCalendarYear(fyStartYear, monthNum);
+            return `${SOC_MONTH_FULL_NAMES[monthNum - 1]} ${calYr}`;
+        }
+
+        function getSocietyFyQuarterKeyForMonth(monthNum) {
+            if (monthNum >= 4 && monthNum <= 6) return 'Q1';
+            if (monthNum >= 7 && monthNum <= 9) return 'Q2';
+            if (monthNum >= 10 && monthNum <= 12) return 'Q3';
+            return 'Q4';
+        }
 
         function hasNonEmptySocietyRegularEntry(entry) {
             if (!entry || typeof entry !== 'object') return false;
@@ -13744,37 +13778,44 @@ const SOC_MONTH_SHORT_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 
         }
 
         function getSocietyPeriodsForCycle(cycle, selYear) {
+            const y = parseInt(selYear, 10) || getCurrentSocietyFyStartYear();
+            const fyLabel = formatSocietyFyLabel(y);
             if (cycle === 'Yearly') {
-                return [{ key: 'Yearly', label: `Annual Bill (${selYear})` }];
+                return [{ key: 'Yearly', label: `Annual Bill (${fyLabel})` }];
             }
             if (cycle === 'Quarterly') {
                 return [
-                    { key: 'Q1', label: 'Q1 (Jan - Mar)' },
-                    { key: 'Q2', label: 'Q2 (Apr - Jun)' },
-                    { key: 'Q3', label: 'Q3 (Jul - Sep)' },
-                    { key: 'Q4', label: 'Q4 (Oct - Dec)' }
+                    { key: 'Q1', label: `Q1 (Apr - Jun ${y})` },
+                    { key: 'Q2', label: `Q2 (Jul - Sep ${y})` },
+                    { key: 'Q3', label: `Q3 (Oct - Dec ${y})` },
+                    { key: 'Q4', label: `Q4 (Jan - Mar ${y + 1})` }
                 ];
             }
-            return SOC_MONTH_FULL_NAMES.map((m, idx) => ({ key: `M${idx + 1}`, label: m }));
+            return SOC_FY_MONTH_ORDER.map(mNum => ({
+                key: `M${mNum}`,
+                label: getSocietyMonthFullWithYear(y, mNum)
+            }));
         }
 
         function getSocietyPeriodLabel(periodKey, selYear) {
-            if (periodKey === 'Yearly') return `Annual Bill (${selYear})`;
-            if (periodKey === 'Q1') return 'Q1 (Jan - Mar)';
-            if (periodKey === 'Q2') return 'Q2 (Apr - Jun)';
-            if (periodKey === 'Q3') return 'Q3 (Jul - Sep)';
-            if (periodKey === 'Q4') return 'Q4 (Oct - Dec)';
+            const y = parseInt(selYear, 10) || getCurrentSocietyFyStartYear();
+            const fyLabel = formatSocietyFyLabel(y);
+            if (periodKey === 'Yearly') return `Annual Bill (${fyLabel})`;
+            if (periodKey === 'Q1') return `Q1 (Apr - Jun ${y})`;
+            if (periodKey === 'Q2') return `Q2 (Jul - Sep ${y})`;
+            if (periodKey === 'Q3') return `Q3 (Oct - Dec ${y})`;
+            if (periodKey === 'Q4') return `Q4 (Jan - Mar ${y + 1})`;
             const mMatch = String(periodKey || '').match(/^M(\d+)$/);
             if (mMatch) {
-                const idx = parseInt(mMatch[1], 10) - 1;
-                if (SOC_MONTH_FULL_NAMES[idx]) return SOC_MONTH_FULL_NAMES[idx];
+                const mNum = parseInt(mMatch[1], 10);
+                if (mNum >= 1 && mNum <= 12) return getSocietyMonthFullWithYear(y, mNum);
             }
             return String(periodKey || '');
         }
 
         function getSocietyMonthPaymentStatus(record, monthNum) {
             const mKey = `M${monthNum}`;
-            const qKey = `Q${Math.ceil(monthNum / 3)}`;
+            const qKey = getSocietyFyQuarterKeyForMonth(monthNum);
             const reg = (record && record.regular && typeof record.regular === 'object') ? record.regular : {};
             const manualMap = (record && record.manualMonths && typeof record.manualMonths === 'object') ? record.manualMonths : {};
 
@@ -13834,7 +13875,7 @@ const SOC_MONTH_SHORT_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 
 
             const titleEl = document.getElementById('socMonthModalTitle');
             const subEl = document.getElementById('socMonthModalSubtitle');
-            if (titleEl) titleEl.innerText = `${SOC_MONTH_FULL_NAMES[mNum - 1]} ${cleanYear}`;
+            if (titleEl) titleEl.innerText = `${getSocietyMonthFullWithYear(cleanYear, mNum)} (${formatSocietyFyLabel(cleanYear)})`;
             if (subEl) subEl.innerText = cleanSoc;
 
             const bannerEl = document.getElementById('socMonthAutoBillBanner');
@@ -13895,7 +13936,7 @@ const SOC_MONTH_SHORT_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 
             await recordDawatEstatesNotification(
                 'society',
                 'manual-month-status',
-                `Updated ${SOC_MONTH_FULL_NAMES[mNum - 1]} ${yearStr} status for "${socName}" — ${isPaid ? 'Marked Paid' : 'Unmarked'}${reason ? ` (Reason: ${reason})` : ''}`
+                `Updated ${getSocietyMonthFullWithYear(yearStr, mNum)} (${formatSocietyFyLabel(yearStr)}) status for "${socName}" — ${isPaid ? 'Marked Paid' : 'Unmarked'}${reason ? ` (Reason: ${reason})` : ''}`
             );
 
             closeModal('modalSocietyMonthStatus');
@@ -13919,7 +13960,8 @@ window.renderSocieties = function() {
             grid.innerHTML = '';
 
             const list = getBuildingSocietyList();
-            const selYear = document.getElementById('societyOverviewYearSelect')?.value || String(new Date().getFullYear());
+            const selYear = document.getElementById('societyOverviewYearSelect')?.value || String(getCurrentSocietyFyStartYear());
+            const fyLabel = formatSocietyFyLabel(selYear);
 
             if(list.length === 0) {
                 grid.innerHTML = '<p class="text-xs text-gray-400 col-span-3 text-center py-6">No societies found or created yet.</p>';
@@ -13962,30 +14004,31 @@ window.renderSocieties = function() {
                 const encodedName = encodeURIComponent(s.name).replace(/'/g, "%27");
 
                 let paidMonthsCount = 0;
-                const monthPillsHtml = SOC_MONTH_SHORT_NAMES.map((mShort, idx) => {
-                    const mNum = idx + 1;
+                const monthPillsHtml = SOC_FY_MONTH_ORDER.map((mNum) => {
+                    const mLabelShort = getSocietyMonthShortWithYear(selYear, mNum);
+                    const mLabelFull = getSocietyMonthFullWithYear(selYear, mNum);
                     const st = getSocietyMonthPaymentStatus(record, mNum);
                     if (st.isPaid) paidMonthsCount++;
 
                     let pillCls = 'bg-gray-100 hover:bg-emerald-50 text-gray-600 border-gray-200 hover:border-emerald-400';
                     let iconHtml = '';
-                    let tooltip = `${SOC_MONTH_FULL_NAMES[idx]} ${selYear}: Pending — click to mark Paid or add reason`;
+                    let tooltip = `${mLabelFull} (${fyLabel}): Pending — click to mark Paid or add reason`;
 
                     if (st.autoPaid) {
                         pillCls = 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 shadow-sm';
                         iconHtml = '<i class="fa-solid fa-check text-[9px] mr-0.5"></i>';
-                        tooltip = `${SOC_MONTH_FULL_NAMES[idx]} ${selYear}: Paid via ${getSocietyPeriodLabel(st.autoSourceKey, selYear)} (₹${st.autoAmount.toLocaleString('en-IN')})${st.manualReason ? ' • Note: ' + st.manualReason : ''}`;
+                        tooltip = `${mLabelFull} (${fyLabel}): Paid via ${getSocietyPeriodLabel(st.autoSourceKey, selYear)} (₹${st.autoAmount.toLocaleString('en-IN')})${st.manualReason ? ' • Note: ' + st.manualReason : ''}`;
                     } else if (st.manualPaid) {
                         pillCls = 'bg-teal-600 hover:bg-teal-700 text-white border-teal-700 shadow-sm';
                         iconHtml = '<i class="fa-solid fa-check text-[9px] mr-0.5"></i>';
-                        tooltip = `${SOC_MONTH_FULL_NAMES[idx]} ${selYear}: Marked Paid${st.manualReason ? ' — ' + st.manualReason : ''}`;
+                        tooltip = `${mLabelFull} (${fyLabel}): Marked Paid${st.manualReason ? ' — ' + st.manualReason : ''}`;
                     }
 
                     const noteDot = st.manualReason
                         ? '<span class="ml-0.5 text-[8px] opacity-90" title="Has reason note">&bull;</span>'
                         : '';
 
-                    return `<button type="button" onclick="openSocietyMonthStatusModal(decodeURIComponent('${encodedName}'), '${selYear}', ${mNum})" title="${escapeSocietyAttrText(tooltip)}" class="px-1 py-1 rounded border text-[10px] font-bold transition flex items-center justify-center leading-none ${pillCls}">${iconHtml}<span>${mShort}</span>${noteDot}</button>`;
+                    return `<button type="button" onclick="openSocietyMonthStatusModal(decodeURIComponent('${encodedName}'), '${selYear}', ${mNum})" title="${escapeSocietyAttrText(tooltip)}" class="px-1 py-1 rounded border text-[10px] font-bold transition flex items-center justify-center leading-none whitespace-nowrap ${pillCls}">${iconHtml}<span>${mLabelShort}</span>${noteDot}</button>`;
                 }).join('');
 
                 const paidBadgeCls = paidMonthsCount === 12
@@ -13999,11 +14042,11 @@ window.renderSocieties = function() {
                                 <div>
                                     <h4 class="font-bold text-emerald-900 text-base">${s.name}</h4>
                                     <span class="text-xs font-semibold text-emerald-700 block">${flatDisplay}</span>
-                                    <span class="text-xs font-bold text-red-600 block mt-0.5">Total Bills (${selYear}): ₹${socTotalAmount.toLocaleString('en-IN')}</span>
+                                    <span class="text-xs font-bold text-red-600 block mt-0.5">Total Bills (${fyLabel}): ₹${socTotalAmount.toLocaleString('en-IN')}</span>
                                 </div>
                                 <div class="text-right">
                                     <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full inline-block">${effectiveCycle}</span>
-                                    ${isPreservedCycle ? `<span class="block text-[10px] text-amber-700 font-semibold mt-0.5" title="Preserved format for ${selYear}; current setting is ${defaultCycle}">(${selYear} Format)</span>` : ''}
+                                    ${isPreservedCycle ? `<span class="block text-[10px] text-amber-700 font-semibold mt-0.5" title="Preserved format for ${fyLabel}; current setting is ${defaultCycle}">(${fyLabel} Format)</span>` : ''}
                                 </div>
                             </div>
 
@@ -14017,7 +14060,7 @@ window.renderSocieties = function() {
                                 <div class="flex justify-between items-center">
                                     <span class="text-[11px] font-extrabold text-emerald-950 uppercase tracking-wide flex items-center">
                                         <i class="fa-regular fa-calendar-check text-emerald-700 mr-1"></i>
-                                        <span>${selYear} Months</span>
+                                        <span>${fyLabel} (Apr–Mar)</span>
                                     </span>
                                     <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${paidBadgeCls}">${paidMonthsCount}/12 Paid</span>
                                 </div>
@@ -14126,7 +14169,7 @@ window.renderSocieties = function() {
 
             // Preserve earlier years and any existing years' bills in their original billing cycle format
             if (prevCycle !== cycle && societyBillsData && typeof societyBillsData === 'object') {
-                const curCalYear = new Date().getFullYear();
+                const curCalYear = getCurrentSocietyFyStartYear();
                 const socSlug = String(socName || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
                 Object.keys(societyBillsData).forEach(k => {
                     const rec = societyBillsData[k];
@@ -14196,7 +14239,7 @@ await recordDawatEstatesNotification(
             currentSummaryCycle = cycle;
 
             const yrSel = document.getElementById('billsSummaryYearSelect');
-            const overviewYr = document.getElementById('societyOverviewYearSelect')?.value || String(new Date().getFullYear());
+            const overviewYr = document.getElementById('societyOverviewYearSelect')?.value || String(getCurrentSocietyFyStartYear());
             const desiredYear = targetYear ? String(targetYear) : overviewYr;
             if (yrSel && Array.from(yrSel.options).some(o => o.value === desiredYear)) {
                 yrSel.value = desiredYear;
@@ -14220,20 +14263,21 @@ await recordDawatEstatesNotification(
 
         window.renderBillsSummaryModalContent = function() {
             const selYear = document.getElementById('billsSummaryYearSelect').value;
+            const fyLabel = formatSocietyFyLabel(selYear);
             const { record: currentData } = ensureSocietyBillRecord(currentSummarySocName, selYear);
-            const curCalYear = new Date().getFullYear();
+            const curFyStartYear = getCurrentSocietyFyStartYear();
 
-            // Earlier years (and any year with an explicitly locked cycle) stay in their preserved format;
-            // current/future years use the society's active cycle while safely preserving any prior-format bills below.
-            const effectiveCycle = (parseInt(selYear, 10) < curCalYear || (currentData.cycle && ['Monthly', 'Quarterly', 'Yearly'].includes(currentData.cycle)))
+            // Earlier financial years (and any FY with an explicitly locked cycle) stay in their preserved format;
+            // current/future FYs use the society's active cycle while safely preserving any prior-format bills below.
+            const effectiveCycle = (parseInt(selYear, 10) < curFyStartYear || (currentData.cycle && ['Monthly', 'Quarterly', 'Yearly'].includes(currentData.cycle)))
                 ? resolveSocietyCycleForYear(currentSummarySocName, selYear, currentSummaryCycle, currentData)
                 : currentSummaryCycle;
 
             const subtitleEl = document.getElementById('billsSummarySubtitle');
             if (subtitleEl) {
                 subtitleEl.innerText = effectiveCycle !== currentSummaryCycle
-                    ? `Frequency for ${selYear}: ${effectiveCycle} System (Preserved Format • Current setting: ${currentSummaryCycle})`
-                    : `Frequency: ${effectiveCycle} System (${selYear})`;
+                    ? `Frequency for ${fyLabel}: ${effectiveCycle} System (Preserved Format • Current setting: ${currentSummaryCycle})`
+                    : `Frequency: ${effectiveCycle} System (${fyLabel}, Apr–Mar)`;
             }
 
             const tbodyReg = document.getElementById('regularBillsTableBody');
@@ -14309,7 +14353,7 @@ await recordDawatEstatesNotification(
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-extrabold text-amber-950 uppercase flex items-center">
                                 <i class="fa-solid fa-shield-halved text-amber-700 mr-1.5"></i>
-                                <span>Preserved Previous-Format Bills (${selYear}) — Kept Safe</span>
+                                <span>Preserved Previous-Format Bills (${fyLabel}) — Kept Safe</span>
                             </span>
                             <span class="text-[11px] text-amber-800 font-semibold">Included in Regular Bills Total</span>
                         </div>
@@ -33163,33 +33207,38 @@ Shukran`;
 
     <script>
       (function syncCurrentYearOnTopForBillSelects() {
-        const curYr = new Date().getFullYear();
+        const now = new Date();
+        const curYr = now.getFullYear();
+        const curFyYr = (now.getMonth() >= 3) ? curYr : (curYr - 1);
         const maxYr = Math.max(2035, curYr);
         const configs = [
-          { id: 'societyOverviewYearSelect', minYr: 2024, comp: false },
-          { id: 'billsSummaryYearSelect', minYr: 2024, comp: false },
-          { id: 'egDashYearSelect', minYr: 2023, comp: false },
-          { id: 'egYearSelect', minYr: 2023, comp: false },
-          { id: 'egBachYearSelect', minYr: 2023, comp: false },
-          { id: 'egVacantArchiveYearSelect', minYr: 2023, comp: false },
-          { id: 'egFacYearSelect', minYr: 2023, comp: false },
-          { id: 'egBillModalYearSelect', minYr: 2023, comp: false },
-          { id: 'egCompYearSelect', minYr: 2024, comp: true },
-          { id: 'facReplicaYearSelect', minYr: 2023, comp: false },
-          { id: 'facStmtYearSelect', minYr: 2024, comp: false }
+          { id: 'societyOverviewYearSelect', minYr: 2024, comp: false, fy: true },
+          { id: 'billsSummaryYearSelect', minYr: 2024, comp: false, fy: true },
+          { id: 'egDashYearSelect', minYr: 2023, comp: false, fy: false },
+          { id: 'egYearSelect', minYr: 2023, comp: false, fy: false },
+          { id: 'egBachYearSelect', minYr: 2023, comp: false, fy: false },
+          { id: 'egVacantArchiveYearSelect', minYr: 2023, comp: false, fy: false },
+          { id: 'egFacYearSelect', minYr: 2023, comp: false, fy: false },
+          { id: 'egBillModalYearSelect', minYr: 2023, comp: false, fy: false },
+          { id: 'egCompYearSelect', minYr: 2024, comp: true, fy: false },
+          { id: 'facReplicaYearSelect', minYr: 2023, comp: false, fy: false },
+          { id: 'facStmtYearSelect', minYr: 2024, comp: false, fy: false }
         ];
         function populateAll() {
           configs.forEach(cfg => {
             const el = document.getElementById(cfg.id);
             if (!el) return;
-            const years = [curYr];
-            for (let y = curYr + 1; y <= maxYr; y++) years.push(y);
-            for (let y = curYr - 1; y >= cfg.minYr; y--) years.push(y);
+            const topYr = cfg.fy ? curFyYr : curYr;
+            const years = [topYr];
+            for (let y = topYr + 1; y <= maxYr; y++) years.push(y);
+            for (let y = topYr - 1; y >= cfg.minYr; y--) years.push(y);
             el.innerHTML = years.map(y => {
-              const label = cfg.comp ? `${y} (vs ${y - 1})` : String(y);
-              return `<option value="${y}"${y === curYr ? ' selected' : ''}>${label}</option>`;
+              let label = String(y);
+              if (cfg.fy) label = `FY ${y}-${String(y + 1).slice(-2)}`;
+              else if (cfg.comp) label = `${y} (vs ${y - 1})`;
+              return `<option value="${y}"${y === topYr ? ' selected' : ''}>${label}</option>`;
             }).join('');
-            el.value = String(curYr);
+            el.value = String(topYr);
           });
         }
         if (document.readyState === 'loading') {

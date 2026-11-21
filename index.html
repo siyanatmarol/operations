@@ -9289,10 +9289,35 @@ function setupDailyTrigger() {
                         });
                     }
                 });
-                normalized[cleanKey] = {
+                const manualMonthsObj = {};
+                if (entry.manualMonths && typeof entry.manualMonths === 'object' && !Array.isArray(entry.manualMonths)) {
+                    Object.keys(entry.manualMonths).forEach(mKey => {
+                        const mVal = entry.manualMonths[mKey];
+                        if (mVal && typeof mVal === 'object') {
+                            const isPaid = Boolean(mVal.paid);
+                            const reasonStr = String(mVal.reason || '').trim();
+                            if (isPaid || reasonStr) {
+                                manualMonthsObj[mKey] = {
+                                    paid: isPaid,
+                                    reason: reasonStr,
+                                    updatedAt: mVal.updatedAt || ''
+                                };
+                            }
+                        }
+                    });
+                }
+                const cleanRec = {
                     regular: regObj,
-                    other: otherArr
+                    other: otherArr,
+                    manualMonths: manualMonthsObj
                 };
+                if (entry.cycle && ['Monthly', 'Quarterly', 'Yearly'].includes(entry.cycle)) {
+                    cleanRec.cycle = entry.cycle;
+                }
+                if (entry.previousCycle && ['Monthly', 'Quarterly', 'Yearly'].includes(entry.previousCycle)) {
+                    cleanRec.previousCycle = entry.previousCycle;
+                }
+                normalized[cleanKey] = cleanRec;
             });
             return normalized;
         }
@@ -9314,6 +9339,9 @@ function setupDailyTrigger() {
                 } else {
                     societyBillsData[dataKey].other = [];
                 }
+            }
+            if (!societyBillsData[dataKey].manualMonths || typeof societyBillsData[dataKey].manualMonths !== 'object' || Array.isArray(societyBillsData[dataKey].manualMonths)) {
+                societyBillsData[dataKey].manualMonths = {};
             }
             return { dataKey, record: societyBillsData[dataKey] };
         }

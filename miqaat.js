@@ -730,27 +730,27 @@
                             </div>
                         </div>
 
-                        <!-- 5 Sub-Navigation Tabs -->
-                        <div class="mt-4 pt-3 border-t border-emerald-700/70 flex flex-wrap gap-2" id="miqaatSubTabsBar">
-                            <button type="button" data-subtab="dashboard" class="miqaat-subtab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold border transition flex items-center space-x-2">
-                                <i class="fa-solid fa-gauge-high"></i>
-                                <span>Dashboard</span>
+                        <!-- 5 Sub-Navigation Tabs (2-per-row compact grid on mobile, inline flex on desktop) -->
+                        <div class="mt-3 pt-3 border-t border-emerald-700/70 grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2" id="miqaatSubTabsBar">
+                            <button type="button" data-subtab="dashboard" class="miqaat-subtab-btn active px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
+                                <i class="fa-solid fa-gauge-high shrink-0"></i>
+                                <span class="truncate">Dashboard</span>
                             </button>
-                            <button type="button" data-subtab="checklist" class="miqaat-subtab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold border transition flex items-center space-x-2">
-                                <i class="fa-solid fa-list-check"></i>
-                                <span>User-based Checklist</span>
+                            <button type="button" data-subtab="checklist" class="miqaat-subtab-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
+                                <i class="fa-solid fa-list-check shrink-0"></i>
+                                <span class="truncate">User-based Checklist</span>
                             </button>
-                            <button type="button" data-subtab="events-details" class="miqaat-subtab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold border transition flex items-center space-x-2">
-                                <i class="fa-solid fa-clipboard-list"></i>
-                                <span>Miqaat Events Details</span>
+                            <button type="button" data-subtab="events-details" class="miqaat-subtab-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
+                                <i class="fa-solid fa-clipboard-list shrink-0"></i>
+                                <span class="truncate">Miqaat Events Details</span>
                             </button>
-                            <button type="button" data-subtab="budget" class="miqaat-subtab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold border transition flex items-center space-x-2">
-                                <i class="fa-solid fa-indian-rupee-sign"></i>
-                                <span>Imtehan Budget</span>
+                            <button type="button" data-subtab="budget" class="miqaat-subtab-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
+                                <i class="fa-solid fa-indian-rupee-sign shrink-0"></i>
+                                <span class="truncate">Imtehan Budget</span>
                             </button>
-                            <button type="button" data-subtab="daily-events" class="miqaat-subtab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold border transition flex items-center space-x-2">
-                                <i class="fa-solid fa-star-and-crescent"></i>
-                                <span>Aqa Maula – Daily Events</span>
+                            <button type="button" data-subtab="daily-events" class="miqaat-subtab-btn col-span-2 sm:col-span-1 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
+                                <i class="fa-solid fa-star-and-crescent shrink-0"></i>
+                                <span class="truncate">Aqa Maula – Daily Events</span>
                             </button>
                         </div>
                     </div>
@@ -1143,25 +1143,6 @@
         return `
             ${bannerHtml}
 
-            <!-- Imtehaan Venues Summary -->
-            <div class="space-y-3">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h3 class="text-base sm:text-lg font-extrabold text-emerald-950 flex items-center gap-2">
-                        <i class="fa-solid fa-building-columns text-emerald-700"></i>
-                        <span>Imtehaan Venues Summary</span>
-                    </h3>
-                    <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
-                        <span class="bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1 rounded-full">Male: ${maleTotal.toLocaleString('en-IN')}</span>
-                        <span class="bg-pink-50 text-pink-900 border border-pink-200 px-3 py-1 rounded-full">Female: ${femaleTotal.toLocaleString('en-IN')}</span>
-                        <span class="bg-emerald-900 text-amber-300 px-3.5 py-1 rounded-full shadow-sm">Total Students: ${grandStudents.toLocaleString('en-IN')}</span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    ${renderVenueList('male', maleVenues, 'bg-gradient-to-r from-blue-800 to-indigo-800', 'bg-blue-100 text-blue-950')}
-                    ${renderVenueList('female', femaleVenues, 'bg-gradient-to-r from-rose-700 to-pink-700', 'bg-pink-100 text-pink-950')}
-                </div>
-            </div>
-
             <!-- Examination Timetable -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-emerald-50 border-b border-emerald-200 px-4 py-3.5 flex flex-wrap items-center justify-between gap-2">
@@ -1248,6 +1229,25 @@
                             }).join('')}
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Imtehaan Venues Summary -->
+            <div class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h3 class="text-base sm:text-lg font-extrabold text-emerald-950 flex items-center gap-2">
+                        <i class="fa-solid fa-building-columns text-emerald-700"></i>
+                        <span>Imtehaan Venues Summary</span>
+                    </h3>
+                    <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+                        <span class="bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1 rounded-full">Male: ${maleTotal.toLocaleString('en-IN')}</span>
+                        <span class="bg-pink-50 text-pink-900 border border-pink-200 px-3 py-1 rounded-full">Female: ${femaleTotal.toLocaleString('en-IN')}</span>
+                        <span class="bg-emerald-900 text-amber-300 px-3.5 py-1 rounded-full shadow-sm">Total Students: ${grandStudents.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    ${renderVenueList('male', maleVenues, 'bg-gradient-to-r from-blue-800 to-indigo-800', 'bg-blue-100 text-blue-950')}
+                    ${renderVenueList('female', femaleVenues, 'bg-gradient-to-r from-rose-700 to-pink-700', 'bg-pink-100 text-pink-950')}
                 </div>
             </div>
         `;

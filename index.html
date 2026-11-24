@@ -4261,39 +4261,55 @@
     
     
     <!-- PWA MOBILE BOTTOM APP NAVIGATION BAR (Active in PWA standalone app mode) -->
+    <style>
+        #pwaBottomNav .pwa-nav-btn {
+            position: relative;
+            min-width: 0;
+        }
+        #pwaBottomNav .pwa-nav-btn.pwa-has-divider::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 16%;
+            bottom: 16%;
+            width: 1px;
+            background: rgba(110, 231, 183, 0.35);
+            pointer-events: none;
+        }
+    </style>
     <nav id="pwaBottomNav" class="pwa-bottom-nav fixed bottom-0 left-0 right-0 bg-emerald-950/95 backdrop-blur-md border-t border-emerald-800 text-white z-40">
-        <div class="grid grid-cols-4 sm:grid-cols-5 max-w-lg mx-auto items-center text-center py-1.5 px-2">
-            <button type="button" onclick="pwaSwitchModule('dawat-estates')" id="pwa-nav-dawat-estates" class="pwa-nav-btn text-emerald-400 flex flex-col items-center justify-center space-y-0.5 relative py-1 focus:outline-none">
-                <i class="fa-solid fa-city text-base"></i>
-                <span class="text-[10px] font-bold">Estates</span>
-                <span id="pwaNotifBadgeDawatEstates" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
+        <div class="grid grid-cols-4 sm:grid-cols-5 max-w-lg mx-auto items-center text-center py-1.5 px-1">
+            <button type="button" onclick="pwaSwitchModule('dawat-estates')" id="pwa-nav-dawat-estates" class="pwa-nav-btn text-emerald-400 flex flex-col items-center justify-center space-y-0.5 relative py-1 px-0.5 focus:outline-none">
+                <i class="fa-solid fa-city text-sm"></i>
+                <span class="text-[9px] font-bold leading-tight tracking-tight truncate max-w-full">Estates</span>
+                <span id="pwaNotifBadgeDawatEstates" class="hidden absolute top-0.5 right-2 bg-red-600 text-white text-[8px] font-extrabold px-1 py-0.2 rounded-full border border-red-200 leading-none"></span>
             </button>
-            <button type="button" onclick="pwaSwitchModule('classroom-allocation')" id="pwa-nav-classroom-allocation" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 focus:outline-none">
-                <i class="fa-solid fa-chalkboard-user text-base"></i>
-                <span class="text-[10px] font-bold">Classrooms</span>
-                <span id="pwaNotifBadgeClassroomAllocation" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
+            <button type="button" onclick="pwaSwitchModule('classroom-allocation')" id="pwa-nav-classroom-allocation" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 px-0.5 focus:outline-none">
+                <i class="fa-solid fa-chalkboard-user text-sm"></i>
+                <span class="text-[9px] font-bold leading-tight tracking-tight truncate max-w-full">Classrooms</span>
+                <span id="pwaNotifBadgeClassroomAllocation" class="hidden absolute top-0.5 right-2 bg-red-600 text-white text-[8px] font-extrabold px-1 py-0.2 rounded-full border border-red-200 leading-none"></span>
             </button>
-            <button type="button" onclick="pwaSwitchModule('inventory')" id="pwa-nav-inventory" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 focus:outline-none">
-                <i class="fa-solid fa-key text-base"></i>
-                <span class="text-[10px] font-bold">Keys</span>
-                <span id="pwaNotifBadgeKeysInventory" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
+            <button type="button" onclick="pwaSwitchModule('inventory')" id="pwa-nav-inventory" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 px-0.5 focus:outline-none">
+                <i class="fa-solid fa-key text-sm"></i>
+                <span class="text-[9px] font-bold leading-tight tracking-tight truncate max-w-full">Keys</span>
+                <span id="pwaNotifBadgeKeysInventory" class="hidden absolute top-0.5 right-2 bg-red-600 text-white text-[8px] font-extrabold px-1 py-0.2 rounded-full border border-red-200 leading-none"></span>
             </button>
-            <button type="button" onclick="pwaSwitchModule('faculty-dir')" id="pwa-nav-faculty-dir" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 focus:outline-none">
-                <i class="fa-solid fa-id-card text-base"></i>
-                <span class="text-[10px] font-bold">Directory</span>
+            <button type="button" onclick="pwaSwitchModule('faculty-dir')" id="pwa-nav-faculty-dir" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 px-0.5 focus:outline-none">
+                <i class="fa-solid fa-id-card text-sm"></i>
+                <span class="text-[9px] font-bold leading-tight tracking-tight truncate max-w-full">Directory</span>
             </button>
-            <button type="button" onclick="pwaSwitchModule('elec-gas-bills')" id="pwa-nav-elec-gas-bills" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 focus:outline-none">
-                <i class="fa-solid fa-bolt-lightning text-base"></i>
-                <span class="text-[10px] font-bold">Elec &amp; Gas</span>
-                <span id="pwaNotifBadgeElecGasBills" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
+            <button type="button" onclick="pwaSwitchModule('elec-gas-bills')" id="pwa-nav-elec-gas-bills" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 px-0.5 focus:outline-none">
+                <i class="fa-solid fa-bolt-lightning text-sm"></i>
+                <span class="text-[9px] font-bold leading-tight tracking-tight truncate max-w-full">Elec &amp; Gas</span>
+                <span id="pwaNotifBadgeElecGasBills" class="hidden absolute top-0.5 right-2 bg-red-600 text-white text-[8px] font-extrabold px-1 py-0.2 rounded-full border border-red-200 leading-none"></span>
             </button>
-            <button type="button" onclick="pwaSwitchModule('miqaat')" id="pwa-nav-miqaat" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 focus:outline-none">
-                <i class="fa-solid fa-mosque text-base"></i>
-                <span class="text-[10px] font-bold">Miqaat</span>
+            <button type="button" onclick="pwaSwitchModule('miqaat')" id="pwa-nav-miqaat" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 px-0.5 focus:outline-none">
+                <i class="fa-solid fa-mosque text-sm"></i>
+                <span class="text-[9px] font-bold leading-tight tracking-tight truncate max-w-full">Miqaat</span>
             </button>
-            <button type="button" onclick="pwaSwitchModule('admin-access')" id="pwa-nav-admin-access" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 hidden focus:outline-none">
-                <i class="fa-solid fa-user-shield text-base"></i>
-                <span class="text-[10px] font-bold">Admin</span>
+            <button type="button" onclick="pwaSwitchModule('admin-access')" id="pwa-nav-admin-access" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 relative py-1 px-0.5 hidden focus:outline-none">
+                <i class="fa-solid fa-user-shield text-sm"></i>
+                <span class="text-[9px] font-bold leading-tight tracking-tight truncate max-w-full">Admin</span>
             </button>
         </div>
     </nav>
@@ -12078,6 +12094,11 @@ window.loadClassroomsFromCloud = async function() {
                 if (navContainer) {
                     navContainer.style.display = 'grid';
                     navContainer.style.gridTemplateColumns = `repeat(${allowedPwaCount}, minmax(0, 1fr))`;
+                    const visibleBtns = Array.from(navContainer.querySelectorAll('.pwa-nav-btn')).filter(b => !b.classList.contains('hidden'));
+                    navContainer.querySelectorAll('.pwa-nav-btn').forEach(b => b.classList.remove('pwa-has-divider'));
+                    visibleBtns.forEach((b, idx) => {
+                        if (idx < visibleBtns.length - 1) b.classList.add('pwa-has-divider');
+                    });
                 }
             }
         };

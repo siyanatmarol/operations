@@ -734,23 +734,23 @@
                         <div class="mt-3 pt-3 border-t border-emerald-700/70 grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2" id="miqaatSubTabsBar">
                             <button type="button" data-subtab="dashboard" class="miqaat-subtab-btn active px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
                                 <i class="fa-solid fa-gauge-high shrink-0"></i>
-                                <span class="truncate">Dashboard</span>
+                                <span class="whitespace-normal break-words text-center sm:text-left leading-tight">Dashboard</span>
                             </button>
                             <button type="button" data-subtab="checklist" class="miqaat-subtab-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
                                 <i class="fa-solid fa-list-check shrink-0"></i>
-                                <span class="truncate">User-based Checklist</span>
+                                <span class="whitespace-normal break-words text-center sm:text-left leading-tight">Work Checklist</span>
                             </button>
                             <button type="button" data-subtab="events-details" class="miqaat-subtab-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
                                 <i class="fa-solid fa-clipboard-list shrink-0"></i>
-                                <span class="truncate">Miqaat Events Details</span>
+                                <span class="whitespace-normal break-words text-center sm:text-left leading-tight">Miqaat Events Details</span>
                             </button>
                             <button type="button" data-subtab="budget" class="miqaat-subtab-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
                                 <i class="fa-solid fa-indian-rupee-sign shrink-0"></i>
-                                <span class="truncate">Imtehan Budget</span>
+                                <span class="whitespace-normal break-words text-center sm:text-left leading-tight">Imtehan Budget</span>
                             </button>
                             <button type="button" data-subtab="daily-events" class="miqaat-subtab-btn col-span-2 sm:col-span-1 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm font-bold border transition flex items-center justify-center sm:justify-start space-x-1.5 sm:space-x-2">
                                 <i class="fa-solid fa-star-and-crescent shrink-0"></i>
-                                <span class="truncate">Aqa Maula – Daily Events</span>
+                                <span class="whitespace-normal break-words text-center sm:text-left leading-tight">Aqa Maula – Daily Events</span>
                             </button>
                         </div>
                     </div>

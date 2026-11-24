@@ -1299,6 +1299,10 @@
                     <span>Electricity &amp; Gas Bills</span>
                     <span id="notifBadgeElecGasBills" onclick="event.stopPropagation(); switchModule('elec-gas-bills'); openModuleNotificationsPopupIfAny('elec-gas-bills');" class="hidden ml-1.5 bg-red-600 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-red-300 leading-none cursor-pointer" title="Click to view unseen notifications"></span>
                 </button>
+                <button onclick="switchModule('miqaat')" id="mod-miqaat" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-mosque text-amber-300"></i>
+                    <span>Miqaat</span>
+                </button>
                 <button onclick="switchModule('admin-access')" id="mod-admin-access" class="px-5 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-800 rounded-t-lg transition flex items-center space-x-2 hidden">
                     <i class="fa-solid fa-user-shield"></i>
                     <span>Admin Access & Invitations</span>
@@ -3913,6 +3917,9 @@
         </div>
 
         <!-- MODULE: ADMIN ACCESS & INVITATIONS -->
+        <!-- Miqaat Module Container (Rendered by external miqaat.js) -->
+        <div id="module-miqaat" class="hidden space-y-6"></div>
+
         <div id="module-admin-access" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-lg shadow border space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 gap-3">
@@ -4041,6 +4048,21 @@
                                 <div id="wrap-access-elec-gas-bills" class="pt-1.5 border-t border-amber-100">
                                     <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Module Access Level</label>
                                     <select id="mod-access-elec-gas-bills" onchange="handlePerModuleAccessSelectChange('elec-gas-bills')" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none">
+                                        <option value="Editing Rights">✏️ Editing Rights</option>
+                                        <option value="View Only">👁️ View Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 6. Miqaat Module -->
+                            <div class="bg-white p-3 border-2 border-teal-200 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="mod-perm-miqaat" value="miqaat" checked onchange="toggleModuleCardAccessSelect('miqaat')" class="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                                    <span class="font-bold text-gray-800"><i class="fa-solid fa-mosque text-teal-600 mr-1.5"></i>Miqaat</span>
+                                </label>
+                                <div id="wrap-access-miqaat" class="pt-1.5 border-t border-teal-100">
+                                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Module Access Level</label>
+                                    <select id="mod-access-miqaat" onchange="handlePerModuleAccessSelectChange('miqaat')" class="w-full p-1.5 border rounded-lg text-xs font-bold bg-emerald-50 text-emerald-900 border-emerald-300 focus:outline-none">
                                         <option value="Editing Rights">✏️ Editing Rights</option>
                                         <option value="View Only">👁️ View Only</option>
                                     </select>
@@ -4264,6 +4286,10 @@
                 <i class="fa-solid fa-bolt-lightning text-base"></i>
                 <span class="text-[10px] font-bold">Elec &amp; Gas</span>
                 <span id="pwaNotifBadgeElecGasBills" class="hidden absolute top-0.5 right-4 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border border-red-200 leading-none"></span>
+            </button>
+            <button type="button" onclick="pwaSwitchModule('miqaat')" id="pwa-nav-miqaat" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 focus:outline-none">
+                <i class="fa-solid fa-mosque text-base"></i>
+                <span class="text-[10px] font-bold">Miqaat</span>
             </button>
             <button type="button" onclick="pwaSwitchModule('admin-access')" id="pwa-nav-admin-access" class="pwa-nav-btn text-emerald-300 hover:text-white flex flex-col items-center justify-center space-y-0.5 py-1 hidden focus:outline-none">
                 <i class="fa-solid fa-user-shield text-base"></i>
@@ -9250,6 +9276,7 @@ function setupDailyTrigger() {
             return String(map[mId] || (lineKey && map[lineKey]) || (caKey && map[`ca_${caKey}`]) || map[`gas_${gasIdxZeroBased + 1}`] || '').trim();
         }
         let elecGasBillsData = {};
+        let miqaatData = {};
         let elecGasLoginsData = [];
         let vacantBillsArchiveData = [];
         let facultyBldgBillsData = {};
@@ -9367,7 +9394,7 @@ function setupDailyTrigger() {
             'murtaza.kheraluwala@jameasaifiyah.edu'
         ];
 
-        const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
+        const ALL_PORTAL_MODULES = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'miqaat'];
         const ALL_CLASSROOM_COL_PERMS = ['allotted-class', 'event', 'student-count', 'extra-chair', 'raihaan'];
 
         const DEFAULT_WATI_ACCESS_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6Im11cnRhemEua2hlcmFsdXdhbGFAamFtZWFzYWlmaXlhaC5lZHUiLCJuYW1laWQiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiZW1haWwiOiJtdXJ0YXphLmtoZXJhbHV3YWxhQGphbWVhc2FpZml5YWguZWR1IiwiYXV0aF90aW1lIjoiMTAvMjYvMjAyNiAxMjoyMjo0OCIsInRlbmFudF9pZCI6IjMxMDM4NSIsImRiX25hbWUiOiJtdC1wcm9kLVRlbmFudHMiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBRE1JTklTVFJBVE9SIiwiZXhwIjoyNTM0MDIzMDA4MDAsImlzcyI6IkNsYXJlX0FJIiwiYXVkIjoiQ2xhcmVfQUkifQ.K69obg-iYKCwmE4B8M7EklmXokQBT63bXpdQsdimVNw";
@@ -10505,6 +10532,9 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                         estateAssetsData = cloudAssets;
                     }
 
+                    if (data.miqaat && typeof data.miqaat === 'object') {
+                        miqaatData = data.miqaat;
+                    }
                     recordAllCloudNodeSnapshots(data);
                     recheckKeysDirectoryMatches();
                     const repairedFacultySig = computeFastNodeSignature(facultyData);
@@ -10677,7 +10707,7 @@ window.loadClassroomsFromCloud = async function() {
         let lastCloudSyncTimestamp = Date.now();
 
         function getCurrentlyVisibleModuleName() {
-            const mods = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'];
+            const mods = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'miqaat', 'admin-access'];
             for (const m of mods) {
                 const el = document.getElementById('module-' + m);
                 if (el && !el.classList.contains('hidden')) return m;
@@ -10726,6 +10756,8 @@ window.loadClassroomsFromCloud = async function() {
                 renderFacultyTable();
             } else if (modName === 'elec-gas-bills') {
                 renderElecGasModule();
+            } else if (modName === 'miqaat') {
+                if (window.MiqaatModule && typeof window.MiqaatModule.render === 'function') window.MiqaatModule.render();
             } else if (modName === 'admin-access') {
                 renderUsersList();
                 populateWatiConfigInputs();
@@ -10734,7 +10766,7 @@ window.loadClassroomsFromCloud = async function() {
         }
 
         function markAllPortalViewsDirty() {
-            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'].forEach(m => dirtyPortalViewsSet.add('mod:' + m));
+            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'miqaat', 'admin-access'].forEach(m => dirtyPortalViewsSet.add('mod:' + m));
             ['estate-details', 'allocation', 'maintenance', 'bachelor', 'society', 'integrated', 'asset-details'].forEach(s => dirtyPortalViewsSet.add('sub:' + s));
             ['dashboard', 'master', 'people'].forEach(k => dirtyPortalViewsSet.add('keys-sub:' + k));
         }
@@ -10896,6 +10928,12 @@ window.loadClassroomsFromCloud = async function() {
                     }
                     if (!isSavingAssets && data.estate_assets !== undefined && didNodeChange('estate_assets')) {
                         estateAssetsData = normalizeEstateAssetsList(data.estate_assets);
+                    }
+                    if (data.miqaat !== undefined && data.miqaat !== null && didNodeChange('miqaat')) {
+                        miqaatData = data.miqaat;
+                        if (window.MiqaatModule && typeof window.MiqaatModule.onDataUpdated === 'function') {
+                            window.MiqaatModule.onDataUpdated(miqaatData);
+                        }
                     }
                     syncCurrentUserLivePermissions();
                     refreshAllPortalViews(false);
@@ -11868,6 +11906,7 @@ window.loadClassroomsFromCloud = async function() {
             facultyBldgBills: facultyBldgBillsData || {},
             facultyBldgMeters: facultyBldgMetersData || loadFacultyBldgMetersCache() || {},
             timetableTemplate: TIMETABLE_COLUMNS || DEFAULT_TIMETABLE_COLUMNS,
+            miqaat: miqaatData || {},
             googleScriptUrl: GOOGLE_SCRIPT_URL || ''
         };
 
@@ -11996,6 +12035,7 @@ window.loadClassroomsFromCloud = async function() {
                 { key: 'inventory', btnId: 'pwa-nav-inventory' },
                 { key: 'faculty-dir', btnId: 'pwa-nav-faculty-dir' },
                 { key: 'elec-gas-bills', btnId: 'pwa-nav-elec-gas-bills' },
+                { key: 'miqaat', btnId: 'pwa-nav-miqaat' },
                 { key: 'admin-access', btnId: 'pwa-nav-admin-access' }
             ];
 
@@ -12055,7 +12095,7 @@ window.loadClassroomsFromCloud = async function() {
         };
 
         window.applyModuleAndSubHeaderPermissions = function applyModuleAndSubHeaderPermissions() {
-            const modOrder = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills'];
+            const modOrder = ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'miqaat'];
             let firstAllowedMod = null;
             const effectiveIsAdmin = (typeof window.isUserAdmin !== 'undefined') ? window.isUserAdmin : isUserAdmin;
             const effectiveModules = (typeof window.currentUserModules !== 'undefined') ? window.currentUserModules : currentUserModules;
@@ -12213,7 +12253,7 @@ window.loadClassroomsFromCloud = async function() {
                 return;
             }
 
-            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'admin-access'].forEach(m => {
+            ['dawat-estates', 'classroom-allocation', 'inventory', 'faculty-dir', 'elec-gas-bills', 'miqaat', 'admin-access'].forEach(m => {
                 document.getElementById('module-' + m)?.classList.add('hidden');
                 document.getElementById('mod-' + m)?.classList.remove('active-tab');
             });
@@ -12261,6 +12301,19 @@ window.loadClassroomsFromCloud = async function() {
         };
 
         window.switchModule = switchModule;
+
+        // Shared Bridge for external modular Miqaat Module (miqaat.js)
+        window.SiyanatMiqaatBridge = {
+            getData: () => miqaatData,
+            saveData: async (updatedData) => {
+                miqaatData = updatedData || {};
+                await window.saveCloudData();
+            },
+            getUsersList: () => usersList || [],
+            getCurrentUser: () => currentUser || null,
+            isViewOnly: () => isCurrentUserViewOnly('miqaat'),
+            showToast: (msg, isError = false) => showAssetToast(msg, isError)
+        };
 
         function switchSubHeader(secName) {
             if (secName === 'vacant-bills') {
@@ -15409,7 +15462,8 @@ await recordDawatEstatesNotification(
             'classroom-allocation': 'Classroom Allocation',
             'inventory': 'Keys Inventory',
             'faculty-dir': 'Directory',
-            'elec-gas-bills': 'Electricity & Gas Bills'
+            'elec-gas-bills': 'Electricity & Gas Bills',
+            'miqaat': 'Miqaat'
         };
 
         const CLASSROOM_COL_LABELS_MAP = {
@@ -15615,6 +15669,7 @@ await recordDawatEstatesNotification(
             document.getElementById('mod-perm-inventory').checked = true;
             document.getElementById('mod-perm-faculty-dir').checked = true;
             if (document.getElementById('mod-perm-elec-gas-bills')) document.getElementById('mod-perm-elec-gas-bills').checked = true;
+            if (document.getElementById('mod-perm-miqaat')) document.getElementById('mod-perm-miqaat').checked = true;
             document.getElementById('accessLevelEditing').checked = true;
             applyGlobalAccessLevelToAllModuleSelects('Editing Rights');
             setAllDawatSubPerms(true);
@@ -15656,6 +15711,7 @@ await recordDawatEstatesNotification(
             document.getElementById('mod-perm-inventory').checked = mods.includes('inventory');
             document.getElementById('mod-perm-faculty-dir').checked = mods.includes('faculty-dir');
             if (document.getElementById('mod-perm-elec-gas-bills')) document.getElementById('mod-perm-elec-gas-bills').checked = mods.includes('elec-gas-bills');
+            if (document.getElementById('mod-perm-miqaat')) document.getElementById('mod-perm-miqaat').checked = mods.includes('miqaat');
 
             const perms = Array.isArray(u.permissions) ? u.permissions : [];
             for (let i = 1; i <= 7; i++) {
@@ -15774,6 +15830,7 @@ await recordDawatEstatesNotification(
             if (document.getElementById('mod-perm-inventory')?.checked) allowedModules.push('inventory');
             if (document.getElementById('mod-perm-faculty-dir')?.checked) allowedModules.push('faculty-dir');
             if (document.getElementById('mod-perm-elec-gas-bills')?.checked) allowedModules.push('elec-gas-bills');
+            if (document.getElementById('mod-perm-miqaat')?.checked) allowedModules.push('miqaat');
 
             if (allowedModules.length === 0) {
                 showAssetToast("Please select at least one allowed module for the user.", true);
@@ -20696,7 +20753,8 @@ await recordDawatEstatesNotification(
                     elecGasBills: elecGasBillsData,
                     elecGasLogins: elecGasLoginsData,
                     vacantBillsArchive: vacantBillsArchiveData,
-                    facultyBldgBills: facultyBldgBillsData
+                    facultyBldgBills: facultyBldgBillsData,
+                    miqaat: miqaatData
                 }
             };
 
@@ -20753,6 +20811,7 @@ await recordDawatEstatesNotification(
                     if (Array.isArray(src.societies)) societiesData = src.societies;
                     if (Array.isArray(src.docs)) societyDocs = src.docs;
                     if (Array.isArray(src.maint)) maintLogs = src.maint;
+                    if (src.miqaat && typeof src.miqaat === 'object') miqaatData = src.miqaat;
                     if (src.bills && typeof src.bills === 'object') vacantBills = src.bills;
                     if (src.socBills && typeof src.socBills === 'object') societyBillsData = normalizeSocietyBillsData(src.socBills);
                     if (src.users !== undefined) usersList = normalizeUsersList(src.users);
@@ -33417,5 +33476,7 @@ Shukran`;
         }
       })();
     </script>
+    <!-- External Modular Miqaat Module -->
+    <script src="miqaat.js"></script>
 </body>
 </html>

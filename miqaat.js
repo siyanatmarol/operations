@@ -575,6 +575,22 @@
         return String(str || '').trim().toLowerCase().replace(/\s+/g, ' ');
     }
 
+    function levenshteinDist(a, b) {
+        const m = a.length, n = b.length;
+        if (!m) return n;
+        if (!n) return m;
+        const dp = Array.from({ length: m + 1 }, (_, i) => [i]);
+        for (let j = 1; j <= n; j++) dp[0][j] = j;
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                dp[i][j] = a[i - 1] === b[j - 1]
+                    ? dp[i - 1][j - 1]
+                    : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+            }
+        }
+        return dp[m][n];
+    }
+
     function matchTaskToUser(task, authUsers) {
         const taskEmail = String(task.assigneeEmail || '').trim().toLowerCase();
         if (taskEmail) {
@@ -583,13 +599,38 @@
         }
         const taskName = normalizeNameKey(task.assigneeName);
         if (taskName) {
-            const exact = authUsers.find(u => normalizeNameKey(u.name) === taskName);
+            // 1. Exact display-name or email-derived name match
+            const exact = authUsers.find(u =>
+                normalizeNameKey(u.name) === taskName ||
+                normalizeNameKey(formatNameFromEmail(u.email)) === taskName
+            );
             if (exact) return exact.email;
+
+            // 2. Partial substring match
             const partial = authUsers.find(u => {
                 const uName = normalizeNameKey(u.name);
-                return uName && (uName.includes(taskName) || taskName.includes(uName));
+                const eName = normalizeNameKey(formatNameFromEmail(u.email));
+                return (uName && (uName.includes(taskName) || taskName.includes(uName))) ||
+                       (eName && (eName.includes(taskName) || taskName.includes(eName)));
             });
             if (partial) return partial.email;
+
+            // 3. Spelling-tolerant match (handles variants like Abduttayeb/Abduttayyeb, Huzaifa/Huzefa)
+            const tParts = taskName.split(' ').filter(Boolean);
+            const fuzzy = authUsers.find(u => {
+                const candidates = [normalizeNameKey(u.name), normalizeNameKey(formatNameFromEmail(u.email))].filter(Boolean);
+                return candidates.some(cand => {
+                    if (levenshteinDist(cand, taskName) <= 2) return true;
+                    const cParts = cand.split(' ').filter(Boolean);
+                    if (tParts.length >= 2 && cParts.length >= 2) {
+                        const sameLast = levenshteinDist(tParts[tParts.length - 1], cParts[cParts.length - 1]) <= 1;
+                        const closeFirst = levenshteinDist(tParts[0], cParts[0]) <= 2;
+                        return sameLast && closeFirst;
+                    }
+                    return false;
+                });
+            });
+            if (fuzzy) return fuzzy.email;
         }
         return '__unassigned__';
     }
@@ -863,8 +904,8 @@
             </div>
 
             <!-- Last Year Events Reference Modal -->
-            <div id="miqaatLastYearModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs hidden z-50 flex items-center justify-center p-2 sm:p-4">
-                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-emerald-300">
+            <div id="miqaatLastYearModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs hidden z-50 flex items-center justify-center p-2 sm:p-3">
+                <div class="bg-white rounded-2xl shadow-2xl w-[96vw] max-w-[1600px] max-h-[92vh] flex flex-col overflow-hidden border border-emerald-300">
                     <div class="bg-emerald-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-2">
                         <div>
                             <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
@@ -887,9 +928,66 @@
     // SUB-HEADER 1: DASHBOARD
     // =========================================================================
 
+    function getMergedDailyEvents(yr) {
+        const daily = Array.isArray(yr.dailyEvents) ? yr.dailyEvents : [];
+        const tt = Array.isArray(yr.timetable) ? yr.timetable : [];
+        const byDate = new Map();
+
+        daily.forEach(ev => {
+            const key = String(ev.englishDate || '').trim();
+            if (key) byDate.set(key, ev);
+        });
+
+        let addedAny = false;
+        tt.forEach(t => {
+            const key = String(t.englishDate || '').trim();
+            if (!key) return;
+            if (byDate.has(key)) {
+                const ev = byDate.get(key);
+                if (!ev.hijriDate && t.hijriDate) ev.hijriDate = t.hijriDate;
+                if (!ev.day && t.day) ev.day = t.day;
+                if (ev.paper1 === undefined && t.paper1) ev.paper1 = t.paper1;
+                if (ev.paper2 === undefined && t.paper2) ev.paper2 = t.paper2;
+            } else {
+                const synced = {
+                    id: genId('dev'),
+                    englishDate: key,
+                    hijriDate: t.hijriDate || '',
+                    day: t.day || getDayNameFromIso(key),
+                    paper1: t.paper1 || '',
+                    paper2: t.paper2 || '',
+                    routeProgram: '',
+                    dignitaryVisit: '',
+                    nightProgram: '',
+                    marolProg: '',
+                    fromTimetableId: t.id
+                };
+                daily.push(synced);
+                byDate.set(key, synced);
+                addedAny = true;
+            }
+        });
+        if (addedAny) yr.dailyEvents = daily;
+        return daily;
+    }
+
+    function formatDailyEventBannerHtml(ev) {
+        const parts = [];
+        if (ev.paper1 || ev.paper2) {
+            const papers = [ev.paper1 ? `Paper 1: ${ev.paper1}` : '', ev.paper2 ? `Paper 2: ${ev.paper2}` : ''].filter(Boolean).join(' | ');
+            parts.push(`<div><span class="text-amber-300 uppercase text-[11px] font-extrabold">Exam:</span> ${escapeHtml(papers)}</div>`);
+        }
+        if (ev.routeProgram) parts.push(`<div><span class="text-orange-200 uppercase text-[11px] font-extrabold">Route Program:</span> ${nl2br(ev.routeProgram)}</div>`);
+        if (ev.dignitaryVisit) parts.push(`<div><span class="text-sky-200 uppercase text-[11px] font-extrabold">Dignitary Visit:</span> ${nl2br(ev.dignitaryVisit)}</div>`);
+        if (ev.nightProgram) parts.push(`<div><span class="text-yellow-200 uppercase text-[11px] font-extrabold">Night Program:</span> ${nl2br(ev.nightProgram)}</div>`);
+        if (ev.marolProg) parts.push(`<div><span class="text-emerald-200 uppercase text-[11px] font-extrabold">Marol Prog:</span> ${escapeHtml(ev.marolProg)}</div>`);
+        if (ev.events) parts.push(`<div>${nl2br(ev.events)}</div>`);
+        return parts.length ? parts.join('<div class="my-1 border-t border-white/15"></div>') : '<span class="italic text-amber-100/80">Date scheduled (no program details added yet)</span>';
+    }
+
     function getMatchingDailyEventsForDates(todayIso, tomorrowIso) {
         const yr = getYearData(selectedHijriYear);
-        const list = Array.isArray(yr.dailyEvents) ? yr.dailyEvents : [];
+        const list = getMergedDailyEvents(yr);
         const todayEvents = list.filter(ev => String(ev.englishDate || '').trim() === todayIso);
         const tomorrowEvents = list.filter(ev => String(ev.englishDate || '').trim() === tomorrowIso);
         return { todayEvents, tomorrowEvents };
@@ -934,8 +1032,8 @@
                             </div>
                             ${todayEvents.length > 0
                                 ? todayEvents.map(ev => `
-                                    <div class="text-sm font-bold text-white leading-relaxed whitespace-pre-line bg-white/10 rounded-lg p-2.5 mt-1.5 border border-white/15">
-                                        ${nl2br(ev.events)}
+                                    <div class="text-sm font-bold text-white leading-relaxed bg-white/10 rounded-lg p-2.5 mt-1.5 border border-white/15 space-y-1">
+                                        ${formatDailyEventBannerHtml(ev)}
                                     </div>
                                 `).join('')
                                 : `<p class="text-xs text-amber-100/90 italic">No events recorded for today.</p>`
@@ -948,8 +1046,8 @@
                             </div>
                             ${tomorrowEvents.length > 0
                                 ? tomorrowEvents.map(ev => `
-                                    <div class="text-sm font-bold text-white leading-relaxed whitespace-pre-line bg-white/10 rounded-lg p-2.5 mt-1.5 border border-white/15">
-                                        ${nl2br(ev.events)}
+                                    <div class="text-sm font-bold text-white leading-relaxed bg-white/10 rounded-lg p-2.5 mt-1.5 border border-white/15 space-y-1">
+                                        ${formatDailyEventBannerHtml(ev)}
                                     </div>
                                 `).join('')
                                 : `<p class="text-xs text-amber-100/90 italic">No events recorded for tomorrow.</p>`
@@ -1438,9 +1536,9 @@
                         <tbody class="divide-y divide-gray-200">
                             ${rows.length === 0 ? `
                                 <tr><td colspan="${readonly ? 7 : 8}" class="px-4 py-6 text-center text-gray-400 italic">No entries found.</td></tr>
-                            ` : rows.map(row => `
+                            ` : rows.map((row, idx) => `
                                 <tr class="hover:bg-emerald-50/30 transition align-top">
-                                    <td class="px-3 py-2.5 text-center font-bold text-gray-700 border-r border-gray-200">${escapeHtml(row.srNo)}</td>
+                                    <td class="px-3 py-2.5 text-center font-bold text-gray-700 border-r border-gray-200">${idx + 1}</td>
                                     <td class="px-3 py-2.5 font-semibold text-gray-900 border-r border-gray-200">${nl2br(row.description)}</td>
                                     <td class="px-3 py-2.5 text-gray-700 border-r border-gray-200">${nl2br(row.hastak)}</td>
                                     <td class="px-3 py-2.5 text-gray-700 border-r border-gray-200">${nl2br(row.requirements)}</td>
@@ -1623,7 +1721,8 @@
         const readonly = isViewOnly();
         const todayIso = getLocalDateIso(0);
         const tomorrowIso = getLocalDateIso(1);
-        const sorted = [...(yr.dailyEvents || [])].sort((a, b) => String(a.englishDate || '').localeCompare(String(b.englishDate || '')));
+        const merged = getMergedDailyEvents(yr);
+        const sorted = [...merged].sort((a, b) => String(a.englishDate || '9999-99-99').localeCompare(String(b.englishDate || '9999-99-99')));
 
         return `
             <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
@@ -1632,7 +1731,7 @@
                         <i class="fa-solid fa-star-and-crescent text-amber-500"></i>
                         <span>Aqa Maula TUS – Daily Events (${selectedHijriYear}H)</span>
                     </h3>
-                    <p class="text-xs text-gray-600">Events matching Today (${formatDisplayDate(todayIso)}) or Tomorrow (${formatDisplayDate(tomorrowIso)}) automatically flash at the top of the Dashboard.</p>
+                    <p class="text-xs text-gray-600">Exam dates (English Date, Hijri Date, Day, Paper 1 &amp; Paper 2) auto-reflect here. Today (${formatDisplayDate(todayIso)}) &amp; Tomorrow (${formatDisplayDate(tomorrowIso)}) flash on the Dashboard.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <button type="button" onclick="window.MiqaatModule.openLastYearEventsModal()" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-amber-500 text-emerald-950 hover:bg-amber-400 shadow-sm">
@@ -1640,7 +1739,7 @@
                     </button>
                     ${!readonly ? `
                         <button type="button" onclick="window.MiqaatModule.openDailyEventModal()" class="miqaat-edit-only px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-700 text-white hover:bg-emerald-800 shadow-sm">
-                            <i class="fa-solid fa-plus mr-1"></i>Add Day / Events
+                            <i class="fa-solid fa-plus mr-1"></i>Add Date
                         </button>
                     ` : ''}
                 </div>
@@ -1648,41 +1747,51 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-emerald-900 text-white text-xs uppercase tracking-wider">
-                            <tr>
-                                <th class="px-4 py-3 text-left w-44">English Date</th>
-                                <th class="px-4 py-3 text-left w-40">Hijri Date</th>
-                                <th class="px-4 py-3 text-left w-32">Day</th>
-                                <th class="px-4 py-3 text-left">Events / Programs</th>
-                                ${!readonly ? '<th class="px-3 py-3 text-center w-24 miqaat-edit-only">Actions</th>' : ''}
+                    <table class="w-full text-xs sm:text-sm border-collapse">
+                        <thead>
+                            <tr class="text-left text-xs font-extrabold uppercase tracking-wider border-b border-gray-300">
+                                <th class="px-3 py-3 bg-emerald-900 text-white border-r border-emerald-800 whitespace-nowrap">English Date</th>
+                                <th class="px-3 py-3 bg-emerald-900 text-white border-r border-emerald-800 whitespace-nowrap">Hijri Date</th>
+                                <th class="px-3 py-3 bg-emerald-900 text-white border-r border-emerald-800 whitespace-nowrap">Day</th>
+                                <th class="px-3 py-3 bg-teal-900 text-amber-200 border-r border-teal-800 min-w-[120px]">Paper 1</th>
+                                <th class="px-3 py-3 bg-teal-900 text-emerald-200 border-r border-teal-800 min-w-[120px]">Paper 2</th>
+                                <th class="px-3 py-3 bg-orange-200 text-gray-900 border-r border-orange-300 min-w-[170px]">Route Program</th>
+                                <th class="px-3 py-3 bg-blue-300 text-gray-900 border-r border-blue-400 min-w-[170px]">Dignitary Visit</th>
+                                <th class="px-3 py-3 bg-yellow-200 text-gray-900 border-r border-yellow-300 min-w-[220px]">Night Program Details</th>
+                                <th class="px-3 py-3 bg-blue-300 text-gray-900 border-r border-blue-400 whitespace-nowrap">Marol Prog (Q/M/Z)</th>
+                                ${!readonly ? '<th class="px-3 py-3 bg-emerald-900 text-white text-center w-20 miqaat-edit-only">Actions</th>' : ''}
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             ${sorted.length === 0 ? `
                                 <tr>
-                                    <td colspan="${readonly ? 4 : 5}" class="px-4 py-8 text-center text-gray-500">
+                                    <td colspan="${readonly ? 9 : 10}" class="px-4 py-8 text-center text-gray-500">
                                         <i class="fa-solid fa-calendar-day text-3xl text-gray-300 mb-2 block"></i>
-                                        No daily events scheduled for ${selectedHijriYear}H yet. Click <strong>Add Day / Events</strong> or check <strong>Last Year Events</strong> for reference.
+                                        No dates yet for ${selectedHijriYear}H. Add an Exam Date in Dashboard or click <strong>Add Date</strong> above.
                                     </td>
                                 </tr>
                             ` : sorted.map(ev => {
-                                const isToday = ev.englishDate === todayIso;
-                                const isTomorrow = ev.englishDate === tomorrowIso;
-                                const highlightRow = isToday ? 'bg-amber-50/90' : (isTomorrow ? 'bg-yellow-50/60' : 'hover:bg-emerald-50/30');
+                                const isToday = ev.englishDate && ev.englishDate === todayIso;
+                                const isTomorrow = ev.englishDate && ev.englishDate === tomorrowIso;
+                                const nightText = ev.nightProgram || ev.events || '';
                                 return `
-                                    <tr class="${highlightRow} transition align-top">
-                                        <td class="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">
-                                            <div>${formatDisplayDate(ev.englishDate)}</div>
+                                    <tr class="align-top transition ${isToday ? 'ring-2 ring-inset ring-red-500' : (isTomorrow ? 'ring-2 ring-inset ring-amber-400' : 'hover:bg-emerald-50/30')}">
+                                        <td class="px-3 py-2.5 font-bold text-gray-900 bg-white border-r border-gray-200 whitespace-nowrap">
+                                            <div>${ev.englishDate ? formatDisplayDate(ev.englishDate) : '—'}</div>
                                             ${isToday ? '<span class="inline-block mt-1 text-[10px] font-extrabold uppercase bg-red-600 text-white px-2 py-0.5 rounded-full">TODAY</span>' : ''}
                                             ${isTomorrow ? '<span class="inline-block mt-1 text-[10px] font-extrabold uppercase bg-amber-500 text-emerald-950 px-2 py-0.5 rounded-full">TOMORROW</span>' : ''}
                                         </td>
-                                        <td class="px-4 py-3 font-semibold text-emerald-900 whitespace-nowrap">${escapeHtml(ev.hijriDate || '—')}</td>
-                                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">${escapeHtml(ev.day || getDayNameFromIso(ev.englishDate) || '—')}</td>
-                                        <td class="px-4 py-3 text-gray-900 leading-relaxed">${nl2br(ev.events)}</td>
+                                        <td class="px-3 py-2.5 font-semibold text-emerald-900 bg-white border-r border-gray-200 whitespace-nowrap">${escapeHtml(ev.hijriDate || '—')}</td>
+                                        <td class="px-3 py-2.5 text-gray-700 bg-white border-r border-gray-200 whitespace-nowrap">${escapeHtml(ev.day || getDayNameFromIso(ev.englishDate) || '—')}</td>
+                                        <td class="px-3 py-2.5 text-gray-900 font-medium bg-emerald-50/40 border-r border-gray-200">${ev.paper1 ? nl2br(ev.paper1) : '<span class="text-gray-400">—</span>'}</td>
+                                        <td class="px-3 py-2.5 text-gray-900 font-medium bg-emerald-50/40 border-r border-gray-200">${ev.paper2 ? nl2br(ev.paper2) : '<span class="text-gray-400">—</span>'}</td>
+                                        <td class="px-3 py-2.5 bg-orange-50/80 text-gray-900 border-r border-orange-200">${ev.routeProgram ? nl2br(ev.routeProgram) : '<span class="text-gray-400">—</span>'}</td>
+                                        <td class="px-3 py-2.5 bg-blue-50/80 text-gray-900 border-r border-blue-200">${ev.dignitaryVisit ? nl2br(ev.dignitaryVisit) : '<span class="text-gray-400">—</span>'}</td>
+                                        <td class="px-3 py-2.5 bg-yellow-50/80 text-gray-900 border-r border-yellow-200">${nightText ? nl2br(nightText) : '<span class="text-gray-400">—</span>'}</td>
+                                        <td class="px-3 py-2.5 bg-blue-50/80 font-semibold text-center text-gray-900 border-r border-blue-200 whitespace-nowrap">${escapeHtml(ev.marolProg || '—')}</td>
                                         ${!readonly ? `
-                                            <td class="px-3 py-3 text-center whitespace-nowrap miqaat-edit-only">
-                                                <button type="button" onclick="window.MiqaatModule.openDailyEventModal('${ev.id}')" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                                            <td class="px-3 py-2.5 text-center whitespace-nowrap bg-white miqaat-edit-only">
+                                                <button type="button" onclick="window.MiqaatModule.openDailyEventModal('${ev.id}')" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="Edit Date / Events"><i class="fa-solid fa-pen-to-square"></i></button>
                                                 <button type="button" onclick="window.MiqaatModule.deleteDailyEvent('${ev.id}')" class="text-red-600 hover:bg-red-50 p-1.5 rounded" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                             </td>
                                         ` : ''}
@@ -1855,12 +1964,44 @@
                     paper2: form.paper2.value.trim(),
                     eveningTiming: form.eveningTiming.value.trim()
                 };
+                const prevDate = existing ? String(existing.englishDate || '').trim() : '';
                 if (existing) {
                     Object.assign(existing, payload);
                 } else {
                     yr.timetable.push(payload);
                 }
-                await persistData(existing ? 'Timetable updated.' : 'Exam date added.');
+
+                // Auto-reflect exam date, Hijri date, Day, Paper 1 & Paper 2 into Aqa Maula – Daily Events
+                if (!Array.isArray(yr.dailyEvents)) yr.dailyEvents = [];
+                let linkedDaily = yr.dailyEvents.find(d =>
+                    (d.fromTimetableId && d.fromTimetableId === payload.id) ||
+                    (payload.englishDate && String(d.englishDate || '').trim() === payload.englishDate) ||
+                    (prevDate && String(d.englishDate || '').trim() === prevDate)
+                );
+                if (linkedDaily) {
+                    linkedDaily.englishDate = payload.englishDate;
+                    linkedDaily.hijriDate = payload.hijriDate;
+                    linkedDaily.day = payload.day;
+                    linkedDaily.paper1 = payload.paper1;
+                    linkedDaily.paper2 = payload.paper2;
+                    linkedDaily.fromTimetableId = payload.id;
+                } else if (payload.englishDate || payload.hijriDate) {
+                    yr.dailyEvents.push({
+                        id: genId('dev'),
+                        englishDate: payload.englishDate,
+                        hijriDate: payload.hijriDate,
+                        day: payload.day,
+                        paper1: payload.paper1,
+                        paper2: payload.paper2,
+                        routeProgram: '',
+                        dignitaryVisit: '',
+                        nightProgram: '',
+                        marolProg: '',
+                        fromTimetableId: payload.id
+                    });
+                }
+
+                await persistData(existing ? 'Timetable & Daily Events updated.' : 'Exam date added & reflected in Daily Events.');
                 renderActiveTab();
             }
         );
@@ -2102,15 +2243,9 @@
         openFormModal(
             `<i class="fa-solid fa-clipboard-list text-amber-300"></i> ${existing ? 'Edit' : 'Add'} ${sectionTitle} Entry`,
             `
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Sr No</label>
-                        <input type="text" name="srNo" value="${escapeHtml(existing?.srNo || String(list.length + 1))}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Description *</label>
-                        <textarea name="description" rows="2" required class="w-full p-2 border border-gray-300 rounded-lg text-sm">${escapeHtml(existing?.description || '')}</textarea>
-                    </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Description *</label>
+                    <textarea name="description" rows="2" required class="w-full p-2 border border-gray-300 rounded-lg text-sm">${escapeHtml(existing?.description || '')}</textarea>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Hastak (One name per line)</label>
@@ -2138,7 +2273,6 @@
             async (form) => {
                 const payload = {
                     id: existing ? existing.id : genId('evd'),
-                    srNo: form.srNo.value.trim(),
                     description: form.description.value.trim(),
                     hastak: form.hastak.value.trim(),
                     requirements: form.requirements.value.trim(),
@@ -2508,29 +2642,56 @@
     function openDailyEventModal(eventId = null) {
         if (isViewOnly()) return;
         const yr = getYearData(selectedHijriYear);
-        const existing = eventId ? yr.dailyEvents.find(e => e.id === eventId) : null;
+        const list = getMergedDailyEvents(yr);
+        const existing = eventId ? list.find(e => e.id === eventId) : null;
+        const existingNight = existing ? (existing.nightProgram !== undefined ? existing.nightProgram : (existing.events || '')) : '';
 
         openFormModal(
-            `<i class="fa-solid fa-star-and-crescent text-amber-300"></i> ${existing ? 'Edit' : 'Add'} Aqa Maula Daily Event`,
+            `<i class="fa-solid fa-star-and-crescent text-amber-300"></i> ${existing ? 'Edit' : 'Add'} Date &amp; Daily Events`,
             `
+                <p class="text-xs text-gray-500 -mt-1">All fields are optional — fill in whichever columns apply for this date.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">English Date *</label>
-                        <input type="date" name="englishDate" required value="${escapeHtml(existing?.englishDate || getLocalDateIso(0))}" class="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">English Date</label>
+                        <input type="date" name="englishDate" value="${escapeHtml(existing?.englishDate || '')}" class="w-full p-2 border border-gray-300 rounded-lg text-sm"
                             onchange="const d=this.value; if(d){ const dt=new Date(d+'T00:00:00'); this.form.day.value=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dt.getDay()]||''; }">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Hijri Date *</label>
-                        <input type="text" name="hijriDate" required placeholder="e.g. 6 Rajab 1448" value="${escapeHtml(existing?.hijriDate || '')}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Hijri Date</label>
+                        <input type="text" name="hijriDate" placeholder="e.g. 6 Rajab" value="${escapeHtml(existing?.hijriDate || '')}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Day</label>
-                        <input type="text" name="day" value="${escapeHtml(existing?.day || getDayNameFromIso(existing?.englishDate || getLocalDateIso(0)))}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                        <input type="text" name="day" placeholder="e.g. Thursday" value="${escapeHtml(existing?.day || getDayNameFromIso(existing?.englishDate || ''))}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-emerald-50/60 p-3 rounded-lg border border-emerald-200">
+                    <div>
+                        <label class="block text-xs font-bold text-emerald-900 uppercase mb-1">Paper 1</label>
+                        <input type="text" name="paper1" placeholder="Optional (auto-filled from Timetable)" value="${escapeHtml(existing?.paper1 || '')}" class="w-full p-2 border border-emerald-300 rounded-lg text-sm bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-emerald-900 uppercase mb-1">Paper 2</label>
+                        <input type="text" name="paper2" placeholder="Optional (auto-filled from Timetable)" value="${escapeHtml(existing?.paper2 || '')}" class="w-full p-2 border border-emerald-300 rounded-lg text-sm bg-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-orange-900 uppercase mb-1">Route Program</label>
+                        <textarea name="routeProgram" rows="2" placeholder="e.g. 1 Aqiqa at Bab Zuwaila" class="w-full p-2 border border-orange-300 bg-orange-50/40 rounded-lg text-sm">${escapeHtml(existing?.routeProgram || '')}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-blue-900 uppercase mb-1">Dignitary Visit</label>
+                        <textarea name="dignitaryVisit" rows="2" placeholder="e.g. Before Imtehaan Route in Talebaat Mawaid..." class="w-full p-2 border border-blue-300 bg-blue-50/40 rounded-lg text-sm">${escapeHtml(existing?.dignitaryVisit || '')}</textarea>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Events / Programs * <span class="text-gray-400 font-normal">(Enter multiple events on separate lines)</span></label>
-                    <textarea name="events" rows="5" required placeholder="- Morning program...&#10;- Dignitary visit...&#10;- Night program..." class="w-full p-2.5 border border-gray-300 rounded-lg text-sm">${escapeHtml(existing?.events || '')}</textarea>
+                    <label class="block text-xs font-bold text-yellow-900 uppercase mb-1">Night Program Details</label>
+                    <textarea name="nightProgram" rows="3" placeholder="- Program 1&#10;- Program 2" class="w-full p-2 border border-yellow-300 bg-yellow-50/40 rounded-lg text-sm">${escapeHtml(existingNight)}</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-blue-900 uppercase mb-1">Marol Prog (Q/M/Z)</label>
+                    <input type="text" name="marolProg" placeholder="e.g. 1 Hour / 45 mins" value="${escapeHtml(existing?.marolProg || '')}" class="w-full p-2 border border-blue-300 bg-blue-50/40 rounded-lg text-sm">
                 </div>
             `,
             async (form) => {
@@ -2539,14 +2700,21 @@
                     englishDate: form.englishDate.value.trim(),
                     hijriDate: form.hijriDate.value.trim(),
                     day: form.day.value.trim() || getDayNameFromIso(form.englishDate.value.trim()),
-                    events: form.events.value.trim()
+                    paper1: form.paper1.value.trim(),
+                    paper2: form.paper2.value.trim(),
+                    routeProgram: form.routeProgram.value.trim(),
+                    dignitaryVisit: form.dignitaryVisit.value.trim(),
+                    nightProgram: form.nightProgram.value.trim(),
+                    marolProg: form.marolProg.value.trim(),
+                    fromTimetableId: existing?.fromTimetableId || ''
                 };
                 if (existing) {
+                    delete existing.events;
                     Object.assign(existing, payload);
                 } else {
                     yr.dailyEvents.push(payload);
                 }
-                await persistData(existing ? 'Daily event updated.' : 'Daily event added.');
+                await persistData(existing ? 'Daily event updated.' : 'Date added to Daily Events.');
                 renderActiveTab();
             }
         );
@@ -2631,20 +2799,28 @@
             bodyEl.innerHTML = prevYearEvents.length === 0
                 ? `<div class="text-center py-10 text-gray-500 text-sm">No saved daily events found for ${prevYear}H yet.</div>`
                 : `
-                    <table class="w-full text-sm border border-gray-200 rounded-xl overflow-hidden">
-                        <thead class="bg-emerald-900 text-white text-xs uppercase">
-                            <tr>
-                                <th class="px-4 py-2.5 text-left">English Date</th>
-                                <th class="px-4 py-2.5 text-left">Hijri Date</th>
-                                <th class="px-4 py-2.5 text-left">Events / Programs</th>
+                    <table class="w-full text-xs sm:text-sm border-collapse border border-gray-300 rounded-xl overflow-hidden">
+                        <thead>
+                            <tr class="text-left font-extrabold text-gray-900 border-b border-gray-300">
+                                <th class="px-3 py-2 bg-gray-100 border-r border-gray-300 whitespace-nowrap">Hijri Date</th>
+                                <th class="px-3 py-2 bg-gray-100 border-r border-gray-300 whitespace-nowrap">English Date</th>
+                                <th class="px-3 py-2 bg-gray-100 border-r border-gray-300 whitespace-nowrap">Day</th>
+                                <th class="px-3 py-2 bg-orange-200 border-r border-gray-300">Route Program</th>
+                                <th class="px-3 py-2 bg-blue-300 border-r border-gray-300">Dignitary Visit</th>
+                                <th class="px-3 py-2 bg-yellow-200 border-r border-gray-300">Night Program Details</th>
+                                <th class="px-3 py-2 bg-blue-300 whitespace-nowrap">Marol Prog (Q/M/Z)</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200">
+                        <tbody class="divide-y divide-gray-300">
                             ${prevYearEvents.map(ev => `
-                                <tr>
-                                    <td class="px-4 py-2.5 font-bold whitespace-nowrap">${formatDisplayDate(ev.englishDate)}</td>
-                                    <td class="px-4 py-2.5 font-semibold text-emerald-900 whitespace-nowrap">${escapeHtml(ev.hijriDate || '—')}</td>
-                                    <td class="px-4 py-2.5">${nl2br(ev.events)}</td>
+                                <tr class="align-top">
+                                    <td class="px-3 py-2 font-bold border-r border-gray-300 whitespace-nowrap">${escapeHtml(ev.hijriDate || '—')}</td>
+                                    <td class="px-3 py-2 border-r border-gray-300 whitespace-nowrap">${ev.englishDate ? formatDisplayDate(ev.englishDate) : '—'}</td>
+                                    <td class="px-3 py-2 border-r border-gray-300 whitespace-nowrap">${escapeHtml(ev.day || getDayNameFromIso(ev.englishDate) || '—')}</td>
+                                    <td class="px-3 py-2 bg-orange-50/80 border-r border-gray-300">${nl2br(ev.routeProgram || '')}</td>
+                                    <td class="px-3 py-2 bg-blue-50/80 border-r border-gray-300">${nl2br(ev.dignitaryVisit || '')}</td>
+                                    <td class="px-3 py-2 bg-yellow-50/80 border-r border-gray-300">${nl2br(ev.nightProgram || ev.events || '')}</td>
+                                    <td class="px-3 py-2 bg-blue-50/80 font-bold text-center whitespace-nowrap">${escapeHtml(ev.marolProg || '')}</td>
                                 </tr>
                             `).join('')}
                         </tbody>

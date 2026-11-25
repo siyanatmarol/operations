@@ -3156,9 +3156,9 @@
                         <i class="fa-solid fa-user-lock"></i>
                         <span>Login Details</span>
                     </button>
-                    <button type="button" onclick="cleanUpExtraMetersAndInvalidAutoBills(true)" class="crud-action-btn bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Remove Extra Auto-Added Meters (Keep Only 27 Elec & 7 Gas) and Clear Invalid ₹34 / Disconnection Notice Entries">
+                    <button type="button" onclick="cleanUpExtraMetersAndInvalidAutoBills(true)" class="crud-action-btn bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-sm" title="Deduplicate MGL Gas Bills, Remove Extra Auto-Added Meters (Keep Only 27 Elec & 7 Gas), and Clear Invalid Entries">
                         <i class="fa-solid fa-broom"></i>
-                        <span>Clean Extra Meters</span>
+                        <span>Clean &amp; Fix Duplicates</span>
                     </button>
                     <button type="button" onclick="openManualAddElecGasBillModal()" class="crud-action-btn bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 rounded-lg text-xs font-extrabold transition flex items-center space-x-1.5 shadow-sm" title="Manually Add or Edit Any Monthly Electricity or Gas Bill">
                         <i class="fa-solid fa-file-circle-plus"></i>
@@ -7043,24 +7043,49 @@ function autoFetchAdaniAndMglBillsDaily(customLookbackDays) {
               fileUrl: existingRec.fileUrl || ""
             });
           }
-          var alreadyExists = subBills.some(function(sb) {
-            return (sb.billKeyId && sb.billKeyId === parsedBill.invoiceId) ||
-              (sb.billDate === parsedBill.billDateStr && Math.abs(Number(sb.amount || 0) - parsedBill.amount) < 0.01 && Math.abs(Number(sb.units || 0) - parsedBill.units) < 0.01);
-          });
-          if (alreadyExists) {
-            skippedAlreadySynced++;
-            continue;
+          subBills = deduplicateMglSubBillsServer_(subBills);
+
+          var matchIdx = -1;
+          for (var mi = 0; mi < subBills.length; mi++) {
+            if (isSameMglSubBillServer_(subBills[mi], {
+              billKeyId: parsedBill.invoiceId,
+              billDate: parsedBill.billDateStr || d.msgDateStr,
+              amount: parsedBill.amount,
+              units: parsedBill.units
+            })) {
+              matchIdx = mi;
+              break;
+            }
           }
 
-          var desiredNameGas = caClean + "_" + parsedBill.yearStr + "_M" + (parsedBill.monthIdx + 1) + "_B" + (subBills.length + 1) + ".pdf";
-          var fileUrlGas = saveSinglePdfInFolder_(folder, { messageId: d.messageId, attIndex: a, desiredFileName: desiredNameGas });
-          subBills.push({
-            billKeyId: parsedBill.invoiceId,
-            billDate: parsedBill.billDateStr || d.msgDateStr,
-            amount: parsedBill.amount,
-            units: parsedBill.units,
-            fileUrl: fileUrlGas || ""
-          });
+          if (matchIdx !== -1) {
+            var existingSb = subBills[matchIdx];
+            var betterUnits = pickBetterMglUnitsServer_(existingSb.units, parsedBill.units, parsedBill.amount);
+            var needsUpgrade = (Math.abs(Number(existingSb.units || 0) - betterUnits) >= 0.01) || (!existingSb.fileUrl);
+            if (!needsUpgrade) {
+              skippedAlreadySynced++;
+              continue;
+            }
+            if (!existingSb.fileUrl) {
+              var desiredNameGasUp = caClean + "_" + parsedBill.yearStr + "_M" + (parsedBill.monthIdx + 1) + "_B" + (matchIdx + 1) + ".pdf";
+              existingSb.fileUrl = saveSinglePdfInFolder_(folder, { messageId: d.messageId, attIndex: a, desiredFileName: desiredNameGasUp }) || "";
+            }
+            existingSb.units = betterUnits;
+            if (extractCanonicalMglInvServer_(parsedBill.invoiceId)) {
+              existingSb.billKeyId = extractCanonicalMglInvServer_(parsedBill.invoiceId);
+            }
+          } else {
+            var desiredNameGas = caClean + "_" + parsedBill.yearStr + "_M" + (parsedBill.monthIdx + 1) + "_B" + (subBills.length + 1) + ".pdf";
+            var fileUrlGas = saveSinglePdfInFolder_(folder, { messageId: d.messageId, attIndex: a, desiredFileName: desiredNameGas });
+            subBills.push({
+              billKeyId: parsedBill.invoiceId,
+              billDate: parsedBill.billDateStr || d.msgDateStr,
+              amount: parsedBill.amount,
+              units: parsedBill.units,
+              fileUrl: fileUrlGas || ""
+            });
+          }
+          subBills = deduplicateMglSubBillsServer_(subBills);
           subBills.sort(function(x, y) { return String(x.billDate || "").localeCompare(String(y.billDate || "")); });
 
           var totAmt = 0;
@@ -7361,14 +7386,16 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
     var guPatterns = [
       /Gas\s*Consumption\s*SCM\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
       /Corrected\s*Consumption\s*For\s*Piped\s*Natural\s*Gas\s*(?:\(in\s*Scm\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
-      /(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i,
-      /\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i
+      /\b1\.1\s+[A-Za-z0-9\-]+\s+[0-9,]+\.\d{2}\s+[0-9,]+\.\d{2}\s+[0-9]+\.\d+\s+([0-9,]+(?:\.\d+)?)/i,
+      /(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i
     ];
     for (var up = 0; up < guPatterns.length; up++) {
       var guM = flatCorpus.match(guPatterns[up]);
       if (guM) {
         var uVal = parseFloat(guM[1].replace(/,/g, ""));
-        if (!isNaN(uVal) && uVal >= 0) { gUnits = uVal; break; }
+        // Reject MGL section-number false positives (e.g. "2.2" or "2.1" or "1.1") on commercial bills
+        var isSectionFalsePos = (up === 3) && gAmt >= 1000 && (Math.abs(uVal - 2.2) < 0.01 || Math.abs(uVal - 2.1) < 0.01 || Math.abs(uVal - 1.1) < 0.01 || Math.abs(uVal - 1.2) < 0.01);
+        if (!isNaN(uVal) && uVal >= 0 && !isSectionFalsePos) { gUnits = uVal; break; }
       }
     }
     if (!(gAmt > 0) && !gIsCredit) return null;
@@ -7387,7 +7414,10 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
     }
     var domConM = flatCorpus.match(/\b((?:DOM|CON)\/[0-9A-Z\/\-]{5,25})\b/i);
     var invNoM = domConM || flatCorpus.match(/(?:MVAT\s*INVOICE\s*NO|GST\s*INVOICE\s*NO|BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
-    var invNoClean = invNoM ? invNoM[1].trim() : "MGL";
+    var invNoClean = invNoM ? invNoM[1].trim().toUpperCase() : "MGL";
+    var canonicalId = /^(?:DOM|CON)\//i.test(invNoClean)
+      ? invNoClean
+      : (invNoClean + "_" + billDateIso + "_" + Math.round(gAmt * 100));
     var gCreditPayable = (mTpDom && !isNaN(parseFloat(mTpDom[1].replace(/[\s,]/g, ""))) && parseFloat(mTpDom[1].replace(/[\s,]/g, "")) <= 0)
       ? parseFloat(mTpDom[1].replace(/[\s,]/g, ""))
       : 0;
@@ -7399,9 +7429,88 @@ function parseUtilityBillTextServer_(combinedCorpus, subjectStr, msgDateStr, isG
       monthIdx: gMonthIdx,
       yearStr: gYearStr,
       billDateStr: billDateIso,
-      invoiceId: invNoClean + "_" + billDateIso + "_" + Math.round(gAmt * 100) + "_" + Math.round(gUnits * 100)
+      invoiceId: canonicalId
     };
   }
+}
+
+function extractCanonicalMglInvServer_(keyId) {
+  var m = String(keyId || "").trim().match(/^((?:CON|DOM)\/[0-9A-Z\/\-]{4,25})(?:_|$)/i);
+  return m ? m[1].toUpperCase() : "";
+}
+
+function isSuspectMglUnitsServer_(u, amt) {
+  var uv = Number(u || 0);
+  var av = Number(amt || 0);
+  if (!(uv > 0)) return true;
+  if (Math.abs(uv - 2.2) < 0.01 && av >= 1000) return true;
+  if (av >= 5000 && uv < 10) return true;
+  return false;
+}
+
+function pickBetterMglUnitsServer_(uA, uB, amt) {
+  var a = Number(uA || 0);
+  var b = Number(uB || 0);
+  var suspA = isSuspectMglUnitsServer_(a, amt);
+  var suspB = isSuspectMglUnitsServer_(b, amt);
+  if (suspA && !suspB) return b;
+  if (suspB && !suspA) return a;
+  return Math.max(a, b);
+}
+
+function isSameMglSubBillServer_(a, b) {
+  if (!a || !b) return false;
+  var invA = extractCanonicalMglInvServer_(a.billKeyId);
+  var invB = extractCanonicalMglInvServer_(b.billKeyId);
+  if (invA && invB) {
+    if (invA === invB) return true;
+    if (a.fileUrl && b.fileUrl && a.fileUrl === b.fileUrl) return true;
+    return false;
+  }
+  if (a.billKeyId && b.billKeyId && a.billKeyId !== "U/MVAT" && a.billKeyId === b.billKeyId) return true;
+  var amtA = Number(a.amount || 0);
+  var amtB = Number(b.amount || 0);
+  if (amtA > 0 && Math.abs(amtA - amtB) < 0.05) {
+    var dA = String(a.billDate || "").trim();
+    var dB = String(b.billDate || "").trim();
+    if (!dA || !dB || dA === dB) return true;
+    if (Math.abs(Number(a.units || 0) - Number(b.units || 0)) < 0.05) return true;
+    if (isSuspectMglUnitsServer_(a.units, amtA) || isSuspectMglUnitsServer_(b.units, amtB)) return true;
+    var tA = Date.parse(dA);
+    var tB = Date.parse(dB);
+    if (!isNaN(tA) && !isNaN(tB) && Math.abs(tA - tB) <= 7 * 86400000) return true;
+  }
+  return false;
+}
+
+function deduplicateMglSubBillsServer_(list) {
+  if (!Array.isArray(list) || list.length <= 1) return Array.isArray(list) ? list.slice() : [];
+  var result = [];
+  for (var i = 0; i < list.length; i++) {
+    var cur = list[i];
+    if (!cur) continue;
+    var foundIdx = -1;
+    for (var j = 0; j < result.length; j++) {
+      if (isSameMglSubBillServer_(result[j], cur)) { foundIdx = j; break; }
+    }
+    if (foundIdx === -1) {
+      result.push({
+        billKeyId: extractCanonicalMglInvServer_(cur.billKeyId) || cur.billKeyId || "",
+        billDate: cur.billDate || "",
+        amount: Math.round(Number(cur.amount || 0) * 100) / 100,
+        units: Math.round(Number(cur.units || 0) * 100) / 100,
+        fileUrl: cur.fileUrl || ""
+      });
+    } else {
+      var k = result[foundIdx];
+      k.units = Math.round(pickBetterMglUnitsServer_(k.units, cur.units, k.amount) * 100) / 100;
+      if (!k.fileUrl && cur.fileUrl) k.fileUrl = cur.fileUrl;
+      if (!k.billDate && cur.billDate) k.billDate = cur.billDate;
+      var cInv = extractCanonicalMglInvServer_(cur.billKeyId);
+      if (cInv && !extractCanonicalMglInvServer_(k.billKeyId)) k.billKeyId = cInv;
+    }
+  }
+  return result;
 }
 
 function getOrCreateUtilityFolder_(folderName) {
@@ -11883,6 +11992,9 @@ window.loadClassroomsFromCloud = async function() {
                   }
               }
           } catch (e) {}
+          if (typeof reconcileAllMglGasBillsInMap === 'function') {
+              reconcileAllMglGasBillsInMap(base);
+          }
           return base;
       }
 
@@ -22290,44 +22402,63 @@ window.cleanDuplicateEstateAssets = async function() {
                     }
 
                     if (isUpdated) {
-                        // Check if this month has 2 bills (e.g. Mahanagar Gas 1st & 17th bills)
-                        const subBillsArr = Array.isArray(rec.subBills) ? rec.subBills : [];
-                        const hasTwoBills = subBillsArr.length >= 2 || (Number(rec.amount2 || 0) > 0) || Boolean(rec.fileUrl2);
-                        const b1Amt = subBillsArr.length >= 2 ? Number(subBillsArr[0].amount || 0) : Number(rec.amount1 || (amtVal - Number(rec.amount2 || 0)));
-                        const b2Amt = subBillsArr.length >= 2 ? Number(subBillsArr[1].amount || 0) : Number(rec.amount2 || 0);
-                        const b1Units = subBillsArr.length >= 2 ? Number(subBillsArr[0].units || 0) : Number(rec.units1 || (unitsVal - Number(rec.units2 || 0)));
-                        const b2Units = subBillsArr.length >= 2 ? Number(subBillsArr[1].units || 0) : Number(rec.units2 || 0);
-                        const pdf1Url = (subBillsArr[0] && subBillsArr[0].fileUrl) ? subBillsArr[0].fileUrl : (rec.fileUrl || '');
-                        const pdf2Url = (subBillsArr[1] && subBillsArr[1].fileUrl) ? subBillsArr[1].fileUrl : (rec.fileUrl2 || '');
+                        // Deduplicate & reconcile multi-bill entries (e.g. Mahanagar Gas 1st & 17th bills) so Total ALWAYS matches Breakup
+                        const rawSubBills = Array.isArray(rec.subBills) ? rec.subBills : [];
+                        const subBillsArr = (isGas && rawSubBills.length > 1 && typeof deduplicateMglSubBills === 'function')
+                            ? deduplicateMglSubBills(rawSubBills)
+                            : rawSubBills;
+                        const hasMultiBills = subBillsArr.length >= 2 || (Number(rec.amount2 || 0) > 0) || Boolean(rec.fileUrl2);
+                        const billCountDisplay = subBillsArr.length >= 2 ? subBillsArr.length : (hasMultiBills ? 2 : 1);
+
+                        // Build unified list of bills to render breakup & PDF badges cleanly for 1, 2, or more bills
+                        const displayBills = subBillsArr.length >= 2
+                            ? subBillsArr.map(sb => ({
+                                amount: Math.round(Number(sb.amount || 0) * 100) / 100,
+                                units: Math.round(Number(sb.units || 0) * 100) / 100,
+                                fileUrl: sb.fileUrl || ''
+                            }))
+                            : (hasMultiBills
+                                ? [
+                                    { amount: Number(rec.amount1 || (amtVal - Number(rec.amount2 || 0))), units: Number(rec.units1 || (unitsVal - Number(rec.units2 || 0))), fileUrl: (subBillsArr[0] && subBillsArr[0].fileUrl) || rec.fileUrl || '' },
+                                    { amount: Number(rec.amount2 || 0), units: Number(rec.units2 || 0), fileUrl: (subBillsArr[1] && subBillsArr[1].fileUrl) || rec.fileUrl2 || '' }
+                                  ]
+                                : [
+                                    { amount: amtVal, units: isNaN(unitsVal) ? 0 : unitsVal, fileUrl: (subBillsArr[0] && subBillsArr[0].fileUrl) || rec.fileUrl || '' }
+                                  ]);
+
+                        const safeMeterTitle = `${m.location || m.caNumber || 'Utility'} — ${EG_MONTH_NAMES[mIdx]} ${selYear}`.replace(/'/g, "\'");
+                        const pdfButtons = displayBills
+                            .map((b, bIdx) => ({ url: String(b.fileUrl || '').trim(), idx: bIdx + 1 }))
+                            .filter(x => Boolean(x.url));
 
                         let pdfBadgesHtml = '';
-                        const safePdf1 = String(pdf1Url || '').replace(/'/g, "\'");
-                        const safePdf2 = String(pdf2Url || '').replace(/'/g, "\'");
-                        const safeMeterTitle = `${m.location || m.caNumber || 'Utility'} — ${EG_MONTH_NAMES[mIdx]} ${selYear}`.replace(/'/g, "\'");
-                        if (pdf1Url && pdf2Url) {
+                        if (pdfButtons.length > 1) {
                             pdfBadgesHtml = `
                                 <div class="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
-                                    <button type="button" onclick="event.stopPropagation(); openInAppMediaViewer('${safePdf1}', '${safeMeterTitle} (Bill 1 PDF)', 'pdf');" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="View 1st Bill PDF in Webpage"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 1</span></button>
-                                    <button type="button" onclick="event.stopPropagation(); openInAppMediaViewer('${safePdf2}', '${safeMeterTitle} (Bill 2 PDF)', 'pdf');" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="View 2nd Bill PDF in Webpage"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF 2</span></button>
+                                    ${pdfButtons.map(pb => {
+                                        const safePdf = pb.url.replace(/'/g, "\'");
+                                        return `<button type="button" onclick="event.stopPropagation(); openInAppMediaViewer('${safePdf}', '${safeMeterTitle} (Bill ${pb.idx} PDF)', 'pdf');" class="inline-flex items-center space-x-0.5 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[9.5px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="View Bill ${pb.idx} PDF in Webpage"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF ${pb.idx}</span></button>`;
+                                    }).join('')}
                                 </div>
                             `;
-                        } else if (pdf1Url) {
+                        } else if (pdfButtons.length === 1) {
+                            const safePdf1 = pdfButtons[0].url.replace(/'/g, "\'");
                             pdfBadgesHtml = `<button type="button" onclick="event.stopPropagation(); openInAppMediaViewer('${safePdf1}', '${safeMeterTitle} Bill PDF', 'pdf');" class="mt-0.5 inline-flex items-center space-x-1 bg-white text-emerald-950 border border-emerald-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold hover:bg-emerald-50 shadow-sm transition" title="View Attached Bill PDF in Webpage"><i class="fa-solid fa-file-pdf text-red-600"></i><span>PDF</span></button>`;
                         } else {
                             pdfBadgesHtml = `<span class="text-[9px] text-emerald-900 font-semibold block mt-0.5">No PDF</span>`;
                         }
 
-                        const amtBreakdownHtml = (hasTwoBills && b1Amt > 0 && b2Amt > 0)
-                            ? `<span class="text-[9px] font-bold text-emerald-950 bg-emerald-200/90 px-1 py-0.2 rounded leading-tight">(₹${b1Amt.toLocaleString('en-IN')} + ₹${b2Amt.toLocaleString('en-IN')})</span>`
+                        const amtBreakdownHtml = (billCountDisplay >= 2 && displayBills.filter(b => b.amount > 0).length >= 2)
+                            ? `<span class="text-[9px] font-bold text-emerald-950 bg-emerald-200/90 px-1 py-0.2 rounded leading-tight">(${displayBills.map(b => '₹' + b.amount.toLocaleString('en-IN')).join(' + ')})</span>`
                             : '';
-                        const unitsBreakdownHtml = (hasTwoBills && (b1Units > 0 || b2Units > 0))
-                            ? `<span class="text-[9px] font-semibold text-emerald-900 leading-tight">(${b1Units.toLocaleString('en-IN')} + ${b2Units.toLocaleString('en-IN')} ${rowUnitSuffix})</span>`
+                        const unitsBreakdownHtml = (billCountDisplay >= 2 && displayBills.some(b => b.units > 0))
+                            ? `<span class="text-[9px] font-semibold text-emerald-900 leading-tight">(${displayBills.map(b => b.units.toLocaleString('en-IN')).join(' + ')} ${rowUnitSuffix})</span>`
                             : '';
 
                         monthCellsHtml += `
                             <td onclick="openElecGasBillEntryModal('${safeMeterId}', '${selYear}', ${mIdx})" class="eg-month-col p-1.5 align-middle bg-emerald-300/90 hover:bg-emerald-400/90 border-2 border-emerald-600 text-center cursor-pointer transition shadow-inner" title="Click to Edit ${EG_MONTH_NAMES[mIdx]} ${selYear} Bill for CA ${m.caNumber}">
                                 <div class="flex flex-col items-center justify-center leading-tight">
-                                    <span class="${(rec.isLocked || rec.isManualEdit) ? 'bg-indigo-900' : 'bg-emerald-800'} text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-1" title="${(rec.isLocked || rec.isManualEdit) ? 'Locked: Auto-Fetch will not overwrite this bill' : 'Added'}"><i class="fa-solid ${(rec.isLocked || rec.isManualEdit) ? 'fa-lock' : 'fa-circle-check'} text-[8px]"></i><span>${hasTwoBills ? 'Added (2 Bills)' : 'Added'}${(rec.isLocked || rec.isManualEdit) ? ' • Locked' : ''}</span></span>
+                                    <span class="${(rec.isLocked || rec.isManualEdit) ? 'bg-indigo-900' : 'bg-emerald-800'} text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full mb-0.5 inline-flex items-center space-x-1" title="${(rec.isLocked || rec.isManualEdit) ? 'Locked: Auto-Fetch will not overwrite this bill' : 'Added'}"><i class="fa-solid ${(rec.isLocked || rec.isManualEdit) ? 'fa-lock' : 'fa-circle-check'} text-[8px]"></i><span>${billCountDisplay >= 2 ? `Added (${billCountDisplay} Bills)` : 'Added'}${(rec.isLocked || rec.isManualEdit) ? ' • Locked' : ''}</span></span>
                                     <span class="font-extrabold text-emerald-950 text-xs">₹${amtVal.toLocaleString('en-IN')}</span>
                                     ${amtBreakdownHtml}
                                     <span class="text-[10.5px] font-extrabold text-emerald-900 mt-0.5">${(isNaN(unitsVal) ? 0 : unitsVal).toLocaleString('en-IN')} ${rowUnitSuffix}</span>
@@ -22703,8 +22834,147 @@ window.cleanDuplicateEstateAssets = async function() {
             showAssetToast(`Deleted meter "${m.location || m.caNumber}"`);
         };
 
+        // --- Mahanagar Gas (MGL) Sub-Bill Deduplication & Reconciliation Engine ---
+        function extractCanonicalMglInvoiceNo(billKeyId) {
+            const m = String(billKeyId || '').trim().match(/^((?:CON|DOM)\/[0-9A-Z\/\-]{4,25})(?:_|$)/i);
+            return m ? m[1].toUpperCase() : '';
+        }
+
+        function isSuspectMglUnits(u, amt) {
+            const uv = Number(u || 0);
+            const av = Number(amt || 0);
+            if (!(uv > 0)) return true;
+            if (Math.abs(uv - 2.2) < 0.01 && av >= 1000) return true;
+            if (av >= 5000 && uv < 10) return true;
+            return false;
+        }
+
+        function pickBetterMglUnits(uA, uB, amt) {
+            const a = Number(uA || 0);
+            const b = Number(uB || 0);
+            const suspA = isSuspectMglUnits(a, amt);
+            const suspB = isSuspectMglUnits(b, amt);
+            if (suspA && !suspB) return b;
+            if (suspB && !suspA) return a;
+            return Math.max(a, b);
+        }
+
+        function isSameMglSubBill(a, b) {
+            if (!a || !b) return false;
+            const invA = extractCanonicalMglInvoiceNo(a.billKeyId);
+            const invB = extractCanonicalMglInvoiceNo(b.billKeyId);
+            if (invA && invB) {
+                if (invA === invB) return true;
+                if (a.fileUrl && b.fileUrl && a.fileUrl === b.fileUrl) return true;
+                return false;
+            }
+            if (a.billKeyId && b.billKeyId && a.billKeyId !== 'U/MVAT' && a.billKeyId === b.billKeyId) {
+                return true;
+            }
+            const amtA = Number(a.amount || 0);
+            const amtB = Number(b.amount || 0);
+            if (amtA > 0 && Math.abs(amtA - amtB) < 0.05) {
+                const dA = typeof normalizeDateToIso === 'function' ? normalizeDateToIso(a.billDate, '') : String(a.billDate || '').trim();
+                const dB = typeof normalizeDateToIso === 'function' ? normalizeDateToIso(b.billDate, '') : String(b.billDate || '').trim();
+                if (!dA || !dB || dA === dB) return true;
+                if (Math.abs(Number(a.units || 0) - Number(b.units || 0)) < 0.05) return true;
+                if (isSuspectMglUnits(a.units, amtA) || isSuspectMglUnits(b.units, amtB)) return true;
+                const tA = Date.parse(dA);
+                const tB = Date.parse(dB);
+                if (!isNaN(tA) && !isNaN(tB) && Math.abs(tA - tB) <= 7 * 86400000) return true;
+            }
+            return false;
+        }
+
+        function deduplicateMglSubBills(rawList) {
+            if (!Array.isArray(rawList) || rawList.length === 0) return [];
+            const result = [];
+            for (const cur of rawList) {
+                if (!cur) continue;
+                const normDate = typeof normalizeDateToIso === 'function' ? normalizeDateToIso(cur.billDate, '') : String(cur.billDate || '').trim();
+                const amt = Math.round((Number(cur.amount) || 0) * 100) / 100;
+                const units = Math.round((Number(cur.units) || 0) * 100) / 100;
+                const canonInv = extractCanonicalMglInvoiceNo(cur.billKeyId);
+                const cleanKey = canonInv
+                    || ((!cur.billKeyId || cur.billKeyId === 'U/MVAT' || String(cur.billKeyId).length < 8)
+                        ? `MGL_${normDate}_${Math.round(amt * 100)}`
+                        : String(cur.billKeyId));
+                const normalized = {
+                    ...cur,
+                    billKeyId: cleanKey,
+                    billDate: normDate,
+                    amount: amt,
+                    units: units,
+                    fileUrl: cur.fileUrl || ''
+                };
+                const matchIdx = result.findIndex(existing => isSameMglSubBill(existing, normalized));
+                if (matchIdx === -1) {
+                    result.push(normalized);
+                } else {
+                    const kept = result[matchIdx];
+                    kept.units = Math.round(pickBetterMglUnits(kept.units, normalized.units, kept.amount) * 100) / 100;
+                    if (!kept.fileUrl && normalized.fileUrl) kept.fileUrl = normalized.fileUrl;
+                    if (!kept.billDate && normalized.billDate) kept.billDate = normalized.billDate;
+                    if (canonInv && !extractCanonicalMglInvoiceNo(kept.billKeyId)) kept.billKeyId = canonInv;
+                    if (normalized._msgId !== undefined && !kept.fileUrl) {
+                        kept._msgId = normalized._msgId;
+                        kept._attIdx = normalized._attIdx;
+                    }
+                }
+            }
+            result.sort((a, b) => String(a.billDate || '').localeCompare(String(b.billDate || '')));
+            return result;
+        }
+
+        function reconcileMglBillRecord(rec) {
+            if (!rec || !Array.isArray(rec.subBills) || rec.subBills.length === 0) return false;
+            if (rec.isLocked === true || rec.isManualEdit === true) return false;
+            const origCount = rec.subBills.length;
+            const origAmt = Math.round(Number(rec.amount || 0) * 100) / 100;
+            const origUnits = Math.round(Number(rec.units || 0) * 100) / 100;
+            const deduped = deduplicateMglSubBills(rec.subBills);
+            const newAmt = Math.round(deduped.reduce((s, b) => s + (Number(b.amount) || 0), 0) * 100) / 100;
+            const newUnits = Math.round(deduped.reduce((s, b) => s + (Number(b.units) || 0), 0) * 100) / 100;
+            const changed = (deduped.length !== origCount)
+                || (Math.abs(newAmt - origAmt) >= 0.01)
+                || (Math.abs(newUnits - origUnits) >= 0.01)
+                || (deduped.length < 2 && Number(rec.amount2 || 0) > 0);
+            if (!changed) return false;
+            rec.subBills = deduped;
+            rec.amount = newAmt;
+            rec.units = newUnits;
+            rec.amount1 = deduped[0] ? deduped[0].amount : newAmt;
+            rec.units1 = deduped[0] ? deduped[0].units : newUnits;
+            rec.amount2 = deduped[1] ? deduped[1].amount : 0;
+            rec.units2 = deduped[1] ? deduped[1].units : 0;
+            rec.billDate = deduped[0] ? (deduped[0].billDate || rec.billDate || '') : (rec.billDate || '');
+            rec.billDate2 = deduped[1] ? (deduped[1].billDate || '') : '';
+            rec.fileUrl = deduped[0] ? (deduped[0].fileUrl || '') : (rec.fileUrl || '');
+            rec.fileUrl2 = deduped[1] ? (deduped[1].fileUrl || '') : '';
+            if (String(rec.notes || '').toLowerCase().includes('auto-fetched')) {
+                rec.notes = deduped.length >= 2
+                    ? `Auto-fetched ${deduped.length} MGL Bills (${deduped.map(b => '₹' + (Number(b.amount) || 0).toLocaleString('en-IN')).join(' + ')})`
+                    : `Auto-fetched from MGL Bill PDF`;
+            }
+            return true;
+        }
+
+        function reconcileAllMglGasBillsInMap(billsMap) {
+            let repairedCount = 0;
+            if (!billsMap || typeof billsMap !== 'object') return 0;
+            Object.keys(billsMap).forEach(k => {
+                const rec = billsMap[k];
+                if (rec && Array.isArray(rec.subBills) && rec.subBills.length > 0) {
+                    if (reconcileMglBillRecord(rec)) {
+                        repairedCount++;
+                    }
+                }
+            });
+            return repairedCount;
+        }
+
         // Clean up any extra auto-created meters beyond the 27 Electricity & 7 Gas meters,
-        // and purge invalid ₹34 / 0-unit / disconnection-notice auto-fetched bill records
+        // deduplicate repeated MGL gas subBills, and purge invalid ₹34 / 0-unit / disconnection-notice auto-fetched bill records
         window.cleanUpExtraMetersAndInvalidAutoBills = async function(showFeedback = false) {
             if (!guardEditingRights()) return { removedMeters: 0, removedBadBills: 0 };
 
@@ -22737,6 +23007,7 @@ window.cleanDuplicateEstateAssets = async function() {
             // - Any auto-fetched bill with amount <= 0 or units <= 0 (Disconnection Notices have 0 units and only an arrears/random amount!)
             // - Any auto-fetched bill where notes/filename mentions disconnection or notice
             let removedBadBills = 0;
+            let repairedGasDuplicates = 0;
             if (elecGasBillsData && typeof elecGasBillsData === 'object') {
                 Object.keys(elecGasBillsData).forEach(k => {
                     const rec = elecGasBillsData[k];
@@ -22762,25 +23033,23 @@ window.cleanDuplicateEstateAssets = async function() {
                         removedBadBills++;
                         return;
                     }
-                    // Repair any legacy MGL subBills where billKeyId was set to "U/MVAT" so the 2nd monthly gas bill is never blocked!
-                    if (Array.isArray(rec.subBills)) {
-                        rec.subBills.forEach((sb, sIdx) => {
-                            if (sb && (!sb.billKeyId || sb.billKeyId === 'U/MVAT' || String(sb.billKeyId).length < 8)) {
-                                sb.billKeyId = `MGL_${sb.billDate || sIdx}_${Math.round(Number(sb.amount || 0) * 100)}_${Math.round(Number(sb.units || 0) * 100)}`;
-                            }
-                        });
+                    // Deduplicate repeated MGL subBills (e.g. OCR 2.2 SCM vs pdf.js duplicates) and recalculate exact totals
+                    if (Array.isArray(rec.subBills) && rec.subBills.length > 0) {
+                        if (reconcileMglBillRecord(rec)) {
+                            repairedGasDuplicates++;
+                        }
                     }
                 });
             }
 
-            if (removedMeters > 0 || removedBadBills > 0) {
+            if (removedMeters > 0 || removedBadBills > 0 || repairedGasDuplicates > 0) {
                 renderElecGasModule();
                 await saveCloudData();
             }
             if (showFeedback) {
-                showAssetToast(`Cleaned ${removedMeters} extra meter(s) and ${removedBadBills} invalid ₹34 / non-bill entry(s)! Keeping ${validElec.length} Elec & ${validGas.length} Gas meters.`);
+                showAssetToast(`Repaired ${repairedGasDuplicates} duplicated gas bill month(s), cleaned ${removedMeters} extra meter(s) & ${removedBadBills} invalid entry(s). Saved to Cloud!`);
             }
-            return { removedMeters, removedBadBills };
+            return { removedMeters, removedBadBills, repairedGasDuplicates };
         };
 
         window.updateEgBillModalCombinedPreview = function() {
@@ -24203,7 +24472,15 @@ window.cleanDuplicateEstateAssets = async function() {
                     }
                     if (!foundUnitsExplicit && units <= 0) {
                         const u3 = txt.match(/(?:CORRECTED\s*CONSUMPTION|BILLED\s*CONSUMPTION|GAS\s*CONSUMED|TOTAL\s*CONSUMPTION|CONSUMPTION\s*\(?\s*SCM\s*\)?|BILLED\s*UNITS|UNITS\s*CONSUMED)\s*(?:\([^)]*\))?\s*[:\-]?\s*([0-9,]+(?:\.\d+)?)/i);
-                        if (u3) { units = parseFloat(u3[1].replace(/,/g, "")); foundUnitsExplicit = true; }
+                        if (u3) {
+                            const v3 = parseFloat(u3[1].replace(/,/g, ""));
+                            // Reject MGL section-number false positives (e.g. "2.2", "2.1", "1.1", "1.2") on commercial bills
+                            const isSecFalsePos = amount >= 1000 && (Math.abs(v3 - 2.2) < 0.01 || Math.abs(v3 - 2.1) < 0.01 || Math.abs(v3 - 1.1) < 0.01 || Math.abs(v3 - 1.2) < 0.01);
+                            if (!isNaN(v3) && v3 >= 0 && !isSecFalsePos) {
+                                units = v3;
+                                foundUnitsExplicit = true;
+                            }
+                        }
                     }
                 }
 
@@ -24238,8 +24515,10 @@ window.cleanDuplicateEstateAssets = async function() {
                 const directDomConMatch = fullMglCorpus.match(/\b((?:DOM|CON)\/[0-9A-Z\/\-]{5,25})\b/i);
                 const invNoMatch = directDomConMatch || fullMglCorpus.match(/(?:MVAT\s*INVOICE\s*NO|GST\s*INVOICE\s*NO|BILL\s*OF\s*SUPPLY\s*NO|INVOICE\s*NO|BILL\s*NO)\.?\s*(?:\([^)]*\))?\s*[:\-]?\s*([A-Z0-9]{2,10}[\/\-][0-9A-Z\/\-]{3,25}|\d{8,16})/i);
                 const invDateIso = invDateMatch ? normalizeDateToIso(invDateMatch[1], msgDateStr) : normalizeDateToIso(msgDateStr, "2026-01-01");
-                const invNoClean = invNoMatch ? invNoMatch[1].trim() : "MGL";
-                const uniqueInvoiceId = `${invNoClean}_${invDateIso}_${Math.round(amount * 100)}_${Math.round(units * 100)}`;
+                const invNoClean = invNoMatch ? invNoMatch[1].trim().toUpperCase() : "MGL";
+                const uniqueInvoiceId = /^(?:DOM|CON)\//i.test(invNoClean)
+                    ? invNoClean
+                    : `${invNoClean}_${invDateIso}_${Math.round(amount * 100)}`;
 
                 const period = determineBillPeriodFromPdfAndSubject(subjectStr, fullMglCorpus, msgDateStr, true);
                 return {
@@ -24419,25 +24698,10 @@ window.cleanDuplicateEstateAssets = async function() {
                                     });
                                 }
 
-                                // Repair any legacy "U/MVAT" billKeyId in subBills before checking for duplicates
-                                subBills = subBills.map(sb => {
-                                    const normD = normalizeDateToIso(sb.billDate, '');
-                                    const fixedKey = (!sb.billKeyId || sb.billKeyId === 'U/MVAT' || String(sb.billKeyId).length < 8)
-                                        ? `MGL_${normD}_${Math.round(Number(sb.amount || 0) * 100)}_${Math.round(Number(sb.units || 0) * 100)}`
-                                        : sb.billKeyId;
-                                    return { ...sb, billDate: normD, billKeyId: fixedKey };
-                                });
+                                // Deduplicate any pre-existing repeated MGL subBills before checking this email
+                                subBills = deduplicateMglSubBills(subBills);
 
-                                // Check if this exact MGL invoice (by unique invoiceId OR same ISO date + same amount + same units) is already in subBills
-                                const alreadyInSubBills = subBills.some(sb =>
-                                    (sb.billKeyId && sb.billKeyId === parsedBill.invoiceId) ||
-                                    (sb.billDate === parsedBill.billDateStr && Math.abs(Number(sb.amount || 0) - parsedBill.amount) < 0.01 && Math.abs(Number(sb.units || 0) - parsedBill.units) < 0.01)
-                                );
-                                if (alreadyInSubBills) {
-                                    continue;
-                                }
-
-                                const newSubEntry = {
+                                const candidateSubEntry = {
                                     billKeyId: parsedBill.invoiceId,
                                     billDate: parsedBill.billDateStr || normalizeDateToIso(item.msgDateStr, ''),
                                     amount: parsedBill.amount,
@@ -24446,10 +24710,31 @@ window.cleanDuplicateEstateAssets = async function() {
                                     _msgId: item.messageId,
                                     _attIdx: item.attIndex
                                 };
-                                subBills.push(newSubEntry);
 
-                                // Sort subBills chronologically by ISO billDate (YYYY-MM-DD) so Bill 1 (e.g. 1st) is first and Bill 2 (e.g. 17th) is second
-                                subBills.sort((a, b) => String(a.billDate || '').localeCompare(String(b.billDate || '')));
+                                // Check if this MGL invoice already exists (by canonical invoice no OR same date/amount, even if OCR parsed bogus 2.2 SCM)
+                                const existingSubIdx = subBills.findIndex(sb => isSameMglSubBill(sb, candidateSubEntry));
+                                if (existingSubIdx !== -1) {
+                                    const existingSb = subBills[existingSubIdx];
+                                    const betterUnits = Math.round(pickBetterMglUnits(existingSb.units, parsedBill.units, parsedBill.amount) * 100) / 100;
+                                    const needsUnitsUpgrade = Math.abs(Number(existingSb.units || 0) - betterUnits) >= 0.01;
+                                    const needsPdfUpgrade = !existingSb.fileUrl;
+                                    if (!needsUnitsUpgrade && !needsPdfUpgrade) {
+                                        continue;
+                                    }
+                                    existingSb.units = betterUnits;
+                                    if (extractCanonicalMglInvoiceNo(parsedBill.invoiceId)) {
+                                        existingSb.billKeyId = extractCanonicalMglInvoiceNo(parsedBill.invoiceId);
+                                    }
+                                    if (needsPdfUpgrade) {
+                                        existingSb._msgId = item.messageId;
+                                        existingSb._attIdx = item.attIndex;
+                                    }
+                                } else {
+                                    subBills.push(candidateSubEntry);
+                                }
+
+                                // Final dedup & chronological sort by ISO billDate (YYYY-MM-DD) so Bill 1 (e.g. 1st) is first and Bill 2 (e.g. 17th) is second
+                                subBills = deduplicateMglSubBills(subBills);
 
                                 const totalAmt = Math.round(subBills.reduce((s, b) => s + (Number(b.amount) || 0), 0) * 100) / 100;
                                 const totalUnits = Math.round(subBills.reduce((s, b) => s + (Number(b.units) || 0), 0) * 100) / 100;

@@ -9298,7 +9298,8 @@ function setupDailyTrigger() {
             'classroom-allocation': 'Editing Rights',
             'inventory': 'Editing Rights',
             'faculty-dir': 'Editing Rights',
-            'elec-gas-bills': 'Editing Rights'
+            'elec-gas-bills': 'Editing Rights',
+            'miqaat': 'Editing Rights'
         };
         let isUserAdmin = false;
 
@@ -10397,6 +10398,28 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
             return normalizedList;
         }
 
+        function resolveAuthoritativeUsersList(rawUsers, rawUsersMeta) {
+            const metaUsers = (rawUsersMeta && typeof rawUsersMeta === 'object' && rawUsersMeta.users !== undefined)
+                ? rawUsersMeta.users
+                : null;
+            if (metaUsers !== null) {
+                const normalizedMeta = normalizeUsersList(metaUsers);
+                const normalizedLegacy = rawUsers !== undefined ? normalizeUsersList(rawUsers) : [];
+                const metaSig = computeFastNodeSignature(normalizedMeta);
+                const legacySig = computeFastNodeSignature(normalizedLegacy);
+                return {
+                    list: normalizedMeta,
+                    shouldHealLegacy: metaSig !== legacySig,
+                    fromMeta: true
+                };
+            }
+            return {
+                list: normalizeUsersList(rawUsers || usersList),
+                shouldHealLegacy: false,
+                fromMeta: false
+            };
+        }
+
         function normalizeWhatsAppPhone(rawPhone) {
             if (!rawPhone) return '';
             let digits = String(rawPhone).replace(/\D/g, '');
@@ -10575,7 +10598,13 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                     }
                     elecGasBillsData = mergeElecGasBillsWithLocalCache(rawCloudEgBills);
                     societyBillsData = normalizeSocietyBillsData(data.socBills || {});
-                    usersList = normalizeUsersList(data.users || usersList);
+                    const resolvedUsersOnLoad = resolveAuthoritativeUsersList(data.users, data.usersMeta);
+                    usersList = resolvedUsersOnLoad.list;
+                    if (resolvedUsersOnLoad.shouldHealLegacy) {
+                        // Another tab/device with an older portal version overwrote portalData/users; heal it from usersMeta
+                        const healedUsersClean = JSON.parse(computeFastNodeSignature(usersList));
+                        set(dbRef(db, 'portalData/users'), healedUsersClean).catch(() => {});
+                    }
                     if (data.watiConfig) {
                         watiConfig = normalizeWatiConfig(data.watiConfig);
                     }
@@ -10661,6 +10690,10 @@ toDate: String(a.toDate || a.eventToDate || a.endDate || a.fromDate || a.startDa
                         miqaatData = data.miqaat;
                     }
                     recordAllCloudNodeSnapshots(data);
+                    _cloudNodeSnapshots['users'] = computeFastNodeSignature(usersList);
+                    if (data.usersMeta !== undefined) {
+                        _cloudNodeSnapshots['usersMeta'] = computeFastNodeSignature(data.usersMeta);
+                    }
                     recheckKeysDirectoryMatches();
                     const repairedFacultySig = computeFastNodeSignature(facultyData);
                     const repairedKeysSig = computeFastNodeSignature(keysInventoryData);
@@ -11010,8 +11043,20 @@ window.loadClassroomsFromCloud = async function() {
                     if (didNodeChange('socBills')) {
                         societyBillsData = normalizeSocietyBillsData(data.socBills || {});
                     }
-                    if (data.users !== undefined && didNodeChange('users')) {
-                        usersList = normalizeUsersList(data.users);
+                    const usersNodeChanged = data.users !== undefined && didNodeChange('users');
+                    const usersMetaChanged = data.usersMeta !== undefined && didNodeChange('usersMeta');
+                    if (usersNodeChanged || usersMetaChanged) {
+                        const resolvedUsersLive = resolveAuthoritativeUsersList(data.users, data.usersMeta);
+                        usersList = resolvedUsersLive.list;
+                        _cloudNodeSnapshots['users'] = computeFastNodeSignature(usersList);
+                        if (resolvedUsersLive.shouldHealLegacy) {
+                            // Another tab/device with an older portal version overwrote portalData/users; immediately heal Firebase!
+                            const healedUsersClean = JSON.parse(computeFastNodeSignature(usersList));
+                            set(dbRef(db, 'portalData/users'), healedUsersClean).catch(() => {});
+                        }
+                        if (window.MiqaatModule && typeof window.MiqaatModule.onDataUpdated === 'function') {
+                            window.MiqaatModule.onDataUpdated(miqaatData);
+                        }
                     }
                     if (data.watiConfig !== undefined && didNodeChange('watiConfig')) {
                         watiConfig = normalizeWatiConfig(data.watiConfig);
@@ -12004,6 +12049,50 @@ window.loadClassroomsFromCloud = async function() {
           } catch (e) {}
       }
 
+      window.saveUsersListToCloud = async function() {
+    isSavingPortalData = true;
+    try {
+        const cleanUsers = JSON.parse(computeFastNodeSignature(normalizeUsersList(usersList || [])));
+        usersList = cleanUsers;
+        const usersMetaPayload = {
+            users: cleanUsers,
+            updatedAt: Date.now(),
+            updatedBy: (currentUser && currentUser.email) ? currentUser.email : ''
+        };
+        const usersSig = computeFastNodeSignature(cleanUsers);
+        const usersMetaSig = computeFastNodeSignature(usersMetaPayload);
+
+        let savedPrimary = false;
+        try {
+            await dbUpdate(dbRef(db), {
+                'portalData/users': cleanUsers,
+                'portalData/usersMeta': usersMetaPayload
+            });
+            savedPrimary = true;
+        } catch (batchErr) {
+            console.warn("Batch users save failed, trying individual writes:", batchErr);
+            await set(dbRef(db, 'portalData/users'), cleanUsers);
+            savedPrimary = true;
+            await set(dbRef(db, 'portalData/usersMeta'), usersMetaPayload).catch(err => console.warn("usersMeta write warning:", err));
+        }
+
+        if (savedPrimary) {
+            _cloudNodeSnapshots['users'] = usersSig;
+            _cloudNodeSnapshots['usersMeta'] = usersMetaSig;
+            set(dbRef(db, 'users'), cleanUsers).catch(() => {});
+        }
+        return savedPrimary;
+    } catch (err) {
+        console.error("Error saving users list to cloud:", err);
+        return false;
+    } finally {
+        if (window._savingPortalDataTimer) clearTimeout(window._savingPortalDataTimer);
+        window._savingPortalDataTimer = setTimeout(() => {
+            isSavingPortalData = false;
+        }, 2000);
+    }
+};
+
       window.saveCloudData = async function() {
     isSavingPortalData = true;
     try {
@@ -12023,7 +12112,6 @@ window.loadClassroomsFromCloud = async function() {
             maint: maintLogs || [],
             bills: vacantBills || {},
             socBills: societyBillsData || {},
-            users: usersList || [],
             watiConfig: watiConfig || {},
             estate_assets: estateAssetsData || [],
             elecGasMeters: elecGasMetersData || [],
@@ -16014,14 +16102,19 @@ await recordDawatEstatesNotification(
                 usersList.push(userObj);
             }
 
-            // If the admin updated their own or currently signed-in user's permissions, refresh live state
-            if (currentUser && currentUser.email.trim().toLowerCase() === email.toLowerCase() && !isUserAdmin) {
-                currentUserClassroomPerms = [...classroomPermissions];
+            const savedOk = await saveUsersListToCloud();
+            if (!savedOk) {
+                showAssetToast(`Failed to save permissions for ${email} to Cloud. Please retry.`, true);
+                return;
             }
 
-            await saveCloudData();
+            // Refresh live permissions & dependent views
+            syncCurrentUserLivePermissions();
             renderUsersList();
             renderClassroomsTables();
+            if (window.MiqaatModule && typeof window.MiqaatModule.onDataUpdated === 'function') {
+                window.MiqaatModule.onDataUpdated(miqaatData);
+            }
             resetInviteUserForm();
             showAssetToast(`Saved permissions for ${email}`);
         };
@@ -20957,6 +21050,9 @@ await recordDawatEstatesNotification(
                     if (src.facultyBldgBills && typeof src.facultyBldgBills === 'object') facultyBldgBillsData = normalizeFacultyBldgBillsData(src.facultyBldgBills);
 
                     await saveCloudData();
+                    if (src.users !== undefined) {
+                        await saveUsersListToCloud();
+                    }
                     initAppUI();
                     showAssetToast("Webpage data restored and synced to Cloud!");
                 } catch (err) {
@@ -25842,8 +25938,15 @@ window.cleanDuplicateEstateAssets = async function() {
 
         window.removeUser = async function(email) {
             usersList = usersList.filter(u => u.email !== email);
-            await saveCloudData();
+            const savedOk = await saveUsersListToCloud();
+            if (!savedOk) {
+                showAssetToast(`Failed to remove ${email} from Cloud. Please retry.`, true);
+                return;
+            }
             renderUsersList();
+            if (window.MiqaatModule && typeof window.MiqaatModule.onDataUpdated === 'function') {
+                window.MiqaatModule.onDataUpdated(miqaatData);
+            }
         };
 
         

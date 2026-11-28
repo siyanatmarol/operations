@@ -10,20 +10,20 @@
     const HIJRI_YEARS = ['1447', '1448', '1449', '1450', '1451', '1452', '1453', '1454', '1455'];
     const DEFAULT_HIJRI_YEAR = '1448';
 
-    const CHECKLIST_STATUSES = ['Not Started', 'In Progress', 'Follow-up', 'Completed'];
+    const CHECKLIST_STATUSES = ['Pending', 'Order placed / Work Started', 'Completed'];
     const CHECKLIST_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
     const DEFAULT_BUDGET_CATEGORIES = [
-        'HR',
         'Decor & Lighting',
         'Furnishings',
-        'Lifts',
-        'Housekeeping & Bukhoor',
-        'Staging & Outdoor setup',
-        'Sadaat Kiraam Offices',
-        'Laundry',
-        'Transport',
         'Garbage Disposal',
-        'Olda Rooms'
+        'Housekeeping & Bukhoor',
+        'HR',
+        'Laundry',
+        'Lifts',
+        'Olda Rooms',
+        'Sadaat Kiraam Offices',
+        'Staging & Outdoor setup',
+        'Transport'
     ];
 
     // =========================================================================
@@ -50,35 +50,35 @@
 
     function getSeedChecklist() {
         const rows = [
-            [1, 'Parda / Curtains', 'Plastic Parda additional', 'Abduttayeb Hotelwala', 'Team', '10 Nos', 'Not Started', 'Medium'],
-            [2, 'Seating & Furniture', 'Procurement of Chairs without handles', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '100 Nos', 'Not Started', 'High'],
-            [3, 'Seating & Furniture', 'Procurement of Chairs with handles', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '50 Nos', 'Not Started', 'High'],
-            [4, 'Seating & Furniture', 'Conference Chairs arrangement', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '30 Nos', 'Not Started', 'High'],
-            [5, 'Seating & Furniture', 'SS Foldable Table repair', 'Abduttayeb Hotelwala', 'Yusuf Moiyedi', 'Foldable SS unit', 'Not Started', 'Medium'],
-            [6, 'Seating & Furniture', 'Patla SS follow-up', 'Taher Nomani', 'Yusuf Bhai Savai', '1 week timeline', 'Not Started', 'High'],
-            [7, 'Stage & Mandap', 'Bab Zuwaila Events: Fountain / waterfall stage, foam & cover', 'Mustaali Lohawala', 'Event Team', 'Stage, foam & cover', 'Not Started', 'High'],
-            [8, 'Stage & Mandap', 'Busaheba stage, cover & new chair setup', 'Mustaali Lohawala', 'Huzaifa Rampurawala', 'Stage, cover & new chair', 'Not Started', 'High'],
-            [9, 'Stage & Mandap', 'Mandap tables for Tashreef (Purchase before Imtehaan)', 'Mustaali Lohawala', 'Purchasing Team', 'Tashreef tables', 'Not Started', 'High'],
-            [10, 'Stage & Mandap', 'Stage covers new', 'Taher Nomani', '', '2ft / 4ft', 'Not Started', 'Medium'],
-            [11, 'Stage & Mandap', 'SS Table cover color selection & matching', 'Abduttayeb Hotelwala', 'Taher Nomani', 'Color check & fit', 'Not Started', 'Medium'],
-            [12, 'Partition & VIP', 'Dignitaries / Mulaqaat partition setup', 'Abduttayeb Hotelwala', 'Murtaza Kheraluwala, Huzaifa Rampurawala', 'Partition panels', 'Not Started', 'High'],
-            [13, 'Flooring & Carpets', 'Tehriri Imtehaan: Jazam layout', 'Murtaza Kheraluwala', 'Mustaali Lohawala', 'Exam hall coverage', 'Not Started', 'High'],
-            [14, 'Flooring & Carpets', 'Tehriri Imtehaan: Sujni & Towels setup', 'Mustaali Lohawala', '', '', 'Not Started', 'High'],
-            [15, 'Flooring & Carpets', 'Tehriri Imtehaan: Runners placement', 'Mustaali Lohawala', '', '', 'Not Started', 'High'],
-            [16, 'Flooring & Carpets', 'Terrace Ziyafat Jazam setup', 'Mustaali Lohawala', 'Murtaza Kheraluwala, Huzaifa Rampurawala', 'Terrace dining area', 'Not Started', 'High'],
-            [17, 'Flooring & Carpets', 'Shz Taha BS – Wajebaat Bethak Jazam setup', 'Mustaali Lohawala', 'Murtaza Kheraluwala', 'Bethak room coverage', 'Not Started', 'High'],
-            [18, 'Flooring & Carpets', 'Lift galicha cleaning & readiness (verify size for Qasar)', 'Mustaali Lohawala', 'Logistics Team', 'Lift carpet (size check)', 'Not Started', 'Medium'],
-            [19, 'Religious & Ritual', 'Quran Sipara cleaning (complete before Urus of Qutbuddin Shaheed Aqa)', 'Abduttayeb Hotelwala', '', 'All Siparas', 'In Progress', 'Urgent'],
-            [20, 'Religious & Ritual', 'Masallah arrangement for Sadaat Kiram', 'Abduttayeb Hotelwala', 'Huzaifa Kothawala', '5 Nos', 'Not Started', 'High'],
-            [21, 'Religious & Ritual', 'Red Kapda for Aqiqa', 'Abduttayeb Hotelwala', '', '2 Nos', 'Not Started', 'Medium'],
-            [22, 'Fragrance & Bukhoor', 'Bukhoor: Coal procurement & follow-up', 'Abduttayeb Hotelwala', 'Murtaza Kheraluwala', 'Coal supply', 'Follow-up', 'High'],
-            [23, 'Fragrance & Bukhoor', 'Bukhoor: Agarwood arrangement', 'Abduttayeb Hotelwala', 'Huzaifa Rampurawala', 'Agarwood supply', 'Not Started', 'High'],
-            [24, 'Fragrance & Bukhoor', 'Bukhoor: Burner operation & execution supervision', 'Murtaza Rampurawala', 'Murtaza Kheraluwala', 'Event session coverage', 'Not Started', 'High'],
-            [25, 'Fragrance & Bukhoor', 'Aroma diffuser installation (50% – purchase before Imtehaan)', 'Mustaali Lohawala', 'Procurement Team', '50% Aroma diffuser', 'Not Started', 'Medium'],
-            [26, 'Audio/Visual & Clock', 'Ali Waliyullah frame in Ewaan (Badshah) – shift clock after Urus', 'Taher Nomani', 'Facility Team', '1 Frame & clock shift', 'Not Started', 'Low'],
-            [27, 'Audio/Visual & Clock', 'Wall clocks over TV in Ewaan', 'Taher Nomani', 'Huzaifa Rampurawala', '2 Clocks', 'Follow-up', 'Medium'],
-            [28, 'Audio/Visual & Tech', 'AC control configuration via iPad', 'Abduttayeb Hotelwala', '', 'iPad control setup', 'Not Started', 'Medium'],
-            [29, 'Pentagon tasks', 'Maintenance, amenities etc.', 'Huzaifa Kothawala', 'Huzaifa Rampurawala', '', 'Follow-up', 'High']
+            [1, 'Parda / Curtains', 'Plastic Parda additional', 'Abduttayeb Hotelwala', 'Team', '10 Nos', 'Pending', 'Medium'],
+            [2, 'Seating & Furniture', 'Procurement of Chairs without handles', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '100 Nos', 'Pending', 'High'],
+            [3, 'Seating & Furniture', 'Procurement of Chairs with handles', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '50 Nos', 'Pending', 'High'],
+            [4, 'Seating & Furniture', 'Conference Chairs arrangement', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '30 Nos', 'Pending', 'High'],
+            [5, 'Seating & Furniture', 'SS Foldable Table repair', 'Abduttayeb Hotelwala', 'Yusuf Moiyedi', 'Foldable SS unit', 'Pending', 'Medium'],
+            [6, 'Seating & Furniture', 'Patla SS follow-up', 'Taher Nomani', 'Yusuf Bhai Savai', '1 week timeline', 'Pending', 'High'],
+            [7, 'Stage & Mandap', 'Bab Zuwaila Events: Fountain / waterfall stage, foam & cover', 'Mustaali Lohawala', 'Event Team', 'Stage, foam & cover', 'Pending', 'High'],
+            [8, 'Stage & Mandap', 'Busaheba stage, cover & new chair setup', 'Mustaali Lohawala', 'Huzaifa Rampurawala', 'Stage, cover & new chair', 'Pending', 'High'],
+            [9, 'Stage & Mandap', 'Mandap tables for Tashreef (Purchase before Imtehaan)', 'Mustaali Lohawala', 'Purchasing Team', 'Tashreef tables', 'Pending', 'High'],
+            [10, 'Stage & Mandap', 'Stage covers new', 'Taher Nomani', '', '2ft / 4ft', 'Pending', 'Medium'],
+            [11, 'Stage & Mandap', 'SS Table cover color selection & matching', 'Abduttayeb Hotelwala', 'Taher Nomani', 'Color check & fit', 'Pending', 'Medium'],
+            [12, 'Partition & VIP', 'Dignitaries / Mulaqaat partition setup', 'Abduttayeb Hotelwala', 'Murtaza Kheraluwala, Huzaifa Rampurawala', 'Partition panels', 'Pending', 'High'],
+            [13, 'Flooring & Carpets', 'Tehriri Imtehaan: Jazam layout', 'Murtaza Kheraluwala', 'Mustaali Lohawala', 'Exam hall coverage', 'Pending', 'High'],
+            [14, 'Flooring & Carpets', 'Tehriri Imtehaan: Sujni & Towels setup', 'Mustaali Lohawala', '', '', 'Pending', 'High'],
+            [15, 'Flooring & Carpets', 'Tehriri Imtehaan: Runners placement', 'Mustaali Lohawala', '', '', 'Pending', 'High'],
+            [16, 'Flooring & Carpets', 'Terrace Ziyafat Jazam setup', 'Mustaali Lohawala', 'Murtaza Kheraluwala, Huzaifa Rampurawala', 'Terrace dining area', 'Pending', 'High'],
+            [17, 'Flooring & Carpets', 'Shz Taha BS – Wajebaat Bethak Jazam setup', 'Mustaali Lohawala', 'Murtaza Kheraluwala', 'Bethak room coverage', 'Pending', 'High'],
+            [18, 'Flooring & Carpets', 'Lift galicha cleaning & readiness (verify size for Qasar)', 'Mustaali Lohawala', 'Logistics Team', 'Lift carpet (size check)', 'Pending', 'Medium'],
+            [19, 'Religious & Ritual', 'Quran Sipara cleaning (complete before Urus of Qutbuddin Shaheed Aqa)', 'Abduttayeb Hotelwala', '', 'All Siparas', 'Order placed / Work Started', 'Urgent'],
+            [20, 'Religious & Ritual', 'Masallah arrangement for Sadaat Kiram', 'Abduttayeb Hotelwala', 'Huzaifa Kothawala', '5 Nos', 'Pending', 'High'],
+            [21, 'Religious & Ritual', 'Red Kapda for Aqiqa', 'Abduttayeb Hotelwala', '', '2 Nos', 'Pending', 'Medium'],
+            [22, 'Fragrance & Bukhoor', 'Bukhoor: Coal procurement & follow-up', 'Abduttayeb Hotelwala', 'Murtaza Kheraluwala', 'Coal supply', 'Order placed / Work Started', 'High'],
+            [23, 'Fragrance & Bukhoor', 'Bukhoor: Agarwood arrangement', 'Abduttayeb Hotelwala', 'Huzaifa Rampurawala', 'Agarwood supply', 'Pending', 'High'],
+            [24, 'Fragrance & Bukhoor', 'Bukhoor: Burner operation & execution supervision', 'Murtaza Rampurawala', 'Murtaza Kheraluwala', 'Event session coverage', 'Pending', 'High'],
+            [25, 'Fragrance & Bukhoor', 'Aroma diffuser installation (50% – purchase before Imtehaan)', 'Mustaali Lohawala', 'Procurement Team', '50% Aroma diffuser', 'Pending', 'Medium'],
+            [26, 'Audio/Visual & Clock', 'Ali Waliyullah frame in Ewaan (Badshah) – shift clock after Urus', 'Taher Nomani', 'Facility Team', '1 Frame & clock shift', 'Pending', 'Low'],
+            [27, 'Audio/Visual & Clock', 'Wall clocks over TV in Ewaan', 'Taher Nomani', 'Huzaifa Rampurawala', '2 Clocks', 'Order placed / Work Started', 'Medium'],
+            [28, 'Audio/Visual & Tech', 'AC control configuration via iPad', 'Abduttayeb Hotelwala', '', 'iPad control setup', 'Pending', 'Medium'],
+            [29, 'Pentagon tasks', 'Maintenance, amenities etc.', 'Huzaifa Kothawala', 'Huzaifa Rampurawala', '', 'Order placed / Work Started', 'High']
         ];
         return rows.map((r, idx) => ({
             id: 'chk_' + (idx + 1),
@@ -412,6 +412,8 @@
     let checklistSearch = '';
     let checklistStatusFilter = '';
     let checklistPriorityFilter = '';
+    let checklistOverviewMode = 'all'; // 'all' | 'Pending' | 'Order placed / Work Started' | 'Completed'
+    let checklistOverviewSearch = '';
     let eventsDetailsSearch = '';
     let budgetSearch = '';
     let budgetCategoryFilter = '';
@@ -443,6 +445,7 @@
         const b = getBridge();
         let data = b && typeof b.getData === 'function' ? b.getData() : null;
         if (!data || typeof data !== 'object') data = {};
+        if (!Array.isArray(data.budgetCategories)) data.budgetCategories = [];
         if (!data.years || typeof data.years !== 'object') data.years = {};
         if (!data.years[selectedHijriYear]) {
             data.years[selectedHijriYear] = createDefaultYearBucket(selectedHijriYear);
@@ -575,6 +578,53 @@
         return String(str || '').trim().toLowerCase().replace(/\s+/g, ' ');
     }
 
+    function normalizeChecklistStatus(rawStatus) {
+        const val = String(rawStatus || '').trim();
+        if (val === 'Completed') return 'Completed';
+        if (val === 'Order placed / Work Started' || val === 'In Progress' || val === 'Follow-up') {
+            return 'Order placed / Work Started';
+        }
+        return 'Pending';
+    }
+
+    function getBudgetCategories(yr = getYearData(selectedHijriYear)) {
+        const data = getAllData();
+        const customCats = Array.isArray(data.budgetCategories) ? data.budgetCategories : [];
+        const rowCats = (yr && Array.isArray(yr.budget) ? yr.budget : []).map(r => r.category);
+        const seen = new Map();
+        [...DEFAULT_BUDGET_CATEGORIES, ...customCats, ...rowCats].forEach(c => {
+            const trimmed = String(c || '').trim();
+            if (!trimmed) return;
+            const key = trimmed.toLowerCase();
+            if (!seen.has(key)) seen.set(key, trimmed);
+        });
+        return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }
+
+    function registerBudgetCategory(name) {
+        const trimmed = String(name || '').trim();
+        if (!trimmed) return '';
+        const data = getAllData();
+        if (!Array.isArray(data.budgetCategories)) data.budgetCategories = [];
+        const existing = getBudgetCategories().find(c => c.toLowerCase() === trimmed.toLowerCase());
+        if (existing) return existing;
+        data.budgetCategories.push(trimmed);
+        data.budgetCategories.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        return trimmed;
+    }
+
+    function sortBudgetRows(rows) {
+        return [...(rows || [])].sort((a, b) => {
+            const catA = String(a.category || '').trim();
+            const catB = String(b.category || '').trim();
+            const cmp = catA.localeCompare(catB, undefined, { sensitivity: 'base' });
+            if (cmp !== 0) return cmp;
+            const itemA = String(a.itemDetails !== undefined ? a.itemDetails : (a.item || '')).trim();
+            const itemB = String(b.itemDetails !== undefined ? b.itemDetails : (b.item || '')).trim();
+            return itemA.localeCompare(itemB, undefined, { sensitivity: 'base' });
+        });
+    }
+
     function levenshteinDist(a, b) {
         const m = a.length, n = b.length;
         if (!m) return n;
@@ -633,6 +683,15 @@
             if (fuzzy) return fuzzy.email;
         }
         return '__unassigned__';
+    }
+
+    function resolveChecklistTaskUserName(task, authUsers) {
+        const matchedEmail = matchTaskToUser(task, authUsers);
+        if (matchedEmail !== '__unassigned__') {
+            const u = authUsers.find(user => user.email === matchedEmail);
+            if (u && u.name) return u.name;
+        }
+        return (task.assigneeName || '').trim() || 'Unassigned';
     }
 
     // =========================================================================
@@ -800,7 +859,7 @@
         const root = document.createElement('div');
         root.id = 'miqaatModalsRoot';
         root.innerHTML = `
-            <!-- Generic Form Modal (Venue / Timetable / Checklist / Event Details / Budget Row / Daily Event) -->
+            <!-- Generic Form Modal (Venue / Timetable / Checklist / Event Details / Budget Row / Category / Daily Event) -->
             <div id="miqaatFormModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden z-50 flex items-center justify-center p-3 sm:p-4">
                 <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-emerald-200">
                     <div class="bg-emerald-900 text-white px-5 py-3.5 flex items-center justify-between">
@@ -819,6 +878,32 @@
                 </div>
             </div>
 
+            <!-- Work Checklist Overview Modal (Triggered by clicking KPI cards) -->
+            <div id="miqaatChecklistOverviewModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs hidden z-50 flex items-center justify-center p-2 sm:p-4">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden border-2 border-emerald-700">
+                    <div class="bg-emerald-900 text-white px-5 py-3.5 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 id="miqaatChecklistOverviewTitle" class="text-base sm:text-lg font-bold flex items-center gap-2"></h3>
+                            <p id="miqaatChecklistOverviewSubtitle" class="text-xs text-emerald-200"></p>
+                        </div>
+                        <button type="button" onclick="window.MiqaatModule.closeModal('miqaatChecklistOverviewModal')" class="text-emerald-200 hover:text-white text-2xl leading-none px-2">&times;</button>
+                    </div>
+                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
+                        <div class="relative flex-1 min-w-[200px] max-w-sm">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                            <input type="text" id="miqaatChecklistOverviewSearchInput" placeholder="Search user, category, task..."
+                                oninput="window.MiqaatModule.setChecklistOverviewSearch(this.value)"
+                                class="w-full pl-8 pr-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <span id="miqaatChecklistOverviewCountBadge" class="text-xs font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300 px-3 py-1 rounded-full">0 Tasks</span>
+                    </div>
+                    <div id="miqaatChecklistOverviewBody" class="p-3 sm:p-4 overflow-auto flex-1"></div>
+                    <div class="bg-gray-50 px-5 py-3 border-t border-gray-200 flex justify-end">
+                        <button type="button" onclick="window.MiqaatModule.closeModal('miqaatChecklistOverviewModal')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300">Close</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Wide Excel-Style Full Budget Editor Modal -->
             <div id="miqaatFullBudgetModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs hidden z-50 flex items-center justify-center p-2 sm:p-4">
                 <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden border-2 border-emerald-700">
@@ -828,12 +913,12 @@
                                 <i class="fa-solid fa-table-cells text-amber-300"></i>
                                 <span>Excel-Style Full Budget Editor (<span id="miqaatFullBudgetYearLabel">1448H</span>)</span>
                             </h3>
-                            <p class="text-xs text-emerald-200">Edit all cells inline across all rows simultaneously, then click Save All.</p>
+                            <p class="text-xs text-emerald-200">Edit all cells inline across all rows simultaneously, then click Save All. Rows auto-sort by Category on save.</p>
                         </div>
                         <button type="button" onclick="window.MiqaatModule.closeModal('miqaatFullBudgetModal')" class="text-emerald-200 hover:text-white text-2xl leading-none px-2">&times;</button>
                     </div>
                     <div class="p-3 sm:p-4 overflow-auto flex-1">
-                        <table class="w-full text-xs border-collapse miqaat-excel-grid min-w-[900px]">
+                        <table class="w-full text-xs border-collapse miqaat-excel-grid min-w-[980px]">
                             <thead>
                                 <tr class="bg-emerald-50 text-emerald-950 border-y border-emerald-200 text-left">
                                     <th class="p-2 w-14 text-center">Sr No</th>
@@ -843,6 +928,7 @@
                                     <th class="p-2 min-w-[180px]">Rate Details</th>
                                     <th class="p-2 min-w-[160px]">Remarks</th>
                                     <th class="p-2 w-12 text-center">Del</th>
+                                    <th class="p-2 w-36">Added By</th>
                                 </tr>
                             </thead>
                             <tbody id="miqaatFullBudgetGridBody"></tbody>
@@ -1254,14 +1340,14 @@
     }
 
     // =========================================================================
-    // SUB-HEADER 2: USER-BASED CHECKLIST
+    // SUB-HEADER 2: WORK CHECKLIST
     // =========================================================================
 
     function getStatusBadgeClasses(status) {
-        if (status === 'Completed') return 'bg-emerald-100 text-emerald-900 border-emerald-300';
-        if (status === 'In Progress') return 'bg-blue-100 text-blue-900 border-blue-300';
-        if (status === 'Follow-up') return 'bg-amber-100 text-amber-950 border-amber-300';
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        const norm = normalizeChecklistStatus(status);
+        if (norm === 'Completed') return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+        if (norm === 'Order placed / Work Started') return 'bg-blue-100 text-blue-900 border-blue-300';
+        return 'bg-amber-100 text-amber-950 border-amber-300';
     }
 
     function getPriorityBadgeClasses(priority) {
@@ -1278,20 +1364,21 @@
         const curUser = getCurrentUserInfo();
         const readonly = isViewOnly();
 
-        // KPI counts
+        // KPI counts (normalized to 3 statuses)
         const total = allTasks.length;
-        const inProgress = allTasks.filter(t => t.status === 'In Progress').length;
-        const followUp = allTasks.filter(t => t.status === 'Follow-up').length;
-        const completed = allTasks.filter(t => t.status === 'Completed').length;
+        const pending = allTasks.filter(t => normalizeChecklistStatus(t.status) === 'Pending').length;
+        const started = allTasks.filter(t => normalizeChecklistStatus(t.status) === 'Order placed / Work Started').length;
+        const completed = allTasks.filter(t => normalizeChecklistStatus(t.status) === 'Completed').length;
         const completionRate = total > 0 ? ((completed / total) * 100).toFixed(1) : '0.0';
 
         // Filter tasks
         const q = checklistSearch.trim().toLowerCase();
         const filteredTasks = allTasks.filter(t => {
-            if (checklistStatusFilter && t.status !== checklistStatusFilter) return false;
+            const normStatus = normalizeChecklistStatus(t.status);
+            if (checklistStatusFilter && normStatus !== checklistStatusFilter) return false;
             if (checklistPriorityFilter && t.priority !== checklistPriorityFilter) return false;
             if (q) {
-                const hay = `${t.itemNo} ${t.category} ${t.description} ${t.assigneeName} ${t.collaborators} ${t.quantitySpecs}`.toLowerCase();
+                const hay = `${t.category} ${t.description} ${t.assigneeName} ${t.collaborators} ${t.quantitySpecs}`.toLowerCase();
                 if (!hay.includes(q)) return false;
             }
             return true;
@@ -1351,12 +1438,12 @@
                     <table class="w-full text-xs sm:text-sm">
                         <thead class="bg-slate-800 text-white text-[11px] uppercase tracking-wider">
                             <tr>
-                                <th class="px-3 py-2.5 text-center w-14">Item #</th>
+                                <th class="px-3 py-2.5 text-center w-14">Sr No</th>
                                 <th class="px-3 py-2.5 text-left w-40">Category / Area</th>
                                 <th class="px-3 py-2.5 text-left min-w-[220px]">Task Description</th>
                                 <th class="px-3 py-2.5 text-left w-44">Collaborators / Coordinators</th>
                                 <th class="px-3 py-2.5 text-left w-36">Quantity / Specs</th>
-                                <th class="px-3 py-2.5 text-center w-32">Status</th>
+                                <th class="px-3 py-2.5 text-center w-48">Status</th>
                                 <th class="px-3 py-2.5 text-center w-28">Priority</th>
                                 ${!readonly ? '<th class="px-3 py-2.5 text-left w-52 miqaat-edit-only">Reassign / Actions</th>' : ''}
                             </tr>
@@ -1364,43 +1451,46 @@
                         <tbody class="divide-y divide-gray-100">
                             ${tasks.length === 0 ? `
                                 <tr><td colspan="${readonly ? 7 : 8}" class="px-4 py-5 text-center text-gray-400 italic">No tasks assigned under current filter.</td></tr>
-                            ` : tasks.map(t => `
-                                <tr class="hover:bg-emerald-50/40 transition ${t.status === 'Completed' ? 'bg-emerald-50/30' : ''}">
-                                    <td class="px-3 py-2.5 text-center font-bold text-gray-600">${escapeHtml(t.itemNo || '—')}</td>
-                                    <td class="px-3 py-2.5 font-semibold text-blue-950">${escapeHtml(t.category || '—')}</td>
-                                    <td class="px-3 py-2.5 text-gray-900 ${t.status === 'Completed' ? 'line-through text-gray-500' : 'font-medium'}">${nl2br(t.description)}</td>
-                                    <td class="px-3 py-2.5 text-gray-600">${escapeHtml(t.collaborators || '—')}</td>
-                                    <td class="px-3 py-2.5 text-gray-700">${escapeHtml(t.quantitySpecs || '—')}</td>
-                                    <td class="px-3 py-2.5 text-center">
-                                        ${!readonly ? `
-                                            <select onchange="window.MiqaatModule.updateChecklistField('${t.id}', 'status', this.value)" class="text-xs font-bold rounded-full px-2.5 py-1 border cursor-pointer focus:outline-none ${getStatusBadgeClasses(t.status)}">
-                                                ${CHECKLIST_STATUSES.map(st => `<option value="${st}" ${t.status === st ? 'selected' : ''}>${st}</option>`).join('')}
-                                            </select>
-                                        ` : `<span class="text-xs font-bold rounded-full px-2.5 py-1 border ${getStatusBadgeClasses(t.status)}">${escapeHtml(t.status)}</span>`}
-                                    </td>
-                                    <td class="px-3 py-2.5 text-center">
-                                        ${!readonly ? `
-                                            <select onchange="window.MiqaatModule.updateChecklistField('${t.id}', 'priority', this.value)" class="text-xs font-bold rounded-full px-2.5 py-1 border cursor-pointer focus:outline-none ${getPriorityBadgeClasses(t.priority)}">
-                                                ${CHECKLIST_PRIORITIES.map(pr => `<option value="${pr}" ${t.priority === pr ? 'selected' : ''}>${pr}</option>`).join('')}
-                                            </select>
-                                        ` : `<span class="text-xs font-bold rounded-full px-2.5 py-1 border ${getPriorityBadgeClasses(t.priority)}">${escapeHtml(t.priority)}</span>`}
-                                    </td>
-                                    ${!readonly ? `
-                                        <td class="px-3 py-2.5 miqaat-edit-only">
-                                            <div class="flex items-center gap-1.5">
-                                                <select title="Reassign task to another authorized user"
-                                                    onchange="if(this.value) window.MiqaatModule.reassignChecklistTask('${t.id}', this.value)"
-                                                    class="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 max-w-[140px]">
-                                                    <option value="">Move to user...</option>
-                                                    ${sortedUsers.map(u => `<option value="${escapeHtml(u.email)}" ${u.email === targetUserEmail ? 'disabled' : ''}>${escapeHtml(u.name)}</option>`).join('')}
+                            ` : tasks.map((t, idx) => {
+                                const normStatus = normalizeChecklistStatus(t.status);
+                                return `
+                                    <tr class="hover:bg-emerald-50/40 transition ${normStatus === 'Completed' ? 'bg-emerald-50/30' : ''}">
+                                        <td class="px-3 py-2.5 text-center font-bold text-gray-600">${idx + 1}</td>
+                                        <td class="px-3 py-2.5 font-semibold text-blue-950">${escapeHtml(t.category || '—')}</td>
+                                        <td class="px-3 py-2.5 text-gray-900 ${normStatus === 'Completed' ? 'line-through text-gray-500' : 'font-medium'}">${nl2br(t.description)}</td>
+                                        <td class="px-3 py-2.5 text-gray-600">${escapeHtml(t.collaborators || '—')}</td>
+                                        <td class="px-3 py-2.5 text-gray-700">${escapeHtml(t.quantitySpecs || '—')}</td>
+                                        <td class="px-3 py-2.5 text-center">
+                                            ${!readonly ? `
+                                                <select onchange="window.MiqaatModule.updateChecklistField('${t.id}', 'status', this.value)" class="text-xs font-bold rounded-full px-2.5 py-1 border cursor-pointer focus:outline-none ${getStatusBadgeClasses(normStatus)}">
+                                                    ${CHECKLIST_STATUSES.map(st => `<option value="${escapeHtml(st)}" ${normStatus === st ? 'selected' : ''}>${escapeHtml(st)}</option>`).join('')}
                                                 </select>
-                                                <button type="button" onclick="window.MiqaatModule.openChecklistModal('${t.id}')" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="Edit Task"><i class="fa-solid fa-pen-to-square"></i></button>
-                                                <button type="button" onclick="window.MiqaatModule.deleteChecklistTask('${t.id}')" class="text-red-600 hover:bg-red-50 p-1.5 rounded" title="Delete Task"><i class="fa-solid fa-trash"></i></button>
-                                            </div>
+                                            ` : `<span class="text-xs font-bold rounded-full px-2.5 py-1 border ${getStatusBadgeClasses(normStatus)}">${escapeHtml(normStatus)}</span>`}
                                         </td>
-                                    ` : ''}
-                                </tr>
-                            `).join('')}
+                                        <td class="px-3 py-2.5 text-center">
+                                            ${!readonly ? `
+                                                <select onchange="window.MiqaatModule.updateChecklistField('${t.id}', 'priority', this.value)" class="text-xs font-bold rounded-full px-2.5 py-1 border cursor-pointer focus:outline-none ${getPriorityBadgeClasses(t.priority)}">
+                                                    ${CHECKLIST_PRIORITIES.map(pr => `<option value="${pr}" ${t.priority === pr ? 'selected' : ''}>${pr}</option>`).join('')}
+                                                </select>
+                                            ` : `<span class="text-xs font-bold rounded-full px-2.5 py-1 border ${getPriorityBadgeClasses(t.priority)}">${escapeHtml(t.priority)}</span>`}
+                                        </td>
+                                        ${!readonly ? `
+                                            <td class="px-3 py-2.5 miqaat-edit-only">
+                                                <div class="flex items-center gap-1.5">
+                                                    <select title="Reassign task to another authorized user"
+                                                        onchange="if(this.value) window.MiqaatModule.reassignChecklistTask('${t.id}', this.value)"
+                                                        class="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 max-w-[140px]">
+                                                        <option value="">Move to user...</option>
+                                                        ${sortedUsers.map(u => `<option value="${escapeHtml(u.email)}" ${u.email === targetUserEmail ? 'disabled' : ''}>${escapeHtml(u.name)}</option>`).join('')}
+                                                    </select>
+                                                    <button type="button" onclick="window.MiqaatModule.openChecklistModal('${t.id}')" class="text-blue-600 hover:bg-blue-50 p-1.5 rounded" title="Edit Task"><i class="fa-solid fa-pen-to-square"></i></button>
+                                                    <button type="button" onclick="window.MiqaatModule.deleteChecklistTask('${t.id}')" class="text-red-600 hover:bg-red-50 p-1.5 rounded" title="Delete Task"><i class="fa-solid fa-trash"></i></button>
+                                                </div>
+                                            </td>
+                                        ` : ''}
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -1408,25 +1498,29 @@
         `;
 
         return `
-            <!-- KPI Summary Strip -->
+            <!-- Clickable KPI Overview Cards -->
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                <div class="bg-white rounded-xl border border-gray-200 p-3.5 text-center shadow-xs">
+                <button type="button" onclick="window.MiqaatModule.openChecklistOverviewModal('all')" class="bg-white rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md p-3.5 text-center shadow-xs transition cursor-pointer group">
                     <div class="text-[11px] font-bold uppercase text-gray-500">Total Tasks</div>
                     <div class="text-2xl font-extrabold text-gray-900 mt-0.5">${total}</div>
-                </div>
-                <div class="bg-white rounded-xl border border-blue-200 p-3.5 text-center shadow-xs">
-                    <div class="text-[11px] font-bold uppercase text-blue-600">In Progress</div>
-                    <div class="text-2xl font-extrabold text-blue-900 mt-0.5">${inProgress}</div>
-                </div>
-                <div class="bg-white rounded-xl border border-amber-200 p-3.5 text-center shadow-xs">
-                    <div class="text-[11px] font-bold uppercase text-amber-600">Follow-up</div>
-                    <div class="text-2xl font-extrabold text-amber-900 mt-0.5">${followUp}</div>
-                </div>
-                <div class="bg-white rounded-xl border border-emerald-200 p-3.5 text-center shadow-xs">
+                    <div class="text-[10px] font-semibold text-gray-400 group-hover:text-emerald-700 mt-1"><i class="fa-solid fa-list-ul mr-1"></i>Click to view all</div>
+                </button>
+                <button type="button" onclick="window.MiqaatModule.openChecklistOverviewModal('Pending')" class="bg-white rounded-xl border border-amber-200 hover:border-amber-400 hover:shadow-md p-3.5 text-center shadow-xs transition cursor-pointer group">
+                    <div class="text-[11px] font-bold uppercase text-amber-700">Pending</div>
+                    <div class="text-2xl font-extrabold text-amber-900 mt-0.5">${pending}</div>
+                    <div class="text-[10px] font-semibold text-amber-500 group-hover:text-amber-700 mt-1"><i class="fa-solid fa-clock mr-1"></i>Click to view</div>
+                </button>
+                <button type="button" onclick="window.MiqaatModule.openChecklistOverviewModal('Order placed / Work Started')" class="bg-white rounded-xl border border-blue-200 hover:border-blue-400 hover:shadow-md p-3.5 text-center shadow-xs transition cursor-pointer group">
+                    <div class="text-[11px] font-bold uppercase text-blue-600 leading-tight">Order placed / Work Started</div>
+                    <div class="text-2xl font-extrabold text-blue-900 mt-0.5">${started}</div>
+                    <div class="text-[10px] font-semibold text-blue-500 group-hover:text-blue-700 mt-1"><i class="fa-solid fa-spinner mr-1"></i>Click to view</div>
+                </button>
+                <button type="button" onclick="window.MiqaatModule.openChecklistOverviewModal('Completed')" class="bg-white rounded-xl border border-emerald-200 hover:border-emerald-400 hover:shadow-md p-3.5 text-center shadow-xs transition cursor-pointer group">
                     <div class="text-[11px] font-bold uppercase text-emerald-600">Completed</div>
                     <div class="text-2xl font-extrabold text-emerald-900 mt-0.5">${completed}</div>
-                </div>
-                <div class="bg-emerald-900 rounded-xl border border-emerald-700 p-3.5 text-center shadow-xs col-span-2 sm:col-span-1">
+                    <div class="text-[10px] font-semibold text-emerald-500 group-hover:text-emerald-700 mt-1"><i class="fa-solid fa-circle-check mr-1"></i>Click to view</div>
+                </button>
+                <div class="bg-emerald-900 rounded-xl border border-emerald-700 p-3.5 text-center shadow-xs col-span-2 sm:col-span-1 flex flex-col justify-center">
                     <div class="text-[11px] font-bold uppercase text-emerald-200">Completion Rate</div>
                     <div class="text-2xl font-extrabold text-amber-300 mt-0.5">${completionRate}%</div>
                 </div>
@@ -1443,7 +1537,7 @@
                     </div>
                     <select onchange="window.MiqaatModule.setChecklistFilter('status', this.value)" class="text-xs sm:text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white">
                         <option value="">All Statuses</option>
-                        ${CHECKLIST_STATUSES.map(st => `<option value="${st}" ${checklistStatusFilter === st ? 'selected' : ''}>${st}</option>`).join('')}
+                        ${CHECKLIST_STATUSES.map(st => `<option value="${escapeHtml(st)}" ${checklistStatusFilter === st ? 'selected' : ''}>${escapeHtml(st)}</option>`).join('')}
                     </select>
                     <select onchange="window.MiqaatModule.setChecklistFilter('priority', this.value)" class="text-xs sm:text-sm border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white">
                         <option value="">All Priorities</option>
@@ -1485,6 +1579,107 @@
                     '',
                     true
                 )).join('')}
+            </div>
+        `;
+    }
+
+    function openChecklistOverviewModal(mode = 'all') {
+        ensureModalsMounted();
+        checklistOverviewMode = mode || 'all';
+        checklistOverviewSearch = '';
+        const searchEl = document.getElementById('miqaatChecklistOverviewSearchInput');
+        if (searchEl) searchEl.value = '';
+        renderChecklistOverviewModalContent();
+        document.getElementById('miqaatChecklistOverviewModal').classList.remove('hidden');
+    }
+
+    function setChecklistOverviewSearch(val) {
+        checklistOverviewSearch = val || '';
+        renderChecklistOverviewModalContent();
+    }
+
+    function renderChecklistOverviewModalContent() {
+        const yr = getYearData(selectedHijriYear);
+        const allTasks = yr.checklist || [];
+        const authUsers = getAuthorizedUsers();
+        const readonly = isViewOnly();
+
+        const titleEl = document.getElementById('miqaatChecklistOverviewTitle');
+        const subtitleEl = document.getElementById('miqaatChecklistOverviewSubtitle');
+        const badgeEl = document.getElementById('miqaatChecklistOverviewCountBadge');
+        const bodyEl = document.getElementById('miqaatChecklistOverviewBody');
+        if (!titleEl || !bodyEl) return;
+
+        const modeLabel = checklistOverviewMode === 'all' ? 'Total Tasks — Complete List' : `${checklistOverviewMode} Tasks`;
+        titleEl.innerHTML = `<i class="fa-solid fa-list-check text-amber-300"></i> <span>${escapeHtml(modeLabel)} (${selectedHijriYear}H)</span>`;
+        if (subtitleEl) {
+            subtitleEl.textContent = checklistOverviewMode === 'all'
+                ? 'Showing all checklist tasks across all users with User Name column.'
+                : `Filtered by status: ${checklistOverviewMode}`;
+        }
+
+        const q = checklistOverviewSearch.trim().toLowerCase();
+        const matchedTasks = allTasks.filter(t => {
+            const normStatus = normalizeChecklistStatus(t.status);
+            if (checklistOverviewMode !== 'all' && normStatus !== checklistOverviewMode) return false;
+            if (q) {
+                const userName = resolveChecklistTaskUserName(t, authUsers);
+                const hay = `${userName} ${t.category} ${t.description} ${t.collaborators} ${t.quantitySpecs} ${normStatus} ${t.priority}`.toLowerCase();
+                if (!hay.includes(q)) return false;
+            }
+            return true;
+        });
+
+        if (badgeEl) {
+            badgeEl.textContent = `${matchedTasks.length} Task${matchedTasks.length === 1 ? '' : 's'}`;
+        }
+
+        bodyEl.innerHTML = `
+            <div class="overflow-x-auto border border-gray-200 rounded-xl">
+                <table class="w-full text-xs sm:text-sm">
+                    <thead class="bg-slate-800 text-white text-[11px] uppercase tracking-wider">
+                        <tr>
+                            <th class="px-3 py-2.5 text-center w-14">Sr No</th>
+                            <th class="px-3 py-2.5 text-left w-44">User Name</th>
+                            <th class="px-3 py-2.5 text-left w-40">Category / Area</th>
+                            <th class="px-3 py-2.5 text-left min-w-[220px]">Task Description</th>
+                            <th class="px-3 py-2.5 text-left w-44">Collaborators / Coordinators</th>
+                            <th class="px-3 py-2.5 text-left w-36">Quantity / Specs</th>
+                            <th class="px-3 py-2.5 text-center w-48">Status</th>
+                            <th class="px-3 py-2.5 text-center w-24">Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${matchedTasks.length === 0 ? `
+                            <tr>
+                                <td colspan="8" class="px-4 py-8 text-center text-gray-400 italic">No tasks found for this filter.</td>
+                            </tr>
+                        ` : matchedTasks.map((t, idx) => {
+                            const userName = resolveChecklistTaskUserName(t, authUsers);
+                            const normStatus = normalizeChecklistStatus(t.status);
+                            return `
+                                <tr class="hover:bg-emerald-50/40 transition ${normStatus === 'Completed' ? 'bg-emerald-50/30' : ''}">
+                                    <td class="px-3 py-2.5 text-center font-bold text-gray-600">${idx + 1}</td>
+                                    <td class="px-3 py-2.5 font-bold text-emerald-900 whitespace-nowrap">${escapeHtml(userName)}</td>
+                                    <td class="px-3 py-2.5 font-semibold text-blue-950">${escapeHtml(t.category || '—')}</td>
+                                    <td class="px-3 py-2.5 text-gray-900 ${normStatus === 'Completed' ? 'line-through text-gray-500' : 'font-medium'}">${nl2br(t.description)}</td>
+                                    <td class="px-3 py-2.5 text-gray-600">${escapeHtml(t.collaborators || '—')}</td>
+                                    <td class="px-3 py-2.5 text-gray-700">${escapeHtml(t.quantitySpecs || '—')}</td>
+                                    <td class="px-3 py-2.5 text-center">
+                                        ${!readonly ? `
+                                            <select onchange="window.MiqaatModule.updateChecklistField('${t.id}', 'status', this.value)" class="text-xs font-bold rounded-full px-2.5 py-1 border cursor-pointer focus:outline-none ${getStatusBadgeClasses(normStatus)}">
+                                                ${CHECKLIST_STATUSES.map(st => `<option value="${escapeHtml(st)}" ${normStatus === st ? 'selected' : ''}>${escapeHtml(st)}</option>`).join('')}
+                                            </select>
+                                        ` : `<span class="text-xs font-bold rounded-full px-2.5 py-1 border ${getStatusBadgeClasses(normStatus)}">${escapeHtml(normStatus)}</span>`}
+                                    </td>
+                                    <td class="px-3 py-2.5 text-center">
+                                        <span class="text-xs font-bold rounded-full px-2.5 py-1 border ${getPriorityBadgeClasses(t.priority)}">${escapeHtml(t.priority || 'Medium')}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
             </div>
         `;
     }
@@ -1592,15 +1787,15 @@
 
     function renderBudgetTab() {
         const yr = getYearData(selectedHijriYear);
-        const rows = yr.budget || [];
+        const rows = sortBudgetRows(yr.budget || []);
         const readonly = isViewOnly();
 
-        const categories = Array.from(new Set([...DEFAULT_BUDGET_CATEGORIES, ...rows.map(r => r.category).filter(Boolean)]));
+        const categories = getBudgetCategories(yr);
         const q = budgetSearch.trim().toLowerCase();
         const filtered = rows.filter(r => {
             if (budgetCategoryFilter && r.category !== budgetCategoryFilter) return false;
             if (q) {
-                const hay = `${r.category} ${r.itemDetails || r.item || ''} ${r.rateDetails || ''} ${r.remarks || ''}`.toLowerCase();
+                const hay = `${r.category} ${r.itemDetails || r.item || ''} ${r.rateDetails || ''} ${r.remarks || ''} ${r.addedBy || ''}`.toLowerCase();
                 if (!hay.includes(q)) return false;
             }
             return true;
@@ -1609,12 +1804,65 @@
         const grandTotalAll = rows.reduce((sum, r) => sum + computeRowAmount(r), 0);
         const filteredTotal = filtered.reduce((sum, r) => sum + computeRowAmount(r), 0);
 
+        // Category-wise breakdown (alphabetically sorted)
+        const byCat = new Map();
+        rows.forEach(r => {
+            const cat = String(r.category || 'Uncategorized').trim() || 'Uncategorized';
+            const prev = byCat.get(cat) || { amount: 0, count: 0 };
+            prev.amount += computeRowAmount(r);
+            prev.count += 1;
+            byCat.set(cat, prev);
+        });
+        const categoryBreakdown = Array.from(byCat.entries())
+            .sort((a, b) => a[0].localeCompare(b[0], undefined, { sensitivity: 'base' }));
+
         return `
+            <!-- Budget Overview Card with Total Amount & Category-Wise Breakdown -->
+            <div class="bg-white rounded-xl border border-emerald-200 shadow-sm overflow-hidden">
+                <div class="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-200">Budget Overview (${selectedHijriYear}H)</div>
+                        <div class="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-0.5">${formatINR(grandTotalAll)}</div>
+                        <div class="text-xs text-emerald-100 mt-0.5">${rows.length} Item${rows.length === 1 ? '' : 's'} across ${categoryBreakdown.length} Categor${categoryBreakdown.length === 1 ? 'y' : 'ies'}</div>
+                    </div>
+                    ${budgetCategoryFilter ? `
+                        <button type="button" onclick="window.MiqaatModule.setBudgetFilter('category', '')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-400 text-emerald-950 hover:bg-amber-300 shadow-sm">
+                            <i class="fa-solid fa-filter-circle-xmark mr-1"></i>Clear Filter (${escapeHtml(budgetCategoryFilter)})
+                        </button>
+                    ` : ''}
+                </div>
+                <div class="p-4">
+                    <div class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2.5 flex items-center justify-between">
+                        <span>Category-Wise Breakdown (Alphabetical)</span>
+                        <span class="text-[11px] font-normal text-gray-400">Click any category to filter</span>
+                    </div>
+                    ${categoryBreakdown.length === 0 ? `
+                        <p class="text-xs text-gray-400 italic">No budget items recorded yet for ${selectedHijriYear}H.</p>
+                    ` : `
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                            ${categoryBreakdown.map(([cat, info]) => {
+                                const pct = grandTotalAll > 0 ? ((info.amount / grandTotalAll) * 100).toFixed(1) : '0.0';
+                                const isActive = budgetCategoryFilter === cat;
+                                return `
+                                    <button type="button" data-category="${escapeHtml(cat)}" onclick="window.MiqaatModule.toggleBudgetCategoryFilter(this.dataset.category)"
+                                        class="text-left rounded-lg border p-2.5 transition cursor-pointer ${isActive ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-200' : 'bg-gray-50/70 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/40'}">
+                                        <div class="text-xs font-bold text-gray-800 truncate" title="${escapeHtml(cat)}">${escapeHtml(cat)}</div>
+                                        <div class="text-sm sm:text-base font-extrabold text-emerald-900 mt-0.5">${formatINR(info.amount)}</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">${info.count} item${info.count === 1 ? '' : 's'} • ${pct}%</div>
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                    `}
+                </div>
+            </div>
+
+            <!-- Toolbar: Search, Category Filter, Add Category, Analysis, Full Editor, Add Row -->
             <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
                     <div class="relative flex-1 min-w-[180px] max-w-xs">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" value="${escapeHtml(budgetSearch)}" placeholder="Search item details, category, rate, remarks..."
+                        <input type="text" value="${escapeHtml(budgetSearch)}" placeholder="Search item, category, rate, user..."
                             oninput="window.MiqaatModule.setBudgetFilter('search', this.value)"
                             class="w-full pl-8 pr-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
                     </div>
@@ -1622,6 +1870,11 @@
                         <option value="">All Categories</option>
                         ${categories.map(c => `<option value="${escapeHtml(c)}" ${budgetCategoryFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
                     </select>
+                    ${!readonly ? `
+                        <button type="button" onclick="window.MiqaatModule.openAddBudgetCategoryModal()" class="miqaat-edit-only px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100">
+                            <i class="fa-solid fa-folder-plus mr-1"></i>Add Category
+                        </button>
+                    ` : ''}
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <button type="button" onclick="window.MiqaatModule.openBudgetAnalysisModal()" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-amber-500 text-emerald-950 hover:bg-amber-400 shadow-sm">
@@ -1638,6 +1891,7 @@
                 </div>
             </div>
 
+            <!-- Budget Table -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-emerald-900 text-white px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                     <h3 class="font-extrabold text-sm sm:text-base flex items-center gap-2">
@@ -1659,12 +1913,13 @@
                                 <th class="px-3 py-3 text-left min-w-[180px]">Rate Details</th>
                                 <th class="px-3 py-3 text-left min-w-[160px]">Remarks</th>
                                 ${!readonly ? '<th class="px-3 py-3 text-center w-24 miqaat-edit-only">Actions</th>' : ''}
+                                <th class="px-3 py-3 text-left w-40">Added By</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             ${filtered.length === 0 ? `
                                 <tr>
-                                    <td colspan="${readonly ? 6 : 7}" class="px-4 py-8 text-center text-gray-500">
+                                    <td colspan="${readonly ? 7 : 8}" class="px-4 py-8 text-center text-gray-500">
                                         <i class="fa-solid fa-receipt text-3xl text-gray-300 mb-2 block"></i>
                                         No budget items yet for ${selectedHijriYear}H. Use <strong>Add Row</strong> or <strong>Edit Full Table</strong> to enter budget items.
                                     </td>
@@ -1672,6 +1927,7 @@
                             ` : filtered.map((r, idx) => {
                                 const amt = computeRowAmount(r);
                                 const itemText = r.itemDetails !== undefined ? r.itemDetails : (r.item || '');
+                                const addedByName = (r.addedBy || '').trim();
                                 return `
                                     <tr class="hover:bg-emerald-50/40 transition">
                                         <td class="px-3 py-2.5 text-center font-bold text-gray-500">${idx + 1}</td>
@@ -1681,7 +1937,7 @@
                                                     class="text-xs font-bold bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer w-full">
                                                     ${categories.map(c => `<option value="${escapeHtml(c)}" ${r.category === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
                                                 </select>
-                                            ` : `<span class="inline-block bg-emerald-50 text-emerald-900 border border-emerald-200 px-2 py-0.5 rounded-md text-xs font-bold">${escapeHtml(r.category || 'HR')}</span>`}
+                                            ` : `<span class="inline-block bg-emerald-50 text-emerald-900 border border-emerald-200 px-2 py-0.5 rounded-md text-xs font-bold">${escapeHtml(r.category || categories[0] || 'HR')}</span>`}
                                         </td>
                                         <td class="px-3 py-2.5 font-semibold text-gray-900">${nl2br(itemText || '—')}</td>
                                         <td class="px-3 py-2.5 text-right font-extrabold text-emerald-900 whitespace-nowrap">${formatINR(amt)}</td>
@@ -1693,6 +1949,11 @@
                                                 <button type="button" onclick="window.MiqaatModule.deleteBudgetRow('${r.id}')" class="text-red-600 hover:bg-red-50 p-1.5 rounded" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                             </td>
                                         ` : ''}
+                                        <td class="px-3 py-2.5 text-gray-700 whitespace-nowrap">
+                                            ${addedByName
+                                                ? `<span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800"><i class="fa-solid fa-user text-emerald-600 text-[10px]"></i>${escapeHtml(addedByName)}</span>`
+                                                : '<span class="text-gray-400">—</span>'}
+                                        </td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -1703,7 +1964,7 @@
                                     ${(budgetSearch || budgetCategoryFilter) ? 'Filtered Subtotal' : 'Grand Total'}
                                 </td>
                                 <td class="px-3 py-3 text-right text-base sm:text-lg font-extrabold text-emerald-900 whitespace-nowrap">${formatINR(filteredTotal)}</td>
-                                <td colspan="${readonly ? 2 : 3}"></td>
+                                <td colspan="${readonly ? 3 : 4}"></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -1824,6 +2085,10 @@
             target.innerHTML = renderDashboardTab();
         } else if (activeSubTab === 'checklist') {
             target.innerHTML = renderChecklistTab();
+            const overviewModal = document.getElementById('miqaatChecklistOverviewModal');
+            if (overviewModal && !overviewModal.classList.contains('hidden')) {
+                renderChecklistOverviewModalContent();
+            }
         } else if (activeSubTab === 'events-details') {
             target.innerHTML = renderEventsDetailsTab();
         } else if (activeSubTab === 'budget') {
@@ -2025,19 +2290,14 @@
         const defaultEmail = existing
             ? matchTaskToUser(existing, authUsers)
             : (prefillUserEmail || curUser.email || (authUsers[0]?.email || ''));
+        const existingStatus = existing ? normalizeChecklistStatus(existing.status) : 'Pending';
 
         openFormModal(
             `<i class="fa-solid fa-list-check text-amber-300"></i> ${existing ? 'Edit' : 'Add'} Checklist Task`,
             `
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Item #</label>
-                        <input type="text" name="itemNo" value="${escapeHtml(existing?.itemNo || String(yr.checklist.length + 1))}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Category / Area *</label>
-                        <input type="text" name="category" required placeholder="e.g. Seating & Furniture" value="${escapeHtml(existing?.category || '')}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                    </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Category / Area *</label>
+                    <input type="text" name="category" required placeholder="e.g. Seating & Furniture" value="${escapeHtml(existing?.category || '')}" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Task Description *</label>
@@ -2063,7 +2323,7 @@
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Status</label>
                         <select name="status" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white">
-                            ${CHECKLIST_STATUSES.map(st => `<option value="${st}" ${(existing?.status || 'Not Started') === st ? 'selected' : ''}>${st}</option>`).join('')}
+                            ${CHECKLIST_STATUSES.map(st => `<option value="${escapeHtml(st)}" ${existingStatus === st ? 'selected' : ''}>${escapeHtml(st)}</option>`).join('')}
                         </select>
                     </div>
                     <div>
@@ -2079,14 +2339,13 @@
                 const matchedUser = authUsers.find(u => u.email === chosenEmail);
                 const payload = {
                     id: existing ? existing.id : genId('chk'),
-                    itemNo: form.itemNo.value.trim(),
                     category: form.category.value.trim(),
                     description: form.description.value.trim(),
                     assigneeEmail: chosenEmail,
                     assigneeName: matchedUser ? matchedUser.name : (existing?.assigneeName || ''),
                     collaborators: form.collaborators.value.trim(),
                     quantitySpecs: form.quantitySpecs.value.trim(),
-                    status: form.status.value,
+                    status: normalizeChecklistStatus(form.status.value),
                     priority: form.priority.value
                 };
                 if (existing) {
@@ -2105,7 +2364,7 @@
         const yr = getYearData(selectedHijriYear);
         const task = yr.checklist.find(t => t.id === taskId);
         if (!task) return;
-        task[field] = value;
+        task[field] = field === 'status' ? normalizeChecklistStatus(value) : value;
         await persistData(`Task ${field} updated.`);
         renderActiveTab();
     }
@@ -2144,7 +2403,7 @@
                 const ws = wb.Sheets[wb.SheetNames[0]];
                 const rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-                // Find header row matching screenshot columns (Item #, Category / Area, Task Description, Primary Assignee...)
+                // Find header row matching checklist columns
                 let headerIdx = -1;
                 for (let i = 0; i < Math.min(rows.length, 20); i++) {
                     const norm = rows[i].map(c => String(c || '').trim().toLowerCase());
@@ -2160,7 +2419,6 @@
 
                 const headers = rows[headerIdx].map(c => String(c || '').trim().toLowerCase());
                 const colIdx = (keys) => headers.findIndex(h => keys.some(k => h.includes(k)));
-                const iItem = colIdx(['item', 'sr', '#']);
                 const iCat = colIdx(['category', 'area']);
                 const iDesc = colIdx(['task description', 'description', 'task']);
                 const iAss = colIdx(['primary assignee', 'assignee']);
@@ -2177,19 +2435,18 @@
                     if (!desc) continue;
                     const assigneeName = iAss >= 0 ? String(row[iAss] || '').trim() : '';
                     const matchedEmail = matchTaskToUser({ assigneeName }, authUsers);
-                    const rawStatus = iStat >= 0 ? String(row[iStat] || '').trim() : 'Not Started';
+                    const rawStatus = iStat >= 0 ? String(row[iStat] || '').trim() : 'Pending';
                     const rawPrio = iPrio >= 0 ? String(row[iPrio] || '').trim() : 'Medium';
 
                     imported.push({
                         id: genId('chk_imp'),
-                        itemNo: iItem >= 0 ? String(row[iItem] || '').trim() : String(imported.length + 1),
                         category: iCat >= 0 ? String(row[iCat] || '').trim() : 'General',
                         description: desc,
                         assigneeName,
                         assigneeEmail: matchedEmail !== '__unassigned__' ? matchedEmail : '',
                         collaborators: iCollab >= 0 ? String(row[iCollab] || '').trim() : '',
                         quantitySpecs: iQty >= 0 ? String(row[iQty] || '').trim() : '',
-                        status: CHECKLIST_STATUSES.includes(rawStatus) ? rawStatus : 'Not Started',
+                        status: normalizeChecklistStatus(rawStatus),
                         priority: CHECKLIST_PRIORITIES.includes(rawPrio) ? rawPrio : 'Medium'
                     });
                 }
@@ -2224,8 +2481,8 @@
             showToast('Excel library not loaded.', true);
             return;
         }
-        const headers = ['Item #', 'Category / Area', 'Task Description', 'Primary Assignee', 'Collaborators / Coordinators', 'Quantity / Specs', 'Status', 'Priority'];
-        const sample = [1, 'Seating & Furniture', 'Procurement of Chairs without handles', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '100 Nos', 'Not Started', 'High'];
+        const headers = ['Sr No', 'Category / Area', 'Task Description', 'Primary Assignee', 'Collaborators / Coordinators', 'Quantity / Specs', 'Status', 'Priority'];
+        const sample = [1, 'Seating & Furniture', 'Procurement of Chairs without handles', 'Mustaali Lohawala', 'Huzaifa Rampurawala', '100 Nos', 'Pending', 'High'];
         const ws = window.XLSX.utils.aoa_to_sheet([headers, sample]);
         const wb = window.XLSX.utils.book_new();
         window.XLSX.utils.book_append_sheet(wb, ws, 'Checklist_Import');
@@ -2308,21 +2565,55 @@
         renderActiveTab();
     }
 
-    // --- Budget Single Row CRUD ---
+    // --- Budget Categories & Single Row CRUD ---
+    function openAddBudgetCategoryModal() {
+        if (isViewOnly()) return;
+        const existingCats = getBudgetCategories();
+        openFormModal(
+            `<i class="fa-solid fa-folder-plus text-amber-300"></i> Add Budget Category`,
+            `
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">New Category Name *</label>
+                    <input type="text" name="categoryName" required placeholder="e.g. Sound & AV, Security, Stationery" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div class="text-[11px] font-bold uppercase text-gray-500 mb-1.5">Existing Categories (Alphabetical)</div>
+                    <div class="flex flex-wrap gap-1.5">
+                        ${existingCats.map(c => `<span class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 px-2 py-0.5 rounded-md">${escapeHtml(c)}</span>`).join('')}
+                    </div>
+                </div>
+            `,
+            async (form) => {
+                const name = form.categoryName.value.trim();
+                if (!name) return false;
+                const alreadyExists = getBudgetCategories().some(c => c.toLowerCase() === name.toLowerCase());
+                if (alreadyExists) {
+                    showToast(`Category "${name}" already exists.`, true);
+                    return false;
+                }
+                registerBudgetCategory(name);
+                await persistData(`Added category "${name}".`);
+                renderActiveTab();
+            }
+        );
+    }
+
     async function updateBudgetCategory(rowId, newCategory) {
         if (isViewOnly()) return;
         const yr = getYearData(selectedHijriYear);
         const row = (yr.budget || []).find(r => r.id === rowId);
         if (!row) return;
         row.category = newCategory;
+        yr.budget = sortBudgetRows(yr.budget);
         await persistData('Budget category updated.');
+        renderActiveTab();
     }
 
     function openBudgetRowModal(rowId = null) {
         if (isViewOnly()) return;
         const yr = getYearData(selectedHijriYear);
         const existing = rowId ? yr.budget.find(r => r.id === rowId) : null;
-        const categories = Array.from(new Set([...DEFAULT_BUDGET_CATEGORIES, ...yr.budget.map(r => r.category).filter(Boolean)]));
+        const categories = getBudgetCategories(yr);
         const existingItem = existing ? (existing.itemDetails !== undefined ? existing.itemDetails : (existing.item || '')) : '';
 
         openFormModal(
@@ -2331,9 +2622,14 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Category *</label>
-                        <select name="category" required class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white">
-                            ${categories.map(c => `<option value="${escapeHtml(c)}" ${(existing?.category || DEFAULT_BUDGET_CATEGORIES[0]) === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+                        <select name="category" required class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white"
+                            onchange="const wrap=document.getElementById('miqaatBudgetNewCatWrap'); const inp=document.getElementById('miqaatBudgetNewCatInput'); if(this.value==='__add_new__'){wrap.classList.remove('hidden'); inp.required=true; inp.focus();}else{wrap.classList.add('hidden'); inp.required=false;}">
+                            ${categories.map(c => `<option value="${escapeHtml(c)}" ${(existing?.category || categories[0]) === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+                            <option value="__add_new__">+ Add New Category...</option>
                         </select>
+                        <div id="miqaatBudgetNewCatWrap" class="hidden mt-2">
+                            <input type="text" id="miqaatBudgetNewCatInput" name="newCategoryName" placeholder="Enter new category name" class="w-full p-2 border border-emerald-400 bg-emerald-50/40 rounded-lg text-sm">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-emerald-900 uppercase mb-1">Amount (₹) *</label>
@@ -2354,19 +2650,31 @@
                 </div>
             `,
             async (form) => {
+                let chosenCategory = form.category.value.trim();
+                if (chosenCategory === '__add_new__') {
+                    const customName = (form.newCategoryName?.value || '').trim();
+                    if (!customName) {
+                        showToast('Please enter a new category name.', true);
+                        return false;
+                    }
+                    chosenCategory = registerBudgetCategory(customName);
+                }
+                const curUser = getCurrentUserInfo();
                 const payload = {
                     id: existing ? existing.id : genId('bdg'),
-                    category: form.category.value.trim() || DEFAULT_BUDGET_CATEGORIES[0],
+                    category: chosenCategory || categories[0] || 'HR',
                     itemDetails: form.itemDetails.value.trim(),
                     amount: Number(form.amount.value) || 0,
                     rateDetails: form.rateDetails.value.trim(),
-                    remarks: form.remarks.value.trim()
+                    remarks: form.remarks.value.trim(),
+                    addedBy: existing ? (existing.addedBy || '') : (curUser.name || '')
                 };
                 if (existing) {
                     Object.assign(existing, payload);
                 } else {
                     yr.budget.push(payload);
                 }
+                yr.budget = sortBudgetRows(yr.budget);
                 await persistData(existing ? 'Budget row updated.' : 'Budget row added.');
                 renderActiveTab();
             }
@@ -2386,22 +2694,27 @@
         if (isViewOnly()) return;
         ensureModalsMounted();
         const yr = getYearData(selectedHijriYear);
-        fullBudgetDraftRows = (yr.budget || []).map(r => ({
+        const categories = getBudgetCategories(yr);
+        const defaultCat = categories[0] || 'HR';
+        const curUser = getCurrentUserInfo();
+        fullBudgetDraftRows = sortBudgetRows(yr.budget || []).map(r => ({
             id: r.id || genId('bdg'),
-            category: r.category || DEFAULT_BUDGET_CATEGORIES[0],
+            category: r.category || defaultCat,
             itemDetails: r.itemDetails !== undefined ? r.itemDetails : (r.item || ''),
             amount: computeRowAmount(r),
             rateDetails: r.rateDetails || '',
-            remarks: r.remarks || ''
+            remarks: r.remarks || '',
+            addedBy: r.addedBy || ''
         }));
         if (fullBudgetDraftRows.length === 0) {
             fullBudgetDraftRows.push({
                 id: genId('bdg'),
-                category: DEFAULT_BUDGET_CATEGORIES[0],
+                category: defaultCat,
                 itemDetails: '',
                 amount: 0,
                 rateDetails: '',
-                remarks: ''
+                remarks: '',
+                addedBy: curUser.name || ''
             });
         }
         document.getElementById('miqaatFullBudgetYearLabel').textContent = `${selectedHijriYear}H`;
@@ -2412,14 +2725,22 @@
     function renderFullBudgetDraftGrid() {
         const tbody = document.getElementById('miqaatFullBudgetGridBody');
         if (!tbody) return;
-        const categories = Array.from(new Set([...DEFAULT_BUDGET_CATEGORIES, ...fullBudgetDraftRows.map(r => r.category).filter(Boolean)]));
+        const yr = getYearData(selectedHijriYear);
+        const baseCats = getBudgetCategories(yr);
+        const seen = new Map();
+        [...baseCats, ...fullBudgetDraftRows.map(r => r.category)].forEach(c => {
+            const t = String(c || '').trim();
+            if (t && !seen.has(t.toLowerCase())) seen.set(t.toLowerCase(), t);
+        });
+        const categories = Array.from(seen.values()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        const defaultCat = categories[0] || 'HR';
 
         tbody.innerHTML = fullBudgetDraftRows.map((r, idx) => `
             <tr class="border-b border-gray-200 hover:bg-emerald-50/40">
                 <td class="p-1.5 text-center font-bold text-gray-500">${idx + 1}</td>
                 <td class="p-1.5">
                     <select onchange="window.MiqaatModule.updateFullBudgetCell(${idx}, 'category', this.value)">
-                        ${categories.map(c => `<option value="${escapeHtml(c)}" ${(r.category || DEFAULT_BUDGET_CATEGORIES[0]) === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+                        ${categories.map(c => `<option value="${escapeHtml(c)}" ${(r.category || defaultCat) === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
                     </select>
                 </td>
                 <td class="p-1.5">
@@ -2441,6 +2762,7 @@
                 <td class="p-1.5 text-center">
                     <button type="button" onclick="window.MiqaatModule.removeFullBudgetDraftRow(${idx})" class="text-red-500 hover:text-red-700 p-1" title="Remove row"><i class="fa-solid fa-xmark"></i></button>
                 </td>
+                <td class="p-1.5 text-gray-600 font-semibold whitespace-nowrap">${escapeHtml(r.addedBy || '—')}</td>
             </tr>
         `).join('');
 
@@ -2465,13 +2787,16 @@
     }
 
     function addFullBudgetDraftRow() {
+        const categories = getBudgetCategories();
+        const curUser = getCurrentUserInfo();
         fullBudgetDraftRows.push({
             id: genId('bdg'),
-            category: DEFAULT_BUDGET_CATEGORIES[0],
+            category: categories[0] || 'HR',
             itemDetails: '',
             amount: 0,
             rateDetails: '',
-            remarks: ''
+            remarks: '',
+            addedBy: curUser.name || ''
         });
         renderFullBudgetDraftGrid();
     }
@@ -2484,16 +2809,21 @@
     async function saveFullBudgetGrid() {
         if (isViewOnly()) return;
         const yr = getYearData(selectedHijriYear);
-        yr.budget = fullBudgetDraftRows
+        const categories = getBudgetCategories(yr);
+        const defaultCat = categories[0] || 'HR';
+        const curUser = getCurrentUserInfo();
+        const cleaned = fullBudgetDraftRows
             .filter(r => (r.itemDetails || '').trim() || computeRowAmount(r) > 0)
             .map(r => ({
                 id: r.id || genId('bdg'),
-                category: (r.category || '').trim() || DEFAULT_BUDGET_CATEGORIES[0],
+                category: (r.category || '').trim() || defaultCat,
                 itemDetails: (r.itemDetails || '').trim(),
                 amount: computeRowAmount(r),
                 rateDetails: (r.rateDetails || '').trim(),
-                remarks: (r.remarks || '').trim()
+                remarks: (r.remarks || '').trim(),
+                addedBy: (r.addedBy || '').trim() || (curUser.name || '')
             }));
+        yr.budget = sortBudgetRows(cleaned);
         await persistData(`Saved all ${yr.budget.length} budget rows.`);
         closeModal('miqaatFullBudgetModal');
         renderActiveTab();
@@ -2861,6 +3191,8 @@
             if (key === 'priority') checklistPriorityFilter = val;
             renderActiveTab();
         },
+        openChecklistOverviewModal,
+        setChecklistOverviewSearch,
         openChecklistModal,
         updateChecklistField,
         reassignChecklistTask,
@@ -2883,6 +3215,11 @@
             if (key === 'category') budgetCategoryFilter = val;
             renderActiveTab();
         },
+        toggleBudgetCategoryFilter: function (cat) {
+            budgetCategoryFilter = budgetCategoryFilter === cat ? '' : cat;
+            renderActiveTab();
+        },
+        openAddBudgetCategoryModal,
         updateBudgetCategory,
         openBudgetRowModal,
         deleteBudgetRow,
